@@ -3,55 +3,52 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9E1C7C50-EED3-4483-930F-08279F3D9833}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DDD", "DDD", "{B10B21E6-2126-4B5C-BD62-042A5DA88E8D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLRefactoring.DDD.Api", "src\DDD\Api\BLRefactoring.DDD.Api.csproj", "{FEF2E879-C5FD-472D-A040-6922650DA58E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLRefactoring.DDD.Api", "src\DDD\Api\BLRefactoring.DDD.Api.csproj", "{FEF2E879-C5FD-472D-A040-6922650DA58E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLRefactoring.DDD.Application", "src\DDD\Application\BLRefactoring.DDD.Application.csproj", "{5EEEB6E4-0D87-4202-816C-8F457FF77041}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLRefactoring.DDD.Application", "src\DDD\Application\BLRefactoring.DDD.Application.csproj", "{5EEEB6E4-0D87-4202-816C-8F457FF77041}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLRefactoring.DDD.Infrastructure", "src\DDD\Infrastructure\BLRefactoring.DDD.Infrastructure.csproj", "{8454B329-1F74-40E6-B169-BDD0EC71D997}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLRefactoring.DDD.Infrastructure", "src\DDD\Infrastructure\BLRefactoring.DDD.Infrastructure.csproj", "{8454B329-1F74-40E6-B169-BDD0EC71D997}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLRefactoring.DDD.Domain", "src\DDD\Domain\BLRefactoring.DDD.Domain.csproj", "{2C593286-B46F-4939-85A5-706982A6FFA1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLRefactoring.DDD.Domain", "src\DDD\Domain\BLRefactoring.DDD.Domain.csproj", "{2C593286-B46F-4939-85A5-706982A6FFA1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DDDWithCqrs", "DDDWithCqrs", "{63AE319A-FEFC-4D1D-993D-2A92D4F615BF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLRefactoring.DDDWithCqrs.Api", "src\DDDWithCqrs\Api\BLRefactoring.DDDWithCqrs.Api.csproj", "{EE1C810B-61BC-4663-A3BF-051FE9CC1538}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLRefactoring.DDDWithCqrs.Api", "src\DDDWithCqrs\Api\BLRefactoring.DDDWithCqrs.Api.csproj", "{EE1C810B-61BC-4663-A3BF-051FE9CC1538}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLRefactoring.DDDWithCqrs.Application", "src\DDDWithCqrs\Application\BLRefactoring.DDDWithCqrs.Application.csproj", "{9705BEEB-2D4B-4D09-B47D-4D6AE09FE111}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLRefactoring.DDDWithCqrs.Application", "src\DDDWithCqrs\Application\BLRefactoring.DDDWithCqrs.Application.csproj", "{9705BEEB-2D4B-4D09-B47D-4D6AE09FE111}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLRefactoring.DDDWithCqrs.Infrastructure", "src\DDDWithCqrs\Infrastructure\BLRefactoring.DDDWithCqrs.Infrastructure.csproj", "{DF2A45D5-4A94-4C9C-95D8-63C55F436BC1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLRefactoring.DDDWithCqrs.Infrastructure", "src\DDDWithCqrs\Infrastructure\BLRefactoring.DDDWithCqrs.Infrastructure.csproj", "{DF2A45D5-4A94-4C9C-95D8-63C55F436BC1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLRefactoring.DDDWithCqrs.Domain", "src\DDDWithCqrs\Domain\BLRefactoring.DDDWithCqrs.Domain.csproj", "{4B5F0F93-077F-40F2-9513-C84C0C15A0EE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLRefactoring.DDDWithCqrs.Domain", "src\DDDWithCqrs\Domain\BLRefactoring.DDDWithCqrs.Domain.csproj", "{4B5F0F93-077F-40F2-9513-C84C0C15A0EE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Repr", "Repr", "{24801741-FB18-4AA9-B0DF-6C0FA8421A18}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLRefactoring.Repr.Api", "src\Repr\Api\BLRefactoring.Repr.Api.csproj", "{98581CC3-01DD-4316-B70E-6D871D2B8AE7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLRefactoring.Repr.Api", "src\Repr\Api\BLRefactoring.Repr.Api.csproj", "{98581CC3-01DD-4316-B70E-6D871D2B8AE7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLRefactoring.Repr.Application", "src\Repr\Application\BLRefactoring.Repr.Application.csproj", "{E9B4989C-CA0F-425C-A8FC-FCDDA13A07F9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLRefactoring.Repr.Application", "src\Repr\Application\BLRefactoring.Repr.Application.csproj", "{E9B4989C-CA0F-425C-A8FC-FCDDA13A07F9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLRefactoring.Repr.Infrastructure", "src\Repr\Infrastructure\BLRefactoring.Repr.Infrastructure.csproj", "{C834EB55-62CE-4576-8A6F-B13D86DC0CA8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLRefactoring.Repr.Infrastructure", "src\Repr\Infrastructure\BLRefactoring.Repr.Infrastructure.csproj", "{C834EB55-62CE-4576-8A6F-B13D86DC0CA8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLRefactoring.Repr.Domain", "src\Repr\Domain\BLRefactoring.Repr.Domain.csproj", "{EFA2CBC6-233C-490A-96ED-5D7640BDC21C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLRefactoring.Repr.Domain", "src\Repr\Domain\BLRefactoring.Repr.Domain.csproj", "{EFA2CBC6-233C-490A-96ED-5D7640BDC21C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FastEndpoints", "FastEndpoints", "{349A0D35-DF84-4BAD-A371-8AB0F38AF6A1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLRefactoring.FastEndpoints.Api", "src\FastEndpoints\Api\BLRefactoring.FastEndpoints.Api.csproj", "{F56F05EC-C2D8-4E72-99DD-5EF4C2526365}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLRefactoring.FastEndpoints.Api", "src\FastEndpoints\Api\BLRefactoring.FastEndpoints.Api.csproj", "{F56F05EC-C2D8-4E72-99DD-5EF4C2526365}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLRefactoring.FastEndpoints.Application", "src\FastEndpoints\Application\BLRefactoring.FastEndpoints.Application.csproj", "{1D2E984D-AC00-445F-A75D-AD2D139B0968}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLRefactoring.FastEndpoints.Application", "src\FastEndpoints\Application\BLRefactoring.FastEndpoints.Application.csproj", "{1D2E984D-AC00-445F-A75D-AD2D139B0968}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLRefactoring.FastEndpoints.Infrastructure", "src\FastEndpoints\Infrastructure\BLRefactoring.FastEndpoints.Infrastructure.csproj", "{76228832-FD29-4C5B-9C27-0D8F35E96C59}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLRefactoring.FastEndpoints.Infrastructure", "src\FastEndpoints\Infrastructure\BLRefactoring.FastEndpoints.Infrastructure.csproj", "{76228832-FD29-4C5B-9C27-0D8F35E96C59}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLRefactoring.FastEndpoints.Domain", "src\FastEndpoints\Domain\BLRefactoring.FastEndpoints.Domain.csproj", "{90593967-566A-4829-9AB3-D1027E057668}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLRefactoring.FastEndpoints.Domain", "src\FastEndpoints\Domain\BLRefactoring.FastEndpoints.Domain.csproj", "{90593967-566A-4829-9AB3-D1027E057668}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLRefactoring.Shared", "src\BLRefactoring.Shared\BLRefactoring.Shared.csproj", "{206DAB2D-AE27-45F2-BD26-E9856D4CC25C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{FEF2E879-C5FD-472D-A040-6922650DA58E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -118,27 +115,33 @@ Global
 		{90593967-566A-4829-9AB3-D1027E057668}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{90593967-566A-4829-9AB3-D1027E057668}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{90593967-566A-4829-9AB3-D1027E057668}.Release|Any CPU.Build.0 = Release|Any CPU
+		{206DAB2D-AE27-45F2-BD26-E9856D4CC25C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{206DAB2D-AE27-45F2-BD26-E9856D4CC25C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{206DAB2D-AE27-45F2-BD26-E9856D4CC25C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{206DAB2D-AE27-45F2-BD26-E9856D4CC25C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{B10B21E6-2126-4B5C-BD62-042A5DA88E8D} = {9E1C7C50-EED3-4483-930F-08279F3D9833}
 		{FEF2E879-C5FD-472D-A040-6922650DA58E} = {B10B21E6-2126-4B5C-BD62-042A5DA88E8D}
 		{5EEEB6E4-0D87-4202-816C-8F457FF77041} = {B10B21E6-2126-4B5C-BD62-042A5DA88E8D}
 		{8454B329-1F74-40E6-B169-BDD0EC71D997} = {B10B21E6-2126-4B5C-BD62-042A5DA88E8D}
 		{2C593286-B46F-4939-85A5-706982A6FFA1} = {B10B21E6-2126-4B5C-BD62-042A5DA88E8D}
-		{63AE319A-FEFC-4D1D-993D-2A92D4F615BF} = {9E1C7C50-EED3-4483-930F-08279F3D9833}
 		{EE1C810B-61BC-4663-A3BF-051FE9CC1538} = {63AE319A-FEFC-4D1D-993D-2A92D4F615BF}
 		{9705BEEB-2D4B-4D09-B47D-4D6AE09FE111} = {63AE319A-FEFC-4D1D-993D-2A92D4F615BF}
 		{DF2A45D5-4A94-4C9C-95D8-63C55F436BC1} = {63AE319A-FEFC-4D1D-993D-2A92D4F615BF}
 		{4B5F0F93-077F-40F2-9513-C84C0C15A0EE} = {63AE319A-FEFC-4D1D-993D-2A92D4F615BF}
-		{24801741-FB18-4AA9-B0DF-6C0FA8421A18} = {9E1C7C50-EED3-4483-930F-08279F3D9833}
 		{98581CC3-01DD-4316-B70E-6D871D2B8AE7} = {24801741-FB18-4AA9-B0DF-6C0FA8421A18}
 		{E9B4989C-CA0F-425C-A8FC-FCDDA13A07F9} = {24801741-FB18-4AA9-B0DF-6C0FA8421A18}
 		{C834EB55-62CE-4576-8A6F-B13D86DC0CA8} = {24801741-FB18-4AA9-B0DF-6C0FA8421A18}
 		{EFA2CBC6-233C-490A-96ED-5D7640BDC21C} = {24801741-FB18-4AA9-B0DF-6C0FA8421A18}
-		{349A0D35-DF84-4BAD-A371-8AB0F38AF6A1} = {9E1C7C50-EED3-4483-930F-08279F3D9833}
 		{F56F05EC-C2D8-4E72-99DD-5EF4C2526365} = {349A0D35-DF84-4BAD-A371-8AB0F38AF6A1}
 		{1D2E984D-AC00-445F-A75D-AD2D139B0968} = {349A0D35-DF84-4BAD-A371-8AB0F38AF6A1}
 		{76228832-FD29-4C5B-9C27-0D8F35E96C59} = {349A0D35-DF84-4BAD-A371-8AB0F38AF6A1}
 		{90593967-566A-4829-9AB3-D1027E057668} = {349A0D35-DF84-4BAD-A371-8AB0F38AF6A1}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A5560FC1-D6C7-4CE7-8ABA-7DFBE3B7E6EB}
 	EndGlobalSection
 EndGlobal
