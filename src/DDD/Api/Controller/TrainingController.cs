@@ -1,22 +1,17 @@
 using BLRefactoring.DDD.Application.Services.TrainingServices;
 using BLRefactoring.DDD.Application.Services.TrainingServices.Dtos;
-using BLRefactoring.DDD.Infrastructure.Repositories.EfCore;
 using BLRefactoring.Shared.Common.Errors;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BLRefactoring.DDD.Api.Controller;
 
-[ApiController]
-[Route("[controller]")]
-public class TrainingController : ControllerBase
+public class TrainingController : ApiControllerBase
 {
     private readonly ITrainingApplicationService _trainingApplicationService;
-    private readonly TrainingContext _transportContext;
 
-    public TrainingController(ITrainingApplicationService trainingApplicationService, TrainingContext transportContext)
+    public TrainingController(ITrainingApplicationService trainingApplicationService)
     {
         _trainingApplicationService = trainingApplicationService;
-        _transportContext = transportContext;
     }
 
     [HttpPost]
@@ -53,6 +48,6 @@ public class TrainingController : ControllerBase
     [ProducesResponseType(typeof(List<TrainingDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<TrainingDto>>> GetAllAsync()
     {
-        return Ok((await _trainingApplicationService.GetAllAsync()));
+        return Ok(await _trainingApplicationService.GetAllAsync());
     }
 }

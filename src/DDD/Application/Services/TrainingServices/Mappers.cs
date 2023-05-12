@@ -1,4 +1,6 @@
+using BLRefactoring.DDD.Application.Services.TrainerServices;
 using BLRefactoring.DDD.Application.Services.TrainingServices.Dtos;
+using BLRefactoring.DDD.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.DDD.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.DDD.Domain.Aggregates.TrainingAggregate.ValueObjects;
 
@@ -46,5 +48,16 @@ public static class Mappers
             EndDate = training.EndDate,
             TrainerId = training.TrainerIdd
         }).ToList();
+    }
+
+    public static TrainerDto ToDto(this Trainer trainer)
+    {
+        return new TrainerDto()
+        {
+            Id = trainer.Id,
+            Email = trainer.Email.FullAddress,
+            Firstname = trainer.Name.Firstname,
+            Lastname = trainer.Name.Lastname
+        };
     }
 }

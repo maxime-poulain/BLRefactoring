@@ -22,4 +22,5 @@ public class ErrorCode : SmartEnum<ErrorCode>
 
     // Trainer error codes.
     public static readonly ErrorCode InvalidTrainer = new("InvalidTrainer", 100);
+    public static readonly ErrorCode InvalidEmail = new("InvalidEmail", 101);
 }

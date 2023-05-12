@@ -1,3 +1,4 @@
+using BLRefactoring.DDD.Application.Services.TrainerServices;
 using BLRefactoring.DDD.Application.Services.TrainingServices;
 using BLRefactoring.DDD.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.DDD.Domain.Aggregates.TrainingAggregate;
@@ -18,6 +19,7 @@ builder.Services.AddTransient<ITrainingApplicationService, TrainingApplicationSe
 builder.Services.AddTransient<ITrainingRepository, TrainingRepository>();
 builder.Services.AddTransient<IUniquenessTitleChecker, TrainingRepository>();
 builder.Services.AddTransient<ITrainerRepository, TrainerRepository>();
+builder.Services.AddTransient<ITrainerApplicationService, TrainerApplicationService>();
 
 builder.Services.AddDbContext<TrainingContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("TrainingContext")));

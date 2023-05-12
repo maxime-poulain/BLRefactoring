@@ -5,4 +5,6 @@ namespace BLRefactoring.DDD.Domain.Aggregates.TrainerAggregate;
 public interface ITrainerRepository : IRepository<Trainer>
 {
     public ValueTask<Trainer?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task SaveAsync(Trainer trainer, CancellationToken cancellationToken = default);
+    Task<List<Trainer>> GetAllAsync(CancellationToken cancellationToken);
 }
