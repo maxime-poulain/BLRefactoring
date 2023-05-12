@@ -1,5 +1,6 @@
 using BLRefactoring.DDD.Application.Services.TrainingServices;
 using BLRefactoring.DDD.Application.Services.TrainingServices.Dtos;
+using BLRefactoring.DDD.Infrastructure.Repositories.EfCore;
 using BLRefactoring.Shared.Common.Errors;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,10 +11,12 @@ namespace BLRefactoring.DDD.Api.Controller;
 public class TrainingController : ControllerBase
 {
     private readonly ITrainingApplicationService _trainingApplicationService;
+    private readonly TrainingContext _transportContext;
 
-    public TrainingController(ITrainingApplicationService trainingApplicationService)
+    public TrainingController(ITrainingApplicationService trainingApplicationService, TrainingContext transportContext)
     {
         _trainingApplicationService = trainingApplicationService;
+        _transportContext = transportContext;
     }
 
     [HttpPost]
