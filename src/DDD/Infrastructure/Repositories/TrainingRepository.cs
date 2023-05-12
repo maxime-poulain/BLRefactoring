@@ -1,13 +1,32 @@
 using BLRefactoring.DDD.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.DDD.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.DDD.Domain.Aggregates.TrainingAggregate.ValueObjects;
+using BLRefactoring.DDD.Infrastructure.Repositories.EfCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace BLRefactoring.DDD.Infrastructure.Repositories;
 public class TrainingRepository : ITrainingRepository, IUniquenessTitleChecker
 {
-    public Task<Training> GetByIdAsync(Guid id)
+    private readonly TrainingContext _trainingContext;
+
+    public TrainingRepository(TrainingContext trainingContext)
     {
-        throw new NotImplementedException();
+        _trainingContext = trainingContext;
+    }
+
+    public Task<Training?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return _trainingContext.Trainings
+            .Include(training => training.Rates)
+            .FirstOrDefaultAsync(training => training.Id == id, cancellationToken);
+    }
+
+    public async Task<bool> IsTitleUniqueAsync(string title, Trainer trainer, CancellationToken cancellationToken = default)
+    {
+        return true;
+        return !await _trainingContext.Trainings
+            .AnyAsync(training => training.Title == title &&
+                                  training.TrainerIdd == trainer.Id, cancellationToken: cancellationToken);
     }
 
     public Task<IEnumerable<Training>> GetByTitleAsync(string title)
@@ -25,8 +44,16 @@ public class TrainingRepository : ITrainingRepository, IUniquenessTitleChecker
         throw new NotImplementedException();
     }
 
-    public Task<bool> IsTitleUnique(string title, Trainer trainer)
+    public async Task SaveAsync(Training training)
     {
-        throw new NotImplementedException();
+        await _trainingContext.Trainings.AddAsync(training);
+        await _trainingContext.SaveChangesAsync();
+    }
+
+    public Task<List<Training>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return _trainingContext.Trainings
+            .Include(training => training.Rates)
+            .ToListAsync(cancellationToken);
     }
 }

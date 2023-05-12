@@ -11,7 +11,7 @@ public sealed class Training : AggregateRoot<Guid>
     public string Title { get; private set; }
     public DateTime StartDate { get; private set; }
     public DateTime EndDate { get; private set; }
-    public Trainer Trainer { get; private set; }
+    public Guid TrainerIdd { get; private set; }
     public List<Rate> Rates { get; private set; }
 
     private Training() { } // Private constructor for ORM or serialization
@@ -31,8 +31,8 @@ public sealed class Training : AggregateRoot<Guid>
 
         var errors = new ErrorCollection();
         errors.AddErrors(await training.ChangeTitleAsync(title, titleChecker, trainer));
-        errors.AddErrors(training.ChangeStartDate(startDate));
         errors.AddErrors(training.ChangeEndDate(endDate));
+        errors.AddErrors(training.ChangeStartDate(startDate));
         errors.AddErrors(training.ChangeTrainer(trainer));
         errors.AddErrors(training.ChangeRates(rates));
 
@@ -52,6 +52,11 @@ public sealed class Training : AggregateRoot<Guid>
             return Result.Failure(ErrorCode.InvalidStartDate, "Start date must be in the future.");
         }
 
+        if (startDate > EndDate)
+        {
+            return Result.Failure(ErrorCode.InvalidStartDate, "Start date must be before end date.");
+        }
+
         StartDate = startDate;
         return Result.Success();
     }
@@ -62,17 +67,25 @@ public sealed class Training : AggregateRoot<Guid>
         {
             return Result.Failure(ErrorCode.InvalidEndDate, "End date must be within 3 years from now.");
         }
+
+        if (endDate < StartDate)
+        {
+            return Result.Failure(ErrorCode.InvalidEndDate, "End date must be after start date.");
+        }
+
         EndDate = endDate;
         return Result.Success();
     }
 
     public Result ChangeTrainer(Trainer trainer)
     {
+        TrainerIdd = trainer?.Id ?? Guid.NewGuid();
+        return Result.Success();
         if (trainer == null || trainer.IsTransient())
         {
             return Result.Failure(ErrorCode.InvalidTrainer, "Trainer cannot be null.");
         }
-        Trainer = trainer;
+        TrainerIdd = trainer.Id;
         return Result.Success();
     }
 
@@ -94,7 +107,7 @@ public sealed class Training : AggregateRoot<Guid>
             errors.Add(ErrorCode.InvalidTitle, "Title must be between 5 and 30 characters.");
         }
 
-        if (!await checker.IsTitleUnique(title, trainer))
+        if (!await checker.IsTitleUniqueAsync(title, trainer))
         {
             errors.Add(ErrorCode.DuplicateTitle, "Title must be unique for a given trainer.");
         }

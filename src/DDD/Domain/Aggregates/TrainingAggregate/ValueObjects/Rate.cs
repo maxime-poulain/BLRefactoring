@@ -1,4 +1,4 @@
-﻿using BLRefactoring.Shared.Common;
+using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 
@@ -9,6 +9,8 @@ public class Rate : ValueObject
     public int Value { get; }
     public Comment Comment { get; }
     public Guid AuthorId { get; }
+
+    private Rate() { } // Private constructor for ORM or serialization
 
     private Rate(int value, Comment comment, Guid authorId)
     {

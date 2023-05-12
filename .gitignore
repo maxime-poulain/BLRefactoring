@@ -736,6 +736,6 @@ fabric.properties
 # End of https://www.toptal.com/developers/gitignore/api/csharp,visualstudio,visualstudiocode,jetbrains+all,rider
 
 # Ours
-catalog.db
-catalog.db-shm
-catalog.db-wal
+training.db
+training.db-shm
+training.db-wal
