@@ -4,6 +4,7 @@ using BLRefactoring.DDD.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.DDD.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.DDD.Infrastructure.Repositories;
 using BLRefactoring.DDD.Infrastructure.Repositories.EfCore;
+using BLRefactoring.DDD.Infrastructure.Repositories.EfCore.Interceptor;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,7 +23,8 @@ builder.Services.AddTransient<ITrainerRepository, TrainerRepository>();
 builder.Services.AddTransient<ITrainerApplicationService, TrainerApplicationService>();
 
 builder.Services.AddDbContext<TrainingContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("TrainingContext")));
+    options.UseSqlite(builder.Configuration.GetConnectionString("TrainingContext"))
+        .AddInterceptors(new IsTransientMaterializationInterceptor()));
 
 var app = builder.Build();
 
