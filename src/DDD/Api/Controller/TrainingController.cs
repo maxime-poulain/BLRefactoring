@@ -15,7 +15,7 @@ public class TrainingController : ApiControllerBase
     }
 
     [HttpPost]
-    [ProducesResponseType(typeof(IErrorCollection), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     public async Task<ActionResult> CreateTrainingAsync(TrainingCreationRequest request)
     {
@@ -31,20 +31,23 @@ public class TrainingController : ApiControllerBase
 
 
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(IErrorCollection), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(TrainingDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<TrainingDto>> GetTrainingByIdAsync(Guid id)
     {
-        var training = await _trainingApplicationService.GetByIdAsync(id);
-        if (training.IsFailure)
+        var result = await _trainingApplicationService.GetByIdAsync(id);
+
+        return result.IsFailure switch
         {
-            return NotFound(training.Errors);
-        }
-        return Ok(training.Value);
+            true when result.Errors.Any(error => error.ErrorCode == ErrorCode.NotFound) =>
+                NotFound(result.Errors),
+            true => BadRequest(result.Errors),
+            _ => Ok(result.Value)
+        };
     }
 
     [HttpGet("all")]
-    [ProducesResponseType(typeof(IErrorCollection), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(List<TrainingDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<TrainingDto>>> GetAllAsync()
     {

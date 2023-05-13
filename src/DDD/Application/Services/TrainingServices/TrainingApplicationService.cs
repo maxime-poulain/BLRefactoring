@@ -6,6 +6,12 @@ using BLRefactoring.Shared.Common.Results;
 
 namespace BLRefactoring.DDD.Application.Services.TrainingServices;
 
+// A good alternative would have been to have one application service per use case.
+// This would have allowed us to have a more granular control over the dependencies.
+// Also it makes easier to understand what the underlying class does.
+// Example: `ITrainingCreator` or `ITrainingCreationService` is more meaningfull
+// than `ITrainingApplicationService`.
+
 public interface ITrainingApplicationService
 {
     Task<Result<TrainingDto>> CreateAsync(TrainingCreationRequest request);
@@ -33,6 +39,12 @@ public class TrainingApplicationService : ITrainingApplicationService
     {
         var trainer = await _trainerRepository.GetByIdAsync(request.TrainerId);
 
+        if (trainer is null)
+        {
+            return Result<TrainingDto>.Failure(ErrorCode.Unspecified,
+                $"Trainer with id `{request.TrainerId}` not found.");
+        }
+
         var result = await Training.CreateAsync(
             request.Title,
             request.StartDate,
@@ -47,8 +59,8 @@ public class TrainingApplicationService : ITrainingApplicationService
         }
 
         await _trainingRepository.SaveAsync(result.Value);
-        return Result<TrainingDto>.Success(result.Value.ToDto());
 
+        return Result<TrainingDto>.Success(result.Value.ToDto());
     }
 
     public async Task<Result<TrainingDto>> GetByIdAsync(Guid id)
@@ -56,7 +68,7 @@ public class TrainingApplicationService : ITrainingApplicationService
         var training = await _trainingRepository.GetByIdAsync(id);
 
         return training is null
-            ? Result<TrainingDto>.Failure(ErrorCode.Unspecified, $"Training with id `{id}` not found.")
+            ? Result<TrainingDto>.Failure(ErrorCode.NotFound, $"Training with id `{id}` not found.")
             : Result<TrainingDto>.Success(training.ToDto());
     }
 

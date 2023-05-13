@@ -15,7 +15,7 @@ public class TrainerController : ApiControllerBase
     }
 
     [HttpPost]
-    [ProducesResponseType(typeof(IErrorCollection), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(TrainerDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<TrainerDto>> CreateAsync(TrainerCreationRequest request)
     {
@@ -30,21 +30,22 @@ public class TrainerController : ApiControllerBase
     }
 
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(IErrorCollection), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(TrainerDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var result = await _trainerApplicationService.GetByIdAsync(id, cancellationToken);
-        if (result.IsFailure)
-        {
-            return NotFound(result.Errors);
-        }
 
-        return Ok(result.Value);
+        return result.IsFailure switch
+        {
+            true when result.Errors.Any(error => error.ErrorCode == ErrorCode.NotFound) => NotFound(),
+            true => BadRequest(result.Errors),
+            _ => Ok(result.Value)
+        };
     }
 
     [HttpGet("all")]
-    [ProducesResponseType(typeof(IErrorCollection), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(List<TrainerDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<TrainerDto>>> GetAllAsync(CancellationToken cancellationToken)
     {
@@ -52,18 +53,19 @@ public class TrainerController : ApiControllerBase
     }
 
     [HttpDelete("{id}")]
-    [ProducesResponseType(typeof(IErrorCollection), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(List<TrainerDto>), StatusCodes.Status204NoContent)]
     public async Task<ActionResult> DeleteAsync(Guid id, CancellationToken cancellationToken)
     {
         var result = await _trainerApplicationService.DeleteAsync(id, cancellationToken);
 
-        if (result.IsFailure)
+        return result.IsFailure switch
         {
-            return NotFound();
-        }
-
-        return NoContent();
+            true when result.Errors.Any(error => error.ErrorCode == ErrorCode.NotFound) =>
+                NotFound(),
+            true => BadRequest(result.Errors),
+            _ => NoContent()
+        };
     }
 
 }

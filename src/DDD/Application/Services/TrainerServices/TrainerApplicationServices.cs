@@ -1,11 +1,16 @@
 using BLRefactoring.DDD.Application.Services.TrainerServices.Dto;
-using BLRefactoring.DDD.Application.Services.TrainingServices;
 using BLRefactoring.DDD.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 
 namespace BLRefactoring.DDD.Application.Services.TrainerServices;
+
+// A good alternative would have been to have one application service per use case.
+// This would have allowed us to have a more granular control over the dependencies.
+// Also it makes easier to understand what the underlying class does.
+// Example: `ITrainerCreator` or `ITrainerCreationService` is more meaningful
+// than `ITrainerApplicationService`.
 
 public interface ITrainerApplicationService
 {
@@ -41,16 +46,17 @@ public sealed class TrainerApplicationService : ITrainerApplicationService
         }
 
         await _trainerRepository.SaveAsync(result.Value);
-        return Result<TrainerDto>.Success(result.Value.ToDto());
 
+        return Result<TrainerDto>.Success(result.Value.ToDto());
     }
 
     public async Task<Result<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var trainer = await _trainerRepository.GetByIdAsync(id, cancellationToken);
+
         if (trainer is null)
         {
-            return Result<TrainerDto>.Failure(ErrorCode.Unspecified, $"Trainer with id `{id}` could not be found.");
+            return Result<TrainerDto>.Failure(ErrorCode.NotFound, $"Trainer with id `{id}` could not be found.");
         }
 
         return Result<TrainerDto>.Success(trainer.ToDto());

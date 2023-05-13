@@ -4,14 +4,16 @@ using BLRefactoring.Shared.Common;
 
 namespace BLRefactoring.DDD.Application.EventHandlers;
 
+/// <summary>
+/// Represents an event handler for the <see cref="TrainerDeletedDomainEvent"/>
+/// that deletes all trainings of a given deleted trainer.
+/// </summary>
 public class DeleteTrainingWhenTrainerDeletedEventHandler : IDomainEventHandler<TrainerDeletedDomainEvent>
 {
     private readonly ITrainingRepository _trainingRepository;
 
     public DeleteTrainingWhenTrainerDeletedEventHandler(ITrainingRepository trainingRepository)
-    {
-        _trainingRepository = trainingRepository;
-    }
+        => _trainingRepository = trainingRepository;
 
     public async Task Handle(TrainerDeletedDomainEvent notification, CancellationToken cancellationToken)
     {
