@@ -1,3 +1,4 @@
+using BLRefactoring.DDD.Domain.Aggregates.TrainerAggregate.DomainEvents;
 using BLRefactoring.DDD.Domain.Aggregates.TrainerAggregate.ValueObjects;
 using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Common.Results;
@@ -76,5 +77,10 @@ public sealed class Trainer : AggregateRoot<Guid>
             return Result<Trainer>.Failure(result.Errors);
         }
         return Result<Trainer>.Success(trainer);
+    }
+
+    public void MarkForDeletion()
+    {
+        AddDomainEvent(new TrainerDeletedDomainEvent(this));
     }
 }

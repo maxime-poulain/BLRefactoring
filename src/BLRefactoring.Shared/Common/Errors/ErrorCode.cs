@@ -8,6 +8,7 @@ namespace BLRefactoring.Shared.Common.Errors;
 public class ErrorCode : SmartEnum<ErrorCode>
 {
     public static readonly ErrorCode Unspecified = new("Unspecified", -1);
+    public static readonly ErrorCode NotFound = new("NotFound", -2);
 
     protected ErrorCode(string name, int value) : base(name, value)
     {

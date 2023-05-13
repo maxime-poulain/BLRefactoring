@@ -1,4 +1,5 @@
 using BLRefactoring.DDD.Application.Services.TrainerServices;
+using BLRefactoring.DDD.Application.Services.TrainerServices.Dto;
 using BLRefactoring.Shared.Common.Errors;
 using Microsoft.AspNetCore.Mvc;
 
@@ -49,4 +50,20 @@ public class TrainerController : ApiControllerBase
     {
         return Ok(await _trainerApplicationService.GetAllAsync(cancellationToken));
     }
+
+    [HttpDelete("{id}")]
+    [ProducesResponseType(typeof(IErrorCollection), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(List<TrainerDto>), StatusCodes.Status204NoContent)]
+    public async Task<ActionResult> DeleteAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _trainerApplicationService.DeleteAsync(id, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
+    }
+
 }

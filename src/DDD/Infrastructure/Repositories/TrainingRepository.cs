@@ -34,9 +34,14 @@ public class TrainingRepository : ITrainingRepository, IUniquenessTitleChecker
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<Training>> GetByTrainerAsync(Trainer trainer)
+    public async Task<IEnumerable<Training>> GetByTrainerAsync(Trainer trainer)
     {
-        throw new NotImplementedException();
+        var trainings = await _trainingContext.Trainings
+            .Include(training => training.Rates)
+            .Where(training => training.TrainerIdd == trainer.Id)
+            .ToListAsync();
+
+        return trainings;
     }
 
     public Task<IEnumerable<Training>> SearchByCriteriaAsync(TrainingSearchCriteria criteria)
@@ -46,8 +51,21 @@ public class TrainingRepository : ITrainingRepository, IUniquenessTitleChecker
 
     public async Task SaveAsync(Training training)
     {
-        await _trainingContext.Trainings.AddAsync(training);
+        if (training.IsTransient())
+        {
+            await _trainingContext.Trainings.AddAsync(training);
+        }
+        else
+        {
+            _trainingContext.Trainings.Update(training);
+        }
         await _trainingContext.SaveChangesAsync();
+    }
+
+    public Task DeleteAsync(IEnumerable<Training> trainings, CancellationToken cancellationToken)
+    {
+        _trainingContext.Trainings.RemoveRange(trainings);
+        return _trainingContext.SaveChangesAsync(cancellationToken);
     }
 
     public Task<List<Training>> GetAllAsync(CancellationToken cancellationToken = default)

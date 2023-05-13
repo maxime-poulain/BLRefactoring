@@ -15,4 +15,5 @@ public interface ITrainingRepository : IRepository<Training>
     public Task<IEnumerable<Training>> SearchByCriteriaAsync(TrainingSearchCriteria criteria);
     Task SaveAsync(Training training);
     Task<List<Training>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task DeleteAsync(IEnumerable<Training> trainings, CancellationToken cancellationToken = default);
 }

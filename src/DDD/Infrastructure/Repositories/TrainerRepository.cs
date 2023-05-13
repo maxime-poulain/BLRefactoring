@@ -22,11 +22,18 @@ public class TrainerRepository : ITrainerRepository
 
     public async Task SaveAsync(Trainer trainer, CancellationToken cancellationToken = default)
     {
-        await _trainingContext.Trainers.AddAsync(trainer, cancellationToken);
+        if (trainer.IsTransient())
+        {
+            await _trainingContext.Trainers.AddAsync(trainer, cancellationToken);
+        }
+        else
+        {
+            _trainingContext.Trainers.Update(trainer);
+        }
         await _trainingContext.SaveChangesAsync(cancellationToken);
     }
 
-    public Task<List<Trainer>> GetAllAsync(CancellationToken cancellationToken)
+    public Task<List<Trainer>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         // Owned Entities are by default included in the query.
         // However, we are explicitly including them here for the sake of clarity.
@@ -34,5 +41,11 @@ public class TrainerRepository : ITrainerRepository
             .Include(trainer => trainer.Email)
             .Include(trainer => trainer.Name)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task DeleteAsync(Trainer trainer, CancellationToken cancellationToken = default)
+    {
+        _trainingContext.Remove(trainer);
+        await _trainingContext.SaveChangesAsync(cancellationToken);
     }
 }
