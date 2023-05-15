@@ -1,9 +1,9 @@
 using BLRefactoring.DDD.Application.Services.TrainerServices;
 using BLRefactoring.DDD.Application.Services.TrainerServices.Dto;
 using BLRefactoring.DDD.Application.Services.TrainingServices.Dtos;
-using BLRefactoring.DDD.Domain.Aggregates.TrainerAggregate;
-using BLRefactoring.DDD.Domain.Aggregates.TrainingAggregate;
-using BLRefactoring.DDD.Domain.Aggregates.TrainingAggregate.ValueObjects;
+using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
+using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate;
+using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate.ValueObjects;
 
 namespace BLRefactoring.DDD.Application.Services;
 
@@ -31,7 +31,7 @@ public static class Mappers
             }).ToList(),
             StartDate = training.StartDate,
             EndDate = training.EndDate,
-            TrainerId = training.TrainerIdd
+            TrainerId = training.TrainerId
         };
     }
 
@@ -49,7 +49,7 @@ public static class Mappers
             }).ToList(),
             StartDate = training.StartDate,
             EndDate = training.EndDate,
-            TrainerId = training.TrainerIdd
+            TrainerId = training.TrainerId
         }).ToList();
     }
 
