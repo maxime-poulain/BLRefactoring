@@ -1,14 +1,14 @@
 using BLRefactoring.DDD.Application.EventHandlers;
 using BLRefactoring.DDD.Application.Services.TrainerServices;
 using BLRefactoring.DDD.Application.Services.TrainingServices;
-using BLRefactoring.DDD.Domain.Aggregates.TrainerAggregate;
-using BLRefactoring.DDD.Domain.Aggregates.TrainingAggregate;
-using BLRefactoring.DDD.Infrastructure;
-using BLRefactoring.DDD.Infrastructure.Repositories;
-using BLRefactoring.DDD.Infrastructure.Repositories.EfCore;
-using BLRefactoring.DDD.Infrastructure.Repositories.EfCore.Interceptor;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common;
+using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
+using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate;
+using BLRefactoring.Shared.DDD.Infrastructure;
+using BLRefactoring.Shared.DDD.Infrastructure.Repositories;
+using BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore;
+using BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore.Interceptor;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

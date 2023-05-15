@@ -1,8 +1,8 @@
 using BLRefactoring.DDD.Application.Services.TrainerServices.Dto;
-using BLRefactoring.DDD.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
+using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
 
 namespace BLRefactoring.DDD.Application.Services.TrainerServices;
 

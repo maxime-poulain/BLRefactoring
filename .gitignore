@@ -739,3 +739,8 @@ fabric.properties
 training.db
 training.db-shm
 training.db-wal
+
+cqrsDDD.db
+cqrsDDD.db-shm
+cqrsDDD.db-wal
+
