@@ -1,3 +1,5 @@
+using BLRefactoring.FastEndpoints.Application.Features.Trainers.Create.Command;
+using BLRefactoring.FastEndpoints.Application.Features.Trainers.Create.Mailing;
 using BLRefactoring.FastEndpoints.Application.ThirdParty.EfCore;
 using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +16,11 @@ builder.Services.AddFastEndpoints(options => options.IncludeAbstractValidators =
 
 builder.Services.AddDbContext<TrainingContext>(options
     => options.UseSqlite(@"Data Source=C:\temp\FastEndpoints.db"));
+
+builder.Services.AddMediatR(
+    cfg => cfg.RegisterServicesFromAssemblyContaining<CreateTrainerCommand>());
+
+builder.Services.AddTransient<ITrainerCreationEmailService, TrainerCreationEmailService>();
 
 var app = builder.Build();
 

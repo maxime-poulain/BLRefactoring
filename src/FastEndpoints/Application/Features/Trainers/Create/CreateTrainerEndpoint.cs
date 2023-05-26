@@ -6,7 +6,6 @@ namespace BLRefactoring.FastEndpoints.Application.Features.Trainers.Create;
 // Endpoints could be part of the Api project
 // I put `CreateTrainerEndpoint` in the Trainers/Create slice
 // to illustrate that this is possible.
-
 public class CreateTrainerEndpoint : Endpoint<CreateTrainerCommand, TrainerDto>
 {
     public override void Configure()
