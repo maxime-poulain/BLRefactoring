@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore.Configurations;
 
-public class TrainingConfiguration : EntityBaseConfiguration<Training>
+public class TrainingConfiguration : EntityBaseConfiguration<Training, TrainingId>
 {
     public override void ConfigureEntity(EntityTypeBuilder<Training> builder)
     {

@@ -22,7 +22,6 @@ public abstract class EntityId<TEntityId> : EntityId<TEntityId, Guid>
     /// A new instance of the <typeparamref name="TEntityId"/> class with an
     /// auto-generated <see cref="Guid"/>.
     /// </returns>
-
     public static TEntityId Default() => Create(Guid.NewGuid());
 }
 
@@ -46,7 +45,6 @@ public abstract class EntityId<TEntityId, TValue> :
     /// Gets the unique identifier value of the <see cref="Entity{TEntityId}"/>.
     /// The value is of type <typeparamref name="TValue"/>.
     /// </summary>
-
     public TValue Value { get; protected init; }
 
     protected EntityId()

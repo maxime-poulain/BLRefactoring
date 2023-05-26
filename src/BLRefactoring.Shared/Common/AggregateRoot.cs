@@ -18,7 +18,7 @@ namespace BLRefactoring.Shared.Common;
 /// </list>
 /// </remarks>
 public abstract class AggregateRoot<TEntityId> : Entity<TEntityId>, IAggregateRoot
-    where TEntityId : struct
+    where TEntityId : EntityId<TEntityId>, new()
 {
     private readonly List<IDomainEvent> _domainEvents = new();
 

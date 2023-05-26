@@ -13,10 +13,12 @@ public class TrainerRepository : ITrainerRepository
         _trainingContext = trainingContext;
     }
 
-    public async ValueTask<Trainer?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async ValueTask<Trainer?> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
     {
         return await _trainingContext.Trainers
-            .FindAsync(new object?[] { id }, cancellationToken)
+            .FirstOrDefaultAsync(trainer => trainer.Id == id, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -30,6 +32,7 @@ public class TrainerRepository : ITrainerRepository
         {
             _trainingContext.Trainers.Update(trainer);
         }
+
         await _trainingContext.SaveChangesAsync(cancellationToken);
     }
 

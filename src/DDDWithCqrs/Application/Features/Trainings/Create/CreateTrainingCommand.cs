@@ -53,7 +53,7 @@ public class CreateTrainingCommandHandler : ICommandHandler<CreateTrainingComman
             return Result.Failure(ratesResult.Errors);
         }
 
-        var trainingCreationResult = await Training.CreateAsync(request.TrainingId,
+        var trainingCreationResult = await Training.CreateAsync((TrainingId) request.TrainingId,
             request.Title,
             request.StartDate,
             request.EndDate,
