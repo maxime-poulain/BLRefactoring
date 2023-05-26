@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore.Configurations;
 
-public class TrainerConfiguration : EntityBaseConfiguration<Trainer>
+public class TrainerConfiguration : EntityBaseConfiguration<Trainer, TrainerId>
 {
     public override void ConfigureEntity(EntityTypeBuilder<Trainer> builder)
     {

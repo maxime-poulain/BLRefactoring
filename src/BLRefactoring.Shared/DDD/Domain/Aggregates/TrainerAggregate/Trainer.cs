@@ -5,7 +5,7 @@ using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate.ValueObjects;
 
 namespace BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
 
-public sealed class Trainer : AggregateRoot<Guid>
+public sealed class Trainer : AggregateRoot<TrainerId>
 {
     public Email Email { get; private set; } = null!;
     public Name Name { get; private set; } = null!;
@@ -20,7 +20,7 @@ public sealed class Trainer : AggregateRoot<Guid>
 
     public static Result<Trainer> Create(Guid id, string firstname, string lastname, string email)
     {
-        var trainer = new Trainer() { Id = id };
+        var trainer = new Trainer() { Id = (TrainerId)id };
         return CreateInternal(firstname, lastname, email, trainer);
     }
 

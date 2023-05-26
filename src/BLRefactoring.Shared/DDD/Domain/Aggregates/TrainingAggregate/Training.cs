@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
@@ -7,7 +6,7 @@ using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate.ValueObjects;
 
 namespace BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate;
 
-public sealed class Training : AggregateRoot<Guid>
+public sealed class Training : AggregateRoot<TrainingId>
 {
     private readonly List<Rate> _rates = null!;
 
@@ -20,16 +19,13 @@ public sealed class Training : AggregateRoot<Guid>
 
     private Training() { } // Private constructor for ORM or serialization
 
-    public Training(Guid trainingId)
+    public Training(TrainingId trainingId)
     {
         Id = trainingId;
         _rates = new List<Rate>();
     }
 
-    private static Training CreateDraft(Guid trainingId = default) => new(trainingId)
-    {
-        Id = trainingId
-    };
+    private static Training CreateDraft(TrainingId trainingId) => new(trainingId);
 
     // Usually factory methods are implemented in a separate Factory class.
     // a `TrainingFactory` class would be responsible for creating Training objects.
@@ -49,7 +45,7 @@ public sealed class Training : AggregateRoot<Guid>
         List<Rate> rates,
         IUniquenessTitleChecker titleChecker)
     {
-        var training = CreateDraft();
+        var training = CreateDraft(TrainingId.Default());
         return await CreateInternalAsync(training,
             title,
             startDate,
@@ -60,7 +56,7 @@ public sealed class Training : AggregateRoot<Guid>
     }
 
     public static async Task<Result<Training>> CreateAsync(
-        Guid trainingId,
+        TrainingId trainingId,
         string title,
         DateTime startDate,
         DateTime endDate,
