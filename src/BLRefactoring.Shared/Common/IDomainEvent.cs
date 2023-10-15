@@ -1,12 +1,4 @@
-using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate.ValueObjects;
-using System.Diagnostics;
-using System.Numerics;
-using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
-using System.Threading.Channels;
 using MediatR;
-using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic;
 
 namespace BLRefactoring.Shared.Common;
 

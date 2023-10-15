@@ -9,7 +9,7 @@ namespace BLRefactoring.DDD.Application.Services.TrainingServices;
 // A good alternative would have been to have one application service per use case.
 // This would have allowed us to have a more granular control over the dependencies.
 // Also it makes easier to understand what the underlying class does.
-// Example: `ITrainingCreator` or `ITrainingCreationService` is more meaningfull
+// Example: `ITrainingCreator` or `ITrainingCreationService` is more meaningful
 // than `ITrainingApplicationService`.
 
 public interface ITrainingApplicationService
@@ -53,14 +53,12 @@ public class TrainingApplicationService : ITrainingApplicationService
             request.Rates.ToRates(),
             _uniquenessTitleChecker);
 
-        if (!result.IsSuccess)
+        return await result.MatchAsync(async training =>
         {
-            return Result<TrainingDto>.Failure(result.Errors);
-        }
+            await _trainingRepository.SaveAsync(training);
+            return Result<TrainingDto>.Success(training.ToDto());
+        }, Result<TrainingDto>.FailureAsync);
 
-        await _trainingRepository.SaveAsync(result.Value);
-
-        return Result<TrainingDto>.Success(result.Value.ToDto());
     }
 
     public async Task<Result<TrainingDto>> GetByIdAsync(Guid id)

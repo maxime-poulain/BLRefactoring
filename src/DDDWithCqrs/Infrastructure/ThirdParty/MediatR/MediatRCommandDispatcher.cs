@@ -17,7 +17,7 @@ public class MediatRCommandDispatcher : ICommandDispatcher
     public Task<TResult> DispatchAsync<TResult>(
         ICommand<TResult> command,
         CancellationToken cancellationToken = default)
-        where TResult : IResult
+        where TResult : Result
     {
         return _mediator.Send(command, cancellationToken);
     }

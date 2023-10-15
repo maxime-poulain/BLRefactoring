@@ -48,25 +48,22 @@ public class CreateTrainingCommandHandler : ICommandHandler<CreateTrainingComman
 
         var ratesResult = request.Rates.ToDomainModels();
 
-        if (ratesResult.IsFailure)
+        return await ratesResult.MatchAsync(async rates =>
         {
-            return Result.Failure(ratesResult.Errors);
-        }
+            var trainingCreationResult = await Training.CreateAsync((TrainingId)request.TrainingId,
+                request.Title,
+                request.StartDate,
+                request.EndDate,
+                trainer,
+                rates,
+                _checker);
 
-        var trainingCreationResult = await Training.CreateAsync((TrainingId) request.TrainingId,
-            request.Title,
-            request.StartDate,
-            request.EndDate,
-            trainer,
-            ratesResult.Value,
-            _checker);
+            return await trainingCreationResult.MatchAsync<Result>(async (training) =>
+            {
+                await _trainingRepository.SaveAsync(training, cancellationToken);
+                return Result.Success();
+            }, Result.FailureAsync);
 
-        if (trainingCreationResult.IsFailure)
-        {
-            return Result.Failure(trainingCreationResult.Errors);
-        }
-
-        await _trainingRepository.SaveAsync(trainingCreationResult.Value, cancellationToken);
-        return Result.Success();
+        }, Result.FailureAsync);
     }
 }

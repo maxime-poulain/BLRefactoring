@@ -28,12 +28,9 @@ public class TrainingController : ApiControllerBase
         var trainingId = command.TrainingId;
         var result = await _commandDispatcher.DispatchAsync(command);
 
-        if (result.IsFailure)
-        {
-            return BadRequest(result.Errors);
-        }
-
-        return CreatedAtAction("GetTrainingById", new { id = command.TrainingId }, trainingId);
+        return result.Match<ActionResult>(
+            () => CreatedAtAction("GetTrainingById",
+                new { id = command.TrainingId }, trainingId), BadRequest);
     }
 
     [HttpGet("{id}")]
@@ -69,12 +66,8 @@ public class TrainingController : ApiControllerBase
     {
         var deletionResult = await _commandDispatcher.DispatchAsync(new DeleteTrainingCommand(id));
 
-        return deletionResult.IsFailure switch
-        {
-            true when deletionResult.Errors.Any(e => e.ErrorCode == ErrorCode.NotFound)
-                => NotFound(),
-            true => BadRequest(deletionResult.Errors),
-            _ => NoContent()
-        };
+        return deletionResult.Match<ActionResult>(
+            NoContent,
+            errors => errors.Any(e => e.ErrorCode == ErrorCode.NotFound) ? NotFound() : BadRequest(errors));
     }
 }

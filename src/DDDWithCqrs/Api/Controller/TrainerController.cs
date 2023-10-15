@@ -23,17 +23,14 @@ public class TrainerController : ApiControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
-    public async Task<ActionResult<TrainerDto>> CreateAsync(CreateTrainerCommand request)
+    public async Task<ActionResult> CreateAsync(CreateTrainerCommand request)
     {
         var trainerId = request.TrainerId;
         var result = await _commandDispatcher.DispatchAsync(request);
 
-        if (result.IsFailure)
-        {
-            return BadRequest(result.Errors);
-        }
-
-        return CreatedAtAction("GetById", new { id = trainerId }, trainerId);
+        return result.Match<ActionResult>(
+            () => CreatedAtAction("GetById", new { id = trainerId }, trainerId),
+            BadRequest);
     }
 
     [HttpGet("{id}")]
@@ -66,14 +63,17 @@ public class TrainerController : ApiControllerBase
     {
         var result = await _commandDispatcher.DispatchAsync(new DeleteTrainerCommand(id), cancellationToken);
 
-        switch (result.IsFailure)
-        {
-            case true when result.Errors.Any(error => error.ErrorCode == ErrorCode.NotFound):
-                return NotFound();
-            case true:
-                return BadRequest(result.Errors);
-            default:
-                return NoContent();
-        }
+        return result.Match<ActionResult>(
+            NoContent,
+            errors =>
+            {
+                if (errors.Any(error => error.ErrorCode == ErrorCode.NotFound))
+                {
+                    return NotFound();
+                }
+
+                return BadRequest(errors);
+            }
+            );
     }
 }

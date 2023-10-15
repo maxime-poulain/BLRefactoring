@@ -12,8 +12,8 @@ public interface IQuery : IBaseRequest
 /// <summary>
 /// Represents a query that returns data.
 /// </summary>
-/// <typeparam name="TResponse"></typeparam>
-public interface IQuery<out TResponse> : IQuery, IRequest<TResponse>
+/// <typeparam name="TResult"></typeparam>
+public interface IQuery<out TResult> : IQuery, IRequest<TResult>
 {
 }
 
@@ -21,8 +21,8 @@ public interface IQuery<out TResponse> : IQuery, IRequest<TResponse>
 /// Represents the handler for a query that returns data.
 /// </summary>
 /// <typeparam name="TQuery"></typeparam>
-/// <typeparam name="TResponse"></typeparam>
-public interface IQueryHandler<in TQuery, TResponse> : IRequestHandler<TQuery, TResponse>
-    where TQuery : IQuery<TResponse>
+/// <typeparam name="TResult"></typeparam>
+public interface IQueryHandler<in TQuery, TResult> : IRequestHandler<TQuery, TResult>
+    where TQuery : IQuery<TResult>
 {
 }

@@ -5,7 +5,7 @@ namespace BLRefactoring.Shared.Common.Errors;
 /// <summary>
 /// Represents a collection of <see cref="Error"/> objects, and provides methods for adding and retrieving errors.
 /// </summary>
-public interface IErrorCollection : IReadOnlyErrorCollection
+public interface IErrorCollection
 {
     /// <summary>
     /// Adds an <see cref="Error"/> to the collection.
@@ -30,5 +30,12 @@ public interface IErrorCollection : IReadOnlyErrorCollection
     /// <summary>
     /// Add the <see cref="Error"/> objects from the specified <see cref="IResult"/> to the collection.
     /// </summary>
-    void AddErrors(IResult result);
+    void AddErrors(Result result);
+
+    // The Item property provides methods to read and edit entries in the List.
+    Error this[int index]
+    {
+        get;
+        set;
+    }
 }

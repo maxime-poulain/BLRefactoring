@@ -12,49 +12,44 @@ public static class Mappers
     {
         var commentResult = Comment.Create(rateDto.Comment);
 
-        if (commentResult.IsFailure)
-        {
-            return Result<Rate>.Failure(commentResult.Errors);
-        }
-
-        var authorId = rateDto.AuthorId;
-        return Rate.Create(rateDto.Value, commentResult.Value, authorId);
+        return commentResult.Match(
+            comment => Rate.Create(rateDto.Value, comment, rateDto.AuthorId),
+            Result<Rate>.Failure);
     }
 
     public static Result<List<Rate>> ToDomainModels(this IEnumerable<RateDto> rateDtos)
     {
         var errors = new ErrorCollection();
-
         var rates = new List<Rate>();
 
         foreach (var rateDto in rateDtos)
         {
-            var result = rateDto.ToDomainModel();
-
-            errors.AddErrors(result.Errors);
-
-            if (result.IsFailure)
-            {
-                continue;
-            }
-
-            rates.Add(result.Value);
+            rateDto.ToDomainModel().Match(
+                rate =>
+                {
+                    rates.Add(rate);
+                    return Result.Success();
+                },
+                errorValue =>
+                {
+                    errors.AddErrors(errorValue);
+                    return Result.Failure(errors);
+                });
         }
 
-        if (errors.HasErrors())
-        {
-            return errors;
-        }
-
-        return Result<List<Rate>>.Success(rates);
+        return errors.Match(() => Result<List<Rate>>.Success(rates), Result<List<Rate>>.Failure);
     }
 
     public static List<Rate> ToRates(this List<RateDto> rates)
     {
-        return rates.ConvertAll(r => Rate.Create(
-            r.Value,
-            Comment.Create(r.Comment).Value,
-            r.AuthorId).Value);
+        return rates.Select(rateDto =>
+            Rate.Create(
+                rateDto.Value,
+                Comment.Create(rateDto.Comment)
+                    .Match(
+                        comment => comment,
+                        err => throw new AbandonedMutexException()),
+                rateDto.AuthorId).Match(rate => rate, errors => null)).ToList();
     }
 
     public static TrainingDto ToDto(this Training training)

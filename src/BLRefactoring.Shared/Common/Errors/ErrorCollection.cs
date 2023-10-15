@@ -42,21 +42,20 @@ public sealed class ErrorCollection : IErrorCollection, IReadOnlyErrorCollection
     /// <inheritdoc/>
     public void AddErrors(IEnumerable<Error> errors)
     {
-        ArgumentNullException.ThrowIfNull(errors, nameof(errors));
+        ArgumentNullException.ThrowIfNull(errors);
         _errors.AddRange(errors);
     }
 
     /// <inheritdoc/>
-    public void AddErrors(IResult result)
+    public void AddErrors(Result result)
     {
         ArgumentNullException.ThrowIfNull(result);
-        AddErrors(result.Errors);
-    }
 
-    /// <inheritdoc/>
-    public bool HasErrors()
-    {
-        return _errors.Any();
+        result.Match(() => this, errors =>
+        {
+            AddErrors(errors);
+            return this;
+        });
     }
 
     /// <inheritdoc/>
@@ -78,5 +77,28 @@ public sealed class ErrorCollection : IErrorCollection, IReadOnlyErrorCollection
     IEnumerator IEnumerable.GetEnumerator()
     {
         return GetEnumerator();
+    }
+
+    public Result ToResult()
+    {
+        return this.HasErrors() ? Result.Failure(this) : Result.Success();
+    }
+
+    public Result<TValue> ToResult<TValue>(TValue value)
+    {
+        return this.HasErrors() ? Result<TValue>.Failure(this) : Result<TValue>.Success(value);
+    }
+
+    public TResult Match<TResult>(Func<TResult> onSuccess, Func<IReadOnlyErrorCollection, TResult> onFailure)
+    {
+        return this.HasErrors() ?
+            onSuccess() :
+            onFailure(this);
+    }
+
+    public Error this[int index]
+    {
+        get => _errors[index];
+        set => _errors[index] = value;
     }
 }

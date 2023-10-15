@@ -5,9 +5,9 @@ namespace BLRefactoring.Shared.Common.Errors;
 /// </summary>
 public interface IReadOnlyErrorCollection : IEnumerable<Error>
 {
-    /// <summary>
-    /// Returns a value indicating whether this error collection contains any errors.
-    /// </summary>
-    /// <returns><see langword="true"/> if this error collection contains errors; otherwise, <see langword="false"/>.</returns>
-    bool HasErrors();
+    // The Item property provides methods to read and edit entries in the List.
+    Error this[int index]
+    {
+        get;
+    }
 }

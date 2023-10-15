@@ -19,31 +19,29 @@ public class TrainingController : ApiControllerBase
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     public async Task<ActionResult> CreateTrainingAsync(TrainingCreationRequest request)
     {
-        var training = await _trainingApplicationService.CreateAsync(request);
+        var result = await _trainingApplicationService.CreateAsync(request);
 
-        if (training.IsFailure)
-        {
-            return BadRequest(training.Errors);
-        }
+        return result.Match<ActionResult>(
+            (trainingDto) => CreatedAtAction("GetTrainingById", new { id = trainingDto.Id }, trainingDto.Id),
+            BadRequest);
 
-        return CreatedAtAction("GetTrainingById", new { id = training.Value.Id }, training.Value.Id);
     }
 
 
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(TrainingDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<TrainingDto>> GetTrainingByIdAsync(Guid id)
+    public async Task<ActionResult> GetTrainingByIdAsync(Guid id)
     {
         var result = await _trainingApplicationService.GetByIdAsync(id);
 
-        return result.IsFailure switch
-        {
-            true when result.Errors.Any(error => error.ErrorCode == ErrorCode.NotFound) =>
-                NotFound(result.Errors),
-            true => BadRequest(result.Errors),
-            _ => Ok(result.Value)
-        };
+        return result.Match<ActionResult>(trainingDto => Ok(trainingDto),
+            errors =>
+            {
+                return errors.Any(error => error.ErrorCode == ErrorCode.NotFound)
+                    ? NotFound(errors)
+                    : BadRequest(errors);
+            });
     }
 
     [HttpGet("all")]

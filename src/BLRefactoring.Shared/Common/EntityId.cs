@@ -72,7 +72,7 @@ public abstract class EntityId<TEntityId, TValue> :
 
     public bool Equals(EntityId<TEntityId, TValue>? other)
     {
-        if (ReferenceEquals(null, other))
+        if (other is null)
         {
             return false;
         }

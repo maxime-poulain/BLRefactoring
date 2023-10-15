@@ -102,6 +102,8 @@ public abstract class ValueObject : IComparable, IComparable<ValueObject>
         return 0;
     }
 
+    public virtual int CompareTo(ValueObject? other) => CompareTo(other as object);
+
     private static int CompareComponents(object? object1, object? object2)
     {
         if (object1 is null && object2 is null)
@@ -125,11 +127,6 @@ public abstract class ValueObject : IComparable, IComparable<ValueObject>
         }
 
         return object1.Equals(object2) ? 0 : -1;
-    }
-
-    public virtual int CompareTo(ValueObject? other)
-    {
-        return CompareTo(other as object);
     }
 
     public static bool operator ==(ValueObject? a, ValueObject? b)

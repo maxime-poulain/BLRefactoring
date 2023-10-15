@@ -20,8 +20,10 @@ public class DomainException : Exception
     /// Initializes a new instance of the <see cref="DomainException"/> class with the specified result.
     /// </summary>
     /// <param name="result">The result containing the errors to associate with the exception.</param>
-    public DomainException(IResult result)
+    public DomainException(Result result)
     {
-        Errors = result.Errors;
+        Errors = result.Match(
+            () => throw new InvalidOperationException("Cannot throw an exception with a result in successful state"),
+            errors => errors);
     }
 }

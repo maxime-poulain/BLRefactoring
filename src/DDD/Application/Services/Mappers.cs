@@ -9,12 +9,12 @@ namespace BLRefactoring.DDD.Application.Services;
 
 public static class Mappers
 {
-    public static List<Rate> ToRates(this List<RateDto> rates)
+    public static List<Rate> ToRates(this List<RateDto> rateDtos)
     {
-        return rates.ConvertAll(rateDto => Rate.Create(
+        return rateDtos.ConvertAll(rateDto => Rate.Create(
             rateDto.Value,
-            Comment.Create(rateDto.Comment).Value,
-            rateDto.AuthorId).Value);
+            Comment.Create(rateDto.Comment).Match(comment => comment, errors => throw new InvalidOperationException()),
+            rateDto.AuthorId).Match(rate => rate, errors => throw new InvalidOperationException()));
     }
 
     public static TrainingDto ToDto(this Training training)

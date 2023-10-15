@@ -2,6 +2,7 @@ using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
+using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate.DomainEvents;
 using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate.ValueObjects;
 
 namespace BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate;
@@ -82,20 +83,20 @@ public sealed class Training : AggregateRoot<TrainingId>
         List<Rate> rates,
         IUniquenessTitleChecker titleChecker)
     {
-        var errors = new ErrorCollection();
-        errors.AddErrors(await training.ChangeTitleAsync(title, titleChecker, trainer));
-        errors.AddErrors(training.ChangeEndDate(endDate));
-        errors.AddErrors(training.ChangeStartDate(startDate));
-        errors.AddErrors(training.ChangeTrainer(trainer));
-        errors.AddErrors(training.ChangeRates(rates));
-
-        // Return the result based on the validation
-        if (errors.HasErrors())
-        {
-            return Result<Training>.Failure(errors);
-        }
-
-        return Result<Training>.Success(training);
+        return (await training.ChangeTitleAsync(title, titleChecker, trainer))
+            .Bind(() => training.ChangeEndDate(endDate))
+            .Bind(() => training.ChangeStartDate(startDate))
+            .Bind(() => training.ChangeTrainer(trainer))
+            .Bind(() => training.ChangeRates(rates))
+            .Bind(() =>
+            {
+                training.AddDomainEvent(new TrainingCreatedDomainEvent(training));
+                return Result.Success();
+            })
+            .Match(
+                onSuccess: () => Result<Training>.Success(training),
+                onFailure: Result<Training>.Failure
+            );
     }
 
     public Result ChangeStartDate(DateTime startDate)
@@ -167,12 +168,13 @@ public sealed class Training : AggregateRoot<TrainingId>
             errors.Add(ErrorCode.DuplicateTitle, "Title must be unique for a given trainer.");
         }
 
-        if (errors.HasErrors())
-        {
-            return Result.Failure(errors);
-        }
-
-        Title = title;
-        return Result.Success();
+        return errors.Match(
+            onSuccess: () =>
+            {
+                Title = title;
+                return Result.Success();
+            },
+            onFailure: Result.Failure
+        );
     }
 }

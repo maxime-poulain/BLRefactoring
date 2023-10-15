@@ -34,20 +34,17 @@ public sealed class TrainerApplicationService : ITrainerApplicationService
         _transactionManager = transactionManager;
     }
 
-    public async Task<Result<TrainerDto>> CreateAsync(TrainerCreationRequest request)
+    public Task<Result<TrainerDto>> CreateAsync(TrainerCreationRequest request)
     {
         // Trainer.Create() could have been receiving a Domain Object instead of primitive types.
         // However, for the sake of simplicity, we are using primitive types here.
         var result = Trainer.Create(request.Firstname, request.Lastname, request.Email);
 
-        if (result.IsFailure)
+        return result.MatchAsync(async trainer =>
         {
-            return Result<TrainerDto>.Failure(result.Errors);
-        }
-
-        await _trainerRepository.SaveAsync(result.Value);
-
-        return Result<TrainerDto>.Success(result.Value.ToDto());
+            await _trainerRepository.SaveAsync(trainer);
+            return Result<TrainerDto>.Success(trainer.ToDto());
+        }, Result<TrainerDto>.FailureAsync);
     }
 
     public async Task<Result<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)

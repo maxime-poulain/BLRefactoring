@@ -27,12 +27,10 @@ public class CreateTrainerCommandHandler : ICommandHandler<CreateTrainerCommand,
     {
         var trainerResult = Trainer.Create(request.TrainerId, request.Firstname, request.Lastname, request.Email);
 
-        if (trainerResult.IsFailure)
+        return await trainerResult.MatchAsync(async trainer =>
         {
-            return Result.Failure(trainerResult.Errors);
-        }
-
-        await _trainerRepository.SaveAsync(trainerResult.Value, cancellationToken);
-        return Result.Success();
+            await _trainerRepository.SaveAsync(trainer, cancellationToken);
+            return Result.Success();
+        }, Result.FailureAsync);
     }
 }

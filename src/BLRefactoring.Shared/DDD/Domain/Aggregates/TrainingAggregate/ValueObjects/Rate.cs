@@ -32,12 +32,11 @@ public class Rate : ValueObject
             errors.Add(ErrorCode.Unspecified, "Author id must be provided");
         }
 
-        if (errors.HasErrors())
-        {
-            return Result<Rate>.Failure(errors);
-        }
+        var result = errors.ToResult();
 
-        return Result<Rate>.Success(new Rate(value, comment, authorId));
+        return result.Match(
+            () => Result<Rate>.Success(new Rate(value, comment, authorId)),
+            Result<Rate>.Failure);
     }
 
     protected override IEnumerable<object?> GetEqualityComponents()

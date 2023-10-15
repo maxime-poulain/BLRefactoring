@@ -23,7 +23,10 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     /// <summary>
     /// Private constructor for ORM or serialization.
     /// </summary>
-    private Trainer() { }
+    private Trainer()
+    {
+        AddDomainEvent(new TrainerCreatedDomainEvent(this));
+    }
 
     /// <summary>
     /// Creates a new instance of the Trainer class.
@@ -58,18 +61,10 @@ public sealed class Trainer : AggregateRoot<TrainerId>
         string email,
         Trainer trainer)
     {
-        var result = Result.Success()
-            .Combine(() => trainer.ChangeName(firstname, lastname))
-            .Combine(() => trainer.ChangeEmail(email));
-
-        if (result.IsFailure)
-        {
-            return Result<Trainer>.Failure(result.Errors);
-        }
-
-        trainer.AddDomainEvent(new TrainerCreatedDomainEvent(trainer));
-
-        return Result<Trainer>.Success(trainer);
+        return trainer
+            .ChangeName(firstname, lastname)
+            .Bind(() => trainer.ChangeEmail(email))
+            .Match(() => Result<Trainer>.Success(trainer), Result<Trainer>.Failure);
     }
 
     /// <summary>
@@ -81,16 +76,12 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     {
         var result = Email.Create(email);
 
-        if (result.IsFailure)
+        return result.Match(trainerEmail =>
         {
-            return Result.Failure(result.Errors);
-        }
-
-        Email = result.Value;
-
-        AddDomainEvent(new TrainerEmailChangedDomainEvent(this));
-
-        return Result.Success();
+            AddDomainEvent(new TrainerEmailChangedDomainEvent(this));
+            Email = trainerEmail;
+            return Result.Success();
+        }, Result.Failure);
     }
 
     /// <summary>
@@ -103,16 +94,16 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     {
         var result = Name.Create(firstname, lastname);
 
-        if (result.IsFailure)
+        if (!IsTransient())
         {
-            return Result.Failure(result.Errors);
+            AddDomainEvent(new TrainerNameChangedDomainEvent(this));
         }
 
-        Name = result.Value;
-
-        AddDomainEvent(new TrainerNameChangedDomainEvent(this));
-
-        return Result.Success();
+        return result.Match(name =>
+        {
+            Name = name;
+            return Result.Success();
+        }, Result.Failure);
     }
 
     // ------------------------------
@@ -128,7 +119,10 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     {
         Name = name;
 
-        AddDomainEvent(new TrainerNameChangedDomainEvent(this));
+        if (!IsTransient())
+        {
+            AddDomainEvent(new TrainerNameChangedDomainEvent(this));
+        }
 
         return Result.Success();
     }
@@ -142,7 +136,10 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     {
         Email = email;
 
-        AddDomainEvent(new TrainerEmailChangedDomainEvent(this));
+        if (!IsTransient())
+        {
+            AddDomainEvent(new TrainerEmailChangedDomainEvent(this));
+        }
 
         return Result.Success();
     }
@@ -156,15 +153,9 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     public static Result<Trainer> Create2(Name name, Email email)
     {
         var trainer = new Trainer();
-        var result = trainer.ChangeName2(name).CombineWith(trainer, trainer => trainer.ChangeEmail2(email));
-        if (result.IsFailure)
-        {
-            return Result<Trainer>.Failure(result.Errors);
-        }
+        var result = trainer.ChangeName2(name).Bind(() => trainer.ChangeEmail2(email));
 
-        trainer.AddDomainEvent(new TrainerCreatedDomainEvent(trainer));
-
-        return Result<Trainer>.Success(trainer);
+        return result.Match(() => Result<Trainer>.Success(trainer), Result<Trainer>.Failure);
     }
 
     /// <summary>
