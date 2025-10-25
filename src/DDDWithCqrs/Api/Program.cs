@@ -11,8 +11,9 @@ using BLRefactoring.Shared.DDD.Infrastructure;
 using BLRefactoring.Shared.DDD.Infrastructure.Repositories;
 using BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore.Interceptor;
 using BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore;
+using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate.DomainEvents;
 using FluentValidation;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,21 +25,15 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddMediatR(cfg =>
+builder.Services.AddMediator(configuration =>
 {
-    cfg.AddOpenBehavior(typeof(NoTrackingDuringQueryExecutionBehavior<,>));
-    cfg.AddOpenBehavior(typeof(ValidationPipelineBehavior<,>));
-    cfg.RegisterServicesFromAssemblyContaining<CreateTrainerCommand>();
+    configuration.Assemblies = [typeof(CreateTrainerCommand).Assembly, typeof(TrainerCreatedDomainEvent).Assembly];
+    configuration.PipelineBehaviors = [typeof(ValidationPipelineBehavior<,>), typeof(NoTrackingDuringQueryExecutionBehavior<,>)];
+    configuration.ServiceLifetime = ServiceLifetime.Transient;
 });
 
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>),
-    typeof(NoTrackingDuringQueryExecutionBehavior<,>));
-
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>),
-    typeof(ValidationPipelineBehavior<,>));
-
-builder.Services.AddTransient<ICommandDispatcher, MediatRCommandDispatcher>();
-builder.Services.AddTransient<IQueryDispatcher, MediatRQueryDispatcher>();
+builder.Services.AddTransient<ICommandDispatcher, MediatorCommandDispatcher>();
+builder.Services.AddTransient<IQueryDispatcher, MediatorQueryDispatcher>();
 
 builder.Services.AddTransient<ITrainingRepository, TrainingRepository>();
 builder.Services.AddTransient<IUniquenessTitleChecker, TrainingRepository>();
@@ -49,7 +44,7 @@ builder.Services.AddTransient<IEventPublisher, MediatRDomainEventPublisher>();
 builder.Services.AddScoped<ITransactionManager, TransactionManager>();
 
 builder.Services.AddDbContext<TrainingContext>(options =>
-    options.UseSqlite(@"Data Source=c:\temp\cqrsDDD.db")
+    options.UseSqlite($@"Data Source=c:\temp\cqrsDDD-{Guid.NewGuid()}.db")
         .AddInterceptors(new IsTransientMaterializationInterceptor()));
 
 builder.Services.AddValidatorsFromAssembly(typeof(CreateTrainerCommandValidator).Assembly);
@@ -76,6 +71,7 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<TrainingContext>();
+    context.Database.OpenConnection();
     //await context.Database.EnsureDeletedAsync();
     await context.Database.EnsureCreatedAsync();
 }

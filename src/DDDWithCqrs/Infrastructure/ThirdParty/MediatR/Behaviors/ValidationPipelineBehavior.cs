@@ -1,7 +1,7 @@
 using BLRefactoring.Shared.CQS;
 using FluentValidation;
 using FluentValidation.Results;
-using MediatR;
+using Mediator;
 
 namespace BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.MediatR.Behaviors;
 
@@ -9,7 +9,7 @@ namespace BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.MediatR.Behaviors;
 /// Performs validation of MediatR's requests before it is handled by the handler.
 /// </summary>
 public class ValidationPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : notnull
+    where TRequest : notnull, IMessage
 {
     private readonly IEnumerable<IValidator<TRequest>> _validators;
 
@@ -18,12 +18,9 @@ public class ValidationPipelineBehavior<TRequest, TResponse> : IPipelineBehavior
         _validators = validators;
     }
 
-    public async Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
+    public async ValueTask<TResponse> Handle(TRequest message, MessageHandlerDelegate<TRequest, TResponse> next, CancellationToken cancellationToken)
     {
-        var requestType = request.GetType();
+        var requestType = message.GetType();
         if (requestType.IsAssignableTo(typeof(ICommandBase)) && !_validators.Any())
         {
             throw new InvalidOperationException(
@@ -33,15 +30,15 @@ public class ValidationPipelineBehavior<TRequest, TResponse> : IPipelineBehavior
         var validationResults = new List<ValidationResult>();
         foreach (var validator in _validators)
         {
-            validationResults.Add(await validator.ValidateAsync(request, cancellationToken));
+            validationResults.Add(await validator.ValidateAsync(message, cancellationToken));
         }
 
-        var errors = validationResults.SelectMany(result => result.Errors);
+        var errors = validationResults.SelectMany(result => result.Errors).ToArray();
         if (errors.Any())
         {
             throw new ValidationException(errors);
         }
 
-        return await next();
+        return await next(message, cancellationToken);
     }
 }

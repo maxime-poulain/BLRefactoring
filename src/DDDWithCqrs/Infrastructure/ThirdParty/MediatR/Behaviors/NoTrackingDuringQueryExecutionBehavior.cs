@@ -1,6 +1,6 @@
 using BLRefactoring.Shared.CQS;
 using BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.MediatR.Behaviors;
@@ -9,7 +9,7 @@ namespace BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.MediatR.Behaviors;
 /// Disables EF Core tracking during query execution.
 /// </summary>
 public class NoTrackingDuringQueryExecutionBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : notnull
+    where TRequest : notnull, IMessage
 {
     private readonly TrainingContext _trainingContext;
 
@@ -18,21 +18,21 @@ public class NoTrackingDuringQueryExecutionBehavior<TRequest, TResponse> : IPipe
         _trainingContext = trainingContext;
     }
 
-    public async Task<TResponse> Handle(
+    public async ValueTask<TResponse> Handle(
         TRequest request,
-        RequestHandlerDelegate<TResponse> next,
+        MessageHandlerDelegate<TRequest, TResponse> next,
         CancellationToken cancellationToken)
     {
         if (request is not IQuery)
         {
-            return await next();
+            return await next(request, cancellationToken);
         }
 
         var originalTrackingBehavior = _trainingContext.ChangeTracker.QueryTrackingBehavior;
         try
         {
             _trainingContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
-            return await next();
+            return await next(request, cancellationToken);
         }
         finally
         {

@@ -8,9 +8,9 @@ namespace BLRefactoring.Shared.CQS;
 public interface ICommandDispatcher
 {
     /// <summary>
-    /// Dispatches asynchronously a command and returns a <see cref="IResult"/>.
+    /// Dispatches asynchronously a command and returns a <see cref="Result"/>.
     /// </summary>
-    public Task<TResult> DispatchAsync<TResult>(
+    public ValueTask<TResult> DispatchAsync<TResult>(
         ICommand<TResult> command,
         CancellationToken cancellationToken = default)
         where TResult : Result;

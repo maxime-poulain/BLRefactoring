@@ -26,9 +26,9 @@ public class GetTrainerByIdQueryHandler : IQueryHandler<GetTrainerByIdQuery, Tra
         _trainingContext = trainingContext;
     }
 
-    public Task<TrainerDto?> Handle(GetTrainerByIdQuery request, CancellationToken cancellationToken)
+    public async ValueTask<TrainerDto?> Handle(GetTrainerByIdQuery request, CancellationToken cancellationToken)
     {
-        return _trainingContext.Trainers
+        return await _trainingContext.Trainers
             .Select(trainer => new TrainerDto()
             {
                 Email = trainer.Email.FullAddress,

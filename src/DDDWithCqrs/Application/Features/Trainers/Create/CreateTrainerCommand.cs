@@ -23,7 +23,7 @@ public class CreateTrainerCommandHandler : ICommandHandler<CreateTrainerCommand,
         _trainerRepository = trainerRepository;
     }
 
-    public async Task<Result> Handle(CreateTrainerCommand request, CancellationToken cancellationToken)
+    public async ValueTask<Result> Handle(CreateTrainerCommand request, CancellationToken cancellationToken)
     {
         var trainerResult = Trainer.Create(request.TrainerId, request.Firstname, request.Lastname, request.Email);
 

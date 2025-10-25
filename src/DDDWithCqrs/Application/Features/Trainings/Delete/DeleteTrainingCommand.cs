@@ -24,7 +24,7 @@ public class DeleteTrainerCommandHandler : ICommandHandler<DeleteTrainingCommand
         _trainingRepository = trainingRepository;
     }
 
-    public async Task<Result> Handle(DeleteTrainingCommand request, CancellationToken cancellationToken)
+    public async ValueTask<Result> Handle(DeleteTrainingCommand request, CancellationToken cancellationToken)
     {
         var training = await _trainingRepository.GetByIdAsync(request.Id, cancellationToken);
 

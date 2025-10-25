@@ -13,7 +13,7 @@ public class DeleteTrainerTrainingsWhenTrainerDeletedDomainEventHandler : IDomai
         _trainingRepository = trainingRepository;
     }
 
-    public async Task Handle(TrainerDeletedDomainEvent notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(TrainerDeletedDomainEvent notification, CancellationToken cancellationToken)
     {
         var trainings = await _trainingRepository.GetByTrainerAsync(notification.Trainer);
         await _trainingRepository.DeleteAsync(trainings, cancellationToken);

@@ -1,7 +1,8 @@
 using BLRefactoring.Shared.Common;
 
 namespace BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate.DomainEvents;
-internal class TrainerEmailChangedDomainEvent : IDomainEvent
+
+public class TrainerEmailChangedDomainEvent : IDomainEvent
 {
     public TrainerEmailChangedDomainEvent(Trainer trainer)
     {

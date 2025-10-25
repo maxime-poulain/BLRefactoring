@@ -1,5 +1,5 @@
 using BLRefactoring.Shared.Common;
-using MediatR;
+using Mediator;
 
 namespace BLRefactoring.Shared.DDD.Infrastructure;
 

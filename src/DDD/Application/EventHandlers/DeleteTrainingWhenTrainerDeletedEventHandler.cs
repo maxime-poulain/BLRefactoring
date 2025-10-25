@@ -15,7 +15,7 @@ public class DeleteTrainingWhenTrainerDeletedEventHandler : IDomainEventHandler<
     public DeleteTrainingWhenTrainerDeletedEventHandler(ITrainingRepository trainingRepository)
         => _trainingRepository = trainingRepository;
 
-    public async Task Handle(TrainerDeletedDomainEvent notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(TrainerDeletedDomainEvent notification, CancellationToken cancellationToken)
     {
         // We could have also made a TrainingRepository.DeleteByTrainer(trainerId) method.
         var trainings = await _trainingRepository.GetByTrainerAsync(notification.Trainer);

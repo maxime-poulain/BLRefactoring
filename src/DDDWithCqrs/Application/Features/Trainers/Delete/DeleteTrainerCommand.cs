@@ -36,7 +36,7 @@ public class DeleteTrainerCommandHandler : ICommandHandler<DeleteTrainerCommand,
         _transactionManager = transactionManager;
     }
 
-    public async Task<Result> Handle(DeleteTrainerCommand request, CancellationToken cancellationToken)
+    public async ValueTask<Result> Handle(DeleteTrainerCommand request, CancellationToken cancellationToken)
     {
         var trainer = await _trainerRepository.GetByIdAsync(request.Id, cancellationToken);
 

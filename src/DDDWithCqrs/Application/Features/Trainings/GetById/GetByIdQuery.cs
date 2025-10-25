@@ -23,7 +23,7 @@ public class GetTrainingByIdQueryHandler : IQueryHandler<GetTrainingByIdQuery, T
         _trainingContext = trainingContext;
     }
 
-    public async Task<TrainingDto?> Handle(GetTrainingByIdQuery request, CancellationToken cancellationToken)
+    public async ValueTask<TrainingDto?> Handle(GetTrainingByIdQuery request, CancellationToken cancellationToken)
     {
         return await _trainingContext.Trainings
             .Select(training => training.ToDto())

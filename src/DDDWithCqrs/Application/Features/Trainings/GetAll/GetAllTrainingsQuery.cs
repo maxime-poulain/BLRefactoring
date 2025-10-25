@@ -17,10 +17,10 @@ public class GetAllTrainingQueryHandler : IQueryHandler<GetAllTrainingsQuery, Li
         _trainingContext = trainingContext;
     }
 
-    public Task<List<TrainingDto>> Handle(GetAllTrainingsQuery request, CancellationToken cancellationToken)
+    public async ValueTask<List<TrainingDto>> Handle(GetAllTrainingsQuery request, CancellationToken cancellationToken)
     {
         // In real life use pagination.
-        return _trainingContext.Trainings
+        return await _trainingContext.Trainings
             .Select(training => new TrainingDto()
             {
                 Rates = training.Rates.ToDtos(),

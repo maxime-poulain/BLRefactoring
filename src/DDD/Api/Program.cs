@@ -30,9 +30,6 @@ builder.Services.AddTransient<IEventPublisher, MediatRDomainEventPublisher>();
 
 builder.Services.AddScoped<ITransactionManager, TransactionManager>();
 
-builder.Services.AddMediatR(cfg
-    => cfg.RegisterServicesFromAssemblyContaining<DeleteTrainingWhenTrainerDeletedEventHandler>());
-
 builder.Services.AddDbContext<TrainingContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("TrainingContext"))
         .AddInterceptors(new IsTransientMaterializationInterceptor()));

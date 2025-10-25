@@ -20,9 +20,9 @@ public class GetAllTrainersQueryHandler : IQueryHandler<GetAllTrainersQuery, Lis
         _trainingContext = trainingContext;
     }
 
-    public Task<List<TrainerDto>> Handle(GetAllTrainersQuery request, CancellationToken cancellationToken)
+    public async ValueTask<List<TrainerDto>> Handle(GetAllTrainersQuery request, CancellationToken cancellationToken)
     {
-        return _trainingContext.Trainers.Select(trainer => new TrainerDto()
+        return await _trainingContext.Trainers.Select(trainer => new TrainerDto()
         {
             Email = trainer.Email.FullAddress,
             Id = trainer.Id,

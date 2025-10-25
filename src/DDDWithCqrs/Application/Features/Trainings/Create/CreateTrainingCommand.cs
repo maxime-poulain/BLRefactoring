@@ -34,7 +34,7 @@ public class CreateTrainingCommandHandler : ICommandHandler<CreateTrainingComman
         _checker = checker;
     }
 
-    public async Task<Result> Handle(
+    public async ValueTask<Result> Handle(
         CreateTrainingCommand request,
         CancellationToken cancellationToken)
     {

@@ -1,20 +1,18 @@
 using BLRefactoring.Shared.CQS;
-using MediatR;
+using Mediator;
 
 namespace BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.MediatR;
 
 /// <summary>
 /// Implements <see cref="IQueryDispatcher"/> using MediatR.
 /// </summary>
-public class MediatRQueryDispatcher : IQueryDispatcher
+public class MediatorQueryDispatcher : IQueryDispatcher
 {
     private readonly IMediator _mediator;
 
-    public MediatRQueryDispatcher(IMediator mediator) => _mediator = mediator;
+    public MediatorQueryDispatcher(IMediator mediator) => _mediator = mediator;
 
-    public Task<TResult> DispatchAsync<TResult>(
-        IQuery<TResult> query,
-        CancellationToken cancellationToken = default)
+    public ValueTask<TResult> DispatchAsync<TResult>(Shared.CQS.IQuery<TResult> query, CancellationToken cancellationToken = default)
     {
         return _mediator.Send(query, cancellationToken);
     }
