@@ -8,6 +8,8 @@ public class TrainerConfiguration : EntityBaseConfiguration<Trainer, TrainerId>
 {
     public override void ConfigureEntity(EntityTypeBuilder<Trainer> builder)
     {
+        builder.ToTable("Trainer");
+
         builder.OwnsOne(e => e.Email, b =>
         {
             b.Property(e => e.FullAddress)

@@ -44,7 +44,7 @@ builder.Services.AddTransient<IEventPublisher, MediatRDomainEventPublisher>();
 builder.Services.AddScoped<ITransactionManager, TransactionManager>();
 
 builder.Services.AddDbContext<TrainingContext>(options =>
-    options.UseSqlite($@"Data Source=c:\temp\cqrsDDD-{Guid.NewGuid()}.db")
+    options.UseSqlite($@"Data Source=:memory:")
         .AddInterceptors(new IsTransientMaterializationInterceptor()));
 
 builder.Services.AddValidatorsFromAssembly(typeof(CreateTrainerCommandValidator).Assembly);
@@ -71,8 +71,8 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<TrainingContext>();
-    context.Database.OpenConnection();
-    //await context.Database.EnsureDeletedAsync();
+    await context.Database.OpenConnectionAsync();
+    await context.Database.EnsureDeletedAsync();
     await context.Database.EnsureCreatedAsync();
 }
 

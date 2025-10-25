@@ -1,4 +1,5 @@
 using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore.Configurations;
@@ -7,6 +8,8 @@ public class TrainingConfiguration : EntityBaseConfiguration<Training, TrainingI
 {
     public override void ConfigureEntity(EntityTypeBuilder<Training> builder)
     {
+        builder.ToTable("Training");
+
         builder.Property(training => training.Title)
             .HasMaxLength(100)
             .IsRequired();
