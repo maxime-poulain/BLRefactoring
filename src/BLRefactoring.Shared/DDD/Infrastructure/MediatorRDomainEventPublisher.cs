@@ -3,11 +3,11 @@ using Mediator;
 
 namespace BLRefactoring.Shared.DDD.Infrastructure;
 
-public class MediatRDomainEventPublisher : IEventPublisher
+public class MediatorRDomainEventPublisher : IEventPublisher
 {
     private readonly IMediator _mediator;
 
-    public MediatRDomainEventPublisher(IMediator mediator) => _mediator = mediator;
+    public MediatorRDomainEventPublisher(IMediator mediator) => _mediator = mediator;
 
     /// <inheritdoc />
     public async Task PublishAsync(IEnumerable<IDomainEvent> domainEvents, CancellationToken cancellationToken)

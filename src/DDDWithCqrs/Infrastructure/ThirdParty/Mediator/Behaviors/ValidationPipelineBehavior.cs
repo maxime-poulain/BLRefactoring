@@ -3,10 +3,10 @@ using FluentValidation;
 using FluentValidation.Results;
 using Mediator;
 
-namespace BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.MediatR.Behaviors;
+namespace BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors;
 
 /// <summary>
-/// Performs validation of MediatR's requests before it is handled by the handler.
+/// Performs validation of Mediator's requests before it is handled by the handler.
 /// </summary>
 public class ValidationPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull, IMessage

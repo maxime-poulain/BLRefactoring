@@ -26,7 +26,7 @@ builder.Services.AddTransient<IUniquenessTitleChecker, TrainingRepository>();
 builder.Services.AddTransient<ITrainerRepository, TrainerRepository>();
 builder.Services.AddTransient<ITrainerApplicationService, TrainerApplicationService>();
 
-builder.Services.AddTransient<IEventPublisher, MediatRDomainEventPublisher>();
+builder.Services.AddTransient<IEventPublisher, MediatorRDomainEventPublisher>();
 
 builder.Services.AddScoped<ITransactionManager, TransactionManager>();
 

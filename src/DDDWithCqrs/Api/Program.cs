@@ -1,7 +1,7 @@
 using BLRefactoring.DDDWithCqrs.Api.Middlewares;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
-using BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.MediatR;
-using BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.MediatR.Behaviors;
+using BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator;
+using BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.CQS;
@@ -29,7 +29,7 @@ builder.Services.AddMediator(configuration =>
 {
     configuration.Assemblies = [typeof(CreateTrainerCommand).Assembly, typeof(TrainerCreatedDomainEvent).Assembly];
     configuration.PipelineBehaviors = [typeof(ValidationPipelineBehavior<,>), typeof(NoTrackingDuringQueryExecutionBehavior<,>)];
-    configuration.ServiceLifetime = ServiceLifetime.Transient;
+    configuration.ServiceLifetime = ServiceLifetime.Scoped;
 });
 
 builder.Services.AddTransient<ICommandDispatcher, MediatorCommandDispatcher>();
@@ -39,12 +39,12 @@ builder.Services.AddTransient<ITrainingRepository, TrainingRepository>();
 builder.Services.AddTransient<IUniquenessTitleChecker, TrainingRepository>();
 builder.Services.AddTransient<ITrainerRepository, TrainerRepository>();
 
-builder.Services.AddTransient<IEventPublisher, MediatRDomainEventPublisher>();
+builder.Services.AddTransient<IEventPublisher, MediatorRDomainEventPublisher>();
 
 builder.Services.AddScoped<ITransactionManager, TransactionManager>();
 
 builder.Services.AddDbContext<TrainingContext>(options =>
-    options.UseSqlite($@"Data Source=:memory:")
+    options.UseSqlite($@"Data Source=Application.db;Cache=Shared")
         .AddInterceptors(new IsTransientMaterializationInterceptor()));
 
 builder.Services.AddValidatorsFromAssembly(typeof(CreateTrainerCommandValidator).Assembly);
@@ -72,7 +72,7 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<TrainingContext>();
     await context.Database.OpenConnectionAsync();
-    await context.Database.EnsureDeletedAsync();
+    //await context.Database.EnsureDeletedAsync();
     await context.Database.EnsureCreatedAsync();
 }
 

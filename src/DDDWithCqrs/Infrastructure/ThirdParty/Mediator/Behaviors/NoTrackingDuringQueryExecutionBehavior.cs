@@ -3,7 +3,7 @@ using BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 
-namespace BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.MediatR.Behaviors;
+namespace BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors;
 
 /// <summary>
 /// Disables EF Core tracking during query execution.
