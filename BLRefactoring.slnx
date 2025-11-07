@@ -1,0 +1,21 @@
+<Solution>
+  <Folder Name="/DDD/">
+    <Project Path="src/DDD/Api/BLRefactoring.DDD.Api.csproj" />
+    <Project Path="src/DDD/Application/BLRefactoring.DDD.Application.csproj" />
+    <Project Path="src/DDD/Domain/BLRefactoring.DDD.Domain.csproj" />
+    <Project Path="src/DDD/Infrastructure/BLRefactoring.DDD.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/DDDWithCqrs/">
+    <Project Path="src/DDDWithCqrs/Api/BLRefactoring.DDDWithCqrs.Api.csproj" />
+    <Project Path="src/DDDWithCqrs/Application/BLRefactoring.DDDWithCqrs.Application.csproj" />
+    <Project Path="src/DDDWithCqrs/Domain/BLRefactoring.DDDWithCqrs.Domain.csproj" />
+    <Project Path="src/DDDWithCqrs/Infrastructure/BLRefactoring.DDDWithCqrs.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Repr/">
+    <Project Path="src/Repr/Api/BLRefactoring.Repr.Api.csproj" />
+    <Project Path="src/Repr/Application/BLRefactoring.Repr.Application.csproj" />
+    <Project Path="src/Repr/Domain/BLRefactoring.Repr.Domain.csproj" />
+    <Project Path="src/Repr/Infrastructure/BLRefactoring.Repr.Infrastructure.csproj" />
+  </Folder>
+  <Project Path="src/BLRefactoring.Shared/BLRefactoring.Shared.csproj" />
+</Solution>
