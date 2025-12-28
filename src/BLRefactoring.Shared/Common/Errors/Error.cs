@@ -16,11 +16,6 @@ public class Error : ValueObject
     public ErrorCode ErrorCode { get; }
 
     /// <summary>
-    /// Gets the time when this error occurred.
-    /// </summary>
-    public DateTimeOffset OccurredOn { get; }
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="Error"/> class with the specified error code and error message.
     /// </summary>
     /// <param name="errorCode">The error code associated with this error.</param>
@@ -29,7 +24,6 @@ public class Error : ValueObject
     {
         ErrorCode = errorCode;
         ErrorMessage = errorMessage;
-        OccurredOn = DateTimeOffset.UtcNow;
     }
 
     /// <summary>
@@ -39,7 +33,6 @@ public class Error : ValueObject
     {
         yield return ErrorCode;
         yield return ErrorMessage;
-        yield return OccurredOn;
     }
 
     /// <summary>
@@ -47,6 +40,6 @@ public class Error : ValueObject
     /// </summary>
     public override string ToString()
     {
-        return $"[{OccurredOn:u}] {ErrorCode.Name}: {ErrorMessage}";
+        return $"{ErrorCode.Name}: {ErrorMessage}";
     }
 }

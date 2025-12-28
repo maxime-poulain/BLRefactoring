@@ -29,123 +29,99 @@ namespace BLRefactoring.Shared.Common;
 /// </para>
 /// </remarks>
 [Serializable]
-public abstract class ValueObject : IComparable, IComparable<ValueObject>
+public abstract class ValueObject : IEquatable<ValueObject>, IComparable, IComparable<ValueObject>
 {
     private int? _cachedHashCode;
 
     protected abstract IEnumerable<object?> GetEqualityComponents();
 
-    public override bool Equals(object? obj)
+    public bool Equals(ValueObject? other)
     {
-        if (obj == null)
-        {
-            return false;
-        }
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        if (GetType() != other.GetType()) return false;
 
-        if (GetType() == obj.GetType())
-        {
-            var valueObject = (ValueObject)obj;
-            return GetEqualityComponents().SequenceEqual(valueObject.GetEqualityComponents());
-        }
-
-        return false;
+        return GetEqualityComponents().SequenceEqual(other.GetEqualityComponents());
     }
 
-    public override int GetHashCode()
+    public sealed override bool Equals(object? obj)
     {
-        _cachedHashCode ??= GetEqualityComponents()
-            .Aggregate(1, (current, obj) =>
-            {
-                unchecked
-                {
-                    return current * 23 + (obj?.GetHashCode() ?? 0);
-                }
-            });
+        return obj is ValueObject other && Equals(other);
+    }
 
+    public sealed override int GetHashCode()
+    {
+        if (_cachedHashCode.HasValue)
+            return _cachedHashCode.Value;
+
+        var hash = new HashCode();
+        foreach (var component in GetEqualityComponents())
+        {
+            hash.Add(component);
+        }
+
+        _cachedHashCode = hash.ToHashCode();
         return _cachedHashCode.Value;
     }
 
     public virtual int CompareTo(object? obj)
     {
-        if (obj is null)
-        {
-            return 1;
-        }
+        if (obj is null) return 1;
+        if (ReferenceEquals(this, obj)) return 0;
 
-        if (ReferenceEquals(this, obj))
-        {
-            return 0;
-        }
+        if (obj is not ValueObject other)
+            throw new ArgumentException(
+                $"Object must be of type {nameof(ValueObject)}");
 
-        var thisType = GetType();
-        var otherType = obj.GetType();
+        if (GetType() != other.GetType())
+            return string.Compare(GetType().ToString(),
+                other.GetType().ToString(), StringComparison.Ordinal);
 
-        if (thisType != otherType)
-        {
-            return string.Compare(thisType.ToString(), otherType.ToString(), StringComparison.Ordinal);
-        }
+        return CompareComponents(other);
+    }
 
-        var other = (ValueObject)obj;
+    public virtual int CompareTo(ValueObject? other)
+    {
+        if (other is null) return 1;
+        if (ReferenceEquals(this, other)) return 0;
 
+        return CompareComponents(other);
+    }
+
+    private int CompareComponents(ValueObject other)
+    {
         var components = GetEqualityComponents().ToArray();
         var otherComponents = other.GetEqualityComponents().ToArray();
 
         for (var i = 0; i < components.Length; i++)
         {
-            var comparison = CompareComponents(components[i], otherComponents[i]);
+            var comparison = CompareValues(components[i], otherComponents[i]);
             if (comparison != 0)
-            {
                 return comparison;
-            }
         }
 
         return 0;
     }
 
-    public virtual int CompareTo(ValueObject? other) => CompareTo(other as object);
-
-    private static int CompareComponents(object? object1, object? object2)
+    private static int CompareValues(object? left, object? right)
     {
-        if (object1 is null && object2 is null)
-        {
-            return 0;
-        }
+        if (left is null && right is null) return 0;
+        if (left is null) return -1;
+        if (right is null) return 1;
 
-        if (object1 is null)
-        {
-            return -1;
-        }
+        if (left is IComparable comparable)
+            return comparable.CompareTo(right);
 
-        if (object2 is null)
-        {
-            return 1;
-        }
-
-        if (object1 is IComparable comparable1 && object2 is IComparable comparable2)
-        {
-            return comparable1.CompareTo(comparable2);
-        }
-
-        return object1.Equals(object2) ? 0 : -1;
+        return left.Equals(right) ? 0 : -1;
     }
 
-    public static bool operator ==(ValueObject? a, ValueObject? b)
+    public static bool operator ==(ValueObject? left, ValueObject? right)
     {
-        if (a is null && b is null)
-        {
-            return true;
-        }
-
-        if (a is null || b is null)
-        {
-            return false;
-        }
-
-        return a.Equals(b);
+        return Equals(left, right);
     }
 
-    public static bool operator !=(ValueObject? a, ValueObject? b)
+    public static bool operator !=(ValueObject? left, ValueObject? right)
     {
-        return !(a == b);
+        return !Equals(left, right);
     }
 }

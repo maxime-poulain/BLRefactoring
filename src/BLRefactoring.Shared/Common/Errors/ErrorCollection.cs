@@ -13,7 +13,7 @@ public sealed class ErrorCollection : IErrorCollection, IReadOnlyErrorCollection
     /// </summary>
     public ErrorCollection()
     {
-        _errors = new List<Error>();
+        _errors = [];
     }
 
     /// <summary>

@@ -32,21 +32,13 @@ public abstract class Result
     );
 
     /// <summary>
-    /// Transforms the current result using the provided function.
-    /// If the current result is a failure, the transformation is skipped, and the error is propagated.
-    /// </summary>
-    /// <param name="func">A function to transform the current result.</param>
-    /// <returns>A new result, which can be either a success or failure, based on the provided function and the current result state.</returns>
-    public Result Map(Func<Result> func) => Bind(func);
-
-    /// <summary>
     /// Creates a new instance of the <see cref="Result"/> class that represents a successful computation.
     /// </summary>
     /// <returns>A new instance of the <see cref="Result"/> class that represents a successful computation.</returns>
     public static Result Success() => new SuccessResult();
 
     /// <summary>
-    /// Creates a new instance of the <see cref="Task"/> class that represents a successful computation.
+    /// Creates a new instance of the <see cref="Result"/> class that represents a successful computation.
     /// </summary>
     /// <returns>A new instance of the <see cref="Task"/> class that represents a successful computation.</returns>
     public static Task<Result> SuccessAsync() => Task.FromResult(Success());

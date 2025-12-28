@@ -58,7 +58,7 @@ public abstract class Entity<TEntityId> : Entity, IAuditable
 
     public override int GetHashCode()
     {
-        return Id.GetHashCode();
+        return IsTransient() ? base.GetHashCode() : Id.GetHashCode();
     }
 
     public static bool operator ==(Entity<TEntityId>? a, Entity<TEntityId>? b)

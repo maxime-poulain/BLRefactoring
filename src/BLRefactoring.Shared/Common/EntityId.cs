@@ -45,7 +45,7 @@ public abstract class EntityId<TEntityId, TValue> :
     /// Gets the unique identifier value of the <see cref="Entity{TEntityId}"/>.
     /// The value is of type <typeparamref name="TValue"/>.
     /// </summary>
-    public TValue Value { get; protected init; }
+    public TValue Value { get; private init; }
 
     protected EntityId()
     {
@@ -67,7 +67,7 @@ public abstract class EntityId<TEntityId, TValue> :
     /// </returns>
     public static TEntityId Create(TValue value)
     {
-        return new() { Value = value };
+        return new TEntityId { Value = value };
     }
 
     public bool Equals(EntityId<TEntityId, TValue>? other)
@@ -97,7 +97,7 @@ public abstract class EntityId<TEntityId, TValue> :
             return true;
         }
 
-        if (obj.GetType() != this.GetType())
+        if (this.GetType() != obj.GetType())
         {
             return false;
         }
@@ -135,7 +135,7 @@ public abstract class EntityId<TEntityId, TValue> :
         return Value.CompareTo(other.Value);
     }
 
-    public static implicit operator TValue(EntityId<TEntityId, TValue>? id) => id.Value;
+    public static implicit operator TValue(EntityId<TEntityId, TValue>? id) => id?.Value ?? throw new InvalidOperationException("Cannot convert null EntityId to its value.");
 
     public static explicit operator EntityId<TEntityId, TValue>(TValue value)
         => new TEntityId() { Value = value };

@@ -20,7 +20,7 @@ namespace BLRefactoring.Shared.Common;
 public abstract class AggregateRoot<TEntityId> : Entity<TEntityId>, IAggregateRoot
     where TEntityId : EntityId<TEntityId>, new()
 {
-    private readonly List<IDomainEvent> _domainEvents = new();
+    private readonly List<IDomainEvent> _domainEvents = [];
 
     /// <inheritdoc/>
     public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();

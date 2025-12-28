@@ -37,15 +37,6 @@ public abstract class Result<TValue>
         Func<IReadOnlyErrorCollection, Task<TResult>> onFailure);
 
     /// <summary>
-    /// Transforms the value inside a success result using the provided function.
-    /// If the current result is a failure, the transformation is skipped, and the error is propagated.
-    /// </summary>
-    /// <typeparam name="TNewValue">The type of the new value after the transformation.</typeparam>
-    /// <param name="func">A function to transform the successful value.</param>
-    /// <returns>A new result containing either the transformed value or the original error.</returns>
-    public abstract Result<TNewValue> Map<TNewValue>(Func<TValue, TNewValue> func);
-
-    /// <summary>
     /// Chains computations by applying the provided function to the successful value.
     /// If the current result is a failure, the computation is skipped, and the error is propagated.
     /// </summary>
@@ -146,9 +137,6 @@ public abstract class Result<TValue>
             Func<IReadOnlyErrorCollection, Task<TResult>> onFailure
         ) => onSuccess(_value);
 
-        public override Result<TNewValue> Map<TNewValue>(Func<TValue, TNewValue> func)
-            => Result<TNewValue>.Success(func(_value));
-
         public override Result<TNewValue> Bind<TNewValue>(Func<TValue, Result<TNewValue>> func)
             => func(_value);
 
@@ -176,9 +164,6 @@ public abstract class Result<TValue>
             Func<TValue, TResult> onSuccess,
             Func<IReadOnlyErrorCollection, TResult> onFailure
         ) => onFailure(_error);
-
-        public override Result<TNewValue> Map<TNewValue>(Func<TValue, TNewValue> func)
-            => Result<TNewValue>.Failure(_error);
 
         public override Result<TNewValue> Bind<TNewValue>(Func<TValue, Result<TNewValue>> func)
             => Result<TNewValue>.Failure(_error);

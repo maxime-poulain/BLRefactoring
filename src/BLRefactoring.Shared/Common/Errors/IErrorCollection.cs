@@ -15,6 +15,13 @@ public interface IErrorCollection
     void Add(Error error);
 
     /// <summary>
+    /// Adds an error to the collection by specifying an error code and an error message.
+    /// </summary>
+    /// <param name="errorCode">The <see cref="ErrorCode"/> associated with the error.</param>
+    /// <param name="errorMessage">The error message associated with the error.</param>
+    void Add(ErrorCode errorCode, string errorMessage);
+
+    /// <summary>
     /// Adds a collection of <see cref="Error"/> objects to the collection.
     /// </summary>
     /// <param name="errors">The collection of errors to add to the collection. Must not be null.</param>
@@ -28,11 +35,12 @@ public interface IErrorCollection
     IReadOnlyErrorCollection AsReadOnly();
 
     /// <summary>
-    /// Add the <see cref="Error"/> objects from the specified <see cref="IResult"/> to the collection.
+    /// Add the <see cref="Error"/> objects from the specified <see cref="Result"/> to the collection.
     /// </summary>
     void AddErrors(Result result);
 
     // The Item property provides methods to read and edit entries in the List.
+
     Error this[int index]
     {
         get;

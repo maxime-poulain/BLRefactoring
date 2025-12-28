@@ -18,7 +18,6 @@ public interface ICommand : ICommandBase, IMessage
 {
 }
 
-
 /// <summary>
 /// Represents a command that returns a <see cref="Result"/>.
 /// </summary>
