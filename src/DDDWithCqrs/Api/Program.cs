@@ -43,9 +43,16 @@ builder.Services.AddTransient<IEventPublisher, MediatorRDomainEventPublisher>();
 
 builder.Services.AddScoped<ITransactionManager, TransactionManager>();
 
-builder.Services.AddDbContext<TrainingContext>(options =>
+builder.Services
+    .AddSingleton<IsTransientSaveChangesInterceptor>()
+    .AddSingleton<IsTransientMaterializationInterceptor>();
+
+builder.Services.AddDbContext<TrainingContext>((serviceProvider, options) =>
     options.UseSqlite($@"Data Source=Application.db;Cache=Shared")
-        .AddInterceptors(new IsTransientMaterializationInterceptor()));
+        .AddInterceptors(
+            serviceProvider.GetRequiredService<IsTransientSaveChangesInterceptor>(),
+            serviceProvider.GetRequiredService<IsTransientMaterializationInterceptor>())
+    );
 
 builder.Services.AddValidatorsFromAssembly(typeof(CreateTrainerCommandValidator).Assembly);
 
