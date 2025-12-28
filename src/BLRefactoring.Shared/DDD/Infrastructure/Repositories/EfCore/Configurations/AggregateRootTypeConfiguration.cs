@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore.Configurations;
 
-public abstract class EntityBaseConfiguration<TEntity, TEntityId> : IEntityTypeConfiguration<TEntity>
+public abstract class AggregateRootTypeConfiguration<TEntity, TEntityId> : IEntityTypeConfiguration<TEntity>
     where TEntity : AggregateRoot<TEntityId>
     where TEntityId : EntityId<TEntityId>, new()
 {
-    public abstract void ConfigureEntity(EntityTypeBuilder<TEntity> builder);
+    protected abstract void ConfigureAggregate(EntityTypeBuilder<TEntity> builder);
 
     public void Configure(EntityTypeBuilder<TEntity> builder)
     {
@@ -38,6 +38,6 @@ public abstract class EntityBaseConfiguration<TEntity, TEntityId> : IEntityTypeC
 
         builder.Property(e => e.DeletedOn)
             .HasPrecision(2);
-        ConfigureEntity(builder);
+        ConfigureAggregate(builder);
     }
 }

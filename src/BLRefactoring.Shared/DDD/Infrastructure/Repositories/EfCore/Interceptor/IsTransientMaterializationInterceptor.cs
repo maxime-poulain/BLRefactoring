@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
 using BLRefactoring.Shared.Common;
@@ -5,13 +6,32 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore.Interceptor;
 
+/// <summary>
+/// Interceptor for handling the "IsTransient" property of entities during the materialization process in Entity Framework.
+/// </summary>
 public class IsTransientMaterializationInterceptor : IMaterializationInterceptor
 {
-    private static readonly Dictionary<Type, Action<object, bool>> IsTransientSetters = new();
-    private static readonly Dictionary<Type, FieldInfo> IsTransientFieldInfos = new();
+    /// <summary>
+    /// A thread-safe dictionary that caches delegates for setting the "IsTransient" property of entities.
+    /// </summary>
+    private static readonly ConcurrentDictionary<Type, Action<object, bool>> IsTransientSetters = new();
 
-    private static readonly HashSet<Type> EntityTypes = new();
+    /// <summary>
+    /// A thread-safe dictionary that caches field information for the "IsTransient" property of entities.
+    /// </summary>
+    private static readonly ConcurrentDictionary<Type, FieldInfo> IsTransientFieldInfos = new();
 
+    /// <summary>
+    /// A set of entity types that are assignable to the generic type <see cref="Entity{T}"/>.
+    /// </summary>
+    private static readonly HashSet<Type> EntityTypes = [];
+
+    /// <summary>
+    /// Initializes an entity instance during the materialization process.
+    /// </summary>
+    /// <param name="materializationData">The data related to the materialization process.</param>
+    /// <param name="instance">The entity instance being initialized.</param>
+    /// <returns>The initialized entity instance.</returns>
     public object InitializedInstance(MaterializationInterceptionData materializationData, object instance)
     {
         var entityType = materializationData.EntityType.ConstructorBinding!.RuntimeType;
@@ -23,7 +43,7 @@ public class IsTransientMaterializationInterceptor : IMaterializationInterceptor
         if (!IsTransientSetters.TryGetValue(entityType, out var isTransientSetter))
         {
             isTransientSetter = BuildSetIsTransientDelegate(entityType);
-            IsTransientSetters[entityType] = isTransientSetter;
+            IsTransientSetters[entityType] = BuildSetIsTransientDelegate(entityType);
         }
 
         isTransientSetter(instance, false);
@@ -31,6 +51,12 @@ public class IsTransientMaterializationInterceptor : IMaterializationInterceptor
         return instance;
     }
 
+    /// <summary>
+    /// Builds a delegate for setting the "IsTransient" property of an entity.
+    /// </summary>
+    /// <param name="entityType">The type of the entity.</param>
+    /// <returns>A delegate that sets the "IsTransient" property of the entity.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the "_isTransient" field is not found in the entity type.</exception>
     private static Action<object, bool> BuildSetIsTransientDelegate(Type entityType)
     {
         var fieldInfo = GetFieldInBaseClass(entityType, "_isTransient");
@@ -49,6 +75,12 @@ public class IsTransientMaterializationInterceptor : IMaterializationInterceptor
         return Expression.Lambda<Action<object, bool>>(fieldAssignment, inputObject, valueToSet).Compile();
     }
 
+    /// <summary>
+    /// Determines whether a given type is assignable to a specified generic type.
+    /// </summary>
+    /// <param name="givenType">The type to check.</param>
+    /// <param name="genericType">The generic type to check against.</param>
+    /// <returns>True if the given type is assignable to the generic type; otherwise, false.</returns>
     private static bool IsAssignableToGenericType(Type givenType, Type genericType)
     {
         if (EntityTypes.Contains(givenType) ||
@@ -73,6 +105,12 @@ public class IsTransientMaterializationInterceptor : IMaterializationInterceptor
         return false;
     }
 
+    /// <summary>
+    /// Retrieves the field information for a specified field in the base class of a given type.
+    /// </summary>
+    /// <param name="type">The type to search.</param>
+    /// <param name="fieldName">The name of the field to find.</param>
+    /// <returns>The field information if found; otherwise, null.</returns>
     private static FieldInfo? GetFieldInBaseClass(Type type, string fieldName)
     {
         var originalType = type;

@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore.Configurations;
 
-public class TrainerConfiguration : EntityBaseConfiguration<Trainer, TrainerId>
+public class TrainerConfiguration : AggregateRootTypeConfiguration<Trainer, TrainerId>
 {
-    public override void ConfigureEntity(EntityTypeBuilder<Trainer> builder)
+    protected override void ConfigureAggregate(EntityTypeBuilder<Trainer> builder)
     {
         builder.ToTable("Trainer");
 
