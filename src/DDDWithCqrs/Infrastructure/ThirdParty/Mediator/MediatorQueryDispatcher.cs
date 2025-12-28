@@ -6,14 +6,10 @@ namespace BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator;
 /// <summary>
 /// Implements <see cref="IQueryDispatcher"/> using MediatR.
 /// </summary>
-public class MediatorQueryDispatcher : IQueryDispatcher
+public class MediatorQueryDispatcher(IMediator mediator) : IQueryDispatcher
 {
-    private readonly IMediator _mediator;
-
-    public MediatorQueryDispatcher(IMediator mediator) => _mediator = mediator;
-
     public ValueTask<TResult> DispatchAsync<TResult>(Shared.CQS.IQuery<TResult> query, CancellationToken cancellationToken = default)
     {
-        return _mediator.Send(query, cancellationToken);
+        return mediator.Send(query, cancellationToken);
     }
 }

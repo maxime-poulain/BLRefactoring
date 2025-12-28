@@ -3,12 +3,8 @@ using Mediator;
 
 namespace BLRefactoring.Shared.DDD.Infrastructure;
 
-public class MediatorRDomainEventPublisher : IEventPublisher
+public class MediatorRDomainEventPublisher(IMediator mediator) : IEventPublisher
 {
-    private readonly IMediator _mediator;
-
-    public MediatorRDomainEventPublisher(IMediator mediator) => _mediator = mediator;
-
     /// <inheritdoc />
     public async Task PublishAsync(IEnumerable<IDomainEvent> domainEvents, CancellationToken cancellationToken)
     {
@@ -17,7 +13,7 @@ public class MediatorRDomainEventPublisher : IEventPublisher
 
         foreach (var domainEvent in domainEvents)
         {
-            await _mediator.Publish(domainEvent, cancellationToken);
+            await mediator.Publish(domainEvent, cancellationToken);
         }
     }
 }

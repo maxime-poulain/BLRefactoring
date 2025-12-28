@@ -21,19 +21,11 @@ public interface ITrainerApplicationService
     Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 }
 
-public sealed class TrainerApplicationService : ITrainerApplicationService
+public sealed class TrainerApplicationService(
+    ITrainerRepository trainerRepository,
+    ITransactionManager transactionManager)
+    : ITrainerApplicationService
 {
-    private readonly ITrainerRepository _trainerRepository;
-    private readonly ITransactionManager _transactionManager;
-
-    public TrainerApplicationService(
-        ITrainerRepository trainerRepository,
-        ITransactionManager transactionManager)
-    {
-        _trainerRepository = trainerRepository;
-        _transactionManager = transactionManager;
-    }
-
     public Task<Result<TrainerDto>> CreateAsync(TrainerCreationRequest request)
     {
         // Trainer.Create() could have been receiving a Domain Object instead of primitive types.
@@ -42,14 +34,14 @@ public sealed class TrainerApplicationService : ITrainerApplicationService
 
         return result.MatchAsync(async trainer =>
         {
-            await _trainerRepository.SaveAsync(trainer);
+            await trainerRepository.SaveAsync(trainer);
             return Result<TrainerDto>.Success(trainer.ToDto());
         }, Result<TrainerDto>.FailureAsync);
     }
 
     public async Task<Result<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var trainer = await _trainerRepository.GetByIdAsync(id, cancellationToken);
+        var trainer = await trainerRepository.GetByIdAsync(id, cancellationToken);
 
         if (trainer is null)
         {
@@ -61,7 +53,7 @@ public sealed class TrainerApplicationService : ITrainerApplicationService
 
     public async Task<TrainerDto[]> GetAllAsync(CancellationToken cancellationToken)
     {
-        var trainers = await _trainerRepository.GetAllAsync(cancellationToken);
+        var trainers = await trainerRepository.GetAllAsync(cancellationToken);
         return trainers.Select(x => x.ToDto()).ToArray();
     }
 
@@ -90,7 +82,7 @@ public sealed class TrainerApplicationService : ITrainerApplicationService
     // publishing are treated atomically.
     public async Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var trainer = await _trainerRepository.GetByIdAsync(id, cancellationToken);
+        var trainer = await trainerRepository.GetByIdAsync(id, cancellationToken);
 
         if (trainer is null)
         {
@@ -99,14 +91,14 @@ public sealed class TrainerApplicationService : ITrainerApplicationService
 
         try
         {
-            await _transactionManager.BeginTransactionAsync(cancellationToken);
+            await transactionManager.BeginTransactionAsync(cancellationToken);
             trainer.MarkForDeletion();
-            await _trainerRepository.DeleteAsync(trainer, cancellationToken);
-            await _transactionManager.CommitAsync(cancellationToken);
+            await trainerRepository.DeleteAsync(trainer, cancellationToken);
+            await transactionManager.CommitAsync(cancellationToken);
         }
         catch (Exception)
         {
-            await _transactionManager.RollBackAsync(cancellationToken);
+            await transactionManager.RollBackAsync(cancellationToken);
         }
         return Result.Success();
     }

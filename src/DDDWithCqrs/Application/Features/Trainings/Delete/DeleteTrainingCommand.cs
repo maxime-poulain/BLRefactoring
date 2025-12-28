@@ -5,35 +5,24 @@ using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Delete;
 
-public class DeleteTrainingCommand : ICommand<Result>
+public class DeleteTrainingCommand(Guid id) : ICommand<Result>
 {
-    public DeleteTrainingCommand(Guid id)
-    {
-        Id = id;
-    }
-
-    public Guid Id { get; init; }
+    public Guid Id { get; init; } = id;
 }
 
-public class DeleteTrainerCommandHandler : ICommandHandler<DeleteTrainingCommand, Result>
+public class DeleteTrainerCommandHandler(ITrainingRepository trainingRepository)
+    : ICommandHandler<DeleteTrainingCommand, Result>
 {
-    private readonly ITrainingRepository _trainingRepository;
-
-    public DeleteTrainerCommandHandler(ITrainingRepository trainingRepository)
-    {
-        _trainingRepository = trainingRepository;
-    }
-
     public async ValueTask<Result> Handle(DeleteTrainingCommand request, CancellationToken cancellationToken)
     {
-        var training = await _trainingRepository.GetByIdAsync(request.Id, cancellationToken);
+        var training = await trainingRepository.GetByIdAsync(request.Id, cancellationToken);
 
         if (training == null)
         {
             return Result.Failure(ErrorCode.NotFound, $"Training with id `{request.Id}` does not exist");
         }
 
-        await _trainingRepository.DeleteAsync(new List<Training>() { training }, cancellationToken);
+        await trainingRepository.DeleteAsync(new List<Training>() { training }, cancellationToken);
         return Result.Success();
     }
 }

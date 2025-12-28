@@ -8,19 +8,13 @@ public class GetAllTrainingsQuery : IQuery<List<TrainingDto>>
 {
 }
 
-public class GetAllTrainingQueryHandler : IQueryHandler<GetAllTrainingsQuery, List<TrainingDto>>
+public class GetAllTrainingQueryHandler(TrainingContext trainingContext)
+    : IQueryHandler<GetAllTrainingsQuery, List<TrainingDto>>
 {
-    private readonly TrainingContext _trainingContext;
-
-    public GetAllTrainingQueryHandler(TrainingContext trainingContext)
-    {
-        _trainingContext = trainingContext;
-    }
-
     public async ValueTask<List<TrainingDto>> Handle(GetAllTrainingsQuery request, CancellationToken cancellationToken)
     {
         // In real life use pagination.
-        return await _trainingContext.Trainings
+        return await trainingContext.Trainings
             .Select(training => new TrainingDto()
             {
                 Rates = training.Rates.ToDtos(),

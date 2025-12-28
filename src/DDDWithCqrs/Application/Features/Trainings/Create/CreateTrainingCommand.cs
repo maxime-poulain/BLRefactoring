@@ -18,27 +18,17 @@ public class CreateTrainingCommand : ICommand<Result>
     public List<RateDto> Rates { get; init; } = new();
 }
 
-public class CreateTrainingCommandHandler : ICommandHandler<CreateTrainingCommand, Result>
+public class CreateTrainingCommandHandler(
+    ITrainingRepository trainingRepository,
+    ITrainerRepository trainerRepository,
+    IUniquenessTitleChecker checker)
+    : ICommandHandler<CreateTrainingCommand, Result>
 {
-    private readonly ITrainingRepository _trainingRepository;
-    private readonly ITrainerRepository _trainerRepository;
-    private readonly IUniquenessTitleChecker _checker;
-
-    public CreateTrainingCommandHandler(
-        ITrainingRepository trainingRepository,
-        ITrainerRepository trainerRepository,
-        IUniquenessTitleChecker checker)
-    {
-        _trainingRepository = trainingRepository;
-        _trainerRepository = trainerRepository;
-        _checker = checker;
-    }
-
     public async ValueTask<Result> Handle(
         CreateTrainingCommand request,
         CancellationToken cancellationToken)
     {
-        var trainer = await _trainerRepository.GetByIdAsync(request.TrainerId, cancellationToken);
+        var trainer = await trainerRepository.GetByIdAsync(request.TrainerId, cancellationToken);
 
         if (trainer == null)
         {
@@ -56,11 +46,11 @@ public class CreateTrainingCommandHandler : ICommandHandler<CreateTrainingComman
                 request.EndDate,
                 trainer,
                 rates,
-                _checker);
+                checker);
 
             return await trainingCreationResult.MatchAsync<Result>(async (training) =>
             {
-                await _trainingRepository.SaveAsync(training, cancellationToken);
+                await trainingRepository.SaveAsync(training, cancellationToken);
                 return Result.Success();
             }, Result.FailureAsync);
 

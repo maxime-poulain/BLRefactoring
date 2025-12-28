@@ -5,21 +5,15 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BLRefactoring.DDD.Api.Controller;
 
-public class TrainingController : ApiControllerBase
+public class TrainingController(ITrainingApplicationService trainingApplicationService)
+    : ApiControllerBase
 {
-    private readonly ITrainingApplicationService _trainingApplicationService;
-
-    public TrainingController(ITrainingApplicationService trainingApplicationService)
-    {
-        _trainingApplicationService = trainingApplicationService;
-    }
-
     [HttpPost]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     public async Task<ActionResult> CreateTrainingAsync(TrainingCreationRequest request)
     {
-        var result = await _trainingApplicationService.CreateAsync(request);
+        var result = await trainingApplicationService.CreateAsync(request);
 
         return result.Match<ActionResult>(
             (trainingDto) => CreatedAtAction("GetTrainingById", new { id = trainingDto.Id }, trainingDto.Id),
@@ -33,7 +27,7 @@ public class TrainingController : ApiControllerBase
     [ProducesResponseType(typeof(TrainingDto), StatusCodes.Status200OK)]
     public async Task<ActionResult> GetTrainingByIdAsync(Guid id)
     {
-        var result = await _trainingApplicationService.GetByIdAsync(id);
+        var result = await trainingApplicationService.GetByIdAsync(id);
 
         return result.Match<ActionResult>(trainingDto => Ok(trainingDto),
             errors =>
@@ -49,6 +43,6 @@ public class TrainingController : ApiControllerBase
     [ProducesResponseType(typeof(List<TrainingDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<TrainingDto>>> GetAllAsync()
     {
-        return Ok(await _trainingApplicationService.GetAllAsync());
+        return Ok(await trainingApplicationService.GetAllAsync());
     }
 }

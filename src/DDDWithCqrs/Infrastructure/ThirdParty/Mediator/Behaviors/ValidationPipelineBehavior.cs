@@ -8,27 +8,21 @@ namespace BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors
 /// <summary>
 /// Performs validation of Mediator's requests before it is handled by the handler.
 /// </summary>
-public class ValidationPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+public class ValidationPipelineBehavior<TRequest, TResponse>(
+    IEnumerable<IValidator<TRequest>> validators) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull, IMessage
 {
-    private readonly IEnumerable<IValidator<TRequest>> _validators;
-
-    public ValidationPipelineBehavior(IEnumerable<IValidator<TRequest>> validators)
-    {
-        _validators = validators;
-    }
-
     public async ValueTask<TResponse> Handle(TRequest message, MessageHandlerDelegate<TRequest, TResponse> next, CancellationToken cancellationToken)
     {
         var requestType = message.GetType();
-        if (requestType.IsAssignableTo(typeof(ICommandBase)) && !_validators.Any())
+        if (requestType.IsAssignableTo(typeof(ICommandBase)) && !validators.Any())
         {
             throw new InvalidOperationException(
                 $"Command {requestType.FullName} must have a validator even if it does nothing.");
         }
 
         var validationResults = new List<ValidationResult>();
-        foreach (var validator in _validators)
+        foreach (var validator in validators)
         {
             validationResults.Add(await validator.ValidateAsync(message, cancellationToken));
         }

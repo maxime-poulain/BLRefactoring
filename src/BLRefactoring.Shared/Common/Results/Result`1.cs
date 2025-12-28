@@ -118,31 +118,24 @@ public abstract class Result<TValue>
     public static Task<Result<TValue>> FailureAsync(ErrorCode errorCode, string errorMessage) =>
         Task.FromResult(Failure(new Error(errorCode, errorMessage)));
 
-    private sealed class SuccessResult : Result<TValue>
+    private sealed class SuccessResult(TValue value) : Result<TValue>
     {
-        private readonly TValue _value;
-
-        public SuccessResult(TValue value)
-        {
-            _value = value;
-        }
-
         public override TResult Match<TResult>(
             Func<TValue, TResult> onSuccess,
             Func<IReadOnlyErrorCollection, TResult> onFailure
-        ) => onSuccess(_value);
+        ) => onSuccess(value);
 
         public override Task<TResult> MatchAsync<TResult>(
             Func<TValue, Task<TResult>> onSuccess,
             Func<IReadOnlyErrorCollection, Task<TResult>> onFailure
-        ) => onSuccess(_value);
+        ) => onSuccess(value);
 
         public override Result<TNewValue> Bind<TNewValue>(Func<TValue, Result<TNewValue>> func)
-            => func(_value);
+            => func(value);
 
         public override Task<Result<TNewValue>> BindAsync<TNewValue>(Func<TValue, Task<Result<TNewValue>>> func)
         {
-            return func(_value);
+            return func(value);
         }
     }
 

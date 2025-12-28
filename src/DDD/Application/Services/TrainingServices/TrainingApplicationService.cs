@@ -19,25 +19,15 @@ public interface ITrainingApplicationService
     Task<List<TrainingDto>> GetAllAsync(CancellationToken cancellationToken = default);
 }
 
-public class TrainingApplicationService : ITrainingApplicationService
+public class TrainingApplicationService(
+    ITrainerRepository trainerRepository,
+    IUniquenessTitleChecker uniquenessTitleChecker,
+    ITrainingRepository trainingRepository)
+    : ITrainingApplicationService
 {
-    private readonly ITrainerRepository _trainerRepository;
-    private readonly IUniquenessTitleChecker _uniquenessTitleChecker;
-    private readonly ITrainingRepository _trainingRepository;
-
-    public TrainingApplicationService(
-        ITrainerRepository trainerRepository,
-        IUniquenessTitleChecker uniquenessTitleChecker,
-        ITrainingRepository trainingRepository)
-    {
-        _trainerRepository = trainerRepository;
-        _uniquenessTitleChecker = uniquenessTitleChecker;
-        _trainingRepository = trainingRepository;
-    }
-
     public async Task<Result<TrainingDto>> CreateAsync(TrainingCreationRequest request)
     {
-        var trainer = await _trainerRepository.GetByIdAsync(request.TrainerId);
+        var trainer = await trainerRepository.GetByIdAsync(request.TrainerId);
 
         if (trainer is null)
         {
@@ -51,11 +41,11 @@ public class TrainingApplicationService : ITrainingApplicationService
             request.EndDate,
             trainer,
             request.Rates.ToRates(),
-            _uniquenessTitleChecker);
+            uniquenessTitleChecker);
 
         return await result.MatchAsync(async training =>
         {
-            await _trainingRepository.SaveAsync(training);
+            await trainingRepository.SaveAsync(training);
             return Result<TrainingDto>.Success(training.ToDto());
         }, Result<TrainingDto>.FailureAsync);
 
@@ -63,7 +53,7 @@ public class TrainingApplicationService : ITrainingApplicationService
 
     public async Task<Result<TrainingDto>> GetByIdAsync(Guid id)
     {
-        var training = await _trainingRepository.GetByIdAsync(id);
+        var training = await trainingRepository.GetByIdAsync(id);
 
         return training is null
             ? Result<TrainingDto>.Failure(ErrorCode.NotFound, $"Training with id `{id}` not found.")
@@ -72,6 +62,6 @@ public class TrainingApplicationService : ITrainingApplicationService
 
     public async Task<List<TrainingDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return (await _trainingRepository.GetAllAsync(cancellationToken)).ToDtos();
+        return (await trainingRepository.GetAllAsync(cancellationToken)).ToDtos();
     }
 }

@@ -2,12 +2,7 @@ using BLRefactoring.Shared.Common;
 
 namespace BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate.DomainEvents;
 
-public class TrainerDeletedDomainEvent : IDomainEvent
+public class TrainerDeletedDomainEvent(Trainer trainer) : IDomainEvent
 {
-    public Trainer Trainer { get; }
-
-    public TrainerDeletedDomainEvent(Trainer trainer)
-    {
-        Trainer = trainer;
-    }
+    public Trainer Trainer { get; } = trainer;
 }

@@ -11,18 +11,12 @@ public class GetAllTrainersQuery : IQuery<List<TrainerDto>>
 {
 }
 
-public class GetAllTrainersQueryHandler : IQueryHandler<GetAllTrainersQuery, List<TrainerDto>>
+public class GetAllTrainersQueryHandler(TrainingContext trainingContext)
+    : IQueryHandler<GetAllTrainersQuery, List<TrainerDto>>
 {
-    private readonly TrainingContext _trainingContext;
-
-    public GetAllTrainersQueryHandler(TrainingContext trainingContext)
-    {
-        _trainingContext = trainingContext;
-    }
-
     public async ValueTask<List<TrainerDto>> Handle(GetAllTrainersQuery request, CancellationToken cancellationToken)
     {
-        return await _trainingContext.Trainers.Select(trainer => new TrainerDto()
+        return await trainingContext.Trainers.Select(trainer => new TrainerDto()
         {
             Email = trainer.Email.FullAddress,
             Id = trainer.Id,

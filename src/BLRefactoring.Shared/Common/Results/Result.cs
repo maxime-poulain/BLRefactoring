@@ -95,19 +95,12 @@ public abstract class Result
             => func();
     }
 
-    private sealed class FailureResult : Result
+    private sealed class FailureResult(IReadOnlyErrorCollection error) : Result
     {
-        private readonly IReadOnlyErrorCollection _error;
-
-        public FailureResult(IReadOnlyErrorCollection error)
-        {
-            _error = error;
-        }
-
         public override TResult Match<TResult>(
             Func<TResult> onSuccess,
             Func<IReadOnlyErrorCollection, TResult> onFailure
-        ) => onFailure(_error);
+        ) => onFailure(error);
 
         public override Result Bind(Func<Result> func)
             => this;

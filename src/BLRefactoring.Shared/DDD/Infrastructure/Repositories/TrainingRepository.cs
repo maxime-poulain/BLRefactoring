@@ -5,25 +5,19 @@ using BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BLRefactoring.Shared.DDD.Infrastructure.Repositories;
-public class TrainingRepository : ITrainingRepository, IUniquenessTitleChecker
+public class TrainingRepository(TrainingContext trainingContext)
+    : ITrainingRepository, IUniquenessTitleChecker
 {
-    private readonly TrainingContext _trainingContext;
-
-    public TrainingRepository(TrainingContext trainingContext)
-    {
-        _trainingContext = trainingContext;
-    }
-
     public Task<Training?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return _trainingContext.Trainings
+        return trainingContext.Trainings
             .Include(training => training.Rates)
             .FirstOrDefaultAsync(training => training.Id == id, cancellationToken);
     }
 
     public async Task<bool> IsTitleUniqueAsync(string title, Trainer trainer, CancellationToken cancellationToken = default)
     {
-        return !await _trainingContext.Trainings
+        return !await trainingContext.Trainings
             .AnyAsync(training => training.Title == title &&
                                   training.TrainerId == trainer.Id, cancellationToken: cancellationToken);
     }
@@ -35,7 +29,7 @@ public class TrainingRepository : ITrainingRepository, IUniquenessTitleChecker
 
     public async Task<IEnumerable<Training>> GetByTrainerAsync(Trainer trainer)
     {
-        var trainings = await _trainingContext.Trainings
+        var trainings = await trainingContext.Trainings
             .Include(training => training.Rates)
             .Where(training => training.TrainerId == trainer.Id)
             .ToListAsync();
@@ -52,24 +46,24 @@ public class TrainingRepository : ITrainingRepository, IUniquenessTitleChecker
     {
         if (training.IsTransient())
         {
-            await _trainingContext.Trainings.AddAsync(training, cancellationToken);
+            await trainingContext.Trainings.AddAsync(training, cancellationToken);
         }
         else
         {
-            _trainingContext.Trainings.Update(training);
+            trainingContext.Trainings.Update(training);
         }
-        await _trainingContext.SaveChangesAsync(cancellationToken);
+        await trainingContext.SaveChangesAsync(cancellationToken);
     }
 
     public Task DeleteAsync(IEnumerable<Training> trainings, CancellationToken cancellationToken)
     {
-        _trainingContext.Trainings.RemoveRange(trainings);
-        return _trainingContext.SaveChangesAsync(cancellationToken);
+        trainingContext.Trainings.RemoveRange(trainings);
+        return trainingContext.SaveChangesAsync(cancellationToken);
     }
 
     public Task<List<Training>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return _trainingContext.Trainings
+        return trainingContext.Trainings
             .Include(training => training.Rates)
             .ToListAsync(cancellationToken);
     }

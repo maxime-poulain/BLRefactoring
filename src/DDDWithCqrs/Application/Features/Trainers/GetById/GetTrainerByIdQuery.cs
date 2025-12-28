@@ -7,28 +7,17 @@ namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetById;
 /// <summary>
 /// Retrieves a <see cref="TrainerDto"/> by its <see cref="TrainerDto.Id"/>.
 /// </summary>
-public class GetTrainerByIdQuery : IQuery<TrainerDto?>
+public class GetTrainerByIdQuery(Guid id) : IQuery<TrainerDto?>
 {
-    public GetTrainerByIdQuery(Guid id)
-    {
-        Id = id;
-    }
-
-    public Guid Id { get; init; }
+    public Guid Id { get; init; } = id;
 }
 
-public class GetTrainerByIdQueryHandler : IQueryHandler<GetTrainerByIdQuery, TrainerDto?>
+public class GetTrainerByIdQueryHandler(TrainingContext trainingContext)
+    : IQueryHandler<GetTrainerByIdQuery, TrainerDto?>
 {
-    private readonly TrainingContext _trainingContext;
-
-    public GetTrainerByIdQueryHandler(TrainingContext trainingContext)
-    {
-        _trainingContext = trainingContext;
-    }
-
     public async ValueTask<TrainerDto?> Handle(GetTrainerByIdQuery request, CancellationToken cancellationToken)
     {
-        return await _trainingContext.Trainers
+        return await trainingContext.Trainers
             .Select(trainer => new TrainerDto()
             {
                 Email = trainer.Email.FullAddress,

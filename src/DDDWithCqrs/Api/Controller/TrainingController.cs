@@ -9,24 +9,18 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BLRefactoring.DDDWithCqrs.Api.Controller;
 
-public class TrainingController : ApiControllerBase
+public class TrainingController(
+    ICommandDispatcher commandDispatcher,
+    IQueryDispatcher queryDispatcher)
+    : ApiControllerBase
 {
-    private readonly ICommandDispatcher _commandDispatcher;
-    private readonly IQueryDispatcher _queryDispatcher;
-
-    public TrainingController(ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
-    {
-        _commandDispatcher = commandDispatcher;
-        _queryDispatcher = queryDispatcher;
-    }
-
     [HttpPost]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> CreateTrainingAsync(CreateTrainingCommand command)
     {
         var trainingId = command.TrainingId;
-        var result = await _commandDispatcher.DispatchAsync(command);
+        var result = await commandDispatcher.DispatchAsync(command);
 
         return result.Match<ActionResult>(
             () => CreatedAtAction("GetTrainingById",
@@ -39,7 +33,7 @@ public class TrainingController : ApiControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TrainingDto>> GetTrainingByIdAsync(Guid id)
     {
-        var training = await _queryDispatcher.DispatchAsync(new GetTrainingByIdQuery(id));
+        var training = await queryDispatcher.DispatchAsync(new GetTrainingByIdQuery(id));
 
         // Using a monad such Maybe<T,None> could be an alternative
         // to avoid potential null reference exception.
@@ -55,7 +49,7 @@ public class TrainingController : ApiControllerBase
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<List<TrainingDto>>> GetAllAsync()
     {
-        return await _queryDispatcher.DispatchAsync(new GetAllTrainingsQuery());
+        return await queryDispatcher.DispatchAsync(new GetAllTrainingsQuery());
     }
 
     [HttpDelete("{id}")]
@@ -64,7 +58,7 @@ public class TrainingController : ApiControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteAsync(Guid id)
     {
-        var deletionResult = await _commandDispatcher.DispatchAsync(new DeleteTrainingCommand(id));
+        var deletionResult = await commandDispatcher.DispatchAsync(new DeleteTrainingCommand(id));
 
         return deletionResult.Match<ActionResult>(
             NoContent,

@@ -9,24 +9,18 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BLRefactoring.DDDWithCqrs.Api.Controller;
 
-public class TrainerController : ApiControllerBase
+public class TrainerController(
+    ICommandDispatcher commandDispatcher,
+    IQueryDispatcher queryDispatcher)
+    : ApiControllerBase
 {
-    private readonly ICommandDispatcher _commandDispatcher;
-    private readonly IQueryDispatcher _queryDispatcher;
-
-    public TrainerController(ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher)
-    {
-        _commandDispatcher = commandDispatcher;
-        _queryDispatcher = queryDispatcher;
-    }
-
     [HttpPost]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     public async Task<ActionResult> CreateAsync(CreateTrainerCommand request)
     {
         var trainerId = request.TrainerId;
-        var result = await _commandDispatcher.DispatchAsync(request);
+        var result = await commandDispatcher.DispatchAsync(request);
 
         return result.Match<ActionResult>(
             () => CreatedAtAction("GetById", new { id = trainerId }, trainerId),
@@ -38,7 +32,7 @@ public class TrainerController : ApiControllerBase
     [ProducesResponseType(typeof(TrainerDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        var trainer = await _queryDispatcher.DispatchAsync(new GetTrainerByIdQuery(id), cancellationToken);
+        var trainer = await queryDispatcher.DispatchAsync(new GetTrainerByIdQuery(id), cancellationToken);
         if (trainer is null)
         {
             return NotFound();
@@ -52,7 +46,7 @@ public class TrainerController : ApiControllerBase
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<List<TrainerDto>>> GetAllAsync(CancellationToken cancellationToken)
     {
-        return Ok(await _queryDispatcher.DispatchAsync(new GetAllTrainersQuery(), cancellationToken));
+        return Ok(await queryDispatcher.DispatchAsync(new GetAllTrainersQuery(), cancellationToken));
     }
 
     [HttpDelete("{id}")]
@@ -61,7 +55,7 @@ public class TrainerController : ApiControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteAsync(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _commandDispatcher.DispatchAsync(new DeleteTrainerCommand(id), cancellationToken);
+        var result = await commandDispatcher.DispatchAsync(new DeleteTrainerCommand(id), cancellationToken);
 
         return result.Match<ActionResult>(
             NoContent,

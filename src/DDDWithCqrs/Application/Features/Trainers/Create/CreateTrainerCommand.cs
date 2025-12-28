@@ -14,22 +14,16 @@ public class CreateTrainerCommand : ICommand<Result>
     public string Email { get; init; } = null!;
 }
 
-public class CreateTrainerCommandHandler : ICommandHandler<CreateTrainerCommand, Result>
+public class CreateTrainerCommandHandler(ITrainerRepository trainerRepository)
+    : ICommandHandler<CreateTrainerCommand, Result>
 {
-    private readonly ITrainerRepository _trainerRepository;
-
-    public CreateTrainerCommandHandler(ITrainerRepository trainerRepository)
-    {
-        _trainerRepository = trainerRepository;
-    }
-
     public async ValueTask<Result> Handle(CreateTrainerCommand request, CancellationToken cancellationToken)
     {
         var trainerResult = Trainer.Create(request.TrainerId, request.Firstname, request.Lastname, request.Email);
 
         return await trainerResult.MatchAsync(async trainer =>
         {
-            await _trainerRepository.SaveAsync(trainer, cancellationToken);
+            await trainerRepository.SaveAsync(trainer, cancellationToken);
             return Result.Success();
         }, Result.FailureAsync);
     }

@@ -5,15 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore;
 
-public class TrainingContext : DbContext
+public class TrainingContext(DbContextOptions<TrainingContext> options, IEventPublisher publisher)
+    : DbContext(options)
 {
-    private readonly IEventPublisher _publisher;
-
-    public TrainingContext(DbContextOptions<TrainingContext> options, IEventPublisher publisher) : base(options)
-    {
-        _publisher = publisher;
-    }
-
     public DbSet<Training> Trainings { get; set; } = null!;
     public DbSet<Trainer> Trainers { get; set; } = null!;
 
@@ -31,7 +25,7 @@ public class TrainingContext : DbContext
             .ToArray();
 
         var entriesWrittenCount = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-        await _publisher.PublishAsync(domainEvents, cancellationToken);
+        await publisher.PublishAsync(domainEvents, cancellationToken);
         return entriesWrittenCount;
     }
 

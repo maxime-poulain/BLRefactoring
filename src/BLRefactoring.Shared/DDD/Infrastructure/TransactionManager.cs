@@ -3,18 +3,13 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace BLRefactoring.Shared.DDD.Infrastructure;
 
-public class TransactionManager : ITransactionManager, IDisposable, IAsyncDisposable
+public class TransactionManager(TrainingContext trainingContext)
+    : ITransactionManager, IDisposable, IAsyncDisposable
 {
-    private readonly TrainingContext _trainingContext;
     private IDbContextTransaction? _transaction;
 
-    public TransactionManager(TrainingContext trainingContext)
-    {
-        _trainingContext = trainingContext;
-    }
-
     public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
-        => _transaction = await _trainingContext.Database.BeginTransactionAsync(cancellationToken);
+        => _transaction = await trainingContext.Database.BeginTransactionAsync(cancellationToken);
 
     public async Task CommitAsync(CancellationToken cancellationToken = default)
     {

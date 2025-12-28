@@ -2,22 +2,15 @@ using System.Text;
 
 namespace BLRefactoring.DDDWithCqrs.Api.Middlewares;
 
-public class GlobalExceptionHandlerMiddleware
+public class GlobalExceptionHandlerMiddleware(
+    RequestDelegate next,
+    ILogger<GlobalExceptionHandlerMiddleware> logger)
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<GlobalExceptionHandlerMiddleware> _logger;
-
-    public GlobalExceptionHandlerMiddleware(RequestDelegate next, ILogger<GlobalExceptionHandlerMiddleware> logger)
-    {
-        _next = next;
-        _logger = logger;
-    }
-
     public async Task InvokeAsync(HttpContext context)
     {
         try
         {
-            await _next(context);
+            await next(context);
         }
         catch (Exception e)
         {
@@ -40,7 +33,7 @@ public class GlobalExceptionHandlerMiddleware
             "An unhandled exception occurred at `{endPointPath}` with following request: `{Payload}`";
         string endpoint = context.Request.Path; // Retrieve the endpoint (action) that failed
         var httpRequest = await FormatHttpRequest(context.Request); // Format the HTTP request details
-        _logger.LogError(exception, errorMessage, endpoint, httpRequest);
+        logger.LogError(exception, errorMessage, endpoint, httpRequest);
     }
 
     private static Task<string> FormatHttpRequest(HttpRequest request)

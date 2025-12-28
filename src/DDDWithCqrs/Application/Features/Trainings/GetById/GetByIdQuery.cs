@@ -4,28 +4,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetById;
 
-public class GetTrainingByIdQuery : IQuery<TrainingDto?>
+public class GetTrainingByIdQuery(Guid id) : IQuery<TrainingDto?>
 {
-    public Guid Id { get; }
-
-    public GetTrainingByIdQuery(Guid id)
-    {
-        Id = id;
-    }
+    public Guid Id { get; } = id;
 }
 
-public class GetTrainingByIdQueryHandler : IQueryHandler<GetTrainingByIdQuery, TrainingDto?>
+public class GetTrainingByIdQueryHandler(TrainingContext trainingContext)
+    : IQueryHandler<GetTrainingByIdQuery, TrainingDto?>
 {
-    private readonly TrainingContext _trainingContext;
-
-    public GetTrainingByIdQueryHandler(TrainingContext trainingContext)
-    {
-        _trainingContext = trainingContext;
-    }
-
     public async ValueTask<TrainingDto?> Handle(GetTrainingByIdQuery request, CancellationToken cancellationToken)
     {
-        return await _trainingContext.Trainings
+        return await trainingContext.Trainings
             .Select(training => training.ToDto())
             .FirstOrDefaultAsync(trainingDto => trainingDto.Id == request.Id, cancellationToken);
     }

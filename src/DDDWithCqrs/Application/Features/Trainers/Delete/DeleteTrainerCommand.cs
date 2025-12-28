@@ -23,22 +23,14 @@ public class DeleteTrainerCommand : ICommand<Result>
     }
 }
 
-public class DeleteTrainerCommandHandler : ICommandHandler<DeleteTrainerCommand, Result>
+public class DeleteTrainerCommandHandler(
+    ITrainerRepository trainerRepository,
+    ITransactionManager transactionManager)
+    : ICommandHandler<DeleteTrainerCommand, Result>
 {
-    private readonly ITrainerRepository _trainerRepository;
-    private readonly ITransactionManager _transactionManager;
-
-    public DeleteTrainerCommandHandler(
-        ITrainerRepository trainerRepository,
-        ITransactionManager transactionManager)
-    {
-        _trainerRepository = trainerRepository;
-        _transactionManager = transactionManager;
-    }
-
     public async ValueTask<Result> Handle(DeleteTrainerCommand request, CancellationToken cancellationToken)
     {
-        var trainer = await _trainerRepository.GetByIdAsync(request.Id, cancellationToken);
+        var trainer = await trainerRepository.GetByIdAsync(request.Id, cancellationToken);
 
         if (trainer == null)
         {
@@ -60,13 +52,13 @@ public class DeleteTrainerCommandHandler : ICommandHandler<DeleteTrainerCommand,
         trainer.MarkForDeletion();
         try
         {
-            await _transactionManager.BeginTransactionAsync(cancellationToken);
-            await _trainerRepository.DeleteAsync(trainer, cancellationToken);
-            await _transactionManager.CommitAsync(cancellationToken);
+            await transactionManager.BeginTransactionAsync(cancellationToken);
+            await trainerRepository.DeleteAsync(trainer, cancellationToken);
+            await transactionManager.CommitAsync(cancellationToken);
         }
         catch (Exception)
         {
-            await _transactionManager.RollBackAsync(cancellationToken);
+            await transactionManager.RollBackAsync(cancellationToken);
 
             // When an unmanaged exception is thrown.
             // I prefer make it bubble up to the Api layer.
