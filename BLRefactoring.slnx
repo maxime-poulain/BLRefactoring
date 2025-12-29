@@ -11,11 +11,5 @@
     <Project Path="src/DDDWithCqrs/Domain/BLRefactoring.DDDWithCqrs.Domain.csproj" />
     <Project Path="src/DDDWithCqrs/Infrastructure/BLRefactoring.DDDWithCqrs.Infrastructure.csproj" />
   </Folder>
-  <Folder Name="/Repr/">
-    <Project Path="src/Repr/Api/BLRefactoring.Repr.Api.csproj" />
-    <Project Path="src/Repr/Application/BLRefactoring.Repr.Application.csproj" />
-    <Project Path="src/Repr/Domain/BLRefactoring.Repr.Domain.csproj" />
-    <Project Path="src/Repr/Infrastructure/BLRefactoring.Repr.Infrastructure.csproj" />
-  </Folder>
   <Project Path="src/BLRefactoring.Shared/BLRefactoring.Shared.csproj" />
 </Solution>
