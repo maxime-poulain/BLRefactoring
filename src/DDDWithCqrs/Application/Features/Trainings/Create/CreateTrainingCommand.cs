@@ -9,13 +9,11 @@ namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Create;
 
 public class CreateTrainingCommand : ICommand<Result>
 {
-    [JsonIgnore]
-    public Guid TrainingId { get; init; } = Guid.NewGuid();
+    [JsonIgnore] public Guid TrainingId { get; init; } = Guid.NewGuid();
     public Guid TrainerId { get; init; }
     public string Title { get; init; } = null!;
     public DateTime StartDate { get; init; }
     public DateTime EndDate { get; init; }
-    public List<RateDto> Rates { get; init; } = new();
 }
 
 public class CreateTrainingCommandHandler(
@@ -36,24 +34,17 @@ public class CreateTrainingCommandHandler(
                 $"Trainer `{request.TrainerId}` was not found");
         }
 
-        var ratesResult = request.Rates.ToDomainModels();
+        var trainingCreationResult = await Training.CreateAsync((TrainingId)request.TrainingId,
+            request.Title,
+            request.StartDate,
+            request.EndDate,
+            trainer,
+            checker);
 
-        return await ratesResult.MatchAsync(async rates =>
+        return await trainingCreationResult.MatchAsync<Result>(async (training) =>
         {
-            var trainingCreationResult = await Training.CreateAsync((TrainingId)request.TrainingId,
-                request.Title,
-                request.StartDate,
-                request.EndDate,
-                trainer,
-                rates,
-                checker);
-
-            return await trainingCreationResult.MatchAsync<Result>(async (training) =>
-            {
-                await trainingRepository.SaveAsync(training, cancellationToken);
-                return Result.Success();
-            }, Result.FailureAsync);
-
+            await trainingRepository.SaveAsync(training, cancellationToken);
+            return Result.Success();
         }, Result.FailureAsync);
     }
 }

@@ -15,18 +15,5 @@ public class TrainingConfiguration : AggregateRootTypeConfiguration<Training, Tr
             .IsRequired();
 
         builder.HasIndex(training => training.TrainerId);
-
-        builder.OwnsMany(e => e.Rates, b =>
-        {
-            b.WithOwner().HasForeignKey("TrainingId");
-            b.Property<int>("Id");
-            b.HasKey("Id");
-
-            b.Property<int>(e => e.Value).IsRequired();
-            b.Property(e => e.AuthorId).IsRequired();
-
-            b.OwnsOne(e => e.Comment,
-                commentBuilder => commentBuilder.Property(comment => comment.Content).HasMaxLength(200));
-        });
     }
 }

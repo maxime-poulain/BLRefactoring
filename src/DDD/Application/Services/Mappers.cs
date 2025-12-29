@@ -9,26 +9,12 @@ namespace BLRefactoring.DDD.Application.Services;
 
 public static class Mappers
 {
-    public static List<Rate> ToRates(this List<RateDto> rateDtos)
-    {
-        return rateDtos.ConvertAll(rateDto => Rate.Create(
-            rateDto.Value,
-            Comment.Create(rateDto.Comment).Match(comment => comment, errors => throw new InvalidOperationException()),
-            rateDto.AuthorId).Match(rate => rate, errors => throw new InvalidOperationException()));
-    }
-
     public static TrainingDto ToDto(this Training training)
     {
         return new TrainingDto
         {
             Id = training.Id,
             Title = training.Title,
-            Rates = training.Rates.Select(rate => new RateDto
-            {
-                Value = rate.Value,
-                Comment = rate.Comment.Content,
-                AuthorId = rate.AuthorId
-            }).ToList(),
             StartDate = training.StartDate,
             EndDate = training.EndDate,
             TrainerId = training.TrainerId
@@ -37,20 +23,7 @@ public static class Mappers
 
     public static List<TrainingDto> ToDtos(this IEnumerable<Training> trainings)
     {
-        return trainings.Select(training => new TrainingDto
-        {
-            Id = training.Id,
-            Title = training.Title,
-            Rates = training.Rates.Select(rate => new RateDto
-            {
-                Value = rate.Value,
-                Comment = rate.Comment.Content,
-                AuthorId = rate.AuthorId
-            }).ToList(),
-            StartDate = training.StartDate,
-            EndDate = training.EndDate,
-            TrainerId = training.TrainerId
-        }).ToList();
+        return trainings.Select(ToDto).ToList();
     }
 
     public static TrainerDto ToDto(this Trainer trainer)

@@ -8,12 +8,8 @@ namespace BLRefactoring.Shared.DDD.Infrastructure.Repositories;
 public class TrainingRepository(TrainingContext trainingContext)
     : ITrainingRepository, IUniquenessTitleChecker
 {
-    public Task<Training?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        return trainingContext.Trainings
-            .Include(training => training.Rates)
-            .FirstOrDefaultAsync(training => training.Id == id, cancellationToken);
-    }
+    public Task<Training?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+        trainingContext.Trainings.FirstOrDefaultAsync(training => training.Id == id, cancellationToken);
 
     public async Task<bool> IsTitleUniqueAsync(string title, Trainer trainer, CancellationToken cancellationToken = default)
     {
@@ -30,7 +26,6 @@ public class TrainingRepository(TrainingContext trainingContext)
     public async Task<IEnumerable<Training>> GetByTrainerAsync(Trainer trainer)
     {
         var trainings = await trainingContext.Trainings
-            .Include(training => training.Rates)
             .Where(training => training.TrainerId == trainer.Id)
             .ToListAsync();
 
@@ -63,8 +58,6 @@ public class TrainingRepository(TrainingContext trainingContext)
 
     public Task<List<Training>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return trainingContext.Trainings
-            .Include(training => training.Rates)
-            .ToListAsync(cancellationToken);
+        return trainingContext.Trainings.ToListAsync(cancellationToken);
     }
 }

@@ -7,5 +7,4 @@ public class TrainingDto
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public Guid TrainerId { get; set; }
-    public List<RateDto> Rates { get; set; } = new();
 }

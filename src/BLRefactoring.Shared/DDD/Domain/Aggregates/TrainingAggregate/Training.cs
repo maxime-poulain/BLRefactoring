@@ -9,21 +9,17 @@ namespace BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate;
 
 public sealed class Training : AggregateRoot<TrainingId>
 {
-    private readonly List<Rate> _rates = null!;
-
     public string Title { get; private set; } = null!;
     public DateTime StartDate { get; private set; }
     public DateTime EndDate { get; private set; }
     public Guid TrainerId { get; private set; }
 
-    public IReadOnlyCollection<Rate> Rates => _rates;
 
     private Training() { } // Private constructor for ORM or serialization
 
     public Training(TrainingId trainingId)
     {
         Id = trainingId;
-        _rates = new List<Rate>();
     }
 
     private static Training CreateDraft(TrainingId trainingId) => new(trainingId);
@@ -43,7 +39,6 @@ public sealed class Training : AggregateRoot<TrainingId>
         DateTime startDate,
         DateTime endDate,
         Trainer trainer,
-        List<Rate> rates,
         IUniquenessTitleChecker titleChecker)
     {
         var training = CreateDraft(TrainingId.Default());
@@ -52,7 +47,6 @@ public sealed class Training : AggregateRoot<TrainingId>
             startDate,
             endDate,
             trainer,
-            rates,
             titleChecker);
     }
 
@@ -62,7 +56,6 @@ public sealed class Training : AggregateRoot<TrainingId>
         DateTime startDate,
         DateTime endDate,
         Trainer trainer,
-        List<Rate> rates,
         IUniquenessTitleChecker titleChecker)
     {
         var training = CreateDraft(trainingId);
@@ -71,7 +64,6 @@ public sealed class Training : AggregateRoot<TrainingId>
             startDate,
             endDate,
             trainer,
-            rates,
             titleChecker);
     }
 
@@ -80,14 +72,12 @@ public sealed class Training : AggregateRoot<TrainingId>
         DateTime startDate,
         DateTime endDate,
         Trainer trainer,
-        List<Rate> rates,
         IUniquenessTitleChecker titleChecker)
     {
         return (await training.ChangeTitleAsync(title, titleChecker, trainer))
             .Bind(() => training.ChangeEndDate(endDate))
             .Bind(() => training.ChangeStartDate(startDate))
             .Bind(() => training.ChangeTrainer(trainer))
-            .Bind(() => training.ChangeRates(rates))
             .Bind(() =>
             {
                 training.AddDomainEvent(new TrainingCreatedDomainEvent(training));
@@ -143,22 +133,11 @@ public sealed class Training : AggregateRoot<TrainingId>
         return Result.Success();
     }
 
-    public Result ChangeRates(List<Rate> rates)
-    {
-        if (rates == null)
-        {
-            return Result.Failure(ErrorCode.InvalidRates, "Rates cannot be null.");
-        }
-        _rates.Clear();
-        _rates.AddRange(rates);
-        return Result.Success();
-    }
-
     public async Task<Result> ChangeTitleAsync(string title, IUniquenessTitleChecker checker, Trainer trainer)
     {
         var errors = new ErrorCollection();
 
-        if(title is { Length: <5 or > 30})
+        if(title is { Length: < 5 or > 30})
         {
             errors.Add(ErrorCode.InvalidTitle, "Title must be between 5 and 30 characters.");
         }

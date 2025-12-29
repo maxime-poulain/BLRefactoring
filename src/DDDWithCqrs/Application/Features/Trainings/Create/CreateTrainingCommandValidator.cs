@@ -6,9 +6,6 @@ public class CreateTrainingCommandValidator : AbstractValidator<CreateTrainingCo
 {
     public CreateTrainingCommandValidator()
     {
-        RuleFor(command => command.StartDate)
-            .GreaterThan(DateTime.Now.AddMinutes(-5));
-
         RuleFor(command => command.EndDate)
             .GreaterThan(command => command.StartDate)
             .WithMessage("End date must be after start date");

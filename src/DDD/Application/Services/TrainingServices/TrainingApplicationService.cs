@@ -40,7 +40,6 @@ public class TrainingApplicationService(
             request.StartDate,
             request.EndDate,
             trainer,
-            request.Rates.ToRates(),
             uniquenessTitleChecker);
 
         return await result.MatchAsync(async training =>

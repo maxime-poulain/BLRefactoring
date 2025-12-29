@@ -6,5 +6,4 @@ public class TrainingCreationRequest
     public DateTime StartDate { get; init; }
     public DateTime EndDate { get; init; }
     public Guid TrainerId { get; init; }
-    public List<RateDto> Rates { get; init; } = new();
 }

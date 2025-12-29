@@ -17,7 +17,6 @@ public class GetAllTrainingQueryHandler(TrainingContext trainingContext)
         return await trainingContext.Trainings
             .Select(training => new TrainingDto()
             {
-                Rates = training.Rates.ToDtos(),
                 Id = training.Id,
                 StartDate = training.StartDate,
                 EndDate = training.EndDate,
