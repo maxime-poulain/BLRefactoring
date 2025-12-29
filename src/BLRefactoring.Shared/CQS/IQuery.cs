@@ -5,7 +5,7 @@ namespace BLRefactoring.Shared.CQS;
 /// <summary>
 /// Marker interface for queries.
 /// </summary>
-public interface IQuery : IBaseRequest
+public interface IQuery : IMessage
 {
 }
 
