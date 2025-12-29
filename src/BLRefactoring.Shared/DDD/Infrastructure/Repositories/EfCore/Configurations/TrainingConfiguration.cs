@@ -1,3 +1,4 @@
+using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -15,5 +16,10 @@ public class TrainingConfiguration : AggregateRootTypeConfiguration<Training, Tr
             .IsRequired();
 
         builder.HasIndex(training => training.TrainerId);
+
+        builder.Property(training => training.TrainerId)
+            .HasConversion(
+                id => id.Value,
+                value => TrainerId.Create(value));
     }
 }

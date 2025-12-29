@@ -12,12 +12,12 @@ public sealed class Training : AggregateRoot<TrainingId>
     public string Title { get; private set; } = null!;
     public DateTime StartDate { get; private set; }
     public DateTime EndDate { get; private set; }
-    public Guid TrainerId { get; private set; }
+    public TrainerId TrainerId { get; private set; }
 
 
     private Training() { } // Private constructor for ORM or serialization
 
-    public Training(TrainingId trainingId)
+    private Training(TrainingId trainingId)
     {
         Id = trainingId;
     }
