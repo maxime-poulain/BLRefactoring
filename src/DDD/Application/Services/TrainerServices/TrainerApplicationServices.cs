@@ -26,13 +26,13 @@ public sealed class TrainerApplicationService(
     ITransactionManager transactionManager)
     : ITrainerApplicationService
 {
-    public Task<Result<TrainerDto>> CreateAsync(TrainerCreationRequest request)
+    public async Task<Result<TrainerDto>> CreateAsync(TrainerCreationRequest request)
     {
         // Trainer.Create() could have been receiving a Domain Object instead of primitive types.
         // However, for the sake of simplicity, we are using primitive types here.
         var result = Trainer.Create(request.Firstname, request.Lastname, request.Email);
 
-        return result.MatchAsync(async trainer =>
+        return await result.MatchAsync(async trainer =>
         {
             await trainerRepository.SaveAsync(trainer);
             return Result<TrainerDto>.Success(trainer.ToDto());

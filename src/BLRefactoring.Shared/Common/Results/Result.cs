@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using BLRefactoring.Shared.Common.Errors;
 
 namespace BLRefactoring.Shared.Common.Results;
@@ -35,19 +36,22 @@ public abstract class Result
     /// Creates a new instance of the <see cref="Result"/> class that represents a successful computation.
     /// </summary>
     /// <returns>A new instance of the <see cref="Result"/> class that represents a successful computation.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Result Success() => new SuccessResult();
 
     /// <summary>
     /// Creates a new instance of the <see cref="Result"/> class that represents a successful computation.
     /// </summary>
-    /// <returns>A new instance of the <see cref="Task"/> class that represents a successful computation.</returns>
-    public static Task<Result> SuccessAsync() => Task.FromResult(Success());
+    /// <returns>A new instance of the <see cref="ValueTask"/> class that represents a successful computation.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ValueTask<Result> SuccessAsync() => ValueTask.FromResult(Success());
 
     /// <summary>
     /// Creates a new instance of the <see cref="Result"/> class that represents a failed computation.
     /// </summary>
     /// <param name="error">The error collection that resulted from the failed computation.</param>
     /// <returns>A new instance of the <see cref="Result"/> class that represents a failed computation.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Result Failure(IReadOnlyErrorCollection error) => new FailureResult(error);
 
     /// <summary>
@@ -56,9 +60,10 @@ public abstract class Result
     /// <param name="errorCode">The error code that resulted from the failed computation.</param>
     /// <param name="errorMessage">The error message that resulted from the failed computation.</param>
     /// <returns>A new instance of the <see cref="Result"/> class that represents a failed computation.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Result Failure(ErrorCode errorCode, string errorMessage)
     {
-        var errorCollection = new ErrorCollection(new[] { new Error(errorCode, errorMessage) });
+        var errorCollection = new ErrorCollection([new Error(errorCode, errorMessage)]);
         return Failure(errorCollection);
     }
 
@@ -67,41 +72,48 @@ public abstract class Result
     /// </summary>
     /// <param name="errors">The error collection.</param>
     /// <returns>A new instance of the <see cref="Result"/> class that represents a failed computation if there are errors, or a successful computation otherwise.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Result FromErrors(IReadOnlyErrorCollection errors)
         => errors.HasErrors() ? Failure(errors) : Success();
 
     /// <summary>
-    /// Creates a new instance of the <see cref="Task"/> class that represents a failed computation.
+    /// Creates a new instance of the <see cref="ValueTask"/> class that represents a failed computation.
     /// </summary>
     /// <param name="errors">The error collection that resulted from the failed computation.</param>
-    /// <returns>A new instance of the <see cref="Task"/> class that represents a failed computation.</returns>
-    public static Task<Result> FailureAsync(IReadOnlyErrorCollection errors)
-        => Task.FromResult(Failure(errors));
+    /// <returns>A new instance of the <see cref="ValueTask"/> class that represents a failed computation.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ValueTask<Result> FailureAsync(IReadOnlyErrorCollection errors)
+        => ValueTask.FromResult(Failure(errors));
 
     /// <summary>
     /// Implicitly converts an <see cref="ErrorCollection"/> to a <see cref="Result"/>.
     /// </summary>
     /// <param name="errors">The error collection to convert.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator Result(ErrorCollection errors) => FromErrors(errors);
 
     private sealed class SuccessResult : Result
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override TResult Match<TResult>(
             Func<TResult> onSuccess,
             Func<IReadOnlyErrorCollection, TResult> onFailure
         ) => onSuccess();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override Result Bind(Func<Result> func)
             => func();
     }
 
     private sealed class FailureResult(IReadOnlyErrorCollection error) : Result
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override TResult Match<TResult>(
             Func<TResult> onSuccess,
             Func<IReadOnlyErrorCollection, TResult> onFailure
         ) => onFailure(error);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override Result Bind(Func<Result> func)
             => this;
     }

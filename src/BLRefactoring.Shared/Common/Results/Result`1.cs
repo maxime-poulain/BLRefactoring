@@ -1,7 +1,7 @@
+using System.Runtime.CompilerServices;
 using BLRefactoring.Shared.Common.Errors;
 
 namespace BLRefactoring.Shared.Common.Results;
-
 
 /// <summary>
 /// Represents a result of a computation that can either be successful or result in an error.
@@ -32,9 +32,9 @@ public abstract class Result<TValue>
     /// <param name="onSuccess">A function to handle the success case, taking the successful value as a parameter.</param>
     /// <param name="onFailure">A function to handle the failure case, taking the error collection as a parameter.</param>
     /// <returns>A Task whose result is the result of either the onSuccess or onFailure function, depending on the current result state.</returns>
-    public abstract Task<TResult> MatchAsync<TResult>(
-        Func<TValue, Task<TResult>> onSuccess,
-        Func<IReadOnlyErrorCollection, Task<TResult>> onFailure);
+    public abstract ValueTask<TResult> MatchAsync<TResult>(
+        Func<TValue, ValueTask<TResult>> onSuccess,
+        Func<IReadOnlyErrorCollection, ValueTask<TResult>> onFailure);
 
     /// <summary>
     /// Chains computations by applying the provided function to the successful value.
@@ -51,9 +51,8 @@ public abstract class Result<TValue>
     /// </summary>
     /// <typeparam name="TNewValue">The type of the result of the new computation.</typeparam>
     /// <param name="func">A function to apply to the successful value, producing a new result.</param>
-    /// <returns>A <see cref="Task"/> whose result contains new result, which can be either a success or failure, based on the provided function and the current result state.</returns>
-    public abstract Task<Result<TNewValue>> BindAsync<TNewValue>(Func<TValue, Task<Result<TNewValue>>> func);
-
+    /// <returns>A <see cref="ValueTask"/> whose result contains new result, which can be either a success or failure, based on the provided function and the current result state.</returns>
+    public abstract ValueTask<Result<TNewValue>> BindAsync<TNewValue>(Func<TValue, ValueTask<Result<TNewValue>>> func);
 
     /// <summary>
     /// Creates a new instance of the <see cref="Result{TValue}"/> class that represents a successful computation.
@@ -61,6 +60,7 @@ public abstract class Result<TValue>
     /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <param name="value">The value that resulted from the successful computation.</param>
     /// <returns>A new instance of the <see cref="Result{TValue}"/> class that represents a successful computation.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Result<T> Success<T>(T value) => new Result<T>.SuccessResult(value);
 
     /// <summary>
@@ -69,6 +69,7 @@ public abstract class Result<TValue>
     /// <typeparam name="T">The type of the successful result value.</typeparam>
     /// <param name="value">The value that resulted from the successful computation.</param>
     /// <returns>A new instance of the <see cref="Task"/> class that represents a successful computation.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Task<Result<T>> SuccessAsync<T>(T value) => Task.FromResult(Success(value));
 
     /// <summary>
@@ -76,13 +77,16 @@ public abstract class Result<TValue>
     /// </summary>
     /// <param name="error">The error collection that resulted from the failed computation.</param>
     /// <returns>A new instance of the <see cref="Result{TValue}"/> class that represents a failed computation.</returns>
-    public static Result<TValue> Failure(IReadOnlyErrorCollection error) => new FailureResult(error);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Result<TValue> Failure(IReadOnlyErrorCollection error) =>
+        new FailureResult(error);
 
     /// <summary>
     /// Creates a new instance of the <see cref="Result{TValue}"/> class that represents a failed computation.
     /// </summary>
     /// <param name="error">The error that resulted from the failed computation.</param>
     /// <returns>A new instance of the <see cref="Result{TValue}"/> class that represents a failed computation.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Result<TValue> Failure(Error error) => new FailureResult(error);
 
     /// <summary>
@@ -91,6 +95,7 @@ public abstract class Result<TValue>
     /// <param name="errorCode">The error code that resulted from the failed computation.</param>
     /// <param name="errorMessage">The error message that resulted from the failed computation.</param>
     /// <returns>A new instance of the <see cref="Result{TValue}"/> class that represents a failed computation.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Result<TValue> Failure(ErrorCode errorCode, string errorMessage)
         => Failure(new Error(errorCode, errorMessage));
 
@@ -99,15 +104,18 @@ public abstract class Result<TValue>
     /// </summary>
     /// <param name="errors">The error collection that resulted from the failed computation.</param>
     /// <returns>A new instance of the <see cref="Task"/> class that represents a failed computation.</returns>
-    public static Task<Result<TValue>> FailureAsync(IReadOnlyErrorCollection errors) =>
-        Task.FromResult(Failure(errors));
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ValueTask<Result<TValue>> FailureAsync(IReadOnlyErrorCollection errors) =>
+        ValueTask.FromResult(Failure(errors));
 
     /// <summary>
     /// Creates a new instance of the <see cref="Task"/> class that represents a failed computation.
     /// </summary>
     /// <param name="error">The error that resulted from the failed computation.</param>
     /// <returns>A new instance of the <see cref="Task"/> class that represents a failed computation.</returns>
-    public static Task<Result<TValue>> FailureAsync(Error error) => Task.FromResult(Failure(error));
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ValueTask<Result<TValue>> FailureAsync(Error error) =>
+        ValueTask.FromResult(Failure(error));
 
     /// <summary>
     /// Creates a new instance of the <see cref="Task"/> class that represents a failed computation.
@@ -115,25 +123,32 @@ public abstract class Result<TValue>
     /// <param name="errorCode">The error code that resulted from the failed computation.</param>
     /// <param name="errorMessage">The error message that resulted from the failed computation.</param>
     /// <returns>A new instance of the <see cref="Task"/> class that represents a failed computation.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Task<Result<TValue>> FailureAsync(ErrorCode errorCode, string errorMessage) =>
         Task.FromResult(Failure(new Error(errorCode, errorMessage)));
 
     private sealed class SuccessResult(TValue value) : Result<TValue>
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override TResult Match<TResult>(
             Func<TValue, TResult> onSuccess,
             Func<IReadOnlyErrorCollection, TResult> onFailure
         ) => onSuccess(value);
 
-        public override Task<TResult> MatchAsync<TResult>(
-            Func<TValue, Task<TResult>> onSuccess,
-            Func<IReadOnlyErrorCollection, Task<TResult>> onFailure
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override ValueTask<TResult> MatchAsync<TResult>(
+            Func<TValue, ValueTask<TResult>> onSuccess,
+            Func<IReadOnlyErrorCollection, ValueTask<TResult>> onFailure
         ) => onSuccess(value);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override Result<TNewValue> Bind<TNewValue>(Func<TValue, Result<TNewValue>> func)
             => func(value);
 
-        public override Task<Result<TNewValue>> BindAsync<TNewValue>(Func<TValue, Task<Result<TNewValue>>> func)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override ValueTask<Result<TNewValue>> BindAsync<TNewValue>(
+            Func<TValue, ValueTask<Result<TNewValue>>> func)
         {
             return func(value);
         }
@@ -153,20 +168,25 @@ public abstract class Result<TValue>
             _error = error;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override TResult Match<TResult>(
             Func<TValue, TResult> onSuccess,
             Func<IReadOnlyErrorCollection, TResult> onFailure
         ) => onFailure(_error);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override Result<TNewValue> Bind<TNewValue>(Func<TValue, Result<TNewValue>> func)
             => Result<TNewValue>.Failure(_error);
 
-        public override Task<Result<TNewValue>> BindAsync<TNewValue>(Func<TValue, Task<Result<TNewValue>>> func)
-            => Task.FromResult(Result<TNewValue>.Failure(_error));
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override ValueTask<Result<TNewValue>> BindAsync<TNewValue>(
+            Func<TValue, ValueTask<Result<TNewValue>>> func)
+            => ValueTask.FromResult(Result<TNewValue>.Failure(_error));
 
-        public override Task<TResult> MatchAsync<TResult>(
-            Func<TValue, Task<TResult>> onSuccess,
-            Func<IReadOnlyErrorCollection, Task<TResult>> onFailure)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override ValueTask<TResult> MatchAsync<TResult>(
+            Func<TValue, ValueTask<TResult>> onSuccess,
+            Func<IReadOnlyErrorCollection, ValueTask<TResult>> onFailure)
             => onFailure(_error);
     }
 }
