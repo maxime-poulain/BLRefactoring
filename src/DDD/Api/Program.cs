@@ -4,6 +4,7 @@ using BLRefactoring.DDD.Application.Services.TrainingServices;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
+using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate.DomainEvents;
 using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.DDD.Infrastructure;
 using BLRefactoring.Shared.DDD.Infrastructure.Repositories;
@@ -40,6 +41,12 @@ builder.Services.AddDbContext<TrainingContext>((serviceProvider, options) =>
             serviceProvider.GetRequiredService<IsTransientSaveChangesInterceptor>(),
             serviceProvider.GetRequiredService<IsTransientMaterializationInterceptor>())
     );
+
+builder.Services.AddMediator(options =>
+{
+    options.ServiceLifetime = ServiceLifetime.Scoped;
+    options.Assemblies = [typeof(TrainerDeletedDomainEvent).Assembly, typeof(DeleteTrainingWhenTrainerDeletedEventHandler).Assembly];
+});
 
 var app = builder.Build();
 
