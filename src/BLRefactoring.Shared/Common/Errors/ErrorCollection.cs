@@ -92,8 +92,8 @@ public sealed class ErrorCollection : IErrorCollection, IReadOnlyErrorCollection
     public TResult Match<TResult>(Func<TResult> onSuccess, Func<IReadOnlyErrorCollection, TResult> onFailure)
     {
         return this.HasErrors() ?
-            onSuccess() :
-            onFailure(this);
+            onFailure(this) :
+            onSuccess();
     }
 
     public Error this[int index]

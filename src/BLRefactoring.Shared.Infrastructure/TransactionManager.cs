@@ -1,7 +1,7 @@
-using BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore;
+using BLRefactoring.Shared.Infrastructure.Repositories.EfCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
-namespace BLRefactoring.Shared.DDD.Infrastructure;
+namespace BLRefactoring.Shared.Infrastructure;
 
 public class TransactionManager(TrainingContext trainingContext)
     : ITransactionManager, IDisposable, IAsyncDisposable

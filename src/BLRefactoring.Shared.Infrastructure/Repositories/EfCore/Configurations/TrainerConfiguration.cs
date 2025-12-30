@@ -2,7 +2,7 @@ using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore.Configurations;
+namespace BLRefactoring.Shared.Infrastructure.Repositories.EfCore.Configurations;
 
 public class TrainerConfiguration : AggregateRootTypeConfiguration<Trainer, TrainerId>
 {

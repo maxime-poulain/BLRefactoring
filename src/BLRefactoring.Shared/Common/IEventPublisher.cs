@@ -10,8 +10,8 @@ public interface IEventPublisher
     /// <summary>
     /// Asynchronously publishes a collection of <see cref="IDomainEvent"/>.
     /// </summary>
-    /// <param name="domainEvents">A collection of <see cref="IDomainEvent"/> to be published.</param>
+    /// <param name="havingDomainEvents">A collection of <see cref="IDomainEvent"/> to be published.</param>
     /// <param name="cancellationToken">A CancellationToken used to signal cancellation of the operation.</param>
     /// <returns>A Task representing the asynchronous operation.</returns>
-    Task PublishAsync(IEnumerable<IDomainEvent> domainEvents, CancellationToken cancellationToken);
+    Task PublishAsync(IHasDomainEvents[] havingDomainEvents, CancellationToken cancellationToken);
 }

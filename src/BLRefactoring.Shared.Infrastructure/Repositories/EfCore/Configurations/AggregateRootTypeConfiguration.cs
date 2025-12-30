@@ -2,7 +2,7 @@ using BLRefactoring.Shared.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore.Configurations;
+namespace BLRefactoring.Shared.Infrastructure.Repositories.EfCore.Configurations;
 
 public abstract class AggregateRootTypeConfiguration<TEntity, TEntityId> : IEntityTypeConfiguration<TEntity>
     where TEntity : AggregateRoot<TEntityId>

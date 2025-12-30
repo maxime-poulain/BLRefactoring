@@ -3,7 +3,7 @@ using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate;
 using Microsoft.EntityFrameworkCore;
 
-namespace BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore;
+namespace BLRefactoring.Shared.Infrastructure.Repositories.EfCore;
 
 public class TrainingContext(DbContextOptions<TrainingContext> options, IEventPublisher publisher)
     : DbContext(options)
@@ -20,12 +20,12 @@ public class TrainingContext(DbContextOptions<TrainingContext> options, IEventPu
         bool acceptAllChangesOnSuccess,
         CancellationToken cancellationToken = default)
     {
-        var domainEvents = ChangeTracker.Entries<IHasDomainEvents>()
-            .SelectMany(entry => entry.Entity.DomainEvents)
+        var havingDomainEvents = ChangeTracker.Entries<IHasDomainEvents>()
+            .Select(entry => entry.Entity)
             .ToArray();
 
         var entriesWrittenCount = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-        await publisher.PublishAsync(domainEvents, cancellationToken);
+        await publisher.PublishAsync(havingDomainEvents, cancellationToken);
         return entriesWrittenCount;
     }
 

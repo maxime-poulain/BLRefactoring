@@ -3,7 +3,7 @@ using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore.Configurations;
+namespace BLRefactoring.Shared.Infrastructure.Repositories.EfCore.Configurations;
 
 public class TrainingConfiguration : AggregateRootTypeConfiguration<Training, TrainingId>
 {

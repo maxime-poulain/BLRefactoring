@@ -4,7 +4,7 @@ using System.Reflection;
 using BLRefactoring.Shared.Common;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
-namespace BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore.Interceptor;
+namespace BLRefactoring.Shared.Infrastructure.Repositories.EfCore.Interceptor;
 
 /// <summary>
 /// Interceptor for handling the "IsTransient" property of entities during the SaveChanges process in Entity Framework.

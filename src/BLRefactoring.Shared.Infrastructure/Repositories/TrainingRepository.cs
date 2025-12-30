@@ -1,10 +1,10 @@
 using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate.ValueObjects;
-using BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore;
+using BLRefactoring.Shared.Infrastructure.Repositories.EfCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace BLRefactoring.Shared.DDD.Infrastructure.Repositories;
+namespace BLRefactoring.Shared.Infrastructure.Repositories;
 public class TrainingRepository(TrainingContext trainingContext)
     : ITrainingRepository, IUniquenessTitleChecker
 {

@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\..\BLRefactoring.Shared.Infrastructure\BLRefactoring.Shared.Infrastructure.csproj" />
     <ProjectReference Include="..\Domain\BLRefactoring.DDDWithCqrs.Domain.csproj" />
   </ItemGroup>
 

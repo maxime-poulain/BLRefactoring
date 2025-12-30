@@ -25,7 +25,6 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     /// </summary>
     private Trainer()
     {
-        AddDomainEvent(new TrainerCreatedDomainEvent(this));
     }
 
     /// <summary>
@@ -64,7 +63,11 @@ public sealed class Trainer : AggregateRoot<TrainerId>
         return trainer
             .ChangeName(firstname, lastname)
             .Bind(() => trainer.ChangeEmail(email))
-            .Match(() => Result<Trainer>.Success(trainer), Result<Trainer>.Failure);
+            .Match(() =>
+            {
+                trainer.AddDomainEvent(new TrainerCreatedDomainEvent(trainer));
+                return Result<Trainer>.Success(trainer);
+            }, Result<Trainer>.Failure);
     }
 
     /// <summary>

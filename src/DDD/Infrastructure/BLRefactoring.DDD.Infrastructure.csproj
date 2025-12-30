@@ -5,6 +5,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\BLRefactoring.Shared.Infrastructure\BLRefactoring.Shared.Infrastructure.csproj" />
     <ProjectReference Include="..\Application\BLRefactoring.DDD.Application.csproj" />
   </ItemGroup>
 

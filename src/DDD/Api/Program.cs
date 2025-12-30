@@ -6,10 +6,10 @@ using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate.DomainEvents;
 using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate;
-using BLRefactoring.Shared.DDD.Infrastructure;
-using BLRefactoring.Shared.DDD.Infrastructure.Repositories;
-using BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore;
-using BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore.Interceptor;
+using BLRefactoring.Shared.Infrastructure;
+using BLRefactoring.Shared.Infrastructure.Repositories;
+using BLRefactoring.Shared.Infrastructure.Repositories.EfCore;
+using BLRefactoring.Shared.Infrastructure.Repositories.EfCore.Interceptor;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

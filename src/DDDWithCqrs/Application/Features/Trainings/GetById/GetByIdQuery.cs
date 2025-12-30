@@ -1,5 +1,5 @@
 using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.DDD.Infrastructure.Repositories.EfCore;
+using BLRefactoring.Shared.Infrastructure.Repositories.EfCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetById;

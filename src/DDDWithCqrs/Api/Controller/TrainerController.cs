@@ -49,11 +49,11 @@ public class TrainerController(
         return Ok(await queryDispatcher.DispatchAsync(new GetAllTrainersQuery(), cancellationToken));
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:guid}")]
     [ProducesResponseType(typeof(void), StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> DeleteAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult> DeleteAsync([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         var result = await commandDispatcher.DispatchAsync(new DeleteTrainerCommand(id), cancellationToken);
 

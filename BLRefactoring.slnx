@@ -11,5 +11,6 @@
     <Project Path="src/DDDWithCqrs/Domain/BLRefactoring.DDDWithCqrs.Domain.csproj" />
     <Project Path="src/DDDWithCqrs/Infrastructure/BLRefactoring.DDDWithCqrs.Infrastructure.csproj" />
   </Folder>
+  <Project Path="src/BLRefactoring.Shared.Infrastructure/BLRefactoring.Shared.Infrastructure.csproj" />
   <Project Path="src/BLRefactoring.Shared/BLRefactoring.Shared.csproj" />
 </Solution>
