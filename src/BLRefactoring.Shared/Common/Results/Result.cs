@@ -33,6 +33,13 @@ public abstract class Result
     );
 
     /// <summary>
+    /// Executes one of the provided actions based on whether the result is a success or a failure.
+    /// </summary>
+    /// <param name="onSuccess">An action to execute if the result is a success.</param>
+    /// <param name="onFailure">An action to execute if the result is a failure, taking the error collection as a parameter.</param>
+    public abstract void Switch(Action onSuccess, Action<IReadOnlyErrorCollection> onFailure);
+
+    /// <summary>
     /// Creates a new instance of the <see cref="Result"/> class that represents a successful computation.
     /// </summary>
     /// <returns>A new instance of the <see cref="Result"/> class that represents a successful computation.</returns>
@@ -101,6 +108,10 @@ public abstract class Result
         ) => onSuccess();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override void Switch(Action onSuccess, Action<IReadOnlyErrorCollection> onFailure)
+            => onSuccess();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override Result Bind(Func<Result> func)
             => func();
     }
@@ -112,6 +123,10 @@ public abstract class Result
             Func<TResult> onSuccess,
             Func<IReadOnlyErrorCollection, TResult> onFailure
         ) => onFailure(error);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override void Switch(Action onSuccess, Action<IReadOnlyErrorCollection> onFailure)
+            => onFailure(error);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override Result Bind(Func<Result> func)

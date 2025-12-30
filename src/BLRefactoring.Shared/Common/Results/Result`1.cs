@@ -37,6 +37,25 @@ public abstract class Result<TValue>
         Func<IReadOnlyErrorCollection, ValueTask<TResult>> onFailure);
 
     /// <summary>
+    /// Executes one of the provided actions based on whether the result is a success or a failure.
+    /// </summary>
+    /// <param name="onSuccess">An action to execute if the result is a success.</param>
+    /// <param name="onFailure">An action to execute if the result is a failure.</param>
+    public abstract void Switch(
+        Action<TValue> onSuccess,
+        Action<IReadOnlyErrorCollection> onFailure);
+
+    /// <summary>
+    /// Executes one of the provided asynchronous actions based on whether the result is a success or a failure.
+    /// </summary>
+    /// <param name="onSuccess">An asynchronous action to execute if the result is a success.</param>
+    /// <param name="onFailure">An asynchronous action to execute if the result is a failure.</param>
+    /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
+    public abstract ValueTask SwitchAsync(
+        Func<TValue, ValueTask> onSuccess,
+        Func<IReadOnlyErrorCollection, ValueTask> onFailure);
+
+    /// <summary>
     /// Chains computations by applying the provided function to the successful value.
     /// If the current result is a failure, the computation is skipped, and the error is propagated.
     /// </summary>
@@ -143,6 +162,14 @@ public abstract class Result<TValue>
         ) => onSuccess(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override void Switch(Action<TValue> onSuccess, Action<IReadOnlyErrorCollection> onFailure)
+            => onSuccess(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override ValueTask SwitchAsync(Func<TValue, ValueTask> onSuccess, Func<IReadOnlyErrorCollection, ValueTask> onFailure)
+            => onSuccess(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override Result<TNewValue> Bind<TNewValue>(Func<TValue, Result<TNewValue>> func)
             => func(value);
 
@@ -160,7 +187,7 @@ public abstract class Result<TValue>
 
         public FailureResult(Error error)
         {
-            _error = new ErrorCollection(new[] { error });
+            _error = new ErrorCollection([error]);
         }
 
         public FailureResult(IReadOnlyErrorCollection error)
@@ -175,6 +202,10 @@ public abstract class Result<TValue>
         ) => onFailure(_error);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override void Switch(Action<TValue> onSuccess, Action<IReadOnlyErrorCollection> onFailure)
+            => onFailure(_error);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override Result<TNewValue> Bind<TNewValue>(Func<TValue, Result<TNewValue>> func)
             => Result<TNewValue>.Failure(_error);
 
@@ -187,6 +218,10 @@ public abstract class Result<TValue>
         public override ValueTask<TResult> MatchAsync<TResult>(
             Func<TValue, ValueTask<TResult>> onSuccess,
             Func<IReadOnlyErrorCollection, ValueTask<TResult>> onFailure)
+            => onFailure(_error);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override ValueTask SwitchAsync(Func<TValue, ValueTask> onSuccess, Func<IReadOnlyErrorCollection, ValueTask> onFailure)
             => onFailure(_error);
     }
 }
