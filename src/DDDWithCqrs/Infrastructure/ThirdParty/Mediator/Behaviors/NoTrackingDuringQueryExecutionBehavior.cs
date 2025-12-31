@@ -1,5 +1,5 @@
 using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.Infrastructure.Repositories.EfCore;
+using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 

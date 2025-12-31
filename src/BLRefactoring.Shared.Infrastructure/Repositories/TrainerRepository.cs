@@ -1,5 +1,5 @@
 using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
-using BLRefactoring.Shared.Infrastructure.Repositories.EfCore;
+using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BLRefactoring.Shared.Infrastructure.Repositories;

@@ -1,15 +1,15 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
 using BLRefactoring.Shared.Common;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
-namespace BLRefactoring.Shared.Infrastructure.Repositories.EfCore.Interceptor;
+namespace BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Interceptor;
 
 /// <summary>
-/// Interceptor for handling the "IsTransient" property of entities during the SaveChanges process in Entity Framework.
+/// Interceptor for handling the "IsTransient" property of entities during the materialization process in Entity Framework.
 /// </summary>
-public class IsTransientSaveChangesInterceptor : SaveChangesInterceptor
+public class IsTransientMaterializationInterceptor : IMaterializationInterceptor
 {
     /// <summary>
     /// A thread-safe dictionary that caches delegates for setting the "IsTransient" property of entities.
@@ -27,35 +27,28 @@ public class IsTransientSaveChangesInterceptor : SaveChangesInterceptor
     private static readonly HashSet<Type> EntityTypes = [];
 
     /// <summary>
-    /// Overrides the SavedChangesAsync method to reset the "IsTransient" property of entities after changes are saved.
+    /// Initializes an entity instance during the materialization process.
     /// </summary>
-    /// <param name="eventData">The event data for the save changes operation.</param>
-    /// <param name="result">The result of the save changes operation.</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <returns>A task that represents the asynchronous operation, containing the result of the save changes operation.</returns>
-    public override ValueTask<int> SavedChangesAsync(
-        SaveChangesCompletedEventData eventData,
-        int result,
-        CancellationToken cancellationToken = default)
+    /// <param name="materializationData">The data related to the materialization process.</param>
+    /// <param name="instance">The entity instance being initialized.</param>
+    /// <returns>The initialized entity instance.</returns>
+    public object InitializedInstance(MaterializationInterceptionData materializationData, object instance)
     {
-        var context = eventData.Context ?? throw new InvalidOperationException("DbContext is null in SaveChangesCompletedEventData.");
-        foreach (var entry in context.ChangeTracker.Entries())
+        var entityType = materializationData.EntityType.ConstructorBinding!.RuntimeType;
+        if (!IsAssignableToGenericType(entityType, typeof(Entity<>)))
         {
-            var entityType = entry.Entity.GetType();
-            if (!IsAssignableToGenericType(entityType, typeof(Entity<>)))
-            {
-                continue;
-            }
-
-            if (!IsTransientSetters.TryGetValue(entityType, out var isTransientSetter))
-            {
-                isTransientSetter = BuildSetIsTransientDelegate(entityType);
-                IsTransientSetters[entityType] = isTransientSetter;
-            }
-
-            isTransientSetter(entry.Entity, false);
+            return instance;
         }
-        return base.SavedChangesAsync(eventData, result, cancellationToken);
+
+        if (!IsTransientSetters.TryGetValue(entityType, out var isTransientSetter))
+        {
+            isTransientSetter = BuildSetIsTransientDelegate(entityType);
+            IsTransientSetters[entityType] = BuildSetIsTransientDelegate(entityType);
+        }
+
+        isTransientSetter(instance, false);
+
+        return instance;
     }
 
     /// <summary>
@@ -120,7 +113,7 @@ public class IsTransientSaveChangesInterceptor : SaveChangesInterceptor
     /// <returns>The field information if found; otherwise, null.</returns>
     private static FieldInfo? GetFieldInBaseClass(Type type, string fieldName)
     {
-        Type originalType = type;
+        var originalType = type;
 
         if (IsTransientFieldInfos.TryGetValue(originalType, out var fieldInfo))
         {

@@ -15,4 +15,8 @@
       <ProjectReference Include="..\BLRefactoring.Shared\BLRefactoring.Shared.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="ThirdParty\" />
+    </ItemGroup>
+
 </Project>

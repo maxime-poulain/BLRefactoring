@@ -1,4 +1,4 @@
-using BLRefactoring.Shared.Infrastructure.Repositories.EfCore;
+using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace BLRefactoring.Shared.Infrastructure;

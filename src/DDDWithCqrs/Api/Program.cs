@@ -9,9 +9,10 @@ using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate.DomainEvents;
 using BLRefactoring.Shared.Infrastructure;
+using BLRefactoring.Shared.Infrastructure.Extensions;
 using BLRefactoring.Shared.Infrastructure.Repositories;
-using BLRefactoring.Shared.Infrastructure.Repositories.EfCore;
-using BLRefactoring.Shared.Infrastructure.Repositories.EfCore.Interceptor;
+using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
+using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Interceptor;
 using FluentValidation;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
@@ -35,13 +36,10 @@ builder.Services.AddMediator(configuration =>
 builder.Services.AddTransient<ICommandDispatcher, MediatorCommandDispatcher>();
 builder.Services.AddTransient<IQueryDispatcher, MediatorQueryDispatcher>();
 
-builder.Services.AddTransient<ITrainingRepository, TrainingRepository>();
 builder.Services.AddTransient<IUniquenessTitleChecker, TrainingRepository>();
-builder.Services.AddTransient<ITrainerRepository, TrainerRepository>();
 
-builder.Services.AddTransient<IEventPublisher, MediatorRDomainEventPublisher>();
 
-builder.Services.AddScoped<ITransactionManager, TransactionManager>();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services
     .AddSingleton<IsTransientSaveChangesInterceptor>()

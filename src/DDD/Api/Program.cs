@@ -7,9 +7,11 @@ using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate.DomainEvents;
 using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.Infrastructure;
+using BLRefactoring.Shared.Infrastructure.Extensions;
 using BLRefactoring.Shared.Infrastructure.Repositories;
-using BLRefactoring.Shared.Infrastructure.Repositories.EfCore;
-using BLRefactoring.Shared.Infrastructure.Repositories.EfCore.Interceptor;
+using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
+using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Interceptor;
+using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Interceptors;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,24 +24,22 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddTransient<ITrainingApplicationService, TrainingApplicationService>();
-builder.Services.AddTransient<ITrainingRepository, TrainingRepository>();
 builder.Services.AddTransient<IUniquenessTitleChecker, TrainingRepository>();
-builder.Services.AddTransient<ITrainerRepository, TrainerRepository>();
 builder.Services.AddTransient<ITrainerApplicationService, TrainerApplicationService>();
 
-builder.Services.AddTransient<IEventPublisher, MediatorRDomainEventPublisher>();
-
-builder.Services.AddScoped<ITransactionManager, TransactionManager>();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services
     .AddSingleton<IsTransientSaveChangesInterceptor>()
-    .AddSingleton<IsTransientMaterializationInterceptor>();
+    .AddSingleton<IsTransientMaterializationInterceptor>()
+    .AddSingleton<DomainEventInterceptor>();
 
 builder.Services.AddDbContext<TrainingContext>((serviceProvider, options) =>
     options.UseSqlite(builder.Configuration.GetConnectionString("TrainingContext"))
         .AddInterceptors(
             serviceProvider.GetRequiredService<IsTransientSaveChangesInterceptor>(),
-            serviceProvider.GetRequiredService<IsTransientMaterializationInterceptor>())
+            serviceProvider.GetRequiredService<IsTransientMaterializationInterceptor>(),
+            serviceProvider.GetRequiredService<DomainEventInterceptor>())
     );
 
 builder.Services.AddMediator(options =>
