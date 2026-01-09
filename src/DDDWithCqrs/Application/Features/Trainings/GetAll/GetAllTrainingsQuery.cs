@@ -1,3 +1,5 @@
+using BLRefactoring.Shared.Application.Dtos;
+using BLRefactoring.Shared.Application.Dtos.Training;
 using BLRefactoring.Shared.CQS;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
@@ -14,14 +16,9 @@ public class GetAllTrainingQueryHandler(TrainingContext trainingContext)
     public async ValueTask<List<TrainingDto>> Handle(GetAllTrainingsQuery request, CancellationToken cancellationToken)
     {
         // In real life use pagination.
-        return await trainingContext.Trainings
-            .Select(training => new TrainingDto()
-            {
-                Id = training.Id,
-                StartDate = training.StartDate,
-                EndDate = training.EndDate,
-                TrainerId = training.TrainerId,
-                Title = training.Title
-            }).ToListAsync(cancellationToken);
+        return await trainingContext.
+            Trainings
+            .Select(x => x.ToDto())
+            .ToListAsync(cancellationToken);
     }
 }

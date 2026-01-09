@@ -1,0 +1,222 @@
+﻿@page "/trainings/create"
+@page "/trainings/edit/{TrainingId:guid}"
+@using BLRefactoring.GeneratedClients
+@using FluentValidation
+@using Severity = MudBlazor.Severity
+@inject ITrainingClient TrainingClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Créer une formation</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h4" Class="mb-4">Créer une nouvelle formation</MudText>
+
+        <MudForm @ref="_form" Model="@_model" Validation="@(_validator.ValidateValue)" ValidationDelay="0">
+            <MudTextField @bind-Value="_model.Title"
+                          For="@(() => _model.Title)"
+                          Label="Titre"
+                          Variant="Variant.Outlined"
+                          Immediate="true"
+                          Class="mb-4"/>
+
+            <MudTextField @bind-Value="_model.Description"
+                          For="@(() => _model.Description)"
+                          Label="Description"
+                          Variant="Variant.Outlined"
+                          Lines="5"
+                          Immediate="true"
+                          Class="mb-4"/>
+
+            <MudTextField @bind-Value="_model.Prerequisites"
+                          For="@(() => _model.Prerequisites)"
+                          Label="Prérequis"
+                          Variant="Variant.Outlined"
+                          Lines="3"
+                          Immediate="true"
+                          Class="mb-4"/>
+
+            <MudTextField @bind-Value="_model.AcquiredSkills"
+                          For="@(() => _model.AcquiredSkills)"
+                          Label="Compétences acquises"
+                          Variant="Variant.Outlined"
+                          Lines="3"
+                          Immediate="true"
+                          Class="mb-4"/>
+
+            <MudChipSet @bind-SelectedValues="_selectedTopics"
+                        For="@(() => _model.Topics)"
+                        SelectionMode="SelectionMode.MultiSelection"
+                        Color="Color.Info"
+                        Class="mb-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-2">Topics</MudText>
+                @foreach (var topic in _availableTopics)
+                {
+                    <MudChip T="string" Color="Color.Primary" Value="@topic">@topic</MudChip>
+                }
+            </MudChipSet>
+
+            <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-6">
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Secondary"
+                           OnClick="Cancel">
+                    Annuler
+                </MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Disabled="_isProcessing"
+                           OnClick="Submit">
+                    @if (_isProcessing)
+                    {
+                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                        <MudText Class="ms-2">Création...</MudText>
+                    }
+                    else
+                    {
+                        <MudText>Créer</MudText>
+                    }
+                </MudButton>
+            </MudStack>
+        </MudForm>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private MudForm _form = null!;
+    private TrainingCreationRequest _model = new();
+    private readonly TrainingCreationRequestValidator _validator = new();
+    private bool _isProcessing;
+
+    [Parameter]
+    public Guid? TrainingId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _model.Topics = [];
+        // If TrainingId is provided, load existing training data for editing
+        if (TrainingId.HasValue)
+        {
+            var existingTraining = await TrainingClient.GetTrainingByIdAsync(TrainingId.Value);
+            _model.Title = existingTraining.Title;
+            _model.Description = existingTraining.Description;
+            _model.Prerequisites = existingTraining.Prerequisites;
+            _model.AcquiredSkills = existingTraining.AcquiredSkills;
+            _model.Topics = existingTraining.Topics.ToList();
+        }
+    }
+
+    private readonly List<string> _availableTopics =
+    [
+        "C#", ".NET", "ASP.NET Core", "Blazor", "Entity Framework",
+        "Architecture", "Clean Code", "DDD", "CQRS", "Microservices", "Programming"
+    ];
+
+    private IReadOnlyCollection<string> _selectedTopics
+    {
+        get => (IReadOnlyCollection<string>)_model.Topics;
+        set => _model.Topics = value.ToList();
+    }
+
+    private async Task Submit()
+    {
+        await _form.Validate();
+
+        if (!_form.IsValid)
+        {
+            Snackbar.Add("Form is invalid. Please correct", Severity.Error);
+            return;
+        }
+
+        _isProcessing = true;
+
+        try
+        {
+            if (TrainingId.HasValue)
+            {
+                var request = new TrainingEditionRequest()
+                {
+                    Topics = _model.Topics,
+                    Title = _model.Title,
+                    Description = _model.Description,
+                    Prerequisites = _model.Prerequisites,
+                    AcquiredSkills = _model.AcquiredSkills,
+                    TrainingId = TrainingId.Value
+                };
+                await TrainingClient.UpdateTrainingAsync(request);
+                Snackbar.Add("Training Updated with success", Severity.Success);
+                NavigationManager.NavigateTo($"/trainings");
+                return;
+            }
+
+            await TrainingClient.CreateTrainingAsync(_model);
+            Snackbar.Add("Training created with sucdess", Severity.Success);
+            NavigationManager.NavigateTo($"/trainings");
+        }
+        catch (ApiException<List<Error>> ex)
+        {
+            foreach (var error in ex.Result)
+            {
+                Snackbar.Add($"{error.ErrorMessage}", Severity.Error);
+            }
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add($"Error during creation: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/trainings");
+    }
+
+    public class TrainingCreationRequestValidator : AbstractValidator<TrainingCreationRequest>
+
+    {
+        public TrainingCreationRequestValidator()
+        {
+            RuleFor(x => x.Title)
+                .NotEmpty().WithMessage("Title is mandatory")
+                .MinimumLength(5).WithMessage("Title must be at least 5 characters long")
+                .MaximumLength(200).WithMessage("Title cannot exceed 200 characters");
+
+            RuleFor(x => x.Description)
+                .NotEmpty()
+                .WithMessage("Description is mandatory")
+                .MaximumLength(2000)
+                .WithMessage("La description ne peut pas dépasser 2000 caractères");
+
+            RuleFor(x => x.Prerequisites)
+                .NotEmpty()
+                .WithMessage("Prerequisites are mandatory")
+                .MaximumLength(1000)
+                .WithMessage("Prerequisites cannot exceed 1000 characters");
+
+            RuleFor(x => x.AcquiredSkills)
+                .NotEmpty()
+                .WithMessage("Acquired skills are mandatory")
+                .MaximumLength(1000)
+                .WithMessage("Acquired skills cannot exceed 1000 characters");
+
+            RuleFor(x => x.Topics)
+                .NotEmpty()
+                .WithMessage("At least one topic must be selected")
+                .Must(topics => topics != null && topics.Count() <= 10)
+                .WithMessage("Cannot select more than 10 topics");
+        }
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<TrainingCreationRequest>.CreateWithOptions((TrainingCreationRequest)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+
+}

@@ -1,8 +1,11 @@
-using BLRefactoring.DDD.Application.Services.TrainingServices.Dtos;
+using BLRefactoring.Shared;
+using BLRefactoring.Shared.Application.Dtos;
+using BLRefactoring.Shared.Application.Dtos.Training;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
-using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
-using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
+using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
+using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.Messages;
 
 namespace BLRefactoring.DDD.Application.Services.TrainingServices;
 
@@ -14,45 +17,55 @@ namespace BLRefactoring.DDD.Application.Services.TrainingServices;
 
 public interface ITrainingApplicationService
 {
-    Task<Result<TrainingDto>> CreateAsync(TrainingCreationRequest request);
-    Task<Result<TrainingDto>> GetByIdAsync(Guid id);
+    Task<Result<TrainingDto>> CreateAsync(TrainingCreationRequest request, CancellationToken cancellationToken = default);
+    Task<Result<TrainingDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<List<TrainingDto>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<Result<TrainingDto>> EditAsync(TrainingEditionRequest request, CancellationToken cancellationToken = default);
+    Task<Result<List<TrainingDto>>> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken = default);
+    Task<Result> DeleteAsync(Guid trainingId, CancellationToken cancellationToken = default);
 }
 
 public class TrainingApplicationService(
     ITrainerRepository trainerRepository,
     IUniquenessTitleChecker uniquenessTitleChecker,
-    ITrainingRepository trainingRepository)
+    ITrainingRepository trainingRepository,
+    ICurrentUserService currentUserService)
     : ITrainingApplicationService
 {
-    public async Task<Result<TrainingDto>> CreateAsync(TrainingCreationRequest request)
+    public async Task<Result<TrainingDto>> CreateAsync(TrainingCreationRequest request, CancellationToken cancellationToken = default)
     {
-        var trainer = await trainerRepository.GetByIdAsync(request.TrainerId);
+        var trainer = await trainerRepository.GetByIdAsync(currentUserService.TrainerId, cancellationToken);
 
         if (trainer is null)
         {
-            return Result<TrainingDto>.Failure(ErrorCode.Unspecified,
-                $"Trainer with id `{request.TrainerId}` not found.");
+            return Result<TrainingDto>.Failure(
+                ErrorCode.Unspecified,
+                $"Trainer with id `{currentUserService.TrainerId}` not found.");
         }
 
-        var result = await Training.CreateAsync(
-            request.Title,
-            request.StartDate,
-            request.EndDate,
-            trainer,
-            uniquenessTitleChecker);
+        var trainingCreationMessage = new TrainingCreationMessage
+        {
+            Title = request.Title,
+            Description = request.Description,
+            Prerequisites = request.Prerequisites,
+            AcquiredSkills = request.AcquiredSkills,
+            TrainerId = currentUserService.TrainerId,
+            Topics = request.Topics,
+            UserId = currentUserService.UserId
+        };
+
+        var result = await Training.CreateAsync(trainingCreationMessage, uniquenessTitleChecker, cancellationToken);
 
         return await result.MatchAsync(async training =>
         {
-            await trainingRepository.SaveAsync(training);
+            await trainingRepository.SaveAsync(training, cancellationToken);
             return Result<TrainingDto>.Success(training.ToDto());
         }, Result<TrainingDto>.FailureAsync);
-
     }
 
-    public async Task<Result<TrainingDto>> GetByIdAsync(Guid id)
+    public async Task<Result<TrainingDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var training = await trainingRepository.GetByIdAsync(id);
+        var training = await trainingRepository.GetByIdAsync((TrainingId)id, cancellationToken);
 
         return training is null
             ? Result<TrainingDto>.Failure(ErrorCode.NotFound, $"Training with id `{id}` not found.")
@@ -62,5 +75,57 @@ public class TrainingApplicationService(
     public async Task<List<TrainingDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return (await trainingRepository.GetAllAsync(cancellationToken)).ToDtos();
+    }
+
+    public async Task<Result<TrainingDto>> EditAsync(TrainingEditionRequest request, CancellationToken cancellationToken = default)
+    {
+        var training = await trainingRepository.GetByIdAsync((TrainingId)request.TrainingId, cancellationToken);
+
+        if (training is null)
+        {
+            return Result<TrainingDto>.Failure(
+                ErrorCode.NotFound,
+                $"Training with id `{request.TrainingId}` not found.");
+        }
+
+        var result = await training.EditAsync(
+            new TrainingEditionMessage
+            {
+                Title = request.Title,
+                Description = request.Description,
+                Prerequisites = request.Prerequisites,
+                AcquiredSkills = request.AcquiredSkills,
+                Topics = request.Topics
+            },
+            uniquenessTitleChecker,
+            cancellationToken);
+
+        return await result.MatchAsync(
+            onSuccess: async () =>
+            {
+                await trainingRepository.SaveAsync(training, cancellationToken);
+                return Result<TrainingDto>.Success(training.ToDto());
+            },
+            onFailure: Result<TrainingDto>.FailureAsync);
+    }
+
+    public async Task<Result<List<TrainingDto>>> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken = default)
+    {
+        var trainings = await trainingRepository.GetByTrainerIdAsync((TrainerId)trainerId, cancellationToken);
+        return Result<List<TrainingDto>>.Success(trainings.ToDtos());
+    }
+
+    public async Task<Result> DeleteAsync(Guid trainingId, CancellationToken cancellationToken = default)
+    {
+        var training = await trainingRepository.GetByIdAsync((TrainingId)trainingId, cancellationToken);
+        if (training is null)
+        {
+            return Result.Failure(
+                ErrorCode.NotFound,
+                $"Training with id `{trainingId}` not found.");
+        }
+
+        await trainingRepository.DeleteAsync(training, cancellationToken);
+        return Result.Success();
     }
 }

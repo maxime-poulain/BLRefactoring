@@ -1,7 +1,7 @@
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate;
+using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Delete;
 
@@ -15,7 +15,7 @@ public class DeleteTrainerCommandHandler(ITrainingRepository trainingRepository)
 {
     public async ValueTask<Result> Handle(DeleteTrainingCommand request, CancellationToken cancellationToken)
     {
-        var training = await trainingRepository.GetByIdAsync(request.Id, cancellationToken);
+        var training = await trainingRepository.GetByIdAsync((TrainingId)request.Id, cancellationToken);
 
         if (training == null)
         {

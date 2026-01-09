@@ -1,0 +1,110 @@
+﻿@page "/trainers/my-profile"
+@using FluentValidation
+@using BLRefactoring.GeneratedClients
+@using Microsoft.AspNetCore.Components.Authorization
+@using Severity = MudBlazor.Severity
+@inject ITrainerClient TrainerClient
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<MudContainer MaxWidth="MaxWidth.Medium">
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h4" Class="mb-4">My profile</MudText>
+
+        <MudForm Model="@model" @ref="@form" Validation="@(validator.ValidateValue)" ValidationDelay="0">
+            <MudTextField @bind-Value="model.Firstname"
+                          For="@(() => model.Firstname)"
+                          Label="Prénom"
+                          Variant="Variant.Outlined"
+                          Immediate="true"/>
+
+            <MudTextField @bind-Value="model.Lastname"
+                          For="@(() => model.Lastname)"
+                          Label="Nom"
+                          Variant="Variant.Outlined"
+                          Immediate="true"
+                          Class="mt-3"/>
+
+            <MudTextField @bind-Value="model.Email"
+                          For="@(() => model.Email)"
+                          Label="Email"
+                          Variant="Variant.Outlined"
+                          Immediate="true"
+                          InputType="InputType.Email"
+                          Class="mt-3"/>
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="@(async () => await Submit())"
+                       Class="mt-4">
+                Edit
+            </MudButton>
+        </MudForm>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private MudForm form = null!;
+    private TrainerDto model = new();
+    private TrainerProfileValidator validator = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        var trainerIdClaim = user.FindFirst("trainer_id");
+
+        if (trainerIdClaim != null && Guid.TryParse(trainerIdClaim.Value, out var trainerId))
+        {
+            var trainer = await TrainerClient.GetByIdAsync(trainerId);
+            model.Firstname = trainer.Firstname;
+            model.Lastname = trainer.Lastname;
+            model.Email = trainer.Email;
+        }
+    }
+
+    private async Task Submit()
+    {
+        await form.Validate();
+
+        if (form.IsValid)
+        {
+            try
+            {
+                //var result = await TrainerClient.GetByIdAsync(Id)
+                Snackbar.Add("Formateur créé avec succès", Severity.Success);
+                //NavigationManager.NavigateTo($"/trainer/{result.Id}");
+            }
+            catch (ApiException ex)
+            {
+                Snackbar.Add($"Erreur lors de la création: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    public class TrainerProfileValidator : AbstractValidator<TrainerDto>
+    {
+        public TrainerProfileValidator()
+        {
+            RuleFor(x => x.Firstname)
+                .NotEmpty().WithMessage("First name is required")
+                .Length(2, 50).WithMessage("First name must be between 2 and 50 characters");
+
+            RuleFor(x => x.Lastname)
+                .NotEmpty().WithMessage("Name is required")
+                .Length(2, 50).WithMessage("Name must be between 2 and 50 characters");
+
+            RuleFor(x => x.Email)
+                .NotEmpty().WithMessage("Email is required")
+                .EmailAddress().WithMessage("Invalid email format");
+        }
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<TrainerDto>.CreateWithOptions((TrainerDto)model, x => x.IncludeProperties(propertyName)));
+            return result.IsValid ? Array.Empty<string>() : result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+}

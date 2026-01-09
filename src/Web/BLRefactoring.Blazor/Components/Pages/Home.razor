@@ -1,0 +1,15 @@
+﻿@page "/"
+@inject NavigationManager NavigationManager
+<PageTitle>Home</PageTitle>
+
+@using FluentValidation
+@using Severity = MudBlazor.Severity
+
+@code {
+
+    protected override void OnInitialized()
+    {
+        NavigationManager.NavigateTo("/login");
+    }
+
+}

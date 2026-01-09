@@ -2,7 +2,7 @@ using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Delete;
 

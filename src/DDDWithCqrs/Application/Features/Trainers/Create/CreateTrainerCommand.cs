@@ -1,7 +1,8 @@
 using System.Text.Json.Serialization;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.Messages;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
 
@@ -19,7 +20,16 @@ public class CreateTrainerCommandHandler(ITrainerRepository trainerRepository)
 {
     public async ValueTask<Result> Handle(CreateTrainerCommand request, CancellationToken cancellationToken)
     {
-        var trainerResult = Trainer.Create(request.TrainerId, request.Firstname, request.Lastname, request.Email);
+        var message = new TrainerCreationMessage
+        {
+            Firstname = request.Firstname,
+            Lastname = request.Lastname,
+            Email = request.Email,
+            UserId = Guid.Empty,
+            Bio = "<>"
+        };
+
+        var trainerResult = Trainer.Create(message);
 
         return await trainerResult.MatchAsync(async trainer =>
         {

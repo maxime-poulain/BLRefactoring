@@ -1,0 +1,142 @@
+﻿@page "/trainings"
+@using BLRefactoring.Blazor.Components.Shared
+@using BLRefactoring.GeneratedClients
+@using Microsoft.AspNetCore.Components.Authorization
+@inject ITrainingClient TrainingClient
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>My trainings</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">My Trainings</MudText>
+    <MudButton
+        Href="/trainings/create"
+        EndIcon="@Icons.Material.Filled.Add"
+        OnClick="() => NavigateToTrainingCreation()"
+        Color="Color.Primary"
+        Variant="Variant.Filled"
+        Class="mb-4">
+        Create New Training
+    </MudButton>
+
+    @if (_trainings == null)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (_trainings.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">No training available.</MudAlert>
+    }
+    else
+    {
+        <MudGrid>
+            @foreach (var training in _trainings)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.h6">@training.Title</MudText>
+                            <MudText Typo="Typo.body2" Class="mt-2">
+                                <strong>Topics:</strong>
+                            </MudText>
+                            <MudChipSet T="string">
+                            @foreach (var topic in training.Topics)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Primary">@topic</MudChip>
+                            }
+                            </MudChipSet>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton StartIcon="@Icons.Material.Filled.Edit"
+                                      Color="Color.Primary"
+                                      Variant="Variant.Text"
+                                      OnClick="() => EditTraining(training.Id)">
+                                Edit
+                            </MudButton>
+                            <MudButton StartIcon="@Icons.Material.Filled.Delete"
+                                      Color="Color.Error"
+                                      Variant="Variant.Text"
+                                      OnClick="() => ConfirmDelete(training.Id, training.Title)">
+                                Delete
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    private List<TrainingDto>? _trainings;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        var user = authState.User;
+
+        var trainerIdClaim = user.FindFirst("trainer_id");
+        if (trainerIdClaim != null && Guid.TryParse(trainerIdClaim.Value, out var trainerId))
+        {
+            _trainings = await TrainingClient.GetByTrainerIdAsync(trainerId);
+        }
+        else
+        {
+            Snackbar.Add("Trainer ID not found in user claims.", Severity.Error);
+        }
+    }
+
+    private void EditTraining(Guid trainingId)
+    {
+        NavigationManager.NavigateTo($"/trainings/edit/{trainingId}");
+    }
+
+    private void NavigateToTrainingCreation()
+    {
+        NavigationManager.NavigateTo("/trainings/create");
+    }
+
+    private async Task ConfirmDelete(Guid trainingId, string trainingTitle)
+    {
+        var parameters = new DialogParameters
+        {
+            { "ContentText", $"You are about to delete '{trainingTitle}', are you sure ?" },
+            { "ButtonText", "Confirm" },
+            { "Color", Color.Error }
+        };
+
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small };
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirm", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await DeleteTraining(trainingId);
+        }
+    }
+
+    private async Task DeleteTraining(Guid trainingId)
+    {
+        try
+        {
+            await TrainingClient.DeleteTrainingAsync(trainingId);
+            Snackbar.Add("Training deleted successfully", Severity.Success);
+            _trainings?.Remove(_trainings.First(t => t.Id == trainingId));
+        }
+        catch (ApiException<List<Error>> ex)
+        {
+            foreach (var error in ex.Result)
+            {
+                Snackbar.Add($"{error.ErrorMessage}");
+            }
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add($"Erreur lors de la suppression : {ex.Message}");
+        }
+    }
+}

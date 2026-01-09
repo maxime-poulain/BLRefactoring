@@ -1,0 +1,167 @@
+﻿@page "/register"
+@rendermode InteractiveAuto
+@using BLRefactoring.GeneratedClients
+@using FluentValidation
+@using Severity = MudBlazor.Severity
+@inject IAuthClient AuthClient
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject RegisterModelValidator Validator
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Elevation="3" Class="pa-8">
+        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-6">Create Account</MudText>
+
+        <MudForm Model="@model" @ref="@form" Validation="@(Validator.ValidateValue)" ValidationDelay="0">
+            <MudTextField @bind-Value="model.Username"
+                          For="@(() => model.Username)"
+                          Label="Username"
+                          Required="true"
+                          RequiredError="Username is required"
+                          Variant="Variant.Outlined"
+                          Class="mb-4"
+                          Immediate="true"/>
+
+            <MudTextField @bind-Value="model.Email"
+                          For="@(() => model.Email)"
+                          Label="Email"
+                          Required="true"
+                          RequiredError="Email is required"
+                          Variant="Variant.Outlined"
+                          Class="mb-4"
+                          Immediate="true"/>
+
+            <MudTextField @bind-Value="model.Firstname"
+                          For="@(() => model.Firstname)"
+                          Label="First Name"
+                          InputType="InputType.Text"
+                          Required="true"
+                          RequiredError="Firstname is required"
+                          Variant="Variant.Outlined"
+                          Class="mb-4"
+                          Immediate="true"/>
+
+            <MudTextField @bind-Value="model.Lastname"
+                          For="@(() => model.Lastname)"
+                          Label="Last Name"
+                          InputType="InputType.Text"
+                          Required="true"
+                          RequiredError="Last name is required"
+                          Variant="Variant.Outlined"
+                          Class="mb-4"
+                          Immediate="true"/>
+
+            <MudTextField @bind-Value="model.Password"
+                          For="@(() => model.Password)"
+                          Label="Password"
+                          InputType="InputType.Password"
+                          Required="true"
+                          RequiredError="Password is required"
+                          Variant="Variant.Outlined"
+                          Class="mb-4"
+                          Immediate="true"/>
+
+            <MudTextField @bind-Value="model.ConfirmPassword"
+                          For="@(() => model.ConfirmPassword)"
+                          Label="Confirm Password"
+                          InputType="InputType.Password"
+                          Required="true"
+                          RequiredError="Password confirmation is required"
+                          Variant="Variant.Outlined"
+                          Class="mb-4"
+                          Immediate="true"/>
+        </MudForm>
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   FullWidth="true"
+                   OnClick="@(async () => await Submit())"
+                   Class="mt-4">
+            Register
+        </MudButton>
+        <MudText Align="Align.Center" Class="mt-4">
+            Already have an account? <MudLink Href="/login">Login</MudLink>
+        </MudText>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private MudForm form = null!;
+    private RegisterModel model = new();
+
+    private async Task Submit()
+    {
+        await form.Validate();
+
+        if (form.IsValid)
+        {
+            try
+            {
+                var request = new RegisterRequest
+                {
+                    Username = model.Username,
+                    Email = model.Email,
+                    Password = model.Password,
+                    ConfirmPassword = model.ConfirmPassword,
+                    Firstname = model.Firstname,
+                    Lastname = model.Lastname
+                };
+
+                await AuthClient.RegisterAsync(request);
+                Snackbar.Add("Account created successfully!", Severity.Success);
+                NavigationManager.NavigateTo("/login");
+            }
+            catch (ApiException<List<IdentityError>> ex)
+            {
+                foreach (var error in ex.Result)
+                {
+                    Snackbar.Add($"{error.Description}", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add("An error occurred during registration", Severity.Error);
+            }
+        }
+    }
+
+    public class RegisterModel
+    {
+        public string Username { get; set; } = null!;
+        public string Email { get; set; }  = null!;
+        public string Password { get; set; } = null!;
+        public string ConfirmPassword { get; set; } = null!;
+        public string Firstname { get; set; } = null!;
+        public string Lastname { get; set; } = null!;
+    }
+
+    public class RegisterModelValidator : AbstractValidator<RegisterModel>
+    {
+        public RegisterModelValidator()
+        {
+            RuleFor(x => x.Username)
+                .NotEmpty().WithMessage("Username is required")
+                .MinimumLength(3).WithMessage("Username must be at least 3 characters");
+
+            RuleFor(x => x.Email)
+                .NotEmpty().WithMessage("Email is required")
+                .EmailAddress().WithMessage("Invalid email format");
+
+            RuleFor(x => x.Password)
+                .NotEmpty().WithMessage("Password is required")
+                .MinimumLength(4).WithMessage("Password must be at least 4 characters");
+
+            RuleFor(x => x.ConfirmPassword)
+                .NotEmpty().WithMessage("Password confirmation is required")
+                .Equal(x => x.Password).WithMessage("Passwords must match");
+        }
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<RegisterModel>.CreateWithOptions((RegisterModel)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+}

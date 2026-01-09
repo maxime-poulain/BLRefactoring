@@ -33,6 +33,18 @@ public abstract class Result
     );
 
     /// <summary>
+    /// Matches the current result asynchronously to either a success or failure case.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the result after handling the success or failure.</typeparam>
+    /// <param name="onSuccess">An asynchronous function to handle the success case.</param>
+    /// <param name="onFailure">An asynchronous function to handle the failure case, taking the error collection as a parameter.</param>
+    /// <returns>A task representing the result of either the onSuccess or onFailure function, depending on the current result state.</returns>
+    public abstract ValueTask<TResult> MatchAsync<TResult>(
+        Func<ValueTask<TResult>> onSuccess,
+        Func<IReadOnlyErrorCollection, ValueTask<TResult>> onFailure
+    );
+
+    /// <summary>
     /// Executes one of the provided actions based on whether the result is a success or a failure.
     /// </summary>
     /// <param name="onSuccess">An action to execute if the result is a success.</param>
@@ -47,7 +59,7 @@ public abstract class Result
     public static Result Success() => new SuccessResult();
 
     /// <summary>
-    /// Creates a new instance of the <see cref="Result"/> class that represents a successful computation.
+    /// Creates a new instance of the <see cref="Result"/> class that represents a successful computation asynchronously.
     /// </summary>
     /// <returns>A new instance of the <see cref="ValueTask"/> class that represents a successful computation.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -84,7 +96,7 @@ public abstract class Result
         => errors.HasErrors() ? Failure(errors) : Success();
 
     /// <summary>
-    /// Creates a new instance of the <see cref="ValueTask"/> class that represents a failed computation.
+    /// Creates a new instance of the <see cref="ValueTask"/> class that represents a failed computation asynchronously.
     /// </summary>
     /// <param name="errors">The error collection that resulted from the failed computation.</param>
     /// <returns>A new instance of the <see cref="ValueTask"/> class that represents a failed computation.</returns>
@@ -101,16 +113,26 @@ public abstract class Result
 
     private sealed class SuccessResult : Result
     {
+        /// <inheritdoc />
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override TResult Match<TResult>(
             Func<TResult> onSuccess,
             Func<IReadOnlyErrorCollection, TResult> onFailure
         ) => onSuccess();
 
+        /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override ValueTask<TResult> MatchAsync<TResult>(
+            Func<ValueTask<TResult>> onSuccess,
+            Func<IReadOnlyErrorCollection, ValueTask<TResult>> onFailure
+        ) => onSuccess();
+
+        /// <inheritdoc />
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override void Switch(Action onSuccess, Action<IReadOnlyErrorCollection> onFailure)
             => onSuccess();
 
+        /// <inheritdoc />
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override Result Bind(Func<Result> func)
             => func();
@@ -118,16 +140,26 @@ public abstract class Result
 
     private sealed class FailureResult(IReadOnlyErrorCollection error) : Result
     {
+        /// <inheritdoc />
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override TResult Match<TResult>(
             Func<TResult> onSuccess,
             Func<IReadOnlyErrorCollection, TResult> onFailure
         ) => onFailure(error);
 
+        /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override ValueTask<TResult> MatchAsync<TResult>(
+            Func<ValueTask<TResult>> onSuccess,
+            Func<IReadOnlyErrorCollection, ValueTask<TResult>> onFailure
+        ) => onFailure(error);
+
+        /// <inheritdoc />
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override void Switch(Action onSuccess, Action<IReadOnlyErrorCollection> onFailure)
             => onFailure(error);
 
+        /// <inheritdoc />
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override Result Bind(Func<Result> func)
             => this;

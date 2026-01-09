@@ -1,0 +1,101 @@
+﻿@page "/login"
+@using BLRefactoring.Blazor.Services
+@using BLRefactoring.Blazor.Validators
+@using BLRefactoring.GeneratedClients
+@using FluentValidation
+@using Severity = MudBlazor.Severity
+@inject IAuthClient AuthClient
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject LoginRequestValidator Validator
+@inject ITokenService TokenService
+@inject JwtAuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Login</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Elevation="3" Class="pa-6">
+        <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true">
+            Login
+        </MudText>
+
+        <MudForm @ref="_form" Model="@_model" Validation="@(Validator.ValidateValue)">
+            <MudTextField @bind-Value="_model.Username"
+                          For="@(() => _model.Username)"
+                          Label="Username"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Immediate="true"/>
+
+            <MudTextField @bind-Value="_model.Password"
+                          For="@(() => _model.Password)"
+                          Label="Password"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          InputType="InputType.Password"
+                          Immediate="true"/>
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       Class="mt-4"
+                       OnClick="HandleLoginAsync"
+                       Disabled="_isLoading">
+                @if (_isLoading)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true"/>
+                }
+                else
+                {
+                    <MudText>Login</MudText>
+                }
+            </MudButton>
+        </MudForm>
+
+        <MudDivider Class="my-4"/>
+
+        <MudText Align="Align.Center">
+            Don't have an account?
+            <MudLink Href="/register" Color="Color.Primary">Register</MudLink>
+        </MudText>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private MudForm? _form;
+    private LoginRequest _model = new();
+    private bool _isLoading;
+
+    private async Task HandleLoginAsync()
+    {
+        if (_form == null) return;
+
+        await _form.Validate();
+
+        if (!_form.IsValid) return;
+
+        _isLoading = true;
+        try
+        {
+            var response = await AuthClient.LoginAsync(_model);
+
+            await TokenService.SetTokenAsync(response.Token);
+            AuthStateProvider.NotifyAuthenticationStateChanged();
+
+            Snackbar.Add("Login successful!", Severity.Success);
+            Navigation.NavigateTo("trainings");
+        }
+        catch (ApiException<string> ex)
+        {
+            Snackbar.Add(ex.Result ?? "Invalid credentials", Severity.Error);
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add("An error occurred during login", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

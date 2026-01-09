@@ -6,15 +6,15 @@ public class CreateTrainingCommandValidator : AbstractValidator<CreateTrainingCo
 {
     public CreateTrainingCommandValidator()
     {
-        RuleFor(command => command.EndDate)
-            .GreaterThan(command => command.StartDate)
-            .WithMessage("End date must be after start date");
-
         RuleFor(command => command.Title)
             .NotEmpty();
 
         RuleFor(command => command.TrainingId)
             .NotEqual(Guid.Empty)
             .WithMessage("Invalid trainer identifier");
+
+        RuleFor(command => command.Topics)
+            .NotEmpty();
     }
+
 }

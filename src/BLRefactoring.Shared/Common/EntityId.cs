@@ -22,7 +22,7 @@ public abstract class EntityId<TEntityId> : EntityId<TEntityId, Guid>
     /// A new instance of the <typeparamref name="TEntityId"/> class with an
     /// auto-generated <see cref="Guid"/>.
     /// </returns>
-    public static TEntityId Default() => Create(Guid.NewGuid());
+    public static TEntityId Generate() => Create(Guid.NewGuid());
 }
 
 /// <summary>

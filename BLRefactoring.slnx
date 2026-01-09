@@ -11,6 +11,12 @@
     <Project Path="src/DDDWithCqrs/Domain/BLRefactoring.DDDWithCqrs.Domain.csproj" />
     <Project Path="src/DDDWithCqrs/Infrastructure/BLRefactoring.DDDWithCqrs.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/Web/">
+    <Project Path="src/Web/BLRefactoring.Blazor/BLRefactoring.Blazor.csproj" />
+  </Folder>
+  <Project Path="src/BLRefactoring.GeneratedClients/BLRefactoring.GeneratedClients.csproj" />
+  <Project Path="src/BLRefactoring.Shared.Application/BLRefactoring.Shared.Application.csproj" />
+  <Project Path="src/BLRefactoring.Shared.Domain/BLRefactoring.Shared.Domain.csproj" />
   <Project Path="src/BLRefactoring.Shared.Infrastructure/BLRefactoring.Shared.Infrastructure.csproj" />
   <Project Path="src/BLRefactoring.Shared/BLRefactoring.Shared.csproj" />
 </Solution>

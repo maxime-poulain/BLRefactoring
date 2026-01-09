@@ -1,0 +1,21 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+<AuthorizeView>
+    <Authorized>
+        <MudNavMenu>
+            <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+            <MudNavLink Href="trainers/my-profile" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Edit">
+                My profile
+            </MudNavLink>
+            <MudNavLink Href="trainings" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">
+                My Trainings
+            </MudNavLink>
+        </MudNavMenu>
+    </Authorized>
+    <NotAuthorized>
+        <MudNavMenu>
+            <MudNavLink Href="login" Icon="@Icons.Material.Filled.Login">Login</MudNavLink>
+            <MudNavLink Href="register" Icon="@Icons.Material.Filled.AppRegistration">Register</MudNavLink>
+        </MudNavMenu>
+    </NotAuthorized>
+</AuthorizeView>
+
