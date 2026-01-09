@@ -9,7 +9,7 @@ namespace BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Interceptors;
 /// This interceptor ensures that domain events are published automatically
 /// without requiring explicit calls in the DbContext.
 /// </summary>
-public sealed class DomainEventInterceptor(IEventPublisher publisher) : SaveChangesInterceptor
+public sealed class DomainEventInterceptor(IDomainEventPublisher publisher) : SaveChangesInterceptor
 {
     /// <summary>
     /// Asynchronously handles the logic after changes are saved to the database.

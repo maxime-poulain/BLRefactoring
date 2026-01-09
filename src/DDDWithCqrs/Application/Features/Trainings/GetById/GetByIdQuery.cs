@@ -1,3 +1,5 @@
+using BLRefactoring.Shared.Application.Dtos;
+using BLRefactoring.Shared.Application.Dtos.Training;
 using BLRefactoring.Shared.CQS;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;

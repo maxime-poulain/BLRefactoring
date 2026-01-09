@@ -3,6 +3,7 @@ using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Create;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Delete;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetAll;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetById;
+using BLRefactoring.Shared.Application.Dtos.Training;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.CQS;
 using Microsoft.AspNetCore.Mvc;

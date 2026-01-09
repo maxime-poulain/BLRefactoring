@@ -1,0 +1,146 @@
+﻿@page "/trainers/create"
+@using Blazilla
+@using BLRefactoring.Blazor.Validators
+@using BLRefactoring.GeneratedClients
+@using MudBlazor
+@inject ITrainerClient TrainerClient
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject TrainerCreationValidator Validator
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudText Typo="Typo.h4" Class="mb-4">Create a new trainer</MudText>
+
+        <MudForm Model="@model" @href="form" Validation="@(Validator.ValidateValue)" ValidationDelay="0">
+            @* <FluentValidator/> *@
+
+            <MudGrid>
+                <MudItem xs="12" sm="6">
+                    <MudTextField
+                        @bind-Value="model.Firstname"
+                        For="@(() => model.Firstname)"
+                        Label="Prénom"
+                        Variant="Variant.Outlined"
+                        Immediate="true"/>
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudTextField
+                        @bind-Value="model.Lastname"
+                        For="@(() => model.Lastname)"
+                        Label="Nom"
+                        Variant="Variant.Outlined"
+                        Required="true"
+                        Immediate="true"/>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField
+                        @bind-Value="model.Email"
+                        For="@(() => model.Email)"
+                        Label="Email"
+                        Variant="Variant.Outlined"
+                        InputType="InputType.Email"
+                        Required="true"
+                        Immediate="true"
+                    />
+                </MudItem>
+
+            </MudGrid>
+        </MudForm>
+
+        <MudCardActions>
+            <MudButton
+                Variant="Variant.Filled"
+                Color="Color.Secondary"
+                OnClick="() => Cancel()">
+                Annuler
+            </MudButton>
+            <MudButton
+                OnClick="() => Submit()"
+                Variant="Variant.Filled"
+                Color="Color.Primary"
+                Disabled="@isSubmitting">
+                @if (isSubmitting)
+                {
+                    <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true"/>
+                    <span>Création en cours...</span>
+                }
+                else
+                {
+                    <span>Créer</span>
+                }
+            </MudButton>
+        </MudCardActions>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private TrainerCreationRequest model = new();
+    private bool isSubmitting = false;
+    private MudForm form;
+
+    private async Task OnValidSubmit()
+    {
+        isSubmitting = true;
+        try
+        {
+            var result = await TrainerClient.CreateAsync(model);
+            Snackbar.Add($"Formateur '{model.Firstname} {model.Lastname}' créé avec succès", Severity.Success);
+            Navigation.NavigateTo("/trainers");
+        }
+        catch (ApiException<System.Collections.Generic.List<Error>> ex)
+        {
+            foreach (var error in ex.Result)
+            {
+                Snackbar.Add(error.ToString()!, Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erreur lors de la création : {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    public void Cancel()
+    {
+        Navigation.NavigateTo("/trainers");
+    }
+
+    public async Task Submit()
+    {
+        await form.Validate();
+
+        if (form.IsValid)
+        {
+            isSubmitting = true;
+            try
+            {
+                var result = await TrainerClient.CreateAsync(model);
+                Snackbar.Add($"Formateur '{model.Firstname} {model.Lastname}' créé avec succès", Severity.Success);
+                Navigation.NavigateTo("/trainers");
+            }
+            catch (ApiException<System.Collections.Generic.List<Error>> ex)
+            {
+                foreach (var error in ex.Result)
+                {
+                    Snackbar.Add(error.ToString()!, Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Erreur lors de la création : {ex.Message}", Severity.Error);
+            }
+            finally
+            {
+                isSubmitting = false;
+            }
+        }
+    }
+
+}

@@ -8,7 +8,7 @@ public class TransactionManager(TrainingContext trainingContext)
 {
     private IDbContextTransaction? _transaction;
 
-    public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
+    public async Task<IDisposable> BeginTransactionAsync(CancellationToken cancellationToken = default)
         => _transaction = await trainingContext.Database.BeginTransactionAsync(cancellationToken);
 
     public async Task CommitAsync(CancellationToken cancellationToken = default)

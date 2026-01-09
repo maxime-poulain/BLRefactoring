@@ -1,4 +1,5 @@
-using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
+using BLRefactoring.Shared.Domain;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -29,5 +30,10 @@ public class TrainerConfiguration : AggregateRootTypeConfiguration<Trainer, Trai
                 .IsRequired()
                 .HasMaxLength(50);
         });
+
+        builder.Property(p => p.UserId)
+            .HasConversion(v => v.Value, v => UserId.Create(v))
+            .HasColumnName("UserId")
+            .IsRequired();
     }
 }

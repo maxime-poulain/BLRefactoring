@@ -18,7 +18,7 @@ public abstract class AggregateRootTypeConfiguration<TEntity, TEntityId> : IEnti
             .HasConversion(
                 id => id.Value,
                 guid => EntityId<TEntityId>.Create(guid))
-            .ValueGeneratedOnAdd()
+            .ValueGeneratedNever()
             .IsRequired();
 
         // Special case for aggregate roots as they have a DomainEvents property to be ignored.
@@ -35,9 +35,5 @@ public abstract class AggregateRootTypeConfiguration<TEntity, TEntityId> : IEnti
 
         builder.Property(e => e.ModifiedOn)
             .HasPrecision(2);
-
-        builder.Property(e => e.DeletedOn)
-            .HasPrecision(2);
-        ConfigureAggregate(builder);
     }
 }

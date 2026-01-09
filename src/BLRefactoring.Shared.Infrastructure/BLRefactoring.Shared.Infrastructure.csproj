@@ -7,16 +7,17 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.1" />
+      <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.1" />
+      <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.1" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.1" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\BLRefactoring.Shared\BLRefactoring.Shared.csproj" />
+      <ProjectReference Include="..\BLRefactoring.Shared.Domain\BLRefactoring.Shared.Domain.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="ThirdParty\" />
+      <Folder Include="ThirdParty\EfCore\Migrations\" />
     </ItemGroup>
 
 </Project>

@@ -11,6 +11,10 @@ namespace BLRefactoring.Shared.Common.Results;
 /// <typeparam name="TValue">The type of the value in case of a successful result.</typeparam>
 public abstract class Result<TValue>
 {
+    public bool HasErrors() => Match(
+        _ => false,
+        _ => true);
+
     /// <summary>
     /// Matches the current result to either a success or failure case, allowing for explicit handling of both outcomes.
     /// This method is central to the ROP pattern, ensuring that both success and error paths are addressed.

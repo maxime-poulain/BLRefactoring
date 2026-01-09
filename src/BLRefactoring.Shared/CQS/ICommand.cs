@@ -1,6 +1,5 @@
 using BLRefactoring.Shared.Common.Results;
 using Mediator;
-using Mediator;
 
 namespace BLRefactoring.Shared.CQS;
 

@@ -1,8 +1,10 @@
-using BLRefactoring.DDD.Application.Services.TrainerServices.Dto;
 using BLRefactoring.Shared;
+using BLRefactoring.Shared.Application.Dtos;
+using BLRefactoring.Shared.Application.Dtos.Trainer;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
-using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
+using Microsoft.Extensions.Logging;
 
 namespace BLRefactoring.DDD.Application.Services.TrainerServices;
 
@@ -15,26 +17,27 @@ namespace BLRefactoring.DDD.Application.Services.TrainerServices;
 public interface ITrainerApplicationService
 {
     // Another possibility would have been to return just the Id of the newly created Trainer.
-    Task<Result<TrainerDto>> CreateAsync(TrainerCreationRequest request);
+    Task<Result<TrainerDto>> CreateAsync(TrainerCreationRequest request, CancellationToken cancellationToken = default);
     Task<Result<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<TrainerDto[]> GetAllAsync(CancellationToken cancellationToken = default);
     Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 }
 
 public sealed class TrainerApplicationService(
+    ILogger<TrainerApplicationService> logger,
     ITrainerRepository trainerRepository,
     ITransactionManager transactionManager)
     : ITrainerApplicationService
 {
-    public async Task<Result<TrainerDto>> CreateAsync(TrainerCreationRequest request)
+    public async Task<Result<TrainerDto>> CreateAsync(TrainerCreationRequest request, CancellationToken cancellationToken = default)
     {
         // Trainer.Create() could have been receiving a Domain Object instead of primitive types.
         // However, for the sake of simplicity, we are using primitive types here.
-        var result = Trainer.Create(request.Firstname, request.Lastname, request.Email);
+        var result = Trainer.Create(request.Firstname, request.Lastname, request.Email, request.UserId);
 
         return await result.MatchAsync(async trainer =>
         {
-            await trainerRepository.SaveAsync(trainer);
+            await trainerRepository.SaveAsync(trainer, cancellationToken);
             return Result<TrainerDto>.Success(trainer.ToDto());
         }, Result<TrainerDto>.FailureAsync);
     }
@@ -51,7 +54,7 @@ public sealed class TrainerApplicationService(
         return Result<TrainerDto>.Success(trainer.ToDto());
     }
 
-    public async Task<TrainerDto[]> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<TrainerDto[]> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var trainers = await trainerRepository.GetAllAsync(cancellationToken);
         return trainers.Select(x => x.ToDto()).ToArray();
@@ -96,9 +99,11 @@ public sealed class TrainerApplicationService(
             await trainerRepository.DeleteAsync(trainer, cancellationToken);
             await transactionManager.CommitAsync(cancellationToken);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             await transactionManager.RollBackAsync(cancellationToken);
+            logger.LogError(ex, "An error occurred while deleting the trainer with id `{TrainerId}`.", id);
+            return Result.Failure(ErrorCode.Unspecified, "An error occurred while deleting the trainer.");
         }
         return Result.Success();
     }
