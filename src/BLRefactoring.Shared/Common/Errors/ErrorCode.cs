@@ -17,11 +17,13 @@ public class ErrorCode : SmartEnum<ErrorCode>
     // Training error codes.
     public static readonly ErrorCode InvalidTitle = new("InvalidRequest", 1);
     public static readonly ErrorCode DuplicateTitle = new("DuplicateTitle", 2);
-    public static readonly ErrorCode InvalidStartDate = new("InvalidStartDate", 3);
-    public static readonly ErrorCode InvalidEndDate = new("InvalidEndDate", 4);
-    public static readonly ErrorCode InvalidRates = new("InvalidRates", 5);
+    public static readonly ErrorCode InvalidDescription = new("InvalidDescription", 3);
+    public static readonly ErrorCode InvalidPrerequisites = new("InvalidPrerequisites", 4);
+    public static readonly ErrorCode InvalidAcquiredSkills = new("InvalidAcquiredSkills", 5);
 
     // Trainer error codes.
     public static readonly ErrorCode InvalidTrainer = new("InvalidTrainer", 100);
     public static readonly ErrorCode InvalidEmail = new("InvalidEmail", 101);
+    public static readonly ErrorCode BioEmpty = new("BioEmpty", 102);
+    public static readonly ErrorCode BioExceeds500Characters = new("BioExceeds500Characters", 103);
 }

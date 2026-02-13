@@ -1,4 +1,5 @@
-using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
+using BLRefactoring.Shared.Domain;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +13,13 @@ public class TrainerRepository(TrainingContext trainingContext) : ITrainerReposi
     {
         return await trainingContext.Trainers
             .FirstOrDefaultAsync(trainer => trainer.Id == id, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async ValueTask<Trainer?> GetByUserIdAsync(UserId userId, CancellationToken cancellationToken = default)
+    {
+        return await trainingContext.Trainers
+            .FirstOrDefaultAsync(trainer => trainer.UserId == userId, cancellationToken)
             .ConfigureAwait(false);
     }
 

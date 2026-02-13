@@ -14,7 +14,7 @@ public interface ITransactionManager
     /// Defaults to <see cref="CancellationToken.None"/>.
     /// </param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    Task BeginTransactionAsync(CancellationToken cancellationToken = default);
+    Task<IDisposable> BeginTransactionAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Commits the current transaction asynchronously, persisting all changes made during the transaction.

@@ -1,40 +1,36 @@
-using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainerAggregate;
-using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate;
-using BLRefactoring.Shared.DDD.Domain.Aggregates.TrainingAggregate.ValueObjects;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
+using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
+using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BLRefactoring.Shared.Infrastructure.Repositories;
-public class TrainingRepository(TrainingContext trainingContext)
-    : ITrainingRepository, IUniquenessTitleChecker
+public class TrainingRepository(TrainingContext trainingContext) : ITrainingRepository, IUniquenessTitleChecker
 {
-    public Task<Training?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
-        trainingContext.Trainings.FirstOrDefaultAsync(training => training.Id == id, cancellationToken);
+    public async Task<Training?> GetByIdAsync(TrainingId id, CancellationToken cancellationToken = default) =>
+        await trainingContext
+            .Trainings
+            .FirstOrDefaultAsync(training => training.Id == id, cancellationToken).ConfigureAwait(false);
 
-    public async Task<bool> IsTitleUniqueAsync(string title, Trainer trainer, CancellationToken cancellationToken = default)
+    public async Task<bool> TitleForTrainerExists(
+        TrainingTitle title,
+        TrainerId trainerId,
+        CancellationToken cancellationToken = default)
     {
-        return !await trainingContext.Trainings
-            .AnyAsync(training => training.Title == title &&
-                                  training.TrainerId == trainer.Id, cancellationToken: cancellationToken);
+        return await trainingContext.
+            Trainings
+            .AnyAsync(training =>
+                training.Title == title &&
+                training.TrainerId == trainerId,
+                cancellationToken)
+            .ConfigureAwait(false);
     }
 
-    public Task<IEnumerable<Training>> GetByTitleAsync(string title)
+    // GetByTrainingIdAsync
+    public async Task<Training?> GetByTrainerIdAsync(TrainingId trainingId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
-    }
-
-    public async Task<IEnumerable<Training>> GetByTrainerAsync(Trainer trainer)
-    {
-        var trainings = await trainingContext.Trainings
-            .Where(training => training.TrainerId == trainer.Id)
-            .ToListAsync();
-
-        return trainings;
-    }
-
-    public Task<IEnumerable<Training>> SearchByCriteriaAsync(TrainingSearchCriteria criteria)
-    {
-        throw new NotImplementedException();
+        return await trainingContext.Trainings
+            .FirstOrDefaultAsync(training => training.Id == trainingId, cancellationToken);
     }
 
     public async Task SaveAsync(Training training, CancellationToken cancellationToken = default)
@@ -50,10 +46,23 @@ public class TrainingRepository(TrainingContext trainingContext)
         await trainingContext.SaveChangesAsync(cancellationToken);
     }
 
-    public Task DeleteAsync(IEnumerable<Training> trainings, CancellationToken cancellationToken)
+    public async Task DeleteAsync(Training training, CancellationToken cancellationToken = default)
+    {
+        trainingContext.Trainings.Remove(training);
+        await trainingContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public Task DeleteAsync(IEnumerable<Training> trainings, CancellationToken cancellationToken = default)
     {
         trainingContext.Trainings.RemoveRange(trainings);
         return trainingContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<ICollection<Training>> GetByTrainerIdAsync(TrainerId trainerId, CancellationToken cancellationToken = default)
+    {
+        return await trainingContext.Trainings
+            .Where(training => training.TrainerId == trainerId)
+            .ToListAsync(cancellationToken);
     }
 
     public Task<List<Training>> GetAllAsync(CancellationToken cancellationToken = default)

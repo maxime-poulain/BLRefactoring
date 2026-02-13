@@ -10,22 +10,17 @@ public abstract class Entity<TEntityId> : Entity, IAuditable
     /// <summary>
     /// Gets the unique identifier for the entity.
     /// </summary>
-    public virtual TEntityId Id { get; init; }
+    public virtual TEntityId Id { get; init; } = EntityId<TEntityId>.Generate();
 
     /// <summary>
     /// Gets or sets the date and time the entity was created.
     /// </summary>
-    public DateTime CreatedOn { get; set; }
+    public DateTime CreatedOn { get;  }
 
     /// <summary>
     /// Gets or sets the date and time the entity was last modified, if any.
     /// </summary>
-    public DateTime? ModifiedOn { get; set; }
-
-    /// <summary>
-    /// Gets or sets the date and time the entity was deleted, if any.
-    /// </summary>
-    public DateTime? DeletedOn { get; set; }
+    public DateTime? ModifiedOn { get; }
 
     protected Entity()
     {
@@ -117,9 +112,8 @@ public abstract class Entity
 /// </summary>
 public interface IAuditable
 {
-    public DateTime CreatedOn { get; set; }
-    public DateTime? ModifiedOn { get; set; }
-    public DateTime? DeletedOn { get; set; }
+    public DateTime CreatedOn { get; }
+    public DateTime? ModifiedOn { get; }
 }
 
 /// <summary>

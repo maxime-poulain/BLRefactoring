@@ -36,8 +36,6 @@ public abstract class AggregateRootTypeConfiguration<TEntity, TEntityId> : IEnti
         builder.Property(e => e.ModifiedOn)
             .HasPrecision(2);
 
-        builder.Property(e => e.DeletedOn)
-            .HasPrecision(2);
         ConfigureAggregate(builder);
     }
 }
