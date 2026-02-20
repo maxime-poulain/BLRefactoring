@@ -101,7 +101,7 @@ public class TrainerApplicationServiceTests
     {
         var trainer = new TrainerBuilder().BuildValid();
         _fixture.TrainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
         var sut = _fixture.CreateSut();
 
@@ -115,7 +115,7 @@ public class TrainerApplicationServiceTests
     public async Task GetByIdAsync_NonExistingTrainer_ReturnsNotFoundFailure()
     {
         _fixture.TrainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Trainer?)null);
         var sut = _fixture.CreateSut();
 
@@ -162,7 +162,7 @@ public class TrainerApplicationServiceTests
     {
         var trainer = new TrainerBuilder().BuildValid();
         _fixture.TrainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
         var sut = _fixture.CreateSut();
 
@@ -176,7 +176,7 @@ public class TrainerApplicationServiceTests
     {
         var trainer = new TrainerBuilder().BuildValid();
         _fixture.TrainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
         var sut = _fixture.CreateSut();
 
@@ -192,7 +192,7 @@ public class TrainerApplicationServiceTests
     {
         var trainer = new TrainerBuilder().BuildValid();
         _fixture.TrainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
         var sut = _fixture.CreateSut();
 
@@ -208,7 +208,7 @@ public class TrainerApplicationServiceTests
     {
         var trainer = new TrainerBuilder().BuildValid();
         _fixture.TrainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
         var sut = _fixture.CreateSut();
 
@@ -223,7 +223,7 @@ public class TrainerApplicationServiceTests
     public async Task DeleteAsync_NonExistingTrainer_ReturnsNotFoundFailure()
     {
         _fixture.TrainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Trainer?)null);
         var sut = _fixture.CreateSut();
 
@@ -237,7 +237,7 @@ public class TrainerApplicationServiceTests
     {
         var trainer = new TrainerBuilder().BuildValid();
         _fixture.TrainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
         _fixture.TrainerRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Trainer>(), It.IsAny<CancellationToken>()))
@@ -254,7 +254,7 @@ public class TrainerApplicationServiceTests
     {
         var trainer = new TrainerBuilder().BuildValid();
         _fixture.TrainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
         _fixture.TrainerRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Trainer>(), It.IsAny<CancellationToken>()))
@@ -273,7 +273,7 @@ public class TrainerApplicationServiceTests
     {
         var trainer = new TrainerBuilder().BuildValid();
         _fixture.TrainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
         _fixture.TrainerRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Trainer>(), It.IsAny<CancellationToken>()))

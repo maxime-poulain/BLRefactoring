@@ -21,7 +21,7 @@ public interface ITrainerRepository : IRepository<Trainer>
     /// A <see cref="ValueTask{TResult}"/> of <see cref="Trainer"/>? representing the retrieved entity,
     /// or null if no entity with the specified <paramref name="id"/> exists.
     /// </returns>
-    ValueTask<Trainer?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    ValueTask<Trainer?> GetByIdAsync(TrainerId id, CancellationToken cancellationToken = default);
 
     ValueTask<Trainer?> GetByUserIdAsync(UserId userId, CancellationToken cancellationToken = default);
 

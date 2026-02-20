@@ -30,7 +30,7 @@ public class TrainingApplicationServiceTests
             .WithUserId(_userId)
             .BuildValid();
         _fixture.TrainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
     }
 
@@ -89,7 +89,7 @@ public class TrainingApplicationServiceTests
     {
         SetupCurrentUser();
         _fixture.TrainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Trainer?)null);
         var sut = _fixture.CreateSut();
 
@@ -155,7 +155,7 @@ public class TrainingApplicationServiceTests
         await sut.CreateAsync(ValidCreationRequest());
 
         _fixture.TrainerRepository.Verify(
-            r => r.GetByIdAsync(_trainerId, It.IsAny<CancellationToken>()),
+            r => r.GetByIdAsync((TrainerId)_trainerId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

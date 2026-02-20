@@ -71,7 +71,7 @@ public class TrainingApplicationService(
     /// <inheritdoc />
     public async Task<Result<TrainingDto>> CreateAsync(TrainingCreationRequest request, CancellationToken cancellationToken = default)
     {
-        var trainer = await trainerRepository.GetByIdAsync(currentUserService.TrainerId, cancellationToken);
+        var trainer = await trainerRepository.GetByIdAsync((TrainerId)currentUserService.TrainerId, cancellationToken);
 
         if (trainer is null)
         {

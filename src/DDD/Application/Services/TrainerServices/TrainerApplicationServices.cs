@@ -52,7 +52,7 @@ public sealed class TrainerApplicationService(
 
     public async Task<Result<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var trainer = await trainerRepository.GetByIdAsync(id, cancellationToken);
+        var trainer = await trainerRepository.GetByIdAsync((TrainerId)id, cancellationToken);
 
         if (trainer is null)
         {
@@ -93,7 +93,7 @@ public sealed class TrainerApplicationService(
     // publishing are treated atomically.
     public async Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var trainer = await trainerRepository.GetByIdAsync(id, cancellationToken);
+        var trainer = await trainerRepository.GetByIdAsync((TrainerId)id, cancellationToken);
 
         if (trainer is null)
         {
@@ -118,7 +118,7 @@ public sealed class TrainerApplicationService(
 
     public async Task<Result<TrainerDto>> UpdateAsync(TrainerDto trainerDto, CancellationToken cancellationToken = default)
     {
-        var trainer = await trainerRepository.GetByIdAsync(trainerDto.Id, cancellationToken);
+        var trainer = await trainerRepository.GetByIdAsync((TrainerId)trainerDto.Id, cancellationToken);
 
         if (trainer is null)
         {

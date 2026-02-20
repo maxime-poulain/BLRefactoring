@@ -30,7 +30,7 @@ public class DeleteTrainerCommandHandler(
 {
     public async ValueTask<Result> Handle(DeleteTrainerCommand request, CancellationToken cancellationToken)
     {
-        var trainer = await trainerRepository.GetByIdAsync(request.Id, cancellationToken);
+        var trainer = await trainerRepository.GetByIdAsync((TrainerId)request.Id, cancellationToken);
 
         if (trainer == null)
         {
