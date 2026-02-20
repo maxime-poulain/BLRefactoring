@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -12,6 +10,30 @@ services:
       - "1433:1433"
     volumes:
       - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools2/bin/sqlcmd -S localhost -U sa -P "Password@" -Q "SELECT 1" -b -o /dev/null
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  ddd-api:
+    build:
+      context: .
+      dockerfile: src/DDD/Api/Dockerfile
+    container_name: ddd-api
+    ports:
+      - "5085:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__TrainingContext=Server=sqlserver;Database=BLRefactoring;User Id=sa;Password=Password@;TrustServerCertificate=True;MultipleActiveResultSets=True
+      - Jwt__Key=<(_aHuci8-$=j0J}c>Y{}J?msu3Xe;W*
+      - Jwt__Issuer=BLRefactoring.Api
+      - Jwt__Audience=BLRefactoring.Web
+      - Jwt__ExpireMinutes=60
+    depends_on:
+      sqlserver:
+        condition: service_healthy
 
 volumes:
   sqlserver_data:
