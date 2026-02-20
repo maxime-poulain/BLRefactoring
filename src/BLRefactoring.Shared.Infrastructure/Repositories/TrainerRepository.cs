@@ -9,7 +9,7 @@ namespace BLRefactoring.Shared.Infrastructure.Repositories;
 
 public class TrainerRepository(TrainingContext trainingContext) : ITrainerRepository
 {
-    public async ValueTask<Trainer?> GetByIdAsync(
+    public async Task<Trainer?> GetByIdAsync(
         TrainerId id,
         CancellationToken cancellationToken = default)
     {
@@ -18,7 +18,7 @@ public class TrainerRepository(TrainingContext trainingContext) : ITrainerReposi
             .ConfigureAwait(false);
     }
 
-    public async ValueTask<Trainer?> GetByUserIdAsync(UserId userId, CancellationToken cancellationToken = default)
+    public async Task<Trainer?> GetByUserIdAsync(UserId userId, CancellationToken cancellationToken = default)
     {
         return await trainingContext.Trainers
             .FirstOrDefaultAsync(trainer => trainer.UserId == userId, cancellationToken)

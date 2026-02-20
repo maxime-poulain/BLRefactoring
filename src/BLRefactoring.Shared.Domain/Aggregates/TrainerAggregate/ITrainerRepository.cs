@@ -18,12 +18,12 @@ public interface ITrainerRepository : IRepository<Trainer>
     /// A <see cref="CancellationToken" /> to observe while waiting for the task to complete.
     /// </param>
     /// <returns>
-    /// A <see cref="ValueTask{TResult}"/> of <see cref="Trainer"/>? representing the retrieved entity,
+    /// A <see cref="Task{TResult}"/> of <see cref="Trainer"/>? representing the retrieved entity,
     /// or null if no entity with the specified <paramref name="id"/> exists.
     /// </returns>
-    ValueTask<Trainer?> GetByIdAsync(TrainerId id, CancellationToken cancellationToken = default);
+    Task<Trainer?> GetByIdAsync(TrainerId id, CancellationToken cancellationToken = default);
 
-    ValueTask<Trainer?> GetByUserIdAsync(UserId userId, CancellationToken cancellationToken = default);
+    Task<Trainer?> GetByUserIdAsync(UserId userId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Saves changes to the <see cref="Trainer"/> entity.
