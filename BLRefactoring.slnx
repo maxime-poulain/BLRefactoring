@@ -24,5 +24,6 @@
     <Project Path="tests/BLRefactoring.Shared.Domain.Tests/BLRefactoring.Shared.Domain.Tests.csproj" />
     <Project Path="tests/BLRefactoring.DDD.Application.Tests/BLRefactoring.DDD.Application.Tests.csproj" />
     <Project Path="tests/BLRefactoring.DDD.Api.IntegrationTests/BLRefactoring.DDD.Api.IntegrationTests.csproj" />
+    <Project Path="tests/BLRefactoring.DDDWithCqrs.Tests/BLRefactoring.DDDWithCqrs.Tests.csproj" />
   </Folder>
 </Solution>

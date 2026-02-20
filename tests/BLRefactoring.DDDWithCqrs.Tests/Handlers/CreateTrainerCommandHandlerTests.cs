@@ -1,0 +1,68 @@
+using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
+using BLRefactoring.Shared.Domain.Tests.Helpers;
+using FluentAssertions;
+using Moq;
+using Xunit;
+
+namespace BLRefactoring.DDDWithCqrs.Tests.Handlers;
+
+public class CreateTrainerCommandHandlerTests
+{
+    private readonly Mock<ITrainerRepository> _trainerRepository = new();
+
+    private CreateTrainerCommandHandler CreateSut() => new(_trainerRepository.Object);
+
+    [Fact]
+    public async Task Handle_ValidCommand_ReturnsSuccessAndCallsSave()
+    {
+        var command = new CreateTrainerCommand
+        {
+            Firstname = "John",
+            Lastname = "Doe",
+            Email = "john.doe@example.com"
+        };
+        var sut = CreateSut();
+
+        var result = await sut.Handle(command, CancellationToken.None);
+
+        result.ShouldBeSuccess();
+        _trainerRepository.Verify(
+            r => r.SaveAsync(It.IsAny<Trainer>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_InvalidDomainData_ReturnsFailure()
+    {
+        var command = new CreateTrainerCommand
+        {
+            Firstname = "J", // too short — domain rejects
+            Lastname = "Doe",
+            Email = "john.doe@example.com"
+        };
+        var sut = CreateSut();
+
+        var result = await sut.Handle(command, CancellationToken.None);
+
+        result.ShouldBeFailure();
+    }
+
+    [Fact]
+    public async Task Handle_InvalidDomainData_DoesNotCallSave()
+    {
+        var command = new CreateTrainerCommand
+        {
+            Firstname = "J",
+            Lastname = "Doe",
+            Email = "invalid"
+        };
+        var sut = CreateSut();
+
+        await sut.Handle(command, CancellationToken.None);
+
+        _trainerRepository.Verify(
+            r => r.SaveAsync(It.IsAny<Trainer>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+}
