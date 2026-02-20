@@ -5,7 +5,7 @@ using EmailValidation;
 
 namespace BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 
-public class Email : ValueObject
+public sealed class Email : ValueObject
 {
     public string FullAddress { get; } = null!;
     public string LocalPart => FullAddress.Split('@')[0];
