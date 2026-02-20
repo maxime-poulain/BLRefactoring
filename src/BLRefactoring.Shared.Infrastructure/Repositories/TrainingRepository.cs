@@ -1,10 +1,17 @@
+using BLRefactoring.Shared.Common.Specifications;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
+using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.Specifications;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
+using BLRefactoring.Shared.Infrastructure.Specifications;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BLRefactoring.Shared.Infrastructure.Repositories;
+/// <summary>
+/// Entity Framework Core implementation of <see cref="ITrainingRepository"/> and <see cref="IUniquenessTitleChecker"/>.
+/// Provides data access for the Training aggregate using the Specification pattern.
+/// </summary>
 public class TrainingRepository(TrainingContext trainingContext) : ITrainingRepository, IUniquenessTitleChecker
 {
     public async Task<Training?> GetByIdAsync(TrainingId id, CancellationToken cancellationToken = default) =>
@@ -12,18 +19,17 @@ public class TrainingRepository(TrainingContext trainingContext) : ITrainingRepo
             .Trainings
             .FirstOrDefaultAsync(training => training.Id == id, cancellationToken).ConfigureAwait(false);
 
+    /// <summary>
+    /// Checks whether a training with the given title already exists for the specified trainer,
+    /// using the <see cref="TrainingTitleExistsForTrainerSpecification"/>.
+    /// </summary>
     public async Task<bool> TitleForTrainerExists(
         TrainingTitle title,
         TrainerId trainerId,
         CancellationToken cancellationToken = default)
     {
-        return await trainingContext.
-            Trainings
-            .AnyAsync(training =>
-                training.Title == title &&
-                training.TrainerId == trainerId,
-                cancellationToken)
-            .ConfigureAwait(false);
+        var spec = new TrainingTitleExistsForTrainerSpecification(title, trainerId);
+        return await AnyAsync(spec, cancellationToken);
     }
 
     // GetByTrainingIdAsync
@@ -58,15 +64,39 @@ public class TrainingRepository(TrainingContext trainingContext) : ITrainingRepo
         return trainingContext.SaveChangesAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// Retrieves all trainings belonging to the specified trainer,
+    /// using the <see cref="TrainingsByTrainerSpecification"/>.
+    /// </summary>
     public async Task<ICollection<Training>> GetByTrainerIdAsync(TrainerId trainerId, CancellationToken cancellationToken = default)
     {
-        return await trainingContext.Trainings
-            .Where(training => training.TrainerId == trainerId)
-            .ToListAsync(cancellationToken);
+        var spec = new TrainingsByTrainerSpecification(trainerId);
+        return await GetAsync(spec, cancellationToken);
     }
 
     public Task<List<Training>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return trainingContext.Trainings.ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<List<Training>> GetAsync(ISpecification<Training> spec, CancellationToken cancellationToken = default)
+    {
+        return await SpecificationEvaluator.GetQuery(trainingContext.Trainings, spec)
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<Training?> FirstOrDefaultAsync(ISpecification<Training> spec, CancellationToken cancellationToken = default)
+    {
+        return await SpecificationEvaluator.GetQuery(trainingContext.Trainings, spec)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> AnyAsync(ISpecification<Training> spec, CancellationToken cancellationToken = default)
+    {
+        return await SpecificationEvaluator.GetQuery(trainingContext.Trainings, spec)
+            .AnyAsync(cancellationToken);
     }
 }

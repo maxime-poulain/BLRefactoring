@@ -7,6 +7,10 @@ using Xunit;
 
 namespace BLRefactoring.DDD.Api.IntegrationTests.Controllers;
 
+/// <summary>
+/// Integration tests for <see cref="DDD.Api.Controller.TrainingController"/>.
+/// Validates HTTP endpoints for training CRUD operations including authorization.
+/// </summary>
 [Collection("Api")]
 public class TrainingControllerTests(ApiFactory factory)
 {
@@ -146,6 +150,21 @@ public class TrainingControllerTests(ApiFactory factory)
         var response = await client.DeleteAsync($"/Training/{trainingId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    // -- GetByTopic --
+
+    [Fact]
+    public async Task GetByTopic_Returns200()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
+        await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
+
+        var response = await client.GetAsync("/Training/by-topic/Programming");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var trainings = await response.Content.ReadFromJsonAsync<List<TrainingDto>>();
+        trainings.Should().NotBeEmpty();
     }
 
     // -- GetByTrainerId --

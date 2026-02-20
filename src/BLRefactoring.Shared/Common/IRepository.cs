@@ -1,3 +1,5 @@
+using BLRefactoring.Shared.Common.Specifications;
+
 namespace BLRefactoring.Shared.Common;
 
 /// <summary>
@@ -13,6 +15,29 @@ namespace BLRefactoring.Shared.Common;
 /// the domain model while adhering to DDD principles.
 /// </summary>
 /// <typeparam name="TAggregate">The type of the aggregate root to be managed by the repository. The aggregate root serves as the entry point for interacting with an aggregate, enforcing its invariants and ensuring the internal state is consistent, as emphasized by Eric Evans in "Domain-Driven Design: Tackling Complexity in the Heart of Software." TAggregate must implement the IAggregateRoot interface.</typeparam>
-public interface IRepository<TAggregate> where TAggregate : IAggregateRoot
+public interface IRepository<TAggregate> where TAggregate : class, IAggregateRoot
 {
+    /// <summary>
+    /// Retrieves a list of aggregates matching the given specification.
+    /// </summary>
+    /// <param name="spec">The specification defining the query criteria, ordering, and paging.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    /// <returns>A list of aggregates matching the specification.</returns>
+    Task<List<TAggregate>> GetAsync(ISpecification<TAggregate> spec, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves the first aggregate matching the given specification, or <c>null</c> if none is found.
+    /// </summary>
+    /// <param name="spec">The specification defining the query criteria.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    /// <returns>The first matching aggregate, or <c>null</c>.</returns>
+    Task<TAggregate?> FirstOrDefaultAsync(ISpecification<TAggregate> spec, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Determines whether any aggregate matches the given specification.
+    /// </summary>
+    /// <param name="spec">The specification defining the query criteria.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    /// <returns><c>true</c> if at least one aggregate matches; otherwise, <c>false</c>.</returns>
+    Task<bool> AnyAsync(ISpecification<TAggregate> spec, CancellationToken cancellationToken = default);
 }

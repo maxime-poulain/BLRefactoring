@@ -129,6 +129,21 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
     }
 
     /// <summary>
+    /// Retrieves all trainings that match the specified topic.
+    /// </summary>
+    /// <param name="topic">The topic name to filter trainings by.</param>
+    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
+    /// <returns>200 OK with a list of trainings matching the topic.</returns>
+    [Authorize]
+    [HttpGet("by-topic/{topic}")]
+    [ProducesResponseType(typeof(List<TrainingDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetByTopicAsync(string topic, CancellationToken cancellationToken)
+    {
+        var trainings = await trainingApplicationService.GetByTopicAsync(topic, cancellationToken);
+        return Ok(trainings);
+    }
+
+    /// <summary>
     /// Deletes a training by its unique identifier.
     /// </summary>
     /// <param name="trainingId">The unique identifier of the training to delete.</param>

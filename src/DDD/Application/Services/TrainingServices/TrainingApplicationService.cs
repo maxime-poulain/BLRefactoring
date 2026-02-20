@@ -6,6 +6,7 @@ using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.Messages;
+using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.Specifications;
 
 namespace BLRefactoring.DDD.Application.Services.TrainingServices;
 
@@ -15,16 +16,51 @@ namespace BLRefactoring.DDD.Application.Services.TrainingServices;
 // Example: `ITrainingCreator` or `ITrainingCreationService` is more meaningful
 // than `ITrainingApplicationService`.
 
+/// <summary>
+/// Application service interface for managing training operations (create, read, update, delete).
+/// </summary>
 public interface ITrainingApplicationService
 {
+    /// <summary>
+    /// Creates a new training from the given request.
+    /// </summary>
     Task<Result<TrainingDto>> CreateAsync(TrainingCreationRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves a training by its unique identifier.
+    /// </summary>
     Task<Result<TrainingDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves all available trainings.
+    /// </summary>
     Task<List<TrainingDto>> GetAllAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Edits an existing training identified by <paramref name="trainingId"/>.
+    /// </summary>
     Task<Result<TrainingDto>> EditAsync(Guid trainingId, TrainingEditionRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves all trainings belonging to the specified trainer.
+    /// </summary>
     Task<Result<List<TrainingDto>>> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves all trainings matching the specified topic name.
+    /// </summary>
+    Task<List<TrainingDto>> GetByTopicAsync(string topic, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes a training by its unique identifier.
+    /// </summary>
     Task<Result> DeleteAsync(Guid trainingId, CancellationToken cancellationToken = default);
 }
 
+/// <summary>
+/// Implementation of <see cref="ITrainingApplicationService"/> that orchestrates
+/// training CRUD operations using domain services and repositories.
+/// </summary>
 public class TrainingApplicationService(
     ITrainerRepository trainerRepository,
     IUniquenessTitleChecker uniquenessTitleChecker,
@@ -32,6 +68,7 @@ public class TrainingApplicationService(
     ICurrentUserService currentUserService)
     : ITrainingApplicationService
 {
+    /// <inheritdoc />
     public async Task<Result<TrainingDto>> CreateAsync(TrainingCreationRequest request, CancellationToken cancellationToken = default)
     {
         var trainer = await trainerRepository.GetByIdAsync(currentUserService.TrainerId, cancellationToken);
@@ -63,6 +100,7 @@ public class TrainingApplicationService(
         }, Result<TrainingDto>.FailureAsync);
     }
 
+    /// <inheritdoc />
     public async Task<Result<TrainingDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var training = await trainingRepository.GetByIdAsync((TrainingId)id, cancellationToken);
@@ -72,11 +110,13 @@ public class TrainingApplicationService(
             : Result<TrainingDto>.Success(training.ToDto());
     }
 
+    /// <inheritdoc />
     public async Task<List<TrainingDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return (await trainingRepository.GetAllAsync(cancellationToken)).ToDtos();
     }
 
+    /// <inheritdoc />
     public async Task<Result<TrainingDto>> EditAsync(Guid trainingId, TrainingEditionRequest request, CancellationToken cancellationToken = default)
     {
         var training = await trainingRepository.GetByIdAsync((TrainingId)trainingId, cancellationToken);
@@ -109,12 +149,22 @@ public class TrainingApplicationService(
             onFailure: Result<TrainingDto>.FailureAsync);
     }
 
+    /// <inheritdoc />
     public async Task<Result<List<TrainingDto>>> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken = default)
     {
         var trainings = await trainingRepository.GetByTrainerIdAsync((TrainerId)trainerId, cancellationToken);
         return Result<List<TrainingDto>>.Success(trainings.ToDtos());
     }
 
+    /// <inheritdoc />
+    public async Task<List<TrainingDto>> GetByTopicAsync(string topic, CancellationToken cancellationToken = default)
+    {
+        var spec = new TrainingsByTopicSpecification(topic);
+        var trainings = await trainingRepository.GetAsync(spec, cancellationToken);
+        return trainings.ToDtos();
+    }
+
+    /// <inheritdoc />
     public async Task<Result> DeleteAsync(Guid trainingId, CancellationToken cancellationToken = default)
     {
         var training = await trainingRepository.GetByIdAsync((TrainingId)trainingId, cancellationToken);

@@ -1,5 +1,7 @@
+using BLRefactoring.Shared.Common.Specifications;
 using BLRefactoring.Shared.Domain;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
+using BLRefactoring.Shared.Infrastructure.Specifications;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -51,5 +53,26 @@ public class TrainerRepository(TrainingContext trainingContext) : ITrainerReposi
     {
         trainingContext.Remove(trainer);
         await trainingContext.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<List<Trainer>> GetAsync(ISpecification<Trainer> spec, CancellationToken cancellationToken = default)
+    {
+        return await SpecificationEvaluator.GetQuery(trainingContext.Trainers, spec)
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<Trainer?> FirstOrDefaultAsync(ISpecification<Trainer> spec, CancellationToken cancellationToken = default)
+    {
+        return await SpecificationEvaluator.GetQuery(trainingContext.Trainers, spec)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> AnyAsync(ISpecification<Trainer> spec, CancellationToken cancellationToken = default)
+    {
+        return await SpecificationEvaluator.GetQuery(trainingContext.Trainers, spec)
+            .AnyAsync(cancellationToken);
     }
 }
