@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.CQS;
@@ -11,7 +12,6 @@ namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Create;
 public class CreateTrainingCommand : ICommand<Result>
 {
     [JsonIgnore] public Guid TrainingId { get; init; } = Guid.NewGuid();
-    public Guid TrainerId { get; init; }
     public string Title { get; init; } = null!;
     public List<string> Topics { get; init; } = [];
     public string Description { get; init; } = null!;
@@ -22,19 +22,21 @@ public class CreateTrainingCommand : ICommand<Result>
 public class CreateTrainingCommandHandler(
     ITrainingRepository trainingRepository,
     ITrainerRepository trainerRepository,
-    IUniquenessTitleChecker titleChecker)
+    IUniquenessTitleChecker titleChecker,
+    ICurrentUserService currentUserService)
     : ICommandHandler<CreateTrainingCommand, Result>
 {
     public async ValueTask<Result> Handle(
         CreateTrainingCommand request,
         CancellationToken cancellationToken)
     {
-        var trainer = await trainerRepository.GetByIdAsync((TrainerId)request.TrainerId, cancellationToken);
+        var trainerId = currentUserService.TrainerId;
+        var trainer = await trainerRepository.GetByIdAsync((TrainerId)trainerId, cancellationToken);
 
         if (trainer == null)
         {
             return Result.Failure(ErrorCode.NotFound,
-                $"Trainer `{request.TrainerId}` was not found");
+                $"Trainer `{trainerId}` was not found");
         }
 
         var trainingCreationMessage = new TrainingCreationMessage
@@ -43,9 +45,9 @@ public class CreateTrainingCommandHandler(
             Description = request.Description,
             Prerequisites = request.Prerequisites,
             AcquiredSkills = request.AcquiredSkills,
-            TrainerId = request.TrainerId,
+            TrainerId = trainerId,
             Topics = request.Topics,
-            UserId = Guid.Empty
+            UserId = currentUserService.UserId
         };
 
         var trainingCreationResult = await Training.CreateAsync(trainingCreationMessage, titleChecker);

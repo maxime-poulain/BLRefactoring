@@ -1,4 +1,5 @@
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Create;
+using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
@@ -15,6 +16,7 @@ public class CreateTrainingCommandHandlerTests
     private readonly Mock<ITrainingRepository> _trainingRepository = new();
     private readonly Mock<ITrainerRepository> _trainerRepository = new();
     private readonly Mock<IUniquenessTitleChecker> _titleChecker = new();
+    private readonly Mock<ICurrentUserService> _currentUserService = new();
 
     public CreateTrainingCommandHandlerTests()
     {
@@ -27,7 +29,7 @@ public class CreateTrainingCommandHandlerTests
     }
 
     private CreateTrainingCommandHandler CreateSut() =>
-        new(_trainingRepository.Object, _trainerRepository.Object, _titleChecker.Object);
+        new(_trainingRepository.Object, _trainerRepository.Object, _titleChecker.Object, _currentUserService.Object);
 
     [Fact]
     public async Task Handle_ValidCommand_ReturnsSuccessAndCallsSave()
@@ -36,11 +38,12 @@ public class CreateTrainingCommandHandlerTests
         _trainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
+        _currentUserService.Setup(s => s.TrainerId).Returns(trainer.Id.Value);
+        _currentUserService.Setup(s => s.UserId).Returns(Guid.NewGuid());
         var sut = CreateSut();
 
         var command = new CreateTrainingCommand
         {
-            TrainerId = trainer.Id,
             Title = "Advanced C# Patterns",
             Description = "A deep dive into design patterns",
             Prerequisites = "Basic C# knowledge",
@@ -59,14 +62,16 @@ public class CreateTrainingCommandHandlerTests
     [Fact]
     public async Task Handle_NonExistingTrainer_ReturnsNotFoundFailure()
     {
+        var trainerId = Guid.NewGuid();
         _trainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Trainer?)null);
+        _currentUserService.Setup(s => s.TrainerId).Returns(trainerId);
+        _currentUserService.Setup(s => s.UserId).Returns(Guid.NewGuid());
         var sut = CreateSut();
 
         var command = new CreateTrainingCommand
         {
-            TrainerId = Guid.NewGuid(),
             Title = "Some Training",
             Description = "Description",
             Prerequisites = "Prerequisites",
@@ -89,11 +94,12 @@ public class CreateTrainingCommandHandlerTests
         _trainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
+        _currentUserService.Setup(s => s.TrainerId).Returns(trainer.Id.Value);
+        _currentUserService.Setup(s => s.UserId).Returns(Guid.NewGuid());
         var sut = CreateSut();
 
         var command = new CreateTrainingCommand
         {
-            TrainerId = trainer.Id,
             Title = "AB", // too short — domain rejects (min 3)
             Description = "A valid description",
             Prerequisites = "Valid prerequisites",

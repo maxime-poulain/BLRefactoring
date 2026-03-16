@@ -9,12 +9,7 @@ public class CreateTrainingCommandValidator : AbstractValidator<CreateTrainingCo
         RuleFor(command => command.Title)
             .NotEmpty();
 
-        RuleFor(command => command.TrainingId)
-            .NotEqual(Guid.Empty)
-            .WithMessage("Invalid trainer identifier");
-
         RuleFor(command => command.Topics)
             .NotEmpty();
     }
-
 }
