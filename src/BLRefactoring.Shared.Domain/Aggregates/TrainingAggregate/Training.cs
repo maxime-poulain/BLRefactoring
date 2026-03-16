@@ -62,9 +62,7 @@ public sealed class Training : AggregateRoot<TrainingId>
 
         ErrorCollection errors = [];
 
-        editionResult.Switch(
-            onSuccess: () => { },
-            onFailure: errs => errors.AddErrors(errs));
+        editionResult.TapError(errs => errors.AddErrors(errs));
 
         return errors.Any() ? Result<Training>.Failure(errors) : Result<Training>.Success(training);
     }
@@ -78,10 +76,8 @@ public sealed class Training : AggregateRoot<TrainingId>
 
         var errors = new ErrorCollection();
 
-        var titleResult = TrainingTitle.Create(message.Title);
-        titleResult.Switch(
-            onSuccess: _ => { },
-            onFailure: errs => errors.AddErrors(errs));
+        var titleResult = TrainingTitle.Create(message.Title)
+            .TapError(errs => errors.AddErrors(errs));
 
         if (!titleResult.HasErrors())
         {
@@ -97,41 +93,24 @@ public sealed class Training : AggregateRoot<TrainingId>
             }
         }
 
-        var descriptionResult = TrainingDescription.Create(message.Description);
-        descriptionResult.Switch(
-            onSuccess: _ => { },
-            onFailure: errs => errors.AddErrors(errs));
+        var descriptionResult = TrainingDescription.Create(message.Description)
+            .TapError(errs => errors.AddErrors(errs));
 
-        var prerequisitesResult = TrainingPrerequisites.Create(message.Prerequisites);
-        prerequisitesResult.Switch(
-            onSuccess: _ => { },
-            onFailure: errs => errors.AddErrors(errs));
+        var prerequisitesResult = TrainingPrerequisites.Create(message.Prerequisites)
+            .TapError(errs => errors.AddErrors(errs));
 
-        var acquiredSkillsResult = AcquiredSkills.Create(message.AcquiredSkills);
-        acquiredSkillsResult.Switch(
-            onSuccess: _ => { },
-            onFailure: errs => errors.AddErrors(errs));
+        var acquiredSkillsResult = AcquiredSkills.Create(message.AcquiredSkills)
+            .TapError(errs => errors.AddErrors(errs));
 
         if (errors.Any())
         {
             return Result.Failure(errors);
         }
 
-        titleResult.Switch(
-            onSuccess: title => Title = title,
-            onFailure: _ => { });
-
-        descriptionResult.Switch(
-            onSuccess: desc => Description = desc,
-            onFailure: _ => { });
-
-        prerequisitesResult.Switch(
-            onSuccess: prereq => Prerequisites = prereq,
-            onFailure: _ => { });
-
-        acquiredSkillsResult.Switch(
-            onSuccess: skills => AcquiredSkills = skills,
-            onFailure: _ => { });
+        titleResult.Tap(title => Title = title);
+        descriptionResult.Tap(desc => Description = desc);
+        prerequisitesResult.Tap(prereq => Prerequisites = prereq);
+        acquiredSkillsResult.Tap(skills => AcquiredSkills = skills);
 
         _topics.Clear();
         _topics.AddRange(message.Topics.Select(Topic.FromName));
