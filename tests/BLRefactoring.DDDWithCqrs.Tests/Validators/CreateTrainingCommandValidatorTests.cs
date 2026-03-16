@@ -13,7 +13,7 @@ public class CreateTrainingCommandValidatorTests
     {
         var command = new CreateTrainingCommand
         {
-            TrainerId = Guid.NewGuid(),
+
             Title = "Advanced C# Patterns",
             Topics = ["Programming"],
             Description = "Description",
@@ -31,7 +31,7 @@ public class CreateTrainingCommandValidatorTests
     {
         var command = new CreateTrainingCommand
         {
-            TrainerId = Guid.NewGuid(),
+
             Title = "Valid Title",
             Topics = [],
             Description = "Description",
