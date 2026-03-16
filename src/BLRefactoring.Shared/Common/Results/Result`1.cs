@@ -50,6 +50,32 @@ public abstract class Result<TValue>
         Action<IReadOnlyErrorCollection> onFailure);
 
     /// <summary>
+    /// Executes the provided action with the success value if the result is a success,
+    /// then returns the same result. Useful for side-effects without breaking the fluent chain.
+    /// Unlike <see cref="Bind{TNewValue}"/>, this method does not short-circuit on failure.
+    /// </summary>
+    /// <param name="onSuccess">An action to execute with the success value.</param>
+    /// <returns>The current result instance, enabling fluent chaining.</returns>
+    public Result<TValue> Tap(Action<TValue> onSuccess)
+    {
+        Switch(onSuccess, _ => { });
+        return this;
+    }
+
+    /// <summary>
+    /// Executes the provided action if the result is a failure, then returns the same result.
+    /// Useful for accumulating errors from multiple results without breaking the fluent chain.
+    /// Unlike <see cref="Bind{TNewValue}"/>, this method does not short-circuit on failure.
+    /// </summary>
+    /// <param name="onFailure">An action to execute with the error collection.</param>
+    /// <returns>The current result instance, enabling fluent chaining.</returns>
+    public Result<TValue> TapError(Action<IReadOnlyErrorCollection> onFailure)
+    {
+        Switch(_ => { }, onFailure);
+        return this;
+    }
+
+    /// <summary>
     /// Executes one of the provided asynchronous actions based on whether the result is a success or a failure.
     /// </summary>
     /// <param name="onSuccess">An asynchronous action to execute if the result is a success.</param>

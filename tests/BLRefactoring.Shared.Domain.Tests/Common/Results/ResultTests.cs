@@ -174,4 +174,72 @@ public class ResultTests
 
         result.Match(() => false, _ => true).Should().BeTrue();
     }
+
+    [Fact]
+    public void Success_Tap_CallsAction()
+    {
+        var result = Result.Success();
+        var tapCalled = false;
+
+        result.Tap(() => tapCalled = true);
+
+        tapCalled.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Failure_Tap_DoesNotCallAction()
+    {
+        var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
+        var result = Result.Failure(errors);
+        var tapCalled = false;
+
+        result.Tap(() => tapCalled = true);
+
+        tapCalled.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Tap_ReturnsSameResult()
+    {
+        var result = Result.Success();
+
+        var returned = result.Tap(() => { });
+
+        returned.Should().BeSameAs(result);
+    }
+
+    [Fact]
+    public void Success_TapError_DoesNotCallAction()
+    {
+        var result = Result.Success();
+        var tapErrorCalled = false;
+
+        result.TapError(_ => tapErrorCalled = true);
+
+        tapErrorCalled.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Failure_TapError_CallsActionWithErrors()
+    {
+        var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
+        var result = Result.Failure(errors);
+        IReadOnlyErrorCollection? capturedErrors = null;
+
+        result.TapError(errs => capturedErrors = errs);
+
+        capturedErrors.Should().NotBeNull();
+        capturedErrors!.First().ErrorMessage.Should().Be("test error");
+    }
+
+    [Fact]
+    public void TapError_ReturnsSameResult()
+    {
+        var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
+        var result = Result.Failure(errors);
+
+        var returned = result.TapError(_ => { });
+
+        returned.Should().BeSameAs(result);
+    }
 }

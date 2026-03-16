@@ -52,6 +52,32 @@ public abstract class Result
     public abstract void Switch(Action onSuccess, Action<IReadOnlyErrorCollection> onFailure);
 
     /// <summary>
+    /// Executes the provided action if the result is a success, then returns the same result.
+    /// This is useful for performing side-effects without breaking the fluent chain.
+    /// Unlike <see cref="Bind"/>, this method does not short-circuit on failure.
+    /// </summary>
+    /// <param name="onSuccess">An action to execute if the result is a success.</param>
+    /// <returns>The current result instance, enabling fluent chaining.</returns>
+    public Result Tap(Action onSuccess)
+    {
+        Switch(onSuccess, _ => { });
+        return this;
+    }
+
+    /// <summary>
+    /// Executes the provided action if the result is a failure, then returns the same result.
+    /// This is useful for accumulating errors from multiple results without breaking the fluent chain.
+    /// Unlike <see cref="Bind"/>, this method does not short-circuit on failure.
+    /// </summary>
+    /// <param name="onFailure">An action to execute if the result is a failure, taking the error collection as a parameter.</param>
+    /// <returns>The current result instance, enabling fluent chaining.</returns>
+    public Result TapError(Action<IReadOnlyErrorCollection> onFailure)
+    {
+        Switch(() => { }, onFailure);
+        return this;
+    }
+
+    /// <summary>
     /// Creates a new instance of the <see cref="Result"/> class that represents a successful computation.
     /// </summary>
     /// <returns>A new instance of the <see cref="Result"/> class that represents a successful computation.</returns>

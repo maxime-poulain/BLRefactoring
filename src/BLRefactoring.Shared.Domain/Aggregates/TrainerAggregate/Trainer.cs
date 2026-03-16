@@ -1,4 +1,5 @@
 using BLRefactoring.Shared.Common;
+using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.Messages;
@@ -86,21 +87,26 @@ public sealed class Trainer : AggregateRoot<TrainerId>
         string bio,
         Trainer trainer)
     {
-        return trainer
-            .ChangeName(firstname, lastname)
-            .Bind(() => trainer.ChangeEmail(email))
-            .Bind(() => Bio.Create(bio).Match(
-                createdBio =>
-                {
-                    trainer.Bio = createdBio;
-                    return Result.Success();
-                },
-                Result.Failure))
-            .Match(() =>
-            {
-                trainer.AddDomainEvent(new TrainerCreatedDomainEvent(trainer));
-                return Result<Trainer>.Success(trainer);
-            }, Result<Trainer>.Failure);
+        var errors = new ErrorCollection();
+
+        var nameResult = Name.Create(firstname, lastname)
+            .TapError(errs => errors.AddErrors(errs));
+
+        var emailResult = Email.Create(email)
+            .TapError(errs => errors.AddErrors(errs));
+
+        var bioResult = Bio.Create(bio)
+            .TapError(errs => errors.AddErrors(errs));
+
+        if (errors.Any())
+            return Result<Trainer>.Failure(errors);
+
+        nameResult.Tap(name => trainer.Name = name);
+        emailResult.Tap(e => trainer.Email = e);
+        bioResult.Tap(b => trainer.Bio = b);
+
+        trainer.AddDomainEvent(new TrainerCreatedDomainEvent(trainer));
+        return Result<Trainer>.Success(trainer);
     }
 
     /// <summary>

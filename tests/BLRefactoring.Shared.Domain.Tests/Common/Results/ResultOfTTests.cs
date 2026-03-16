@@ -161,4 +161,72 @@ public class ResultOfTTests
             value => (ErrorCode?)null,
             errors => errors.First().ErrorCode).Should().Be(ErrorCode.NotFound);
     }
+
+    [Fact]
+    public void Success_Tap_CallsActionWithValue()
+    {
+        var result = Result<string>.Success("hello");
+        string? capturedValue = null;
+
+        result.Tap(value => capturedValue = value);
+
+        capturedValue.Should().Be("hello");
+    }
+
+    [Fact]
+    public void Failure_Tap_DoesNotCallAction()
+    {
+        var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
+        var result = Result<string>.Failure(errors);
+        var tapCalled = false;
+
+        result.Tap(_ => tapCalled = true);
+
+        tapCalled.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Tap_ReturnsSameResult()
+    {
+        var result = Result<string>.Success("hello");
+
+        var returned = result.Tap(_ => { });
+
+        returned.Should().BeSameAs(result);
+    }
+
+    [Fact]
+    public void Success_TapError_DoesNotCallAction()
+    {
+        var result = Result<string>.Success("hello");
+        var tapErrorCalled = false;
+
+        result.TapError(_ => tapErrorCalled = true);
+
+        tapErrorCalled.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Failure_TapError_CallsActionWithErrors()
+    {
+        var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
+        var result = Result<string>.Failure(errors);
+        IReadOnlyErrorCollection? capturedErrors = null;
+
+        result.TapError(errs => capturedErrors = errs);
+
+        capturedErrors.Should().NotBeNull();
+        capturedErrors!.First().ErrorMessage.Should().Be("test error");
+    }
+
+    [Fact]
+    public void TapError_ReturnsSameResult()
+    {
+        var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
+        var result = Result<string>.Failure(errors);
+
+        var returned = result.TapError(_ => { });
+
+        returned.Should().BeSameAs(result);
+    }
 }
