@@ -6,6 +6,7 @@ using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetById;
 using BLRefactoring.Shared.Application.Dtos.Training;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.CQS;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BLRefactoring.DDDWithCqrs.Api.Controller;
@@ -53,13 +54,15 @@ public class TrainingController(
         return await queryDispatcher.DispatchAsync(new GetAllTrainingsQuery());
     }
 
-    [HttpDelete("{id}")]
+    [Authorize(Policy = "TrainingOwner")]
+    [HttpDelete("{trainingId:guid}")]
     [ProducesResponseType(typeof(void), StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> DeleteAsync(Guid id)
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult> DeleteAsync(Guid trainingId)
     {
-        var deletionResult = await commandDispatcher.DispatchAsync(new DeleteTrainingCommand(id));
+        var deletionResult = await commandDispatcher.DispatchAsync(new DeleteTrainingCommand(trainingId));
 
         return deletionResult.Match<ActionResult>(
             NoContent,

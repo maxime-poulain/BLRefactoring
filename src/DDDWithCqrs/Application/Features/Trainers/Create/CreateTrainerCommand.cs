@@ -10,6 +10,8 @@ public class CreateTrainerCommand : ICommand<Result>
 {
     [JsonIgnore]
     public Guid TrainerId { get; init; } = Guid.NewGuid();
+    [JsonIgnore]
+    public Guid UserId { get; init; }
     public string Firstname { get; init; } = null!;
     public string Lastname { get; init; } = null!;
     public string Email { get; init; } = null!;
@@ -25,7 +27,7 @@ public class CreateTrainerCommandHandler(ITrainerRepository trainerRepository)
             Firstname = request.Firstname,
             Lastname = request.Lastname,
             Email = request.Email,
-            UserId = Guid.Empty,
+            UserId = request.UserId,
             Bio = "<>"
         };
 
