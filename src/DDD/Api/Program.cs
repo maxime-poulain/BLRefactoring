@@ -105,6 +105,15 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<TrainingContext>();
 
+builder.Services
+    .AddHealthChecksUI(options =>
+    {
+        options.SetEvaluationTimeInSeconds(30);
+        options.MaximumHistoryEntriesPerEndpoint(50);
+        options.AddHealthCheckEndpoint("DDD API", "/health");
+    })
+    .AddInMemoryStorage();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -121,7 +130,11 @@ app.UseCors("BlazorClient");
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = HealthChecks.UI.Client.UIResponseWriter.WriteHealthCheckUIResponse
+});
+app.MapHealthChecksUI(options => options.UIPath = "/health-ui");
 
 using (var scope = app.Services.CreateScope())
 {
