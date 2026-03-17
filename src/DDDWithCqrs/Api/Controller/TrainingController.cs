@@ -1,8 +1,11 @@
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Create;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Delete;
+using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Edit;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetAll;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetById;
+using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetByTopic;
+using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetByTrainerId;
 using BLRefactoring.Shared.Application.Dtos.Training;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.CQS;
@@ -52,6 +55,39 @@ public class TrainingController(
     public async Task<ActionResult<List<TrainingDto>>> GetAllAsync()
     {
         return await queryDispatcher.DispatchAsync(new GetAllTrainingsQuery());
+    }
+
+    [Authorize(Policy = "TrainingOwner")]
+    [HttpPut("{trainingId:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult> EditTrainingAsync(
+        Guid trainingId,
+        [FromBody] EditTrainingCommand command)
+    {
+        command.TrainingId = trainingId;
+        var result = await commandDispatcher.DispatchAsync(command);
+
+        return result.Match<ActionResult>(
+            () => Ok(),
+            errors => errors.Any(e => e.ErrorCode == ErrorCode.NotFound) ? NotFound() : BadRequest(errors));
+    }
+
+    [HttpGet("by-trainer/{trainerId:guid}")]
+    [ProducesResponseType(typeof(List<TrainingDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<List<TrainingDto>>> GetByTrainerIdAsync(Guid trainerId)
+    {
+        return await queryDispatcher.DispatchAsync(new GetTrainingsByTrainerIdQuery(trainerId));
+    }
+
+    [HttpGet("by-topic/{topic}")]
+    [ProducesResponseType(typeof(List<TrainingDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<TrainingDto>>> GetByTopicAsync(string topic)
+    {
+        return await queryDispatcher.DispatchAsync(new GetTrainingsByTopicQuery(topic));
     }
 
     [Authorize(Policy = "TrainingOwner")]
