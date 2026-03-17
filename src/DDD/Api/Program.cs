@@ -102,6 +102,9 @@ builder.Services.AddAuthorization(options =>
         policy.Requirements.Add(new TrainingOwnerRequirement()));
 });
 
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<TrainingContext>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -118,6 +121,7 @@ app.UseCors("BlazorClient");
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 using (var scope = app.Services.CreateScope())
 {
