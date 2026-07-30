@@ -114,7 +114,11 @@ public sealed class Trainer : AggregateRoot<TrainerId>
         emailResult.Tap(e => trainer.Email = e);
         bioResult?.Tap(b => trainer.Bio = b);
 
-        trainer.AddDomainEvent(new TrainerCreatedDomainEvent(trainer.Id));
+        trainer.AddDomainEvent(new TrainerCreatedDomainEvent(
+            trainer.Id,
+            trainer.Name.Firstname,
+            trainer.Name.Lastname,
+            trainer.Email.FullAddress));
         return Result<Trainer>.Success(trainer);
     }
 

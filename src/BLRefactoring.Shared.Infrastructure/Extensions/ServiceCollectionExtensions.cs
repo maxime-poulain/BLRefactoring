@@ -40,6 +40,8 @@ public static class ServiceCollectionExtensions
             .AddScoped<DomainEventInterceptor>()
             .AddSingleton<AuditableEntitiesInterceptor>()
             .AddScoped<ITokenService, TokenService>()
-            .AddScoped<ICurrentUserService, CurrentUserService>();
+            .AddScoped<ICurrentUserService, CurrentUserService>()
+            .AddSingleton<IEmailSender, FakeEmailSender>()
+            .AddSingleton<ITrainingSearchIndexer, FakeTrainingSearchIndexer>();
     }
 }
