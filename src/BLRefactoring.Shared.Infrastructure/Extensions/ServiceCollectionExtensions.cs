@@ -26,12 +26,8 @@ public static class ServiceCollectionExtensions
                 options.UseSqlServer(configuration.GetConnectionString("TrainingContext"))
                     .EnableSensitiveDataLogging()
                     .AddInterceptors(
-                        serviceProvider.GetRequiredService<IsTransientSaveChangesInterceptor>(),
-                        serviceProvider.GetRequiredService<IsTransientMaterializationInterceptor>(),
                         serviceProvider.GetRequiredService<DomainEventInterceptor>(),
                         serviceProvider.GetRequiredService<AuditableEntitiesInterceptor>()))
-            .AddSingleton<IsTransientSaveChangesInterceptor>()
-            .AddSingleton<IsTransientMaterializationInterceptor>()
             .AddSingleton<DomainEventInterceptor>()
             .AddSingleton<AuditableEntitiesInterceptor>()
             .AddScoped<ITokenService, TokenService>()

@@ -138,10 +138,7 @@ public sealed class Trainer : AggregateRoot<TrainerId>
 
         return result.Match(name =>
         {
-            if (!IsTransient())
-            {
-                AddDomainEvent(new TrainerNameChangedDomainEvent(this));
-            }
+            AddDomainEvent(new TrainerNameChangedDomainEvent(this));
             Name = name;
             return Result.Success();
         }, Result.Failure);
