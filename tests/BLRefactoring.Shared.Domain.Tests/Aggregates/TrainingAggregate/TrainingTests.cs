@@ -1,8 +1,6 @@
-using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.DomainEvents;
-using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.Messages;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 using BLRefactoring.Shared.Domain.Tests.Helpers;
 using FluentAssertions;
@@ -11,6 +9,13 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainingAggregate;
 
+/// <summary>
+/// The aggregate only accepts value objects, so malformed input cannot reach it:
+/// those rules belong to the value objects and are covered by their own tests, and
+/// resolving topic names is the application layer's job. The only rule left for the
+/// aggregate is the one it cannot settle alone — a title must be unique among the
+/// trainings of the same trainer.
+/// </summary>
 public class TrainingTests
 {
     // --- CreateAsync ---
@@ -41,11 +46,11 @@ public class TrainingTests
             .BuildValidAsync();
 
         // Assert
-        training.Title.Should().NotBeNull();
-        training.Description.Should().NotBeNull();
-        training.Prerequisites.Should().NotBeNull();
-        training.AcquiredSkills.Should().NotBeNull();
-        (training.TrainerId.Value).Should().Be(trainerId);
+        training.Title.Value.Should().Be("Valid Training Title");
+        training.Description.Value.Should().Be("A valid training description for testing purposes");
+        training.Prerequisites.Value.Should().Be("Basic programming knowledge required");
+        training.AcquiredSkills.Value.Should().Be("Advanced design patterns mastery");
+        training.TrainerId.Value.Should().Be(trainerId);
     }
 
     [Fact]
@@ -77,13 +82,15 @@ public class TrainingTests
     }
 
     [Fact]
-    public async Task CreateAsync_NullMessage_ThrowsArgumentNullException()
+    public async Task CreateAsync_NullTitle_ThrowsArgumentNullException()
     {
         // Arrange
-        var mockChecker = new Mock<IUniquenessTitleChecker>();
+        var checker = new Mock<IUniquenessTitleChecker>().Object;
 
         // Act
-        var act = () => Training.CreateAsync(null!, mockChecker.Object);
+        var act = () => Training.CreateAsync(
+            TrainingId.Generate(), TrainerId.Generate(),
+            null!, Description(), Prerequisites(), Skills(), Topics(), checker);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -92,63 +99,13 @@ public class TrainingTests
     [Fact]
     public async Task CreateAsync_NullTitleChecker_ThrowsArgumentNullException()
     {
-        // Arrange
-        var message = new TrainingCreationMessage
-        {
-            TrainingId = TrainingId.Generate(),
-            Title = "Valid Title",
-            Description = "Valid description",
-            Prerequisites = "Valid prerequisites",
-            AcquiredSkills = "Valid acquired skills",
-            Topics = ["Programming"],
-            TrainerId = TrainerId.Generate()
-        };
-
         // Act
-        var act = () => Training.CreateAsync(message, null!);
+        var act = () => Training.CreateAsync(
+            TrainingId.Generate(), TrainerId.Generate(),
+            Title(), Description(), Prerequisites(), Skills(), Topics(), null!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
-    }
-
-    [Fact]
-    public async Task CreateAsync_InvalidTitle_ReturnsFailure()
-    {
-        // Act
-        var result = await new TrainingBuilder()
-            .WithTitle("ab")
-            .BuildAsync();
-
-        // Assert
-        result.ShouldBeFailure();
-    }
-
-    [Fact]
-    public async Task CreateAsync_InvalidDescription_ReturnsFailure()
-    {
-        // Act
-        var result = await new TrainingBuilder()
-            .WithDescription("")
-            .BuildAsync();
-
-        // Assert
-        result.ShouldBeFailure();
-    }
-
-    [Fact]
-    public async Task CreateAsync_MultipleInvalidFields_ReturnsAllErrors()
-    {
-        // Act
-        var result = await new TrainingBuilder()
-            .WithTitle("ab")
-            .WithDescription("")
-            .WithPrerequisites("")
-            .WithAcquiredSkills("")
-            .BuildAsync();
-
-        // Assert
-        var errors = result.ShouldBeFailure();
-        errors.Should().HaveCountGreaterThanOrEqualTo(4);
     }
 
     [Fact]
@@ -163,34 +120,42 @@ public class TrainingTests
         result.ShouldBeFailure();
     }
 
+    [Fact]
+    public async Task CreateAsync_DuplicateTopics_AreDeduplicated()
+    {
+        // Act
+        var training = await new TrainingBuilder()
+            .WithTopics("Programming", "Programming", "Design")
+            .BuildValidAsync();
+
+        // Assert
+        training.Topics.Should().HaveCount(2);
+        training.Topics.Should().Contain(Topic.Programming);
+        training.Topics.Should().Contain(Topic.Design);
+    }
+
     // --- EditAsync ---
 
     [Fact]
-    public async Task EditAsync_ValidData_ReturnsSuccess()
+    public async Task EditAsync_ValidData_ReturnsSuccessAndUpdatesProperties()
     {
         // Arrange
         var training = await new TrainingBuilder().BuildValidAsync();
-        var mockChecker = new Mock<IUniquenessTitleChecker>();
-        mockChecker.Setup(c => c.TitleForTrainerExists(
-                It.IsAny<TrainingTitle>(),
-                It.IsAny<TrainerId>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-
-        var message = new TrainingEditionMessage
-        {
-            Title = "A Different Valid Title",
-            Description = "Updated description for the training",
-            Prerequisites = "Updated prerequisites content",
-            AcquiredSkills = "Updated acquired skills content",
-            Topics = ["Marketing"]
-        };
+        var checker = AvailableTitleChecker();
 
         // Act
-        var result = await training.EditAsync(message, mockChecker.Object);
+        var result = await training.EditAsync(
+            Title("A Different Valid Title"),
+            Description("Updated description for the training"),
+            Prerequisites("Updated prerequisites content"),
+            Skills("Updated acquired skills content"),
+            Topics(Topic.Marketing),
+            checker.Object);
 
         // Assert
         result.ShouldBeSuccess();
+        training.Title.Value.Should().Be("A Different Valid Title");
+        training.Topics.Should().ContainSingle().Which.Should().Be(Topic.Marketing);
     }
 
     [Fact]
@@ -199,24 +164,12 @@ public class TrainingTests
         // Arrange
         var training = await new TrainingBuilder().BuildValidAsync();
         training.ClearDomainEvents();
-        var mockChecker = new Mock<IUniquenessTitleChecker>();
-        mockChecker.Setup(c => c.TitleForTrainerExists(
-                It.IsAny<TrainingTitle>(),
-                It.IsAny<TrainerId>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-
-        var message = new TrainingEditionMessage
-        {
-            Title = "A Different Valid Title",
-            Description = "Updated description for the training",
-            Prerequisites = "Updated prerequisites content",
-            AcquiredSkills = "Updated acquired skills content",
-            Topics = ["Marketing"]
-        };
+        var checker = AvailableTitleChecker();
 
         // Act
-        await training.EditAsync(message, mockChecker.Object);
+        await training.EditAsync(
+            Title("A Different Valid Title"), Description(), Prerequisites(), Skills(),
+            Topics(Topic.Marketing), checker.Object);
 
         // Assert
         training.DomainEvents.Should().ContainSingle(e => e is TrainingEditedDomainEvent);
@@ -233,28 +186,15 @@ public class TrainingTests
         var training = await new TrainingBuilder()
             .WithTitle("Valid Training Title")
             .BuildValidAsync();
-
-        var mockChecker = new Mock<IUniquenessTitleChecker>();
-        mockChecker.Setup(c => c.TitleForTrainerExists(
-                It.IsAny<TrainingTitle>(),
-                It.IsAny<TrainerId>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-
-        var message = new TrainingEditionMessage
-        {
-            Title = "Valid Training Title",
-            Description = "Updated description for the training",
-            Prerequisites = "Updated prerequisites content",
-            AcquiredSkills = "Updated acquired skills content",
-            Topics = ["Programming"]
-        };
+        var checker = AvailableTitleChecker();
 
         // Act
-        await training.EditAsync(message, mockChecker.Object);
+        await training.EditAsync(
+            Title("Valid Training Title"), Description(), Prerequisites(), Skills(),
+            Topics(), checker.Object);
 
         // Assert
-        mockChecker.Verify(
+        checker.Verify(
             c => c.TitleForTrainerExists(
                 It.IsAny<TrainingTitle>(),
                 It.IsAny<TrainerId>(),
@@ -269,28 +209,15 @@ public class TrainingTests
         var training = await new TrainingBuilder()
             .WithTitle("Valid Training Title")
             .BuildValidAsync();
-
-        var mockChecker = new Mock<IUniquenessTitleChecker>();
-        mockChecker.Setup(c => c.TitleForTrainerExists(
-                It.IsAny<TrainingTitle>(),
-                It.IsAny<TrainerId>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-
-        var message = new TrainingEditionMessage
-        {
-            Title = "A Completely Different Title",
-            Description = "Updated description for the training",
-            Prerequisites = "Updated prerequisites content",
-            AcquiredSkills = "Updated acquired skills content",
-            Topics = ["Programming"]
-        };
+        var checker = AvailableTitleChecker();
 
         // Act
-        await training.EditAsync(message, mockChecker.Object);
+        await training.EditAsync(
+            Title("A Completely Different Title"), Description(), Prerequisites(), Skills(),
+            Topics(), checker.Object);
 
         // Assert
-        mockChecker.Verify(
+        checker.Verify(
             c => c.TitleForTrainerExists(
                 It.IsAny<TrainingTitle>(),
                 It.IsAny<TrainerId>(),
@@ -299,117 +226,72 @@ public class TrainingTests
     }
 
     [Fact]
-    public async Task EditAsync_DuplicateTitle_ReturnsFailure()
+    public async Task EditAsync_DuplicateTitle_FailsWithoutMutatingTheAggregate()
     {
         // Arrange
         var training = await new TrainingBuilder()
             .WithTitle("Valid Training Title")
             .BuildValidAsync();
+        var originalDescription = training.Description;
 
-        var mockChecker = new Mock<IUniquenessTitleChecker>();
-        mockChecker.Setup(c => c.TitleForTrainerExists(
+        var checker = new Mock<IUniquenessTitleChecker>();
+        checker.Setup(c => c.TitleForTrainerExists(
                 It.IsAny<TrainingTitle>(),
                 It.IsAny<TrainerId>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var message = new TrainingEditionMessage
-        {
-            Title = "A Completely Different Title",
-            Description = "Updated description for the training",
-            Prerequisites = "Updated prerequisites content",
-            AcquiredSkills = "Updated acquired skills content",
-            Topics = ["Programming"]
-        };
-
         // Act
-        var result = await training.EditAsync(message, mockChecker.Object);
+        var result = await training.EditAsync(
+            Title("A Completely Different Title"),
+            Description("A description that must not be applied"),
+            Prerequisites(), Skills(), Topics(), checker.Object);
 
-        // Assert
+        // Assert — the rejected title takes the whole edition down with it.
         result.ShouldBeFailure();
-    }
-
-    [Fact]
-    public async Task EditAsync_InvalidFields_DoNotMutateAggregate()
-    {
-        // Arrange
-        var training = await new TrainingBuilder()
-            .WithTitle("Valid Training Title")
-            .BuildValidAsync();
-
-        var originalTitle = training.Title;
-
-        var mockChecker = new Mock<IUniquenessTitleChecker>();
-
-        var message = new TrainingEditionMessage
-        {
-            Title = "ab",
-            Description = "",
-            Prerequisites = "",
-            AcquiredSkills = "",
-            Topics = ["Programming"]
-        };
-
-        // Act
-        var result = await training.EditAsync(message, mockChecker.Object);
-
-        // Assert
-        result.ShouldBeFailure();
-        training.Title.Should().Be(originalTitle);
-    }
-
-    [Fact]
-    public async Task CreateAsync_UnknownTopic_ReturnsInvalidTopicFailure()
-    {
-        // Act
-        var result = await new TrainingBuilder()
-            .WithTopics("Underwater Basket Weaving")
-            .BuildAsync();
-
-        // Assert
-        var errors = result.ShouldBeFailure();
-        errors.Should().Contain(e => e.ErrorCode == ErrorCode.InvalidTopic);
-    }
-
-    [Fact]
-    public async Task EditAsync_UnknownTopic_FailsWithoutMutatingTheAggregate()
-    {
-        // Arrange
-        var training = await new TrainingBuilder().BuildValidAsync();
-        var originalTitle = training.Title;
-        var originalTopics = training.Topics.ToList();
-        var mockChecker = new TrainingBuilder().CreateTitleCheckerMock();
-
-        var message = new TrainingEditionMessage
-        {
-            Title = "A Completely New Title",
-            Description = "A completely new description",
-            Prerequisites = "Completely new prerequisites",
-            AcquiredSkills = "Completely new skills",
-            Topics = ["Programming", "Not A Real Topic"]
-        };
-
-        // Act
-        var result = await training.EditAsync(message, mockChecker.Object);
-
-        // Assert — validation failed, so nothing was mutated.
-        var errors = result.ShouldBeFailure();
-        errors.Should().Contain(e => e.ErrorCode == ErrorCode.InvalidTopic);
-        training.Title.Should().Be(originalTitle);
-        training.Topics.Should().BeEquivalentTo(originalTopics);
+        training.Title.Value.Should().Be("Valid Training Title");
+        training.Description.Should().Be(originalDescription);
     }
 
     [Fact]
     public async Task EditAsync_DuplicateTopics_AreDeduplicated()
     {
+        // Arrange
+        var training = await new TrainingBuilder().BuildValidAsync();
+        var checker = AvailableTitleChecker();
+
         // Act
-        var training = await new TrainingBuilder()
-            .WithTopics("Programming", "Programming", "Design")
-            .BuildValidAsync();
+        await training.EditAsync(
+            Title("A Different Valid Title"), Description(), Prerequisites(), Skills(),
+            Topics(Topic.Programming, Topic.Programming, Topic.Design), checker.Object);
 
         // Assert
         training.Topics.Should().HaveCount(2);
-        training.Topics.Should().Contain(Topic.Programming);
-        training.Topics.Should().Contain(Topic.Design);
     }
+
+    private static Mock<IUniquenessTitleChecker> AvailableTitleChecker()
+    {
+        var checker = new Mock<IUniquenessTitleChecker>();
+        checker.Setup(c => c.TitleForTrainerExists(
+                It.IsAny<TrainingTitle>(),
+                It.IsAny<TrainerId>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        return checker;
+    }
+
+    private static TrainingTitle Title(string value = "Valid Training Title")
+        => TrainingTitle.Create(value).ShouldBeSuccess();
+
+    private static TrainingDescription Description(string value = "A valid training description for testing purposes")
+        => TrainingDescription.Create(value).ShouldBeSuccess();
+
+    private static TrainingPrerequisites Prerequisites(string value = "Basic programming knowledge required")
+        => TrainingPrerequisites.Create(value).ShouldBeSuccess();
+
+    private static AcquiredSkills Skills(string value = "Advanced design patterns mastery")
+        => AcquiredSkills.Create(value).ShouldBeSuccess();
+
+    private static IReadOnlyCollection<Topic> Topics(params Topic[] topics)
+        => topics.Length == 0 ? [Topic.Programming] : topics;
 }

@@ -5,7 +5,7 @@ using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.CQS;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
-using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.Messages;
+using BLRefactoring.Shared.Application.Factories;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Edit;
 
@@ -38,16 +38,19 @@ public class EditTrainingCommandHandler(
                 $"Training with id `{request.TrainingId}` not found.");
         }
 
-        var editionMessage = new TrainingEditionMessage
-        {
-            Title = request.Title,
-            Description = request.Description,
-            Prerequisites = request.Prerequisites,
-            AcquiredSkills = request.AcquiredSkills,
-            Topics = request.Topics
-        };
+        var detailsResult = TrainingDetailsFactory.Create(
+            request.Title, request.Description, request.Prerequisites, request.AcquiredSkills, request.Topics);
 
-        var result = await training.EditAsync(editionMessage, titleChecker, cancellationToken);
+        var result = await detailsResult.MatchAsync(
+            async details => await training.EditAsync(
+                details.Title,
+                details.Description,
+                details.Prerequisites,
+                details.AcquiredSkills,
+                details.Topics,
+                titleChecker,
+                cancellationToken),
+            Result.FailureAsync);
 
         return await result.MatchAsync<Result>(
             onSuccess: async () =>

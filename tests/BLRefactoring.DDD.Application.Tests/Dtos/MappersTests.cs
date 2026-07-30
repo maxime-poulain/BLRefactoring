@@ -10,7 +10,7 @@ public class MappersTests
     [Fact]
     public void TrainerToDto_MapsIdCorrectly()
     {
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         var dto = trainer.ToDto();
         dto.Id.Should().Be(trainer.Id.Value);
     }
@@ -18,7 +18,7 @@ public class MappersTests
     [Fact]
     public void TrainerToDto_MapsContactEmailCorrectly()
     {
-        var trainer = new TrainerBuilder().WithContactEmail("test@example.com").BuildValid();
+        var trainer = new TrainerBuilder().WithContactEmail("test@example.com").Build();
         var dto = trainer.ToDto();
         dto.ContactEmail.Should().Be("test@example.com");
     }
@@ -26,7 +26,7 @@ public class MappersTests
     [Fact]
     public void TrainerToDto_MapsFirstnameCorrectly()
     {
-        var trainer = new TrainerBuilder().WithFirstname("Alice").BuildValid();
+        var trainer = new TrainerBuilder().WithFirstname("Alice").Build();
         var dto = trainer.ToDto();
         dto.Firstname.Should().Be("Alice");
     }
@@ -34,7 +34,7 @@ public class MappersTests
     [Fact]
     public void TrainerToDto_MapsLastnameCorrectly()
     {
-        var trainer = new TrainerBuilder().WithLastname("Smith").BuildValid();
+        var trainer = new TrainerBuilder().WithLastname("Smith").Build();
         var dto = trainer.ToDto();
         dto.Lastname.Should().Be("Smith");
     }

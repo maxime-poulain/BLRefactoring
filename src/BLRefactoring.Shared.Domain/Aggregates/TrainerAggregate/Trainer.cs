@@ -1,8 +1,5 @@
 using BLRefactoring.Shared.Common;
-using BLRefactoring.Shared.Common.Errors;
-using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.Messages;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 
 namespace BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
@@ -50,135 +47,77 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     }
 
     /// <summary>
-    /// Creates a new instance of the Trainer class.
+    /// Creates a trainer from value objects that are, by construction, already valid.
     /// </summary>
-    /// <param name="trainerCreationMessage">The data the trainer is created from.</param>
-    /// <returns>A <see cref="Result{T}"/> of type <see cref="Trainer"/>.</returns>
-    public static Result<Trainer> Create(TrainerCreationMessage trainerCreationMessage)
+    /// <remarks>
+    /// Nothing here can fail, so the factory hands back a <see cref="Trainer"/>
+    /// rather than a result to unwrap: assembling valid parts cannot produce an
+    /// invalid whole as long as the aggregate carries no cross-field rule. Turning
+    /// the caller's input into these value objects is the application layer's job —
+    /// the domain never sees the shape of the message it came from.
+    /// </remarks>
+    /// <param name="id">The identifier of the trainer, generated upfront by the caller.</param>
+    /// <param name="userId">The identity account the trainer is attached to.</param>
+    /// <param name="name">The name of the trainer.</param>
+    /// <param name="contactEmail">The address at which the trainer wishes to be contacted.</param>
+    /// <param name="bio">The bio of the trainer, or <see langword="null"/> when none was provided.</param>
+    public static Trainer Create(TrainerId id, UserId userId, Name name, Email contactEmail, Bio? bio)
     {
-        ArgumentNullException.ThrowIfNull(trainerCreationMessage);
+        ArgumentNullException.ThrowIfNull(id);
+        ArgumentNullException.ThrowIfNull(userId);
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(contactEmail);
 
-        var trainer = new Trainer(trainerCreationMessage.TrainerId)
+        var trainer = new Trainer(id)
         {
-            UserId = trainerCreationMessage.UserId
+            UserId = userId,
+            Name = name,
+            ContactEmail = contactEmail,
+            Bio = bio
         };
 
-        return trainer.ApplyEdition(trainerCreationMessage).Match(
-            () =>
-            {
-                trainer.AddDomainEvent(new TrainerCreatedDomainEvent(
-                    trainer.Id,
-                    trainer.Name.Firstname,
-                    trainer.Name.Lastname,
-                    trainer.ContactEmail.FullAddress));
-                return Result<Trainer>.Success(trainer);
-            },
-            Result<Trainer>.Failure);
+        trainer.AddDomainEvent(new TrainerCreatedDomainEvent(
+            trainer.Id,
+            trainer.Name.Firstname,
+            trainer.Name.Lastname,
+            trainer.ContactEmail.FullAddress));
+
+        return trainer;
     }
 
     /// <summary>
-    /// Creates a new instance of the Trainer class.
-    /// </summary>
-    /// <param name="id">The id of the trainer.</param>
-    /// <param name="firstname">The first name of the trainer.</param>
-    /// <param name="lastname">The last name of the trainer.</param>
-    /// <param name="contactEmail">The contact email of the trainer.</param>
-    /// <param name="bio">The bio of the trainer.</param>
-    /// <param name="userId">The user ID associated with the trainer.</param>
-    /// <returns>A <see cref="Result{T}"/> of type <see cref="Trainer"/>.</returns>
-    public static Result<Trainer> Create(Guid id,
-        string firstname,
-        string lastname,
-        string contactEmail,
-        string? bio,
-        Guid userId)
-        => Create(new TrainerCreationMessage
-        {
-            TrainerId = TrainerId.Create(id),
-            UserId = UserId.Create(userId),
-            Firstname = firstname,
-            Lastname = lastname,
-            ContactEmail = contactEmail,
-            Bio = bio
-        });
-
-    /// <summary>
-    /// Applies the edition described by <paramref name="message"/> to the trainer's
-    /// profile and raises one domain event per attribute that actually changed.
+    /// Replaces the profile of the trainer and raises one domain event per attribute
+    /// that actually changed.
     /// </summary>
     /// <remarks>
     /// The profile is edited as a whole — a single form carrying every field — so the
-    /// aggregate exposes a single entry point rather than one mutator per attribute:
-    /// fine-grained mutators would have no caller, and mixing them with this method
-    /// would offer two mutation paths with incompatible semantics (mutate-on-the-spot
-    /// versus validate-everything-then-mutate).
+    /// aggregate exposes a single entry point rather than one mutator per attribute.
+    /// Every argument is already a valid value object, so the edition cannot fail and
+    /// the aggregate can never be left half-edited.
     /// </remarks>
-    /// <param name="message">The new state of the profile.</param>
-    /// <returns>A <see cref="Result"/> indicating whether the operation was successful or not.</returns>
-    public Result Edit(TrainerEditionMessage message)
+    /// <param name="name">The new name of the trainer.</param>
+    /// <param name="contactEmail">The new contact address of the trainer.</param>
+    /// <param name="bio">The new bio, or <see langword="null"/> to clear the current one.</param>
+    public void Edit(Name name, Email contactEmail, Bio? bio)
     {
-        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(contactEmail);
 
-        var previousName = Name;
-        var previousContactEmail = ContactEmail;
-
-        return ApplyEdition(message).Tap(() =>
+        if (Name != name)
         {
-            if (Name != previousName)
-            {
-                AddDomainEvent(new TrainerNameChangedDomainEvent(
-                    Id,
-                    previousName.Firstname,
-                    previousName.Lastname,
-                    Name.Firstname,
-                    Name.Lastname));
-            }
-
-            if (ContactEmail != previousContactEmail)
-            {
-                AddDomainEvent(new TrainerContactEmailChangedDomainEvent(
-                    Id,
-                    previousContactEmail.FullAddress,
-                    ContactEmail.FullAddress));
-            }
-        });
-    }
-
-    /// <summary>
-    /// Validates the whole <paramref name="message"/> and, only when every input is
-    /// valid, mutates the aggregate. Raises no domain event: the callers each raise
-    /// the events matching their intent (created vs edited).
-    /// </summary>
-    private Result ApplyEdition(TrainerEditionMessage message)
-    {
-        var errors = new ErrorCollection();
-
-        var nameResult = Name.Create(message.Firstname, message.Lastname)
-            .TapError(errs => errors.AddErrors(errs));
-
-        var contactEmailResult = Email.Create(message.ContactEmail)
-            .TapError(errs => errors.AddErrors(errs));
-
-        // The bio is optional: null means "no bio", which is not an error — at
-        // creation time it means none was provided, on edition it clears the
-        // current one. A provided value (even empty) goes through the Bio value
-        // object and keeps its validation rules.
-        var bioResult = message.Bio is null
-            ? null
-            : Bio.Create(message.Bio).TapError(errs => errors.AddErrors(errs));
-
-        if (errors.Any())
-        {
-            return Result.Failure(errors);
+            AddDomainEvent(new TrainerNameChangedDomainEvent(
+                Id, Name.Firstname, Name.Lastname, name.Firstname, name.Lastname));
         }
 
-        nameResult.Tap(name => Name = name);
-        contactEmailResult.Tap(email => ContactEmail = email);
+        if (ContactEmail != contactEmail)
+        {
+            AddDomainEvent(new TrainerContactEmailChangedDomainEvent(
+                Id, ContactEmail.FullAddress, contactEmail.FullAddress));
+        }
 
-        Bio = null;
-        bioResult?.Tap(bio => Bio = bio);
-
-        return Result.Success();
+        Name = name;
+        ContactEmail = contactEmail;
+        Bio = bio;
     }
 
     /// <summary>

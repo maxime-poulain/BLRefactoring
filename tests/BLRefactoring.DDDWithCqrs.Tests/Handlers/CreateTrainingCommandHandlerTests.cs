@@ -36,7 +36,7 @@ public class CreateTrainingCommandHandlerTests
     [Fact]
     public async Task Handle_ValidCommand_ReturnsSuccessAndCallsSave()
     {
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         _trainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
@@ -91,7 +91,7 @@ public class CreateTrainingCommandHandlerTests
     [Fact]
     public async Task Handle_InvalidDomainData_ReturnsFailureAndDoesNotSave()
     {
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         _trainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);

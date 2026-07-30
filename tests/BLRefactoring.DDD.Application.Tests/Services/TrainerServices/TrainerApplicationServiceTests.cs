@@ -101,7 +101,7 @@ public class TrainerApplicationServiceTests
     [Fact]
     public async Task EditAsync_ExistingTrainer_ReturnsSuccessWithUpdatedDto()
     {
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         _fixture.TrainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
@@ -123,7 +123,7 @@ public class TrainerApplicationServiceTests
     [Fact]
     public async Task EditAsync_ExistingTrainer_UpdatesTrainerAndCommitsOnce()
     {
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         _fixture.TrainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
@@ -140,7 +140,7 @@ public class TrainerApplicationServiceTests
     [Fact]
     public async Task EditAsync_NullBio_ClearsTheBio()
     {
-        var trainer = new TrainerBuilder().WithBio("A bio to clear.").BuildValid();
+        var trainer = new TrainerBuilder().WithBio("A bio to clear.").Build();
         _fixture.TrainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
@@ -167,7 +167,7 @@ public class TrainerApplicationServiceTests
     [Fact]
     public async Task EditAsync_InvalidRequest_ReturnsFailureWithoutCommitting()
     {
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         _fixture.TrainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
@@ -200,7 +200,7 @@ public class TrainerApplicationServiceTests
     [Fact]
     public async Task GetByIdAsync_ExistingTrainer_ReturnsSuccessWithDto()
     {
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         _fixture.TrainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
@@ -231,8 +231,8 @@ public class TrainerApplicationServiceTests
     [Fact]
     public async Task GetAllAsync_ReturnsAllTrainerDtos()
     {
-        var t1 = new TrainerBuilder().WithContactEmail("a@a.com").BuildValid();
-        var t2 = new TrainerBuilder().WithContactEmail("b@b.com").BuildValid();
+        var t1 = new TrainerBuilder().WithContactEmail("a@a.com").Build();
+        var t2 = new TrainerBuilder().WithContactEmail("b@b.com").Build();
         _fixture.TrainerRepository
             .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync([t1, t2]);
@@ -261,7 +261,7 @@ public class TrainerApplicationServiceTests
     [Fact]
     public async Task DeleteAsync_ExistingTrainer_ReturnsSuccess()
     {
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         _fixture.TrainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
@@ -275,7 +275,7 @@ public class TrainerApplicationServiceTests
     [Fact]
     public async Task DeleteAsync_ExistingTrainer_DeletesTrainer()
     {
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         _fixture.TrainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
@@ -289,7 +289,7 @@ public class TrainerApplicationServiceTests
     [Fact]
     public async Task DeleteAsync_ExistingTrainer_CommitsOnce()
     {
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         _fixture.TrainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
@@ -333,7 +333,7 @@ public class TrainerApplicationServiceTests
     [Fact]
     public async Task DeleteAsync_SaveChangesThrows_ReturnsFailure()
     {
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         _fixture.TrainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);

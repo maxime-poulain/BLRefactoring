@@ -7,7 +7,7 @@ using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.Domain;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
-using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.Messages;
+using BLRefactoring.Shared.Application.Factories;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.Specifications;
 
 namespace BLRefactoring.DDD.Application.Services.TrainingServices;
@@ -83,18 +83,21 @@ public class TrainingApplicationService(
                 $"Trainer with id `{currentUserService.TrainerId}` not found.");
         }
 
-        var trainingCreationMessage = new TrainingCreationMessage
-        {
-            TrainingId = TrainingId.Generate(),
-            Title = request.Title,
-            Description = request.Description,
-            Prerequisites = request.Prerequisites,
-            AcquiredSkills = request.AcquiredSkills,
-            TrainerId = TrainerId.Create(currentUserService.TrainerId),
-            Topics = request.Topics
-        };
+        var detailsResult = TrainingDetailsFactory.Create(
+            request.Title, request.Description, request.Prerequisites, request.AcquiredSkills, request.Topics);
 
-        var result = await Training.CreateAsync(trainingCreationMessage, uniquenessTitleChecker, cancellationToken);
+        var result = await detailsResult.MatchAsync(
+            async details => await Training.CreateAsync(
+                TrainingId.Generate(),
+                TrainerId.Create(currentUserService.TrainerId),
+                details.Title,
+                details.Description,
+                details.Prerequisites,
+                details.AcquiredSkills,
+                details.Topics,
+                uniquenessTitleChecker,
+                cancellationToken),
+            Result<Training>.FailureAsync);
 
         return await result.MatchAsync(async training =>
         {
@@ -143,17 +146,19 @@ public class TrainingApplicationService(
                 $"Training with id `{trainingId}` not found.");
         }
 
-        var result = await training.EditAsync(
-            new TrainingEditionMessage
-            {
-                Title = request.Title,
-                Description = request.Description,
-                Prerequisites = request.Prerequisites,
-                AcquiredSkills = request.AcquiredSkills,
-                Topics = request.Topics
-            },
-            uniquenessTitleChecker,
-            cancellationToken);
+        var detailsResult = TrainingDetailsFactory.Create(
+            request.Title, request.Description, request.Prerequisites, request.AcquiredSkills, request.Topics);
+
+        var result = await detailsResult.MatchAsync(
+            async details => await training.EditAsync(
+                details.Title,
+                details.Description,
+                details.Prerequisites,
+                details.AcquiredSkills,
+                details.Topics,
+                uniquenessTitleChecker,
+                cancellationToken),
+            Result.FailureAsync);
 
         return await result.MatchAsync(
             onSuccess: async () =>

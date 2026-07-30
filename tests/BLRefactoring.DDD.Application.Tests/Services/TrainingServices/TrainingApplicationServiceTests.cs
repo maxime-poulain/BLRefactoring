@@ -28,7 +28,7 @@ public class TrainingApplicationServiceTests
         var trainer = new TrainerBuilder()
             .WithId(_trainerId)
             .WithUserId(_userId)
-            .BuildValid();
+            .Build();
         _fixture.TrainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
