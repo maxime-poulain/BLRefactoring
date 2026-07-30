@@ -51,24 +51,39 @@ public sealed class Training : AggregateRoot<TrainingId>
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(trainingCreationMessage);
-        ArgumentNullException.ThrowIfNull(titleChecker);
 
         var training = CreateDraft(
             trainingCreationMessage.TrainingId,
             trainingCreationMessage.TrainerId);
 
-        var editionResult = await training.EditAsync(trainingCreationMessage, titleChecker, cancellationToken);
+        var applyResult = await training.ApplyEditionAsync(trainingCreationMessage, titleChecker, cancellationToken);
 
-        ErrorCollection errors = [];
-
-        editionResult.TapError(errs => errors.AddErrors(errs));
-
-        return errors.Any() ? Result<Training>.Failure(errors) : Result<Training>.Success(training);
+        return applyResult.Match(
+            () =>
+            {
+                training.AddDomainEvent(new TrainingCreatedDomainEvent(training.Id, training.TrainerId));
+                return Result<Training>.Success(training);
+            },
+            Result<Training>.Failure);
     }
 
     public async Task<Result> EditAsync(TrainingEditionMessage message,
         IUniquenessTitleChecker titleChecker,
         CancellationToken cancellationToken = default)
+    {
+        var result = await ApplyEditionAsync(message, titleChecker, cancellationToken);
+
+        return result.Tap(() => AddDomainEvent(new TrainingEditedDomainEvent(Id, TrainerId)));
+    }
+
+    /// <summary>
+    /// Validates the whole <paramref name="message"/> and, only when every input is
+    /// valid, mutates the aggregate. Raises no domain event: the callers each raise
+    /// the event matching their intent (created vs edited).
+    /// </summary>
+    private async Task<Result> ApplyEditionAsync(TrainingEditionMessage message,
+        IUniquenessTitleChecker titleChecker,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(message);
         ArgumentNullException.ThrowIfNull(titleChecker);
@@ -129,8 +144,6 @@ public sealed class Training : AggregateRoot<TrainingId>
 
         _topics.Clear();
         _topics.AddRange(topics);
-
-        AddDomainEvent(new TrainingEditedDomainEvent(Id, TrainerId));
 
         return Result.Success();
     }
