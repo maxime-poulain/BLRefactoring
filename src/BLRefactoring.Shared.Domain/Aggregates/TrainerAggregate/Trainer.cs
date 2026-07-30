@@ -23,9 +23,10 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     public Name Name { get; private set; } = null!;
 
     /// <summary>
-    /// Gets the bio of the trainer.
+    /// Gets the bio of the trainer, or <see langword="null"/> when the trainer
+    /// has not provided one yet.
     /// </summary>
-    public Bio Bio { get; private set; } = null!;
+    public Bio? Bio { get; private set; }
 
     /// <summary>
     /// Gets the user ID associated with the trainer.
@@ -77,7 +78,7 @@ public sealed class Trainer : AggregateRoot<TrainerId>
         string firstname,
         string lastname,
         string email,
-        string bio,
+        string? bio,
         Guid userId)
     {
         var trainer = new Trainer(TrainerId.Create(id)) { UserId = UserId.Create(userId) };
@@ -88,7 +89,7 @@ public sealed class Trainer : AggregateRoot<TrainerId>
         string firstname,
         string lastname,
         string email,
-        string bio,
+        string? bio,
         Trainer trainer)
     {
         var errors = new ErrorCollection();
@@ -99,15 +100,19 @@ public sealed class Trainer : AggregateRoot<TrainerId>
         var emailResult = Email.Create(email)
             .TapError(errs => errors.AddErrors(errs));
 
-        var bioResult = Bio.Create(bio)
-            .TapError(errs => errors.AddErrors(errs));
+        // The bio is optional at creation time: null means "no bio yet" and is
+        // not an error, while a provided value (even empty) goes through the
+        // Bio value object and keeps its validation rules.
+        var bioResult = bio is null
+            ? null
+            : Bio.Create(bio).TapError(errs => errors.AddErrors(errs));
 
         if (errors.Any())
             return Result<Trainer>.Failure(errors);
 
         nameResult.Tap(name => trainer.Name = name);
         emailResult.Tap(e => trainer.Email = e);
-        bioResult.Tap(b => trainer.Bio = b);
+        bioResult?.Tap(b => trainer.Bio = b);
 
         trainer.AddDomainEvent(new TrainerCreatedDomainEvent(trainer.Id));
         return Result<Trainer>.Success(trainer);

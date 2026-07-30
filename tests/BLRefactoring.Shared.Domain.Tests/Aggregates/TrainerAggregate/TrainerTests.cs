@@ -93,6 +93,18 @@ public class TrainerTests
         result.ShouldBeFailure();
     }
 
+    [Fact]
+    public void Create_WithMessage_WithoutBio_ReturnsSuccessWithNullBio()
+    {
+        // Act
+        var trainer = new TrainerBuilder()
+            .WithoutBio()
+            .BuildValid();
+
+        // Assert
+        trainer.Bio.Should().BeNull();
+    }
+
     // --- Create via (Guid, ...) ---
 
     [Fact]
