@@ -105,7 +105,7 @@ public sealed class Trainer : AggregateRoot<TrainerId>
         emailResult.Tap(e => trainer.Email = e);
         bioResult.Tap(b => trainer.Bio = b);
 
-        trainer.AddDomainEvent(new TrainerCreatedDomainEvent(trainer));
+        trainer.AddDomainEvent(new TrainerCreatedDomainEvent(trainer.Id));
         return Result<Trainer>.Success(trainer);
     }
 
@@ -120,8 +120,9 @@ public sealed class Trainer : AggregateRoot<TrainerId>
 
         return result.Match(trainerEmail =>
         {
-            AddDomainEvent(new TrainerEmailChangedDomainEvent(this));
+            var oldEmail = Email.FullAddress;
             Email = trainerEmail;
+            AddDomainEvent(new TrainerEmailChangedDomainEvent(Id, oldEmail, Email.FullAddress));
             return Result.Success();
         }, Result.Failure);
     }
@@ -138,8 +139,10 @@ public sealed class Trainer : AggregateRoot<TrainerId>
 
         return result.Match(name =>
         {
-            AddDomainEvent(new TrainerNameChangedDomainEvent(this));
+            var oldName = Name;
             Name = name;
+            AddDomainEvent(new TrainerNameChangedDomainEvent(
+                Id, oldName.Firstname, oldName.Lastname, Name.Firstname, Name.Lastname));
             return Result.Success();
         }, Result.Failure);
     }
@@ -149,6 +152,6 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     /// </summary>
     public void MarkForDeletion()
     {
-        AddDomainEvent(new TrainerDeletedDomainEvent(this));
+        AddDomainEvent(new TrainerDeletedDomainEvent(Id));
     }
 }

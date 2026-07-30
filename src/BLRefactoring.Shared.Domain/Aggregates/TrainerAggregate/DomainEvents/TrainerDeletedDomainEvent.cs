@@ -2,7 +2,8 @@ using BLRefactoring.Shared.Common;
 
 namespace BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
 
-public class TrainerDeletedDomainEvent(Trainer trainer) : IDomainEvent
-{
-    public Trainer Trainer { get; } = trainer;
-}
+/// <summary>
+/// Raised when a <see cref="Trainer"/> has been marked for deletion.
+/// </summary>
+/// <param name="TrainerId">The identifier of the deleted trainer.</param>
+public sealed record TrainerDeletedDomainEvent(TrainerId TrainerId) : IDomainEvent;

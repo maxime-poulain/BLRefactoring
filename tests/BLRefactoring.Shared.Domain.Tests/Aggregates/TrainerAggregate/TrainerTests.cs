@@ -54,7 +54,7 @@ public class TrainerTests
         // Assert
         trainer.DomainEvents.Should().ContainSingle(e => e is TrainerCreatedDomainEvent);
         var domainEvent = trainer.DomainEvents.OfType<TrainerCreatedDomainEvent>().Single();
-        domainEvent.Trainer.Should().BeSameAs(trainer);
+        domainEvent.TrainerId.Should().Be(trainer.Id);
     }
 
     [Fact]
@@ -154,6 +154,28 @@ public class TrainerTests
     }
 
     [Fact]
+    public void ChangeName_ValidNames_EventCarriesOldAndNewNames()
+    {
+        // Arrange
+        var trainer = new TrainerBuilder()
+            .WithFirstname("John")
+            .WithLastname("Doe")
+            .BuildValid();
+        trainer.ClearDomainEvents();
+
+        // Act
+        trainer.ChangeName("Jane", "Smith");
+
+        // Assert
+        var domainEvent = trainer.DomainEvents.OfType<TrainerNameChangedDomainEvent>().Single();
+        domainEvent.TrainerId.Should().Be(trainer.Id);
+        domainEvent.OldFirstname.Should().Be("John");
+        domainEvent.OldLastname.Should().Be("Doe");
+        domainEvent.NewFirstname.Should().Be("Jane");
+        domainEvent.NewLastname.Should().Be("Smith");
+    }
+
+    [Fact]
     public void ChangeName_InvalidFirstname_ReturnsFailure()
     {
         // Arrange
@@ -196,6 +218,25 @@ public class TrainerTests
     }
 
     [Fact]
+    public void ChangeEmail_ValidEmail_EventCarriesOldAndNewEmails()
+    {
+        // Arrange
+        var trainer = new TrainerBuilder()
+            .WithEmail("old.email@example.com")
+            .BuildValid();
+        trainer.ClearDomainEvents();
+
+        // Act
+        trainer.ChangeEmail("new.email@example.com");
+
+        // Assert
+        var domainEvent = trainer.DomainEvents.OfType<TrainerEmailChangedDomainEvent>().Single();
+        domainEvent.TrainerId.Should().Be(trainer.Id);
+        domainEvent.OldEmail.Should().Be("old.email@example.com");
+        domainEvent.NewEmail.Should().Be("new.email@example.com");
+    }
+
+    [Fact]
     public void ChangeEmail_InvalidEmail_ReturnsFailure()
     {
         // Arrange
@@ -223,6 +264,6 @@ public class TrainerTests
         // Assert
         trainer.DomainEvents.Should().ContainSingle(e => e is TrainerDeletedDomainEvent);
         var domainEvent = trainer.DomainEvents.OfType<TrainerDeletedDomainEvent>().Single();
-        domainEvent.Trainer.Should().BeSameAs(trainer);
+        domainEvent.TrainerId.Should().Be(trainer.Id);
     }
 }
