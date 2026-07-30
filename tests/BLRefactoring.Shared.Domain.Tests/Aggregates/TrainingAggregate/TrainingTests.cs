@@ -149,18 +149,6 @@ public class TrainingTests
         result.ShouldBeFailure();
     }
 
-    [Fact]
-    public async Task CreateAsync_InvalidTopic_ThrowsArgumentException()
-    {
-        // Act
-        var act = () => new TrainingBuilder()
-            .WithTopics("NonExistentTopic")
-            .BuildAsync();
-
-        // Assert
-        await act.Should().ThrowAsync<ArgumentException>();
-    }
-
     // --- EditAsync ---
 
     [Fact]
@@ -321,5 +309,60 @@ public class TrainingTests
         // Assert
         result.ShouldBeFailure();
         training.Title.Should().Be(originalTitle);
+    }
+
+    [Fact]
+    public async Task CreateAsync_UnknownTopic_ReturnsInvalidTopicFailure()
+    {
+        // Act
+        var result = await new TrainingBuilder()
+            .WithTopics("Underwater Basket Weaving")
+            .BuildAsync();
+
+        // Assert
+        var errors = result.ShouldBeFailure();
+        errors.Should().Contain(e => e.ErrorCode == ErrorCode.InvalidTopic);
+    }
+
+    [Fact]
+    public async Task EditAsync_UnknownTopic_FailsWithoutMutatingTheAggregate()
+    {
+        // Arrange
+        var training = await new TrainingBuilder().BuildValidAsync();
+        var originalTitle = training.Title;
+        var originalTopics = training.Topics.ToList();
+        var mockChecker = new TrainingBuilder().CreateTitleCheckerMock();
+
+        var message = new TrainingEditionMessage
+        {
+            Title = "A Completely New Title",
+            Description = "A completely new description",
+            Prerequisites = "Completely new prerequisites",
+            AcquiredSkills = "Completely new skills",
+            Topics = ["Programming", "Not A Real Topic"]
+        };
+
+        // Act
+        var result = await training.EditAsync(message, mockChecker.Object);
+
+        // Assert — validation failed, so nothing was mutated.
+        var errors = result.ShouldBeFailure();
+        errors.Should().Contain(e => e.ErrorCode == ErrorCode.InvalidTopic);
+        training.Title.Should().Be(originalTitle);
+        training.Topics.Should().BeEquivalentTo(originalTopics);
+    }
+
+    [Fact]
+    public async Task EditAsync_DuplicateTopics_AreDeduplicated()
+    {
+        // Act
+        var training = await new TrainingBuilder()
+            .WithTopics("Programming", "Programming", "Design")
+            .BuildValidAsync();
+
+        // Assert
+        training.Topics.Should().HaveCount(2);
+        training.Topics.Should().Contain(Topic.Programming);
+        training.Topics.Should().Contain(Topic.Design);
     }
 }

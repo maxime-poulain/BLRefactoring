@@ -20,6 +20,7 @@ public class ErrorCode : SmartEnum<ErrorCode>
     public static readonly ErrorCode InvalidDescription = new("InvalidDescription", 3);
     public static readonly ErrorCode InvalidPrerequisites = new("InvalidPrerequisites", 4);
     public static readonly ErrorCode InvalidAcquiredSkills = new("InvalidAcquiredSkills", 5);
+    public static readonly ErrorCode InvalidTopic = new("InvalidTopic", 6);
 
     // Trainer error codes.
     public static readonly ErrorCode InvalidTrainer = new("InvalidTrainer", 100);

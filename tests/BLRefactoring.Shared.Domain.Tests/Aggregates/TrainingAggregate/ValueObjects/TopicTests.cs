@@ -17,13 +17,13 @@ public class TopicTests
     }
 
     [Fact]
-    public void FromName_CaseInsensitive_ReturnsCorrectTopic()
+    public void FromName_WrongCasing_Throws()
     {
-        // Act
-        var topic = Topic.FromName("programming");
+        // Topics are matched case-sensitively: a name with the wrong casing
+        // means a misbehaving client and must be rejected.
+        var act = () => Topic.FromName("programming");
 
-        // Assert
-        topic.Should().Be(Topic.Programming);
+        act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -66,6 +66,40 @@ public class TopicTests
 
         // Assert
         topic1.Should().NotBe(topic2);
+    }
+
+    [Fact]
+    public void TryFromName_KnownName_ReturnsTrueAndTopic()
+    {
+        // Act
+        var found = Topic.TryFromName("Programming", out var topic);
+
+        // Assert
+        found.Should().BeTrue();
+        topic.Should().Be(Topic.Programming);
+    }
+
+    [Fact]
+    public void TryFromName_IsCaseSensitive()
+    {
+        // Topics are a closed enumeration fed by GetTopics(): a name with the
+        // wrong casing means a misbehaving client and must be rejected.
+        var found = Topic.TryFromName("programming", out var topic);
+
+        // Assert
+        found.Should().BeFalse();
+        topic.Should().BeNull();
+    }
+
+    [Fact]
+    public void TryFromName_UnknownName_ReturnsFalseAndNull()
+    {
+        // Act
+        var found = Topic.TryFromName("Underwater Basket Weaving", out var topic);
+
+        // Assert
+        found.Should().BeFalse();
+        topic.Should().BeNull();
     }
 
     [Fact]

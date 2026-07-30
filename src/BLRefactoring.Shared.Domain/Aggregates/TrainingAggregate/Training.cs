@@ -101,6 +101,22 @@ public sealed class Training : AggregateRoot<TrainingId>
         var acquiredSkillsResult = AcquiredSkills.Create(message.AcquiredSkills)
             .TapError(errs => errors.AddErrors(errs));
 
+        // Topics are resolved during the validation phase, like every other input:
+        // an unknown name is a validation error, never an exception, and the
+        // aggregate is only mutated once the whole message has been validated.
+        var topics = new List<Topic>();
+        foreach (var topicName in message.Topics)
+        {
+            if (!Topic.TryFromName(topicName, out var topic))
+            {
+                errors.Add(new Error(ErrorCode.InvalidTopic, $"Topic '{topicName}' does not exist."));
+            }
+            else if (!topics.Contains(topic))
+            {
+                topics.Add(topic);
+            }
+        }
+
         if (errors.Any())
         {
             return Result.Failure(errors);
@@ -112,7 +128,7 @@ public sealed class Training : AggregateRoot<TrainingId>
         acquiredSkillsResult.Tap(skills => AcquiredSkills = skills);
 
         _topics.Clear();
-        _topics.AddRange(message.Topics.Select(Topic.FromName));
+        _topics.AddRange(topics);
 
         AddDomainEvent(new TrainingEditedDomainEvent(Id, TrainerId));
 
