@@ -9,7 +9,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\BLRefactoring.Blazor.Client\BLRefactoring.Blazor.Client.csproj"/>
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.*"/>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server"/>
     </ItemGroup>
 
 </Project>
