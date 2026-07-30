@@ -1,4 +1,5 @@
 using BLRefactoring.Shared.Common;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 
 namespace BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
 
@@ -10,9 +11,9 @@ namespace BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
 /// identity account: changing it has no effect whatsoever on how they sign in.
 /// </remarks>
 /// <param name="TrainerId">The identifier of the trainer whose contact email changed.</param>
-/// <param name="OldContactEmail">The contact email address before the change.</param>
-/// <param name="NewContactEmail">The contact email address after the change.</param>
+/// <param name="OldContactEmail">The contact address before the change.</param>
+/// <param name="NewContactEmail">The contact address after the change.</param>
 public sealed record TrainerContactEmailChangedDomainEvent(
     TrainerId TrainerId,
-    string OldContactEmail,
-    string NewContactEmail) : IDomainEvent;
+    Email OldContactEmail,
+    Email NewContactEmail) : IDomainEvent;

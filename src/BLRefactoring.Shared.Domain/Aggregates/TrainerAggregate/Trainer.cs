@@ -77,10 +77,7 @@ public sealed class Trainer : AggregateRoot<TrainerId>
         };
 
         trainer.AddDomainEvent(new TrainerCreatedDomainEvent(
-            trainer.Id,
-            trainer.Name.Firstname,
-            trainer.Name.Lastname,
-            trainer.ContactEmail.FullAddress));
+            trainer.Id, trainer.Name, trainer.ContactEmail));
 
         return trainer;
     }
@@ -105,14 +102,12 @@ public sealed class Trainer : AggregateRoot<TrainerId>
 
         if (Name != name)
         {
-            AddDomainEvent(new TrainerNameChangedDomainEvent(
-                Id, Name.Firstname, Name.Lastname, name.Firstname, name.Lastname));
+            AddDomainEvent(new TrainerNameChangedDomainEvent(Id, Name, name));
         }
 
         if (ContactEmail != contactEmail)
         {
-            AddDomainEvent(new TrainerContactEmailChangedDomainEvent(
-                Id, ContactEmail.FullAddress, contactEmail.FullAddress));
+            AddDomainEvent(new TrainerContactEmailChangedDomainEvent(Id, ContactEmail, contactEmail));
         }
 
         Name = name;

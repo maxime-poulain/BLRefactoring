@@ -1,4 +1,5 @@
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.Specifications;
+using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 using BLRefactoring.Shared.Domain.Tests.Helpers;
 using FluentAssertions;
 using Xunit;
@@ -24,7 +25,7 @@ public class TrainingsByTopicSpecificationTests
 
         var trainings = new[] { training1, training2, training3 };
 
-        var spec = new TrainingsByTopicSpecification("Programming");
+        var spec = new TrainingsByTopicSpecification(Topic.Programming);
 
         // Act
         var result = trainings.AsQueryable().Where(spec.Criteria!.Compile()).ToList();
@@ -46,7 +47,7 @@ public class TrainingsByTopicSpecificationTests
 
         var trainings = new[] { training1 };
 
-        var spec = new TrainingsByTopicSpecification("Marketing");
+        var spec = new TrainingsByTopicSpecification(Topic.Marketing);
 
         // Act
         var result = trainings.AsQueryable().Where(spec.Criteria!.Compile()).ToList();

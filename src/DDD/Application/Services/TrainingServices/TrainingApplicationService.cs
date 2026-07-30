@@ -9,6 +9,7 @@ using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.Application.Factories;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.Specifications;
+using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 
 namespace BLRefactoring.DDD.Application.Services.TrainingServices;
 
@@ -191,7 +192,15 @@ public class TrainingApplicationService(
     /// <inheritdoc />
     public async Task<List<TrainingDto>> GetByTopicAsync(string topic, CancellationToken cancellationToken = default)
     {
-        var spec = new TrainingsByTopicSpecification(topic);
+        // Resolving the caller's string against the closed set of topics happens
+        // here, before the domain is reached. A name that matches nothing simply
+        // matches no training, exactly as an unknown name did before.
+        if (!Topic.TryFromName(topic, out var resolvedTopic))
+        {
+            return [];
+        }
+
+        var spec = new TrainingsByTopicSpecification(resolvedTopic);
         var trainings = await trainingRepository.GetAsync(spec, cancellationToken);
         return trainings.ToDtos();
     }

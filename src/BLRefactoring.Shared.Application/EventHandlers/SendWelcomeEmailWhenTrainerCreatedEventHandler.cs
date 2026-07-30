@@ -21,9 +21,9 @@ public sealed class SendWelcomeEmailWhenTrainerCreatedEventHandler(IEmailSender 
     public async ValueTask Handle(TrainerCreatedDomainEvent notification, CancellationToken cancellationToken)
     {
         var message = new EmailMessage(
-            notification.ContactEmail,
+            notification.ContactEmail.FullAddress,
             "Welcome aboard!",
-            $"Hello {notification.Firstname} {notification.Lastname}, " +
+            $"Hello {notification.Name.Firstname} {notification.Name.Lastname}, " +
             "your trainer account has been created. You can now publish your first training.");
 
         await emailSender.SendAsync(message, cancellationToken);

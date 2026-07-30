@@ -50,9 +50,8 @@ public class TrainerTests
         // Assert
         var domainEvent = trainer.DomainEvents.OfType<TrainerCreatedDomainEvent>().Single();
         domainEvent.TrainerId.Should().Be(trainer.Id);
-        domainEvent.Firstname.Should().Be(trainer.Name.Firstname);
-        domainEvent.Lastname.Should().Be(trainer.Name.Lastname);
-        domainEvent.ContactEmail.Should().Be(trainer.ContactEmail.FullAddress);
+        domainEvent.Name.Should().Be(trainer.Name);
+        domainEvent.ContactEmail.Should().Be(trainer.ContactEmail);
     }
 
     [Fact]
@@ -154,10 +153,8 @@ public class TrainerTests
         // Assert
         var domainEvent = trainer.DomainEvents.OfType<TrainerNameChangedDomainEvent>().Single();
         domainEvent.TrainerId.Should().Be(trainer.Id);
-        domainEvent.OldFirstname.Should().Be("John");
-        domainEvent.OldLastname.Should().Be("Doe");
-        domainEvent.NewFirstname.Should().Be("Jane");
-        domainEvent.NewLastname.Should().Be("Smith");
+        domainEvent.OldName.Should().Be(TrainerName("John", "Doe"));
+        domainEvent.NewName.Should().Be(TrainerName("Jane", "Smith"));
     }
 
     [Fact]
@@ -175,8 +172,8 @@ public class TrainerTests
         // Assert
         var domainEvent = trainer.DomainEvents.OfType<TrainerContactEmailChangedDomainEvent>().Single();
         domainEvent.TrainerId.Should().Be(trainer.Id);
-        domainEvent.OldContactEmail.Should().Be("old.email@example.com");
-        domainEvent.NewContactEmail.Should().Be("new.email@example.com");
+        domainEvent.OldContactEmail.Should().Be(ContactEmail("old.email@example.com"));
+        domainEvent.NewContactEmail.Should().Be(ContactEmail("new.email@example.com"));
     }
 
     [Fact]
