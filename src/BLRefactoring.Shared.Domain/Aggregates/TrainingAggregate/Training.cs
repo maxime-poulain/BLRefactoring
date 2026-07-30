@@ -3,7 +3,6 @@ using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.DomainEvents;
-using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.Messages;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 
 namespace BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
@@ -41,22 +40,24 @@ public sealed class Training : AggregateRoot<TrainingId>
     // the object is not complex enough to justify a separate class.
     // Refactoring to a factory class would not be complicated though.
     // It might have been if we were using the constructor to build the object.
-    // Another good practice is to pass in an request(or message) object.
-    // This encapsulates parameters and makes the code more readable.
-    // Furthermore, it makes it easier to add new parameters in the future and decrease
-    // the number of parameters in the method.
+    // The method takes value objects rather than a parameter object of primitives:
+    // the shape of what the application layer receives is none of the domain's
+    // business, and every part is already valid by the time it gets here.
     public static async Task<Result<Training>> CreateAsync(
-        TrainingCreationMessage trainingCreationMessage,
+        TrainingId trainingId,
+        TrainerId trainerId,
+        TrainingTitle title,
+        TrainingDescription description,
+        TrainingPrerequisites prerequisites,
+        AcquiredSkills acquiredSkills,
+        IReadOnlyCollection<Topic> topics,
         IUniquenessTitleChecker titleChecker,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(trainingCreationMessage);
+        var training = CreateDraft(trainingId, trainerId);
 
-        var training = CreateDraft(
-            trainingCreationMessage.TrainingId,
-            trainingCreationMessage.TrainerId);
-
-        var applyResult = await training.ApplyEditionAsync(trainingCreationMessage, titleChecker, cancellationToken);
+        var applyResult = await training.ApplyEditionAsync(
+            title, description, prerequisites, acquiredSkills, topics, titleChecker, cancellationToken);
 
         return applyResult.Match(
             () =>
@@ -67,83 +68,64 @@ public sealed class Training : AggregateRoot<TrainingId>
             Result<Training>.Failure);
     }
 
-    public async Task<Result> EditAsync(TrainingEditionMessage message,
+    public async Task<Result> EditAsync(
+        TrainingTitle title,
+        TrainingDescription description,
+        TrainingPrerequisites prerequisites,
+        AcquiredSkills acquiredSkills,
+        IReadOnlyCollection<Topic> topics,
         IUniquenessTitleChecker titleChecker,
         CancellationToken cancellationToken = default)
     {
-        var result = await ApplyEditionAsync(message, titleChecker, cancellationToken);
+        var result = await ApplyEditionAsync(
+            title, description, prerequisites, acquiredSkills, topics, titleChecker, cancellationToken);
 
         return result.Tap(() => AddDomainEvent(new TrainingEditedDomainEvent(Id, TrainerId)));
     }
 
     /// <summary>
-    /// Validates the whole <paramref name="message"/> and, only when every input is
-    /// valid, mutates the aggregate. Raises no domain event: the callers each raise
-    /// the event matching their intent (created vs edited).
+    /// Applies the given content and, only when the title is available, mutates the
+    /// aggregate. Raises no domain event: the callers each raise the event matching
+    /// their intent (created vs edited).
     /// </summary>
-    private async Task<Result> ApplyEditionAsync(TrainingEditionMessage message,
+    /// <remarks>
+    /// Every argument is a value object, so nothing here can be malformed. The one
+    /// rule left to enforce is the only one the aggregate cannot decide on its own:
+    /// a title must be unique among the trainings of the same trainer.
+    /// </remarks>
+    private async Task<Result> ApplyEditionAsync(
+        TrainingTitle title,
+        TrainingDescription description,
+        TrainingPrerequisites prerequisites,
+        AcquiredSkills acquiredSkills,
+        IReadOnlyCollection<Topic> topics,
         IUniquenessTitleChecker titleChecker,
         CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(title);
+        ArgumentNullException.ThrowIfNull(description);
+        ArgumentNullException.ThrowIfNull(prerequisites);
+        ArgumentNullException.ThrowIfNull(acquiredSkills);
+        ArgumentNullException.ThrowIfNull(topics);
         ArgumentNullException.ThrowIfNull(titleChecker);
 
-        var errors = new ErrorCollection();
-
-        var titleResult = TrainingTitle.Create(message.Title)
-            .TapError(errs => errors.AddErrors(errs));
-
-        if (!titleResult.HasErrors())
+        if (title != Title)
         {
-            var title = titleResult.Match(trainingTitle => trainingTitle, _ => null!);
-            if (title != Title)
+            var titleExists = await titleChecker.TitleForTrainerExists(title, TrainerId, cancellationToken);
+            if (titleExists)
             {
-                var titleExists = await titleChecker.TitleForTrainerExists(title, TrainerId, cancellationToken);
-                if (titleExists)
-                {
-                    errors.Add(new Error(ErrorCode.DuplicateTitle,
-                        "A training with the same title already exists for this trainer."));
-                }
+                return Result.Failure(ErrorCode.DuplicateTitle,
+                    "A training with the same title already exists for this trainer.");
             }
         }
 
-        var descriptionResult = TrainingDescription.Create(message.Description)
-            .TapError(errs => errors.AddErrors(errs));
-
-        var prerequisitesResult = TrainingPrerequisites.Create(message.Prerequisites)
-            .TapError(errs => errors.AddErrors(errs));
-
-        var acquiredSkillsResult = AcquiredSkills.Create(message.AcquiredSkills)
-            .TapError(errs => errors.AddErrors(errs));
-
-        // Topics are resolved during the validation phase, like every other input:
-        // an unknown name is a validation error, never an exception, and the
-        // aggregate is only mutated once the whole message has been validated.
-        var topics = new List<Topic>();
-        foreach (var topicName in message.Topics)
-        {
-            if (!Topic.TryFromName(topicName, out var topic))
-            {
-                errors.Add(new Error(ErrorCode.InvalidTopic, $"Topic '{topicName}' does not exist."));
-            }
-            else if (!topics.Contains(topic))
-            {
-                topics.Add(topic);
-            }
-        }
-
-        if (errors.Any())
-        {
-            return Result.Failure(errors);
-        }
-
-        titleResult.Tap(title => Title = title);
-        descriptionResult.Tap(desc => Description = desc);
-        prerequisitesResult.Tap(prereq => Prerequisites = prereq);
-        acquiredSkillsResult.Tap(skills => AcquiredSkills = skills);
+        Title = title;
+        Description = description;
+        Prerequisites = prerequisites;
+        AcquiredSkills = acquiredSkills;
 
         _topics.Clear();
-        _topics.AddRange(topics);
+        _topics.AddRange(topics.Distinct());
 
         return Result.Success();
     }

@@ -2,6 +2,8 @@ using BLRefactoring.Shared;
 using BLRefactoring.Shared.Application.EventHandlers;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
+using BLRefactoring.Shared.Domain.Tests.Helpers;
 using Moq;
 using Xunit;
 
@@ -18,7 +20,9 @@ public class SendWelcomeEmailWhenTrainerCreatedEventHandlerTests
     public async Task Handle_SendsWelcomeEmailToNewTrainer()
     {
         var domainEvent = new TrainerCreatedDomainEvent(
-            TrainerId.Generate(), "John", "Doe", "john.doe@example.com");
+            TrainerId.Generate(),
+            Name.Create("John", "Doe").ShouldBeSuccess(),
+            Email.Create("john.doe@example.com").ShouldBeSuccess());
 
         var sut = CreateSut();
         await sut.Handle(domainEvent, CancellationToken.None);

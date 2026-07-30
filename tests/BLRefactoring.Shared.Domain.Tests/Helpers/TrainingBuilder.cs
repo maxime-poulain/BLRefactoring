@@ -1,13 +1,16 @@
 using BLRefactoring.Shared.Common.Results;
-using BLRefactoring.Shared.Domain;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
-using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.Messages;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 using Moq;
 
 namespace BLRefactoring.Shared.Domain.Tests.Helpers;
 
+/// <summary>
+/// Builds a training from value objects, the same way the application layer does.
+/// Creation still returns a <see cref="Result{T}"/> because title uniqueness is a
+/// cross-aggregate rule the aggregate can only settle through the checker.
+/// </summary>
 public class TrainingBuilder
 {
     private string _title = "Valid Training Title";
@@ -37,21 +40,21 @@ public class TrainingBuilder
         return mock;
     }
 
+    public IReadOnlyCollection<Topic> BuildTopics()
+        => _topics.Select(name => Topic.FromName(name)).ToList();
+
     public async Task<Result<Training>> BuildAsync()
     {
         var mockChecker = CreateTitleCheckerMock();
 
         return await Training.CreateAsync(
-            new TrainingCreationMessage
-            {
-                TrainingId = TrainingId.Generate(),
-                Title = _title,
-                Description = _description,
-                Prerequisites = _prerequisites,
-                AcquiredSkills = _acquiredSkills,
-                TrainerId = TrainerId.Create(_trainerId),
-                Topics = _topics
-            },
+            TrainingId.Generate(),
+            TrainerId.Create(_trainerId),
+            TrainingTitle.Create(_title).ShouldBeSuccess(),
+            TrainingDescription.Create(_description).ShouldBeSuccess(),
+            TrainingPrerequisites.Create(_prerequisites).ShouldBeSuccess(),
+            AcquiredSkills.Create(_acquiredSkills).ShouldBeSuccess(),
+            BuildTopics(),
             mockChecker.Object);
     }
 

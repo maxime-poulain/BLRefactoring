@@ -1,11 +1,11 @@
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Application.Dtos;
 using BLRefactoring.Shared.Application.Dtos.Trainer;
+using BLRefactoring.Shared.Application.Factories;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.Domain;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.Messages;
 using Microsoft.Extensions.Logging;
 
 namespace BLRefactoring.DDD.Application.Services.TrainerServices;
@@ -40,20 +40,18 @@ public sealed class TrainerApplicationService(
 {
     public async Task<Result<TrainerDto>> CreateAsync(TrainerCreationRequest request, CancellationToken cancellationToken = default)
     {
-        var message = new TrainerCreationMessage
-        {
-            TrainerId = TrainerId.Generate(),
-            Firstname = request.Firstname,
-            Lastname = request.Lastname,
-            ContactEmail = request.ContactEmail,
-            UserId = UserId.Create(request.UserId),
-            Bio = request.Bio
-        };
+        var profileResult = TrainerProfileFactory.Create(
+            request.Firstname, request.Lastname, request.ContactEmail, request.Bio);
 
-        var result = Trainer.Create(message);
-
-        return await result.MatchAsync(async trainer =>
+        return await profileResult.MatchAsync(async profile =>
         {
+            var trainer = Trainer.Create(
+                TrainerId.Generate(),
+                UserId.Create(request.UserId),
+                profile.Name,
+                profile.ContactEmail,
+                profile.Bio);
+
             trainerRepository.Add(trainer);
             await unitOfWork.SaveChangesAsync(cancellationToken);
             return Result<TrainerDto>.Success(trainer.ToDto());
@@ -69,18 +67,15 @@ public sealed class TrainerApplicationService(
             return Result<TrainerDto>.Failure(ErrorCode.NotFound, $"Trainer with id `{id}` could not be found.");
         }
 
-        var message = new TrainerEditionMessage
-        {
-            Firstname = request.Firstname,
-            Lastname = request.Lastname,
-            ContactEmail = request.ContactEmail,
-            Bio = request.Bio
-        };
+        var profileResult = TrainerProfileFactory.Create(
+            request.Firstname, request.Lastname, request.ContactEmail, request.Bio);
 
-        // The aggregate raises one domain event per attribute that actually changed;
-        // their handlers run during SaveChangesAsync, before persistence.
-        return await trainer.Edit(message).MatchAsync(async () =>
+        return await profileResult.MatchAsync(async profile =>
         {
+            // The aggregate raises one domain event per attribute that actually
+            // changed; their handlers run during SaveChangesAsync, before persistence.
+            trainer.Edit(profile.Name, profile.ContactEmail, profile.Bio);
+
             trainerRepository.Update(trainer);
             await unitOfWork.SaveChangesAsync(cancellationToken);
             return Result<TrainerDto>.Success(trainer.ToDto());

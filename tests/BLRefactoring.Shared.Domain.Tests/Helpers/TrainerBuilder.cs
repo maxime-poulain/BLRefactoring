@@ -1,10 +1,13 @@
-using BLRefactoring.Shared.Common.Results;
-using BLRefactoring.Shared.Domain;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.Messages;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 
 namespace BLRefactoring.Shared.Domain.Tests.Helpers;
 
+/// <summary>
+/// Builds a valid trainer. The aggregate only accepts value objects, so the builder
+/// assembles them the same way the application layer does — an invalid input is a
+/// value object concern and is covered by their own tests, not here.
+/// </summary>
 public class TrainerBuilder
 {
     private string _firstname = "John";
@@ -22,24 +25,13 @@ public class TrainerBuilder
     public TrainerBuilder WithUserId(Guid v) { _userId = v; return this; }
     public TrainerBuilder WithId(Guid v) { _id = v; return this; }
 
-    public Result<Trainer> Build()
+    public Trainer Build()
     {
-        if (_id.HasValue)
-            return Trainer.Create(_id.Value, _firstname, _lastname, _contactEmail, _bio, _userId);
-
-        return Trainer.Create(new TrainerCreationMessage
-        {
-            TrainerId = TrainerId.Generate(),
-            Firstname = _firstname,
-            Lastname = _lastname,
-            ContactEmail = _contactEmail,
-            Bio = _bio,
-            UserId = UserId.Create(_userId)
-        });
-    }
-
-    public Trainer BuildValid()
-    {
-        return Build().ShouldBeSuccess();
+        return Trainer.Create(
+            _id.HasValue ? TrainerId.Create(_id.Value) : TrainerId.Generate(),
+            UserId.Create(_userId),
+            Name.Create(_firstname, _lastname).ShouldBeSuccess(),
+            Email.Create(_contactEmail).ShouldBeSuccess(),
+            _bio is null ? null : Bio.Create(_bio).ShouldBeSuccess());
     }
 }

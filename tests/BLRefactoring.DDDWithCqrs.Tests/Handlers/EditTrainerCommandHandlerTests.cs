@@ -20,7 +20,7 @@ public class EditTrainerCommandHandlerTests
     [Fact]
     public async Task Handle_ValidCommand_ReturnsSuccessUpdatesTrainerAndCommitsOnce()
     {
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         GivenTrainer(trainer);
         var sut = CreateSut();
 
@@ -39,7 +39,7 @@ public class EditTrainerCommandHandlerTests
     [Fact]
     public async Task Handle_ChangedContactEmail_UpdatesTheContactAddress()
     {
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         GivenTrainer(trainer);
         var sut = CreateSut();
 
@@ -53,7 +53,7 @@ public class EditTrainerCommandHandlerTests
     [Fact]
     public async Task Handle_NullBio_ClearsTheBio()
     {
-        var trainer = new TrainerBuilder().WithBio("A bio to clear.").BuildValid();
+        var trainer = new TrainerBuilder().WithBio("A bio to clear.").Build();
         GivenTrainer(trainer);
         var sut = CreateSut();
 
@@ -82,7 +82,7 @@ public class EditTrainerCommandHandlerTests
     [Fact]
     public async Task Handle_InvalidDomainData_ReturnsFailureWithoutCommitting()
     {
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         GivenTrainer(trainer);
         var sut = CreateSut();
 

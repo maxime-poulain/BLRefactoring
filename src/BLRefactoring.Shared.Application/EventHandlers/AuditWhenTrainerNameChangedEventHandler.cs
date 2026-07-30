@@ -23,10 +23,10 @@ public sealed class AuditWhenTrainerNameChangedEventHandler(
         logger.LogInformation(
             "Trainer {TrainerId} was renamed from `{OldFirstname} {OldLastname}` to `{NewFirstname} {NewLastname}`.",
             notification.TrainerId.Value,
-            notification.OldFirstname,
-            notification.OldLastname,
-            notification.NewFirstname,
-            notification.NewLastname);
+            notification.OldName.Firstname,
+            notification.OldName.Lastname,
+            notification.NewName.Firstname,
+            notification.NewName.Lastname);
 
         return ValueTask.CompletedTask;
     }

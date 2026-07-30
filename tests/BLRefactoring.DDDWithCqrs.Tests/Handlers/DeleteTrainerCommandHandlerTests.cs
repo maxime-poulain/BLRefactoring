@@ -20,7 +20,7 @@ public class DeleteTrainerCommandHandlerTests
     [Fact]
     public async Task Handle_ExistingTrainer_ReturnsSuccess()
     {
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         _trainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
@@ -47,7 +47,7 @@ public class DeleteTrainerCommandHandlerTests
     [Fact]
     public async Task Handle_ExistingTrainer_DeletesTrainerAndCommitsOnce()
     {
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         _trainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
@@ -64,7 +64,7 @@ public class DeleteTrainerCommandHandlerTests
     [Fact]
     public async Task Handle_SaveChangesThrows_Rethrows()
     {
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         _trainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);

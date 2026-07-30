@@ -3,7 +3,7 @@ using BLRefactoring.Shared.Domain;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.CQS;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.Messages;
+using BLRefactoring.Shared.Application.Factories;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
 
@@ -29,19 +29,18 @@ public class CreateTrainerCommandHandler(
 {
     public async ValueTask<Result> Handle(CreateTrainerCommand request, CancellationToken cancellationToken)
     {
-        var message = new TrainerCreationMessage
-        {
-            TrainerId = TrainerId.Create(request.TrainerId),
-            Firstname = request.Firstname,
-            Lastname = request.Lastname,
-            ContactEmail = request.ContactEmail,
-            UserId = UserId.Create(request.UserId)
-        };
+        var profileResult = TrainerProfileFactory.Create(
+            request.Firstname, request.Lastname, request.ContactEmail, bio: null);
 
-        var trainerResult = Trainer.Create(message);
-
-        return await trainerResult.MatchAsync(async trainer =>
+        return await profileResult.MatchAsync(async profile =>
         {
+            var trainer = Trainer.Create(
+                TrainerId.Create(request.TrainerId),
+                UserId.Create(request.UserId),
+                profile.Name,
+                profile.ContactEmail,
+                profile.Bio);
+
             trainerRepository.Add(trainer);
             await unitOfWork.SaveChangesAsync(cancellationToken);
             return Result.Success();

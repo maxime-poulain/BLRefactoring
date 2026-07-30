@@ -6,8 +6,8 @@ using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.CQS;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
+using BLRefactoring.Shared.Application.Factories;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
-using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.Messages;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Create;
 
@@ -42,18 +42,21 @@ public class CreateTrainingCommandHandler(
                 $"Trainer `{trainerId}` was not found");
         }
 
-        var trainingCreationMessage = new TrainingCreationMessage
-        {
-            TrainingId = TrainingId.Create(request.TrainingId),
-            Title = request.Title,
-            Description = request.Description,
-            Prerequisites = request.Prerequisites,
-            AcquiredSkills = request.AcquiredSkills,
-            TrainerId = trainerId,
-            Topics = request.Topics
-        };
+        var detailsResult = TrainingDetailsFactory.Create(
+            request.Title, request.Description, request.Prerequisites, request.AcquiredSkills, request.Topics);
 
-        var trainingCreationResult = await Training.CreateAsync(trainingCreationMessage, titleChecker);
+        var trainingCreationResult = await detailsResult.MatchAsync(
+            async details => await Training.CreateAsync(
+                TrainingId.Create(request.TrainingId),
+                trainerId,
+                details.Title,
+                details.Description,
+                details.Prerequisites,
+                details.AcquiredSkills,
+                details.Topics,
+                titleChecker,
+                cancellationToken),
+            Result<Training>.FailureAsync);
 
         return await trainingCreationResult.MatchAsync<Result>(async (training) =>
         {

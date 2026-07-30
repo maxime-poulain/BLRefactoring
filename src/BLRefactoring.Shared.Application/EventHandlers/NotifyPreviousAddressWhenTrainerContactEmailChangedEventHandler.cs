@@ -19,9 +19,9 @@ public sealed class NotifyPreviousAddressWhenTrainerContactEmailChangedEventHand
     public async ValueTask Handle(TrainerContactEmailChangedDomainEvent notification, CancellationToken cancellationToken)
     {
         var message = new EmailMessage(
-            notification.OldContactEmail,
+            notification.OldContactEmail.FullAddress,
             "Your contact email address was changed",
-            $"The contact email address of your trainer profile was changed to {notification.NewContactEmail}. " +
+            $"The contact email address of your trainer profile was changed to {notification.NewContactEmail.FullAddress}. " +
             "If you did not request this change, please contact support immediately.");
 
         await emailSender.SendAsync(message, cancellationToken);

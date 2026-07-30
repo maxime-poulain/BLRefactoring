@@ -1,29 +1,25 @@
 using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.Messages;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 using BLRefactoring.Shared.Domain.Tests.Helpers;
 using FluentAssertions;
 using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainerAggregate;
 
+/// <summary>
+/// The aggregate only accepts value objects, so malformed input cannot reach it:
+/// those rules belong to the value objects and are covered by their own tests, and
+/// the accumulation of several errors at once is covered by the application-layer
+/// factory. What is left to assert here is the aggregate's own behaviour.
+/// </summary>
 public class TrainerTests
 {
-    // --- Create via TrainerCreationMessage ---
+    // --- Create ---
 
     [Fact]
-    public void Create_WithMessage_ValidData_ReturnsSuccess()
-    {
-        // Act
-        var result = new TrainerBuilder().Build();
-
-        // Assert
-        result.ShouldBeSuccess();
-    }
-
-    [Fact]
-    public void Create_WithMessage_ValidData_SetsAllProperties()
+    public void Create_ValidData_SetsAllProperties()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -35,107 +31,56 @@ public class TrainerTests
             .WithContactEmail("john.doe@example.com")
             .WithBio("Experienced software trainer with 10 years of experience.")
             .WithUserId(userId)
-            .BuildValid();
+            .Build();
 
         // Assert
-        trainer.Name.Should().NotBeNull();
-        trainer.ContactEmail.Should().NotBeNull();
+        trainer.Name.Firstname.Should().Be("John");
+        trainer.Name.Lastname.Should().Be("Doe");
+        trainer.ContactEmail.FullAddress.Should().Be("john.doe@example.com");
         trainer.Bio.Should().NotBeNull();
-        trainer.UserId.Should().NotBeNull();
         trainer.UserId.Value.Should().Be(userId);
     }
 
     [Fact]
-    public void Create_WithMessage_ValidData_RaisesTrainerCreatedEvent()
+    public void Create_ValidData_RaisesTrainerCreatedEvent()
     {
         // Act
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
 
         // Assert
-        trainer.DomainEvents.Should().ContainSingle(e => e is TrainerCreatedDomainEvent);
         var domainEvent = trainer.DomainEvents.OfType<TrainerCreatedDomainEvent>().Single();
         domainEvent.TrainerId.Should().Be(trainer.Id);
-        domainEvent.Firstname.Should().Be(trainer.Name.Firstname);
-        domainEvent.Lastname.Should().Be(trainer.Name.Lastname);
-        domainEvent.ContactEmail.Should().Be(trainer.ContactEmail.FullAddress);
+        domainEvent.Name.Should().Be(trainer.Name);
+        domainEvent.ContactEmail.Should().Be(trainer.ContactEmail);
     }
 
     [Fact]
-    public void Create_WithMessage_ValidData_RaisesNoChangeEvent()
+    public void Create_ValidData_RaisesNoChangeEvent()
     {
-        // Creation shares its validate-then-mutate path with edition; a trainer
-        // coming into existence must not look like one whose name or contact
-        // email just changed.
+        // A trainer coming into existence must not look like one whose name or
+        // contact email just changed.
 
         // Act
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
 
         // Assert
         trainer.DomainEvents.Should().ContainSingle();
     }
 
     [Fact]
-    public void Create_WithMessage_InvalidEmail_ReturnsFailure()
-    {
-        // Act
-        var result = new TrainerBuilder()
-            .WithContactEmail("invalid-email")
-            .Build();
-
-        // Assert
-        result.ShouldBeFailure();
-    }
-
-    [Fact]
-    public void Create_WithMessage_InvalidName_ReturnsFailure()
-    {
-        // Act
-        var result = new TrainerBuilder()
-            .WithFirstname("")
-            .Build();
-
-        // Assert
-        result.ShouldBeFailure();
-    }
-
-    [Fact]
-    public void Create_WithMessage_InvalidBio_ReturnsFailure()
-    {
-        // Act
-        var result = new TrainerBuilder()
-            .WithBio("")
-            .Build();
-
-        // Assert
-        result.ShouldBeFailure();
-    }
-
-    [Fact]
-    public void Create_WithMessage_WithoutBio_ReturnsSuccessWithNullBio()
+    public void Create_WithoutBio_LeavesTheBioNull()
     {
         // Act
         var trainer = new TrainerBuilder()
             .WithoutBio()
-            .BuildValid();
+            .Build();
 
         // Assert
         trainer.Bio.Should().BeNull();
     }
 
     [Fact]
-    public void Create_NullMessage_ThrowsArgumentNullException()
-    {
-        // Act
-        var act = () => Trainer.Create(null!);
-
-        // Assert
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    // --- Create via (Guid, ...) ---
-
-    [Fact]
-    public void Create_WithId_ValidData_SetsSpecifiedId()
+    public void Create_WithId_SetsSpecifiedId()
     {
         // Arrange
         var specificId = Guid.NewGuid();
@@ -143,39 +88,47 @@ public class TrainerTests
         // Act
         var trainer = new TrainerBuilder()
             .WithId(specificId)
-            .BuildValid();
+            .Build();
 
         // Assert
         trainer.Id.Value.Should().Be(specificId);
     }
 
-    // --- Edit ---
-
     [Fact]
-    public void Edit_ValidData_ReturnsSuccess()
+    public void Create_NullName_ThrowsArgumentNullException()
     {
-        // Arrange
-        var trainer = new TrainerBuilder().BuildValid();
-
         // Act
-        var result = trainer.Edit(EditionMessage(firstname: "Jane", lastname: "Smith"));
+        var act = () => Trainer.Create(
+            TrainerId.Generate(), UserId.Create(Guid.NewGuid()), null!, ContactEmail(), null);
 
         // Assert
-        result.ShouldBeSuccess();
+        act.Should().Throw<ArgumentNullException>();
     }
+
+    [Fact]
+    public void Create_NullContactEmail_ThrowsArgumentNullException()
+    {
+        // Act
+        var act = () => Trainer.Create(
+            TrainerId.Generate(), UserId.Create(Guid.NewGuid()), TrainerName(), null!, null);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    // --- Edit ---
 
     [Fact]
     public void Edit_ValidData_UpdatesEveryEditableProperty()
     {
         // Arrange
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
 
         // Act
-        trainer.Edit(EditionMessage(
-            firstname: "Jane",
-            lastname: "Smith",
-            contactEmail: "jane.smith@example.com",
-            bio: "Freshly written bio."));
+        trainer.Edit(
+            TrainerName("Jane", "Smith"),
+            ContactEmail("jane.smith@example.com"),
+            TrainerBio("Freshly written bio."));
 
         // Assert
         trainer.Name.Firstname.Should().Be("Jane");
@@ -185,25 +138,23 @@ public class TrainerTests
     }
 
     [Fact]
-    public void Edit_ChangedName_RaisesTrainerNameChangedEventCarryingOldAndNewNames()
+    public void Edit_ChangedName_RaisesNameChangedEventCarryingOldAndNewNames()
     {
         // Arrange
         var trainer = new TrainerBuilder()
             .WithFirstname("John")
             .WithLastname("Doe")
-            .BuildValid();
+            .Build();
         trainer.ClearDomainEvents();
 
         // Act
-        trainer.Edit(EditionMessage(firstname: "Jane", lastname: "Smith"));
+        trainer.Edit(TrainerName("Jane", "Smith"), ContactEmail(), TrainerBio());
 
         // Assert
         var domainEvent = trainer.DomainEvents.OfType<TrainerNameChangedDomainEvent>().Single();
         domainEvent.TrainerId.Should().Be(trainer.Id);
-        domainEvent.OldFirstname.Should().Be("John");
-        domainEvent.OldLastname.Should().Be("Doe");
-        domainEvent.NewFirstname.Should().Be("Jane");
-        domainEvent.NewLastname.Should().Be("Smith");
+        domainEvent.OldName.Should().Be(TrainerName("John", "Doe"));
+        domainEvent.NewName.Should().Be(TrainerName("Jane", "Smith"));
     }
 
     [Fact]
@@ -212,28 +163,28 @@ public class TrainerTests
         // Arrange
         var trainer = new TrainerBuilder()
             .WithContactEmail("old.email@example.com")
-            .BuildValid();
+            .Build();
         trainer.ClearDomainEvents();
 
         // Act
-        trainer.Edit(EditionMessage(contactEmail: "new.email@example.com"));
+        trainer.Edit(TrainerName(), ContactEmail("new.email@example.com"), TrainerBio());
 
         // Assert
         var domainEvent = trainer.DomainEvents.OfType<TrainerContactEmailChangedDomainEvent>().Single();
         domainEvent.TrainerId.Should().Be(trainer.Id);
-        domainEvent.OldContactEmail.Should().Be("old.email@example.com");
-        domainEvent.NewContactEmail.Should().Be("new.email@example.com");
+        domainEvent.OldContactEmail.Should().Be(ContactEmail("old.email@example.com"));
+        domainEvent.NewContactEmail.Should().Be(ContactEmail("new.email@example.com"));
     }
 
     [Fact]
     public void Edit_ChangedNameOnly_RaisesNoContactEmailChangedEvent()
     {
         // Arrange
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         trainer.ClearDomainEvents();
 
         // Act
-        trainer.Edit(EditionMessage(firstname: "Jane"));
+        trainer.Edit(TrainerName("Jane", "Doe"), ContactEmail(), TrainerBio());
 
         // Assert
         trainer.DomainEvents.Should().ContainSingle(e => e is TrainerNameChangedDomainEvent);
@@ -244,78 +195,13 @@ public class TrainerTests
     public void Edit_UnchangedValues_RaisesNoEvent()
     {
         // Arrange
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         trainer.ClearDomainEvents();
 
         // Act
-        var result = trainer.Edit(EditionMessage());
+        trainer.Edit(TrainerName(), ContactEmail(), TrainerBio());
 
         // Assert
-        result.ShouldBeSuccess();
-        trainer.DomainEvents.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void Edit_InvalidFirstname_ReturnsFailure()
-    {
-        // Arrange
-        var trainer = new TrainerBuilder().BuildValid();
-
-        // Act
-        var result = trainer.Edit(EditionMessage(firstname: ""));
-
-        // Assert
-        result.ShouldBeFailure();
-    }
-
-    [Fact]
-    public void Edit_InvalidContactEmail_ReturnsFailure()
-    {
-        // Arrange
-        var trainer = new TrainerBuilder().BuildValid();
-
-        // Act
-        var result = trainer.Edit(EditionMessage(contactEmail: "not-a-valid-email"));
-
-        // Assert
-        result.ShouldBeFailure();
-    }
-
-    [Fact]
-    public void Edit_SeveralInvalidFields_AccumulatesEveryError()
-    {
-        // Arrange
-        var trainer = new TrainerBuilder().BuildValid();
-
-        // Act
-        var result = trainer.Edit(EditionMessage(
-            firstname: "",
-            contactEmail: "not-a-valid-email",
-            bio: new string('x', 501)));
-
-        // Assert
-        var errors = result.ShouldBeFailure();
-        errors.Should().HaveCountGreaterThan(2);
-    }
-
-    [Fact]
-    public void Edit_InvalidData_LeavesAggregateUntouched()
-    {
-        // Arrange
-        var trainer = new TrainerBuilder()
-            .WithFirstname("John")
-            .WithLastname("Doe")
-            .WithContactEmail("john.doe@example.com")
-            .BuildValid();
-        trainer.ClearDomainEvents();
-
-        // Act
-        trainer.Edit(EditionMessage(firstname: "Jane", contactEmail: "not-a-valid-email"));
-
-        // Assert — the valid firstname must not have been applied either
-        trainer.Name.Firstname.Should().Be("John");
-        trainer.Name.Lastname.Should().Be("Doe");
-        trainer.ContactEmail.FullAddress.Should().Be("john.doe@example.com");
         trainer.DomainEvents.Should().BeEmpty();
     }
 
@@ -325,13 +211,12 @@ public class TrainerTests
         // Arrange
         var trainer = new TrainerBuilder()
             .WithBio("Some bio worth clearing.")
-            .BuildValid();
+            .Build();
 
         // Act
-        var result = trainer.Edit(EditionMessage(bio: null));
+        trainer.Edit(TrainerName(), ContactEmail(), bio: null);
 
         // Assert
-        result.ShouldBeSuccess();
         trainer.Bio.Should().BeNull();
     }
 
@@ -341,36 +226,36 @@ public class TrainerTests
         // Arrange
         var trainer = new TrainerBuilder()
             .WithoutBio()
-            .BuildValid();
+            .Build();
 
         // Act
-        trainer.Edit(EditionMessage(bio: "A bio at last."));
+        trainer.Edit(TrainerName(), ContactEmail(), TrainerBio("A bio at last."));
 
         // Assert
         trainer.Bio!.Value.Should().Be("A bio at last.");
     }
 
     [Fact]
-    public void Edit_EmptyBio_ReturnsFailure()
+    public void Edit_NullName_ThrowsArgumentNullException()
     {
         // Arrange
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
 
         // Act
-        var result = trainer.Edit(EditionMessage(bio: ""));
+        var act = () => trainer.Edit(null!, ContactEmail(), null);
 
         // Assert
-        result.ShouldBeFailure();
+        act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
-    public void Edit_NullMessage_ThrowsArgumentNullException()
+    public void Edit_NullContactEmail_ThrowsArgumentNullException()
     {
         // Arrange
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
 
         // Act
-        var act = () => trainer.Edit(null!);
+        var act = () => trainer.Edit(TrainerName(), null!, null);
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
@@ -382,32 +267,23 @@ public class TrainerTests
     public void MarkForDeletion_RaisesTrainerDeletedEvent()
     {
         // Arrange
-        var trainer = new TrainerBuilder().BuildValid();
+        var trainer = new TrainerBuilder().Build();
         trainer.ClearDomainEvents();
 
         // Act
         trainer.MarkForDeletion();
 
         // Assert
-        trainer.DomainEvents.Should().ContainSingle(e => e is TrainerDeletedDomainEvent);
         var domainEvent = trainer.DomainEvents.OfType<TrainerDeletedDomainEvent>().Single();
         domainEvent.TrainerId.Should().Be(trainer.Id);
     }
 
-    /// <summary>
-    /// Builds an edition message matching the profile <see cref="TrainerBuilder"/>
-    /// produces by default, so each test only states what it is actually varying.
-    /// </summary>
-    private static TrainerEditionMessage EditionMessage(
-        string firstname = "John",
-        string lastname = "Doe",
-        string contactEmail = "john.doe@example.com",
-        string? bio = "Experienced software trainer with 10 years of experience.")
-        => new()
-        {
-            Firstname = firstname,
-            Lastname = lastname,
-            ContactEmail = contactEmail,
-            Bio = bio
-        };
+    private static Name TrainerName(string firstname = "John", string lastname = "Doe")
+        => Name.Create(firstname, lastname).ShouldBeSuccess();
+
+    private static Email ContactEmail(string address = "john.doe@example.com")
+        => Email.Create(address).ShouldBeSuccess();
+
+    private static Bio TrainerBio(string value = "Experienced software trainer with 10 years of experience.")
+        => Bio.Create(value).ShouldBeSuccess();
 }

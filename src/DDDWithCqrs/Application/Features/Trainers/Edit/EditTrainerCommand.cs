@@ -4,7 +4,7 @@ using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.CQS;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.Messages;
+using BLRefactoring.Shared.Application.Factories;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Edit;
 
@@ -48,19 +48,16 @@ public class EditTrainerCommandHandler(
                 $"Trainer with id `{request.TrainerId}` could not be found.");
         }
 
-        var editionMessage = new TrainerEditionMessage
-        {
-            Firstname = request.Firstname,
-            Lastname = request.Lastname,
-            ContactEmail = request.ContactEmail,
-            Bio = request.Bio
-        };
+        var profileResult = TrainerProfileFactory.Create(
+            request.Firstname, request.Lastname, request.ContactEmail, request.Bio);
 
-        // The aggregate raises one domain event per attribute that actually changed;
-        // their handlers run during SaveChangesAsync, before persistence.
-        return await trainer.Edit(editionMessage).MatchAsync<Result>(
-            onSuccess: async () =>
+        return await profileResult.MatchAsync<Result>(
+            onSuccess: async profile =>
             {
+                // The aggregate raises one domain event per attribute that actually
+                // changed; their handlers run during SaveChangesAsync, before persistence.
+                trainer.Edit(profile.Name, profile.ContactEmail, profile.Bio);
+
                 trainerRepository.Update(trainer);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 return Result.Success();

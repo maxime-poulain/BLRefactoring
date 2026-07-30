@@ -1,4 +1,5 @@
 using BLRefactoring.Shared.Common;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 
 namespace BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
 
@@ -10,14 +11,13 @@ namespace BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
 /// welcome message) rather than just the identifier: domain events are dispatched
 /// before the aggregate is persisted, so a handler cannot load a freshly created
 /// trainer from a repository — and an event should describe what happened on its
-/// own anyway.
+/// own anyway. Those facts are carried as the value objects the domain speaks in,
+/// not as loose strings.
 /// </remarks>
 /// <param name="TrainerId">The identifier of the created trainer.</param>
-/// <param name="Firstname">The first name of the created trainer.</param>
-/// <param name="Lastname">The last name of the created trainer.</param>
-/// <param name="ContactEmail">The contact email address of the created trainer.</param>
+/// <param name="Name">The name of the created trainer.</param>
+/// <param name="ContactEmail">The contact address of the created trainer.</param>
 public sealed record TrainerCreatedDomainEvent(
     TrainerId TrainerId,
-    string Firstname,
-    string Lastname,
-    string ContactEmail) : IDomainEvent;
+    Name Name,
+    Email ContactEmail) : IDomainEvent;

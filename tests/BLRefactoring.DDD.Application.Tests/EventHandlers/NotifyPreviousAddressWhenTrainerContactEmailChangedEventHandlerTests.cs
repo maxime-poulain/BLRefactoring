@@ -2,6 +2,8 @@ using BLRefactoring.Shared;
 using BLRefactoring.Shared.Application.EventHandlers;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
+using BLRefactoring.Shared.Domain.Tests.Helpers;
 using Moq;
 using Xunit;
 
@@ -18,7 +20,9 @@ public class NotifyPreviousAddressWhenTrainerContactEmailChangedEventHandlerTest
     public async Task Handle_NotifiesThePreviousAddress()
     {
         var domainEvent = new TrainerContactEmailChangedDomainEvent(
-            TrainerId.Generate(), "old@example.com", "new@example.com");
+            TrainerId.Generate(),
+            Email.Create("old@example.com").ShouldBeSuccess(),
+            Email.Create("new@example.com").ShouldBeSuccess());
 
         var sut = CreateSut();
         await sut.Handle(domainEvent, CancellationToken.None);
