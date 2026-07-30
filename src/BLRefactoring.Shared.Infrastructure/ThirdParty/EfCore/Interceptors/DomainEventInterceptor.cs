@@ -12,6 +12,12 @@ namespace BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Interceptors;
 /// </summary>
 /// <remarks>
 /// <para>
+/// The interceptor is scoped, like the <see cref="IDomainEventDispatcher"/> it
+/// receives: one instance per request, wired into the DbContext options built for
+/// that same scope. Handlers therefore resolve against the request's scoped
+/// services and share the change tracker of the unit of work being saved.
+/// </para>
+/// <para>
 /// Events are drained in rounds: each round snapshots the pending events, clears
 /// them from their aggregates, then dispatches the batch. Handlers may raise new
 /// events on other aggregates; the loop repeats until no pending event remains.

@@ -50,7 +50,7 @@ builder.Services.AddTransient<ITrainerApplicationService, TrainerApplicationServ
 
 builder.Services.AddInfrastructure(builder.Configuration);
 
-builder.Services.AddDbContextPool<TrainingIdentityDbContext>(options =>
+builder.Services.AddDbContext<TrainingIdentityDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("TrainingContext"));
 });
