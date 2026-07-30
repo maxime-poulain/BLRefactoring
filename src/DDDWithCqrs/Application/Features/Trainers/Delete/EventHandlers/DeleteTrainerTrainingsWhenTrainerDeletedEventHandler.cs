@@ -2,9 +2,9 @@ using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 
-namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create.EventHandlers;
+namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Delete.EventHandlers;
 
-public class DeleteTrainerTrainingsWhenTrainerDeletedDomainEventHandler(ITrainingRepository trainingRepository)
+public class DeleteTrainerTrainingsWhenTrainerDeletedEventHandler(ITrainingRepository trainingRepository)
     : IDomainEventHandler<TrainerDeletedDomainEvent>
 {
     public async ValueTask Handle(TrainerDeletedDomainEvent notification, CancellationToken cancellationToken)
