@@ -4,7 +4,6 @@ using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.Infrastructure.Repositories;
 using BLRefactoring.Shared.Infrastructure.Services;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
-using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Interceptor;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Interceptors;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +17,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         return services
-            .AddSingleton<IDomainEventPublisher, MediatorRDomainDomainEventPublisher>()
+            .AddSingleton<IDomainEventPublisher, MediatorDomainEventPublisher>()
             .AddScoped<ITransactionManager, TransactionManager>()
             .AddScoped<ITrainerRepository, TrainerRepository>()
             .AddScoped<ITrainingRepository, TrainingRepository>()

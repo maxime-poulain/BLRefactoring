@@ -10,7 +10,7 @@ public class DeleteTrainingCommand(Guid id) : ICommand<Result>
     public Guid Id { get; init; } = id;
 }
 
-public class DeleteTrainerCommandHandler(ITrainingRepository trainingRepository)
+public class DeleteTrainingCommandHandler(ITrainingRepository trainingRepository)
     : ICommandHandler<DeleteTrainingCommand, Result>
 {
     public async ValueTask<Result> Handle(DeleteTrainingCommand request, CancellationToken cancellationToken)

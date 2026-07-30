@@ -11,7 +11,7 @@ public class DeleteTrainingCommandHandlerTests
 {
     private readonly Mock<ITrainingRepository> _trainingRepository = new();
 
-    private DeleteTrainerCommandHandler CreateSut() =>
+    private DeleteTrainingCommandHandler CreateSut() =>
         new(_trainingRepository.Object);
 
     [Fact]
