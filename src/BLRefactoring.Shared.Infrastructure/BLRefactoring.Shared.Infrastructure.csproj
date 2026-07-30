@@ -7,6 +7,11 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <!-- Needed by the abstract AuthControllerBase shared by both API hosts. -->
+      <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
       <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.1" />
       <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.1" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.1" />

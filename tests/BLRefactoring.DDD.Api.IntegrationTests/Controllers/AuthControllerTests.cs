@@ -1,6 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
-using BLRefactoring.DDD.Api.Controller;
+using BLRefactoring.Shared.Infrastructure.ThirdParty.Identity;
 using BLRefactoring.DDD.Api.IntegrationTests.Fixtures;
 using FluentAssertions;
 using Xunit;
