@@ -17,18 +17,18 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         return services
-            .AddSingleton<IDomainEventDispatcher, MediatorDomainEventDispatcher>()
+            .AddScoped<IDomainEventDispatcher, MediatorDomainEventDispatcher>()
             .AddScoped<IUnitOfWork, UnitOfWork>()
             .AddScoped<ITrainerRepository, TrainerRepository>()
             .AddScoped<ITrainingRepository, TrainingRepository>()
             .AddScoped<IUniquenessTitleChecker, TrainingRepository>()
-            .AddDbContextPool<TrainingContext>((serviceProvider, options) =>
+            .AddDbContext<TrainingContext>((serviceProvider, options) =>
                 options.UseSqlServer(configuration.GetConnectionString("TrainingContext"))
                     .EnableSensitiveDataLogging()
                     .AddInterceptors(
                         serviceProvider.GetRequiredService<DomainEventInterceptor>(),
                         serviceProvider.GetRequiredService<AuditableEntitiesInterceptor>()))
-            .AddSingleton<DomainEventInterceptor>()
+            .AddScoped<DomainEventInterceptor>()
             .AddSingleton<AuditableEntitiesInterceptor>()
             .AddScoped<ITokenService, TokenService>()
             .AddScoped<ICurrentUserService, CurrentUserService>();

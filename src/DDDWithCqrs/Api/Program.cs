@@ -47,7 +47,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddValidatorsFromAssembly(typeof(CreateTrainerCommandValidator).Assembly);
 
 // Identity
-builder.Services.AddDbContextPool<TrainingIdentityDbContext>(options =>
+builder.Services.AddDbContext<TrainingIdentityDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("TrainingContext"));
 });
