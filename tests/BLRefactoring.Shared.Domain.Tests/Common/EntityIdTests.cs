@@ -90,24 +90,28 @@ public class EntityIdTests
     }
 
     [Fact]
-    public void ImplicitConversion_ToGuid_ReturnsValue()
+    public void Value_ExposesTheUnderlyingGuid()
     {
         var guid = Guid.NewGuid();
         var id = TrainerId.Create(guid);
 
-        Guid result = id;
-
-        result.Should().Be(guid);
+        id.Value.Should().Be(guid);
     }
 
     [Fact]
-    public void ExplicitConversion_FromGuid_CreatesEntityId()
+    public void Create_DefaultValue_Throws()
     {
-        var guid = Guid.NewGuid();
+        var act = () => TrainerId.Create(Guid.Empty);
 
-        var id = (EntityId<TrainerId, Guid>)guid;
+        act.Should().Throw<ArgumentException>();
+    }
 
-        id.Value.Should().Be(guid);
+    [Fact]
+    public void Generate_ProducesNonEmptyValue()
+    {
+        var id = TrainerId.Generate();
+
+        id.Value.Should().NotBe(Guid.Empty);
     }
 
     [Fact]

@@ -107,10 +107,10 @@ public class TrainerApplicationServiceTests
             .ReturnsAsync(trainer);
         var sut = _fixture.CreateSut();
 
-        var result = await sut.GetByIdAsync(trainer.Id);
+        var result = await sut.GetByIdAsync(trainer.Id.Value);
 
         var dto = result.ShouldBeSuccess();
-        dto.Id.Should().Be((Guid)trainer.Id);
+        dto.Id.Should().Be(trainer.Id.Value);
     }
 
     [Fact]
@@ -168,7 +168,7 @@ public class TrainerApplicationServiceTests
             .ReturnsAsync(trainer);
         var sut = _fixture.CreateSut();
 
-        var result = await sut.DeleteAsync(trainer.Id);
+        var result = await sut.DeleteAsync(trainer.Id.Value);
 
         result.ShouldBeSuccess();
     }
@@ -182,7 +182,7 @@ public class TrainerApplicationServiceTests
             .ReturnsAsync(trainer);
         var sut = _fixture.CreateSut();
 
-        await sut.DeleteAsync(trainer.Id);
+        await sut.DeleteAsync(trainer.Id.Value);
 
         _fixture.TrainerRepository.Verify(r => r.Delete(trainer), Times.Once);
     }
@@ -196,7 +196,7 @@ public class TrainerApplicationServiceTests
             .ReturnsAsync(trainer);
         var sut = _fixture.CreateSut();
 
-        await sut.DeleteAsync(trainer.Id);
+        await sut.DeleteAsync(trainer.Id.Value);
 
         _fixture.UnitOfWork.Verify(
             uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
@@ -243,7 +243,7 @@ public class TrainerApplicationServiceTests
             .ThrowsAsync(new Exception("DB error"));
         var sut = _fixture.CreateSut();
 
-        var result = await sut.DeleteAsync(trainer.Id);
+        var result = await sut.DeleteAsync(trainer.Id.Value);
 
         result.ShouldBeFailure();
     }

@@ -26,7 +26,7 @@ public class DeleteTrainerCommandHandlerTests
             .ReturnsAsync(trainer);
         var sut = CreateSut();
 
-        var result = await sut.Handle(new DeleteTrainerCommand(trainer.Id), CancellationToken.None);
+        var result = await sut.Handle(new DeleteTrainerCommand(trainer.Id.Value), CancellationToken.None);
 
         result.ShouldBeSuccess();
     }
@@ -53,7 +53,7 @@ public class DeleteTrainerCommandHandlerTests
             .ReturnsAsync(trainer);
         var sut = CreateSut();
 
-        await sut.Handle(new DeleteTrainerCommand(trainer.Id), CancellationToken.None);
+        await sut.Handle(new DeleteTrainerCommand(trainer.Id.Value), CancellationToken.None);
 
         _trainerRepository.Verify(r => r.Delete(trainer), Times.Once);
         _unitOfWork.Verify(
@@ -73,7 +73,7 @@ public class DeleteTrainerCommandHandlerTests
             .ThrowsAsync(new Exception("DB error"));
         var sut = CreateSut();
 
-        Func<Task> act = async () => await sut.Handle(new DeleteTrainerCommand(trainer.Id), CancellationToken.None);
+        Func<Task> act = async () => await sut.Handle(new DeleteTrainerCommand(trainer.Id.Value), CancellationToken.None);
 
         await act.Should().ThrowAsync<Exception>().WithMessage("DB error");
     }

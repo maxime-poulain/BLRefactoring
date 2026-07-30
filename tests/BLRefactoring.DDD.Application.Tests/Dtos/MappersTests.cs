@@ -12,7 +12,7 @@ public class MappersTests
     {
         var trainer = new TrainerBuilder().BuildValid();
         var dto = trainer.ToDto();
-        dto.Id.Should().Be((Guid)trainer.Id);
+        dto.Id.Should().Be(trainer.Id.Value);
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public class MappersTests
     {
         var training = await new TrainingBuilder().BuildValidAsync();
         var dto = training.ToDto();
-        dto.Id.Should().Be((Guid)training.Id);
+        dto.Id.Should().Be(training.Id.Value);
     }
 
     [Fact]

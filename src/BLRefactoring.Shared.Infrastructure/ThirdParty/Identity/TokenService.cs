@@ -47,7 +47,7 @@ public sealed class TokenService(IConfiguration configuration, ITrainerRepositor
         // Define the signing credentials using the security key and HMAC-SHA256 algorithm.
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var trainer = await trainerRepository.GetByUserIdAsync((UserId)user.Id, cancellationToken);
+        var trainer = await trainerRepository.GetByUserIdAsync(UserId.Create(user.Id), cancellationToken);
 
         if (trainer is null)
         {

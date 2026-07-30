@@ -6,7 +6,10 @@ namespace BLRefactoring.Shared.Domain.Tests.Common;
 
 public class EntityTests
 {
-    public class TestEntityId : EntityId<TestEntityId> { }
+    public class TestEntityId : EntityId<TestEntityId>
+    {
+        private TestEntityId(Guid value) : base(value) { }
+    }
 
     public class TestEntity(TestEntityId id) : Entity<TestEntityId>(id);
 

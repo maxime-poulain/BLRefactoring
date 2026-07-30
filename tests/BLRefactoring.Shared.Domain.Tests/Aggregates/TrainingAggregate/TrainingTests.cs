@@ -45,7 +45,7 @@ public class TrainingTests
         training.Description.Should().NotBeNull();
         training.Prerequisites.Should().NotBeNull();
         training.AcquiredSkills.Should().NotBeNull();
-        ((Guid)training.TrainerId).Should().Be(trainerId);
+        (training.TrainerId.Value).Should().Be(trainerId);
     }
 
     [Fact]

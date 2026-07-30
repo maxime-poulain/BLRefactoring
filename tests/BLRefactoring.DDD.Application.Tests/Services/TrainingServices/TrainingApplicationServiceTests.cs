@@ -157,7 +157,7 @@ public class TrainingApplicationServiceTests
         await sut.CreateAsync(ValidCreationRequest());
 
         _fixture.TrainerRepository.Verify(
-            r => r.GetByIdAsync((TrainerId)_trainerId, It.IsAny<CancellationToken>()),
+            r => r.GetByIdAsync(TrainerId.Create(_trainerId), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -172,9 +172,9 @@ public class TrainingApplicationServiceTests
             .ReturnsAsync(training);
         var sut = _fixture.CreateSut();
 
-        var result = await sut.GetByIdAsync(training.Id);
+        var result = await sut.GetByIdAsync(training.Id.Value);
 
-        result.ShouldBeSuccess().Id.Should().Be((Guid)training.Id);
+        result.ShouldBeSuccess().Id.Should().Be(training.Id.Value);
     }
 
     [Fact]
@@ -247,7 +247,7 @@ public class TrainingApplicationServiceTests
             Topics = ["Design"]
         };
 
-        var result = await sut.EditAsync(training.Id, request);
+        var result = await sut.EditAsync(training.Id.Value, request);
 
         result.ShouldBeSuccess().Title.Should().Be("Updated Title Here");
     }
@@ -293,7 +293,7 @@ public class TrainingApplicationServiceTests
             Topics = ["Programming"]
         };
 
-        var result = await sut.EditAsync(training.Id, request);
+        var result = await sut.EditAsync(training.Id.Value, request);
 
         result.ShouldBeFailure();
     }
@@ -338,7 +338,7 @@ public class TrainingApplicationServiceTests
             .ReturnsAsync(training);
         var sut = _fixture.CreateSut();
 
-        var result = await sut.DeleteAsync(training.Id);
+        var result = await sut.DeleteAsync(training.Id.Value);
 
         result.ShouldBeSuccess();
     }
@@ -352,7 +352,7 @@ public class TrainingApplicationServiceTests
             .ReturnsAsync(training);
         var sut = _fixture.CreateSut();
 
-        await sut.DeleteAsync(training.Id);
+        await sut.DeleteAsync(training.Id.Value);
 
         _fixture.TrainingRepository.Verify(r => r.Delete(training), Times.Once);
         _fixture.UnitOfWork.Verify(

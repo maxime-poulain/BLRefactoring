@@ -29,7 +29,7 @@ public class EditTrainingCommandHandler(
         CancellationToken cancellationToken)
     {
         var training = await trainingRepository.GetByIdAsync(
-            (TrainingId)request.TrainingId, cancellationToken);
+            TrainingId.Create(request.TrainingId), cancellationToken);
 
         if (training == null)
         {

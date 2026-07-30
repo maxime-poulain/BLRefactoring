@@ -29,7 +29,7 @@ public class TrainingTitleExistsForTrainerSpecificationTests
         var trainings = new[] { training };
 
         var title = TrainingTitle.Create("Valid Training Title").Match(t => t, _ => null!);
-        var spec = new TrainingTitleExistsForTrainerSpecification(title, (TrainerId)(Guid)trainerId);
+        var spec = new TrainingTitleExistsForTrainerSpecification(title, TrainerId.Create(trainerId));
 
         // Act
         var result = trainings.AsQueryable().Where(spec.Criteria!.Compile()).ToList();
@@ -55,7 +55,7 @@ public class TrainingTitleExistsForTrainerSpecificationTests
         var trainings = new[] { training };
 
         var title = TrainingTitle.Create("Valid Training Title").Match(t => t, _ => null!);
-        var spec = new TrainingTitleExistsForTrainerSpecification(title, (TrainerId)(Guid)otherTrainerId);
+        var spec = new TrainingTitleExistsForTrainerSpecification(title, TrainerId.Create(otherTrainerId));
 
         // Act
         var result = trainings.AsQueryable().Where(spec.Criteria!.Compile()).ToList();

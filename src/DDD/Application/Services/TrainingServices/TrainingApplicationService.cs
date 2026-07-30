@@ -73,7 +73,7 @@ public class TrainingApplicationService(
     /// <inheritdoc />
     public async Task<Result<TrainingDto>> CreateAsync(TrainingCreationRequest request, CancellationToken cancellationToken = default)
     {
-        var trainer = await trainerRepository.GetByIdAsync((TrainerId)currentUserService.TrainerId, cancellationToken);
+        var trainer = await trainerRepository.GetByIdAsync(TrainerId.Create(currentUserService.TrainerId), cancellationToken);
 
         if (trainer is null)
         {
@@ -106,7 +106,7 @@ public class TrainingApplicationService(
     /// <inheritdoc />
     public async Task<Result<TrainingDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var training = await trainingRepository.GetByIdAsync((TrainingId)id, cancellationToken);
+        var training = await trainingRepository.GetByIdAsync(TrainingId.Create(id), cancellationToken);
 
         return training is null
             ? Result<TrainingDto>.Failure(ErrorCode.NotFound, $"Training with id `{id}` not found.")
@@ -122,7 +122,7 @@ public class TrainingApplicationService(
     /// <inheritdoc />
     public async Task<Result<TrainingDto>> EditAsync(Guid trainingId, TrainingEditionRequest request, CancellationToken cancellationToken = default)
     {
-        var training = await trainingRepository.GetByIdAsync((TrainingId)trainingId, cancellationToken);
+        var training = await trainingRepository.GetByIdAsync(TrainingId.Create(trainingId), cancellationToken);
 
         if (training is null)
         {
@@ -156,7 +156,7 @@ public class TrainingApplicationService(
     /// <inheritdoc />
     public async Task<Result<List<TrainingDto>>> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken = default)
     {
-        var trainings = await trainingRepository.GetByTrainerIdAsync((TrainerId)trainerId, cancellationToken);
+        var trainings = await trainingRepository.GetByTrainerIdAsync(TrainerId.Create(trainerId), cancellationToken);
         return Result<List<TrainingDto>>.Success(trainings.ToDtos());
     }
 
@@ -171,7 +171,7 @@ public class TrainingApplicationService(
     /// <inheritdoc />
     public async Task<Result> DeleteAsync(Guid trainingId, CancellationToken cancellationToken = default)
     {
-        var training = await trainingRepository.GetByIdAsync((TrainingId)trainingId, cancellationToken);
+        var training = await trainingRepository.GetByIdAsync(TrainingId.Create(trainingId), cancellationToken);
         if (training is null)
         {
             return Result.Failure(

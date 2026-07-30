@@ -55,7 +55,7 @@ public sealed class TrainerApplicationService(
 
     public async Task<Result<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var trainer = await trainerRepository.GetByIdAsync((TrainerId)id, cancellationToken);
+        var trainer = await trainerRepository.GetByIdAsync(TrainerId.Create(id), cancellationToken);
 
         if (trainer is null)
         {
@@ -80,7 +80,7 @@ public sealed class TrainerApplicationService(
     // No explicit transaction management is required.
     public async Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var trainer = await trainerRepository.GetByIdAsync((TrainerId)id, cancellationToken);
+        var trainer = await trainerRepository.GetByIdAsync(TrainerId.Create(id), cancellationToken);
 
         if (trainer is null)
         {

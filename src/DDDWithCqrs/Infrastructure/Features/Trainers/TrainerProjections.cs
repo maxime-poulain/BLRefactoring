@@ -12,7 +12,7 @@ public static class TrainerProjections
 {
     public static readonly Expression<Func<Trainer, TrainerDto>> ToDto = trainer => new TrainerDto
     {
-        Id = trainer.Id,
+        Id = trainer.Id.Value,
         Email = trainer.Email.FullAddress,
         Firstname = trainer.Name.Firstname,
         Lastname = trainer.Name.Lastname
