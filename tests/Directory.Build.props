@@ -1,0 +1,14 @@
+<Project>
+
+  <!--
+    MSBuild stops looking upward at the first Directory.Build.props it finds,
+    so this file must import the root one explicitly to keep its properties.
+  -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <!-- Test projects are never packed as NuGet packages. -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+</Project>
