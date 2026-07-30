@@ -115,6 +115,7 @@ app.UseHttpsRedirection();
 
 app.UseCors("BlazorClient");
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

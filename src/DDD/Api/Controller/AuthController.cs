@@ -13,6 +13,7 @@ namespace BLRefactoring.DDD.Api.Controller;
 /// </summary>
 public class AuthController(
     UserManager<IdentityUser<Guid>> userManager,
+    SignInManager<IdentityUser<Guid>> signInManager,
     ITokenService tokenService,
     ITrainerApplicationService trainerApplicationService) : ApiControllerBase
 {
@@ -61,9 +62,15 @@ public class AuthController(
                 Email = user.Email, Firstname = request.Firstname, Lastname = request.Lastname, UserId = user.Id
             }, cancellationToken);
 
-        transactionScope.Complete();
+        // The transaction is only completed when the whole registration succeeded.
+        // If the trainer creation fails, disposing the scope without Complete()
+        // rolls back the identity user as well, so no orphan account survives.
         return creationResult.Match<ActionResult>(
-            _ => Ok(),
+            _ =>
+            {
+                transactionScope.Complete();
+                return Ok();
+            },
             collection => BadRequest(collection.Select(x => new IdentityError()
             {
                 Code = x.ErrorCode.Name, Description = x.ErrorMessage
@@ -91,8 +98,14 @@ public class AuthController(
             return Unauthorized("Invalid username or password.");
         }
 
-        var isPasswordValid = await userManager.CheckPasswordAsync(user, request.Password);
-        if (!isPasswordValid)
+        // CheckPasswordSignInAsync enforces the lockout policy configured on
+        // Identity: it increments the failed-access count, locks the account
+        // at the threshold, rejects a locked-out account and resets the count
+        // on success. The response stays identical for a wrong password and a
+        // locked-out account so callers get no oracle about account state.
+        var signInResult = await signInManager.CheckPasswordSignInAsync(
+            user, request.Password, lockoutOnFailure: true);
+        if (!signInResult.Succeeded)
         {
             return Unauthorized("Invalid username or password.");
         }
