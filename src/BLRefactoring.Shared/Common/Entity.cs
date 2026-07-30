@@ -53,7 +53,7 @@ public abstract class Entity<TEntityId> : Entity, IAuditable
 
     public override int GetHashCode()
     {
-        return IsTransient() ? base.GetHashCode() : Id.GetHashCode();
+        return Id.GetHashCode();
     }
 
     public static bool operator ==(Entity<TEntityId>? a, Entity<TEntityId>? b)
@@ -75,29 +75,6 @@ public abstract class Entity<TEntityId> : Entity, IAuditable
     {
         return !(a == b);
     }
-
-    /*
-     * DO NO MODIFY THIS.
-     * `IsTransientMaterializationInterceptor` class intercept materialization
-     * and uses tree expressions to set the private field to `false`.
-     */
-#pragma warning disable RCS1169 // Make field read-only.
-#pragma warning disable IDE0044 // Add readonly modifier
-#pragma warning disable S2933 // Fields that are only assigned in the constructor should be "readonly"
-    // ReSharper disable once FieldCanBeMadeReadOnly.Local
-    private bool _isTransient = true;
-#pragma warning restore S2933 // Fields that are only assigned in the constructor should be "readonly"
-#pragma warning restore IDE0044 // Add readonly modifier
-#pragma warning restore RCS1169 // Make field read-only.
-
-    /// <summary>
-    /// Determines if the underlying entity has already been persisted.
-    /// </summary>
-    /// <returns>
-    /// Returns <see langword="true"/> if the entity has been persisted;
-    /// <see langword="false"/> otherwise.
-    /// </returns>
-    public virtual bool IsTransient() => _isTransient;
 }
 
 /// <summary>

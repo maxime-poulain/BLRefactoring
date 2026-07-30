@@ -20,14 +20,6 @@ public class EntityTests
     }
 
     [Fact]
-    public void NewEntity_IsTransient()
-    {
-        var entity = new TestEntity();
-
-        entity.IsTransient().Should().BeTrue();
-    }
-
-    [Fact]
     public void Equals_SameId_ReturnsTrue()
     {
         var id = TestEntityId.Generate();
@@ -64,14 +56,23 @@ public class EntityTests
     }
 
     [Fact]
-    public void GetHashCode_TransientEntity_UsesReferenceHashCode()
+    public void GetHashCode_SameId_ReturnsSameHashCode()
     {
         var id = TestEntityId.Generate();
         var entity1 = new TestEntity { Id = id };
         var entity2 = new TestEntity { Id = id };
 
-        // Both are transient, so GetHashCode uses base.GetHashCode() (reference-based)
-        // Two different instances should have different hash codes
+        // Equal entities (same Id) must have equal hash codes,
+        // as required by the Equals/GetHashCode contract.
+        entity1.GetHashCode().Should().Be(entity2.GetHashCode());
+    }
+
+    [Fact]
+    public void GetHashCode_DifferentId_ReturnsDifferentHashCode()
+    {
+        var entity1 = new TestEntity();
+        var entity2 = new TestEntity();
+
         entity1.GetHashCode().Should().NotBe(entity2.GetHashCode());
     }
 

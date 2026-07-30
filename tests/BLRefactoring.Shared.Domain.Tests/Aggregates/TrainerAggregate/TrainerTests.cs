@@ -1,4 +1,3 @@
-using System.Reflection;
 using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
@@ -141,36 +140,17 @@ public class TrainerTests
     }
 
     [Fact]
-    public void ChangeName_OnNonTransientEntity_RaisesTrainerNameChangedEvent()
+    public void ChangeName_ValidNames_RaisesTrainerNameChangedEvent()
     {
         // Arrange
         var trainer = new TrainerBuilder().BuildValid();
         trainer.ClearDomainEvents();
-
-        // Set _isTransient to false via reflection to simulate a persisted entity
-        var field = typeof(Entity<TrainerId>)
-            .GetField("_isTransient", BindingFlags.NonPublic | BindingFlags.Instance);
-        field!.SetValue(trainer, false);
 
         // Act
         trainer.ChangeName("Jane", "Smith");
 
         // Assert
         trainer.DomainEvents.Should().ContainSingle(e => e is TrainerNameChangedDomainEvent);
-    }
-
-    [Fact]
-    public void ChangeName_OnTransientEntity_DoesNotRaiseNameChangedEvent()
-    {
-        // Arrange
-        var trainer = new TrainerBuilder().BuildValid();
-        trainer.ClearDomainEvents();
-
-        // Act - trainer is transient by default
-        trainer.ChangeName("Jane", "Smith");
-
-        // Assert
-        trainer.DomainEvents.Should().NotContain(e => e is TrainerNameChangedDomainEvent);
     }
 
     [Fact]
