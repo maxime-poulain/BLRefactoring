@@ -49,8 +49,7 @@ public class CreateTrainingCommandHandler(
             Prerequisites = request.Prerequisites,
             AcquiredSkills = request.AcquiredSkills,
             TrainerId = trainerId,
-            Topics = request.Topics,
-            UserId = UserId.Create(currentUserService.UserId)
+            Topics = request.Topics
         };
 
         var trainingCreationResult = await Training.CreateAsync(trainingCreationMessage, titleChecker);

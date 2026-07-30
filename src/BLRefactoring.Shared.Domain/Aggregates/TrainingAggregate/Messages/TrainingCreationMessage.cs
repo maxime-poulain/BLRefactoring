@@ -11,5 +11,4 @@ public class TrainingCreationMessage : TrainingEditionMessage
     public required TrainingId TrainingId { get; init; }
 
     public required TrainerId TrainerId { get; init; }
-    public required UserId UserId { get; init; }
 }

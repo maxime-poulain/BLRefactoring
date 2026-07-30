@@ -90,8 +90,7 @@ public class TrainingApplicationService(
             Prerequisites = request.Prerequisites,
             AcquiredSkills = request.AcquiredSkills,
             TrainerId = TrainerId.Create(currentUserService.TrainerId),
-            Topics = request.Topics,
-            UserId = UserId.Create(currentUserService.UserId)
+            Topics = request.Topics
         };
 
         var result = await Training.CreateAsync(trainingCreationMessage, uniquenessTitleChecker, cancellationToken);
