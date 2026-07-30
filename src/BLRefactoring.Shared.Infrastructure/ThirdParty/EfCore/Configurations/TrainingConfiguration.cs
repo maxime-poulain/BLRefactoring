@@ -63,6 +63,11 @@ public class TrainingConfiguration : AggregateRootTypeConfiguration<Training, Tr
                 .IsRequired();
         });
 
-        builder.HasIndex(training => training.TrainerId);
+        // The business rule "a trainer cannot have two trainings with the same title"
+        // is checked upfront by IUniquenessTitleChecker for fast feedback, but only a
+        // unique index makes it hold under concurrency (check-then-act race).
+        // The composite index also serves TrainerId-only lookups (leading column).
+        builder.HasIndex(training => new { training.TrainerId, training.Title })
+            .IsUnique();
     }
 }
