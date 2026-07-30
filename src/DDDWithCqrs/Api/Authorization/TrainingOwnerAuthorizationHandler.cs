@@ -24,19 +24,19 @@ public class TrainingOwnerAuthorizationHandler(
             return;
         }
 
-        var training = await trainingRepository.GetByIdAsync(TrainingId.Create(trainingId));
-        if (training is null)
-        {
-            return;
-        }
-
         var trainerIdClaim = httpContext.User.FindFirst("trainer_id")?.Value;
         if (trainerIdClaim is null || !Guid.TryParse(trainerIdClaim, out var trainerIdFromToken))
         {
             return;
         }
 
-        if (training.TrainerId.Value == trainerIdFromToken)
+        // This policy only guards ownership; existence is the action's concern.
+        // A nonexistent training therefore succeeds the requirement so the
+        // action can answer 404 — failing here would turn "not found" into an
+        // incorrect 403. Ownership of a training is not a secret anyway: every
+        // authenticated caller can list all trainings.
+        var training = await trainingRepository.GetByIdAsync(TrainingId.Create(trainingId));
+        if (training is null || training.TrainerId.Value == trainerIdFromToken)
         {
             context.Succeed(requirement);
         }

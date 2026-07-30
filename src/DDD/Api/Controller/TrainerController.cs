@@ -7,32 +7,14 @@ namespace BLRefactoring.DDD.Api.Controller;
 
 /// <summary>
 /// API controller for managing trainer resources.
-/// Provides REST endpoints for creating, reading, and deleting trainer records.
+/// Provides REST endpoints for reading and deleting trainer records.
+/// Trainers are only created through the registration flow, which creates
+/// the identity user and its trainer atomically.
 /// </summary>
 /// <param name="trainerApplicationService">Application service for trainer operations.</param>
 public class TrainerController(ITrainerApplicationService trainerApplicationService)
     : ApiControllerBase
 {
-    /// <summary>
-    /// Creates a new trainer.
-    /// </summary>
-    /// <param name="request">The trainer creation request containing trainer details.</param>
-    /// <returns>
-    /// 201 Created with the created trainer details on success.
-    /// 400 Bad Request with validation errors on failure.
-    /// </returns>
-    [HttpPost]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(TrainerDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<TrainerDto>> CreateAsync(TrainerCreationRequest request)
-    {
-        var result = await trainerApplicationService.CreateAsync(request);
-
-        return result.Match<ActionResult>(
-            trainerDto => CreatedAtAction("GetById", new { id = trainerDto.Id }, trainerDto),
-            BadRequest);
-    }
-
     /// <summary>
     /// Retrieves a trainer by its unique identifier.
     /// </summary>

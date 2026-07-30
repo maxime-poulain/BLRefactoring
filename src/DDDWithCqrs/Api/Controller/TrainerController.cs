@@ -1,5 +1,4 @@
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Delete;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetAll;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetById;
@@ -9,24 +8,15 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BLRefactoring.DDDWithCqrs.Api.Controller;
 
+/// <summary>
+/// Trainers are only created through the registration flow, which creates
+/// the identity user and its trainer atomically.
+/// </summary>
 public class TrainerController(
     ICommandDispatcher commandDispatcher,
     IQueryDispatcher queryDispatcher)
     : ApiControllerBase
 {
-    [HttpPost]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
-    public async Task<ActionResult> CreateAsync(CreateTrainerCommand request)
-    {
-        var trainerId = request.TrainerId;
-        var result = await commandDispatcher.DispatchAsync(request);
-
-        return result.Match<ActionResult>(
-            () => CreatedAtAction("GetById", new { id = trainerId }, trainerId),
-            BadRequest);
-    }
-
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(TrainerDto), StatusCodes.Status200OK)]
