@@ -87,8 +87,7 @@ public class TrainingTests
             Prerequisites = "Valid prerequisites",
             AcquiredSkills = "Valid acquired skills",
             Topics = ["Programming"],
-            TrainerId = TrainerId.Generate(),
-            UserId = UserId.Generate()
+            TrainerId = TrainerId.Generate()
         };
 
         // Act

@@ -15,7 +15,6 @@ public class TrainingBuilder
     private string _prerequisites = "Basic programming knowledge required";
     private string _acquiredSkills = "Advanced design patterns mastery";
     private Guid _trainerId = Guid.NewGuid();
-    private Guid _userId = Guid.NewGuid();
     private List<string> _topics = ["Programming"];
     private bool _titleExistsResult;
 
@@ -24,7 +23,6 @@ public class TrainingBuilder
     public TrainingBuilder WithPrerequisites(string v) { _prerequisites = v; return this; }
     public TrainingBuilder WithAcquiredSkills(string v) { _acquiredSkills = v; return this; }
     public TrainingBuilder WithTrainerId(Guid v) { _trainerId = v; return this; }
-    public TrainingBuilder WithUserId(Guid v) { _userId = v; return this; }
     public TrainingBuilder WithTopics(params string[] v) { _topics = v.ToList(); return this; }
     public TrainingBuilder WithTitleAlreadyExists() { _titleExistsResult = true; return this; }
 
@@ -52,7 +50,6 @@ public class TrainingBuilder
                 Prerequisites = _prerequisites,
                 AcquiredSkills = _acquiredSkills,
                 TrainerId = TrainerId.Create(_trainerId),
-                UserId = UserId.Create(_userId),
                 Topics = _topics
             },
             mockChecker.Object);
