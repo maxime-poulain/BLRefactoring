@@ -2,4 +2,9 @@
 
 namespace BLRefactoring.Shared.Domain;
 
-public class UserId : EntityId<UserId>;
+public sealed class UserId : EntityId<UserId>
+{
+    private UserId(Guid value) : base(value)
+    {
+    }
+}

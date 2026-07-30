@@ -6,7 +6,10 @@ namespace BLRefactoring.Shared.Domain.Tests.Common;
 
 public class AggregateRootTests
 {
-    public class TestAggregateId : EntityId<TestAggregateId> { }
+    public class TestAggregateId : EntityId<TestAggregateId>
+    {
+        private TestAggregateId(Guid value) : base(value) { }
+    }
 
     public class TestAggregate() : AggregateRoot<TestAggregateId>(TestAggregateId.Generate())
     {

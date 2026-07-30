@@ -6,7 +6,7 @@ namespace BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Configurations;
 
 public abstract class AggregateRootTypeConfiguration<TEntity, TEntityId> : IEntityTypeConfiguration<TEntity>
     where TEntity : AggregateRoot<TEntityId>
-    where TEntityId : EntityId<TEntityId>, new()
+    where TEntityId : EntityId<TEntityId>
 {
     protected abstract void ConfigureAggregate(EntityTypeBuilder<TEntity> builder);
 

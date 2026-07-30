@@ -5,7 +5,7 @@ namespace BLRefactoring.Shared.Common;
 /// </summary>
 /// <typeparam name="TEntityId">The type of the unique identifier for the entity.</typeparam>
 public abstract class Entity<TEntityId> : Entity, IAuditable
-    where TEntityId : EntityId<TEntityId>, new()
+    where TEntityId : EntityId<TEntityId>
 {
     /// <summary>
     /// Gets the unique identifier for the entity.

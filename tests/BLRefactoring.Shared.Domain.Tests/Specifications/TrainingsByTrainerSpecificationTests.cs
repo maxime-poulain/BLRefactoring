@@ -28,7 +28,7 @@ public class TrainingsByTrainerSpecificationTests
 
         var trainings = new[] { training1, training2, training3 };
 
-        var spec = new TrainingsByTrainerSpecification((TrainerId)(Guid)targetTrainerId);
+        var spec = new TrainingsByTrainerSpecification(TrainerId.Create(targetTrainerId));
 
         // Act
         var result = trainings.AsQueryable().Where(spec.Criteria!.Compile()).ToList();

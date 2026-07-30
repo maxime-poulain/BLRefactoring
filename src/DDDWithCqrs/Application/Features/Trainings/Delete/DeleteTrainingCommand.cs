@@ -18,7 +18,7 @@ public class DeleteTrainingCommandHandler(
 {
     public async ValueTask<Result> Handle(DeleteTrainingCommand request, CancellationToken cancellationToken)
     {
-        var training = await trainingRepository.GetByIdAsync((TrainingId)request.Id, cancellationToken);
+        var training = await trainingRepository.GetByIdAsync(TrainingId.Create(request.Id), cancellationToken);
 
         if (training == null)
         {

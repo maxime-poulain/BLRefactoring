@@ -30,21 +30,18 @@ public class TrainerIdTests
     }
 
     [Fact]
-    public void ImplicitConversion_ToGuid_Works()
+    public void Value_ExposesTheUnderlyingGuid()
     {
         // Arrange
         var guid = Guid.NewGuid();
         var trainerId = TrainerId.Create(guid);
 
-        // Act
-        Guid result = trainerId;
-
         // Assert
-        result.Should().Be(guid);
+        trainerId.Value.Should().Be(guid);
     }
 
     [Fact]
-    public void ExplicitConversion_FromGuid_Works()
+    public void ExplicitConversion_FromGuid_CreatesValidatedId()
     {
         // Arrange
         var guid = Guid.NewGuid();
@@ -54,6 +51,26 @@ public class TrainerIdTests
 
         // Assert
         trainerId.Value.Should().Be(guid);
+    }
+
+    [Fact]
+    public void ExplicitConversion_FromEmptyGuid_Throws()
+    {
+        // Act
+        var act = () => (TrainerId)Guid.Empty;
+
+        // Assert
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_EmptyGuid_Throws()
+    {
+        // Act
+        var act = () => TrainerId.Create(Guid.Empty);
+
+        // Assert
+        act.Should().Throw<ArgumentException>();
     }
 
     [Fact]

@@ -9,9 +9,9 @@ public static class Mappers
     {
         return new TrainingDto
         {
-            Id = training.Id,
+            Id = training.Id.Value,
             Title = training.Title.Value,
-            TrainerId = training.TrainerId,
+            TrainerId = training.TrainerId.Value,
             Topics = training.Topics.Select(t => t.Name).ToList(),
             Description = training.Description.Value,
             Prerequisites = training.Prerequisites.Value,
@@ -28,7 +28,7 @@ public static class Mappers
     {
         return new TrainerDto()
         {
-            Id = trainer.Id,
+            Id = trainer.Id.Value,
             Email = trainer.Email.FullAddress,
             Firstname = trainer.Name.Firstname,
             Lastname = trainer.Name.Lastname

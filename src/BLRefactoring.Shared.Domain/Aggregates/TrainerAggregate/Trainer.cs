@@ -80,7 +80,7 @@ public sealed class Trainer : AggregateRoot<TrainerId>
         string bio,
         Guid userId)
     {
-        var trainer = new Trainer((TrainerId)id) { UserId = (UserId)userId };
+        var trainer = new Trainer(TrainerId.Create(id)) { UserId = UserId.Create(userId) };
         return CreateInternal(firstname, lastname, email, bio, trainer);
     }
 

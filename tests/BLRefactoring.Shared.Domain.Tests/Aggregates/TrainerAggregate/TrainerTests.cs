@@ -42,7 +42,7 @@ public class TrainerTests
         trainer.Email.Should().NotBeNull();
         trainer.Bio.Should().NotBeNull();
         trainer.UserId.Should().NotBeNull();
-        ((Guid)trainer.UserId).Should().Be(userId);
+        trainer.UserId.Value.Should().Be(userId);
     }
 
     [Fact]
@@ -107,7 +107,7 @@ public class TrainerTests
             .BuildValid();
 
         // Assert
-        ((Guid)trainer.Id).Should().Be(specificId);
+        trainer.Id.Value.Should().Be(specificId);
     }
 
     // --- ChangeName ---
