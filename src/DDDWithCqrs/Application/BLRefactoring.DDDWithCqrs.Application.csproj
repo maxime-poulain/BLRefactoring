@@ -2,7 +2,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\BLRefactoring.Shared.Application\BLRefactoring.Shared.Application.csproj" />
-    <ProjectReference Include="..\..\BLRefactoring.Shared.Infrastructure\BLRefactoring.Shared.Infrastructure.csproj" />
     <ProjectReference Include="..\Domain\BLRefactoring.DDDWithCqrs.Domain.csproj" />
   </ItemGroup>
 

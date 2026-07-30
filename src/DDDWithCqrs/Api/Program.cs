@@ -29,7 +29,12 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddMediator(configuration =>
 {
-    configuration.Assemblies = [typeof(CreateTrainerCommand).Assembly, typeof(TrainerCreatedDomainEvent).Assembly];
+    configuration.Assemblies =
+    [
+        typeof(CreateTrainerCommand).Assembly,      // DDDWithCqrs.Application: commands + command handlers
+        typeof(TrainerCreatedDomainEvent).Assembly, // Shared.Domain: domain events
+        typeof(MediatorCommandDispatcher).Assembly  // DDDWithCqrs.Infrastructure: query handlers
+    ];
     configuration.PipelineBehaviors = [typeof(ValidationPipelineBehavior<,>), typeof(NoTrackingDuringQueryExecutionBehavior<,>)];
     configuration.ServiceLifetime = ServiceLifetime.Transient;
 });
@@ -42,7 +47,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddValidatorsFromAssembly(typeof(CreateTrainerCommandValidator).Assembly);
 
 // Identity
-builder.Services.AddDbContext<TrainingIdentityDbContext>(options =>
+builder.Services.AddDbContextPool<TrainingIdentityDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("TrainingContext"));
 });
