@@ -28,8 +28,10 @@ public class CreateTrainingCommandHandlerTests
             .ReturnsAsync(false);
     }
 
+    private readonly Mock<IUnitOfWork> _unitOfWork = new();
+
     private CreateTrainingCommandHandler CreateSut() =>
-        new(_trainingRepository.Object, _trainerRepository.Object, _titleChecker.Object, _currentUserService.Object);
+        new(_trainingRepository.Object, _trainerRepository.Object, _titleChecker.Object, _currentUserService.Object, _unitOfWork.Object);
 
     [Fact]
     public async Task Handle_ValidCommand_ReturnsSuccessAndCallsSave()
@@ -54,8 +56,9 @@ public class CreateTrainingCommandHandlerTests
         var result = await sut.Handle(command, CancellationToken.None);
 
         result.ShouldBeSuccess();
-        _trainingRepository.Verify(
-            r => r.SaveAsync(It.IsAny<Training>(), It.IsAny<CancellationToken>()),
+        _trainingRepository.Verify(r => r.Add(It.IsAny<Training>()), Times.Once);
+        _unitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -82,9 +85,7 @@ public class CreateTrainingCommandHandlerTests
         var result = await sut.Handle(command, CancellationToken.None);
 
         result.ShouldContainError(ErrorCode.NotFound);
-        _trainingRepository.Verify(
-            r => r.SaveAsync(It.IsAny<Training>(), It.IsAny<CancellationToken>()),
-            Times.Never);
+        _trainingRepository.Verify(r => r.Add(It.IsAny<Training>()), Times.Never);
     }
 
     [Fact]
@@ -110,8 +111,9 @@ public class CreateTrainingCommandHandlerTests
         var result = await sut.Handle(command, CancellationToken.None);
 
         result.ShouldBeFailure();
-        _trainingRepository.Verify(
-            r => r.SaveAsync(It.IsAny<Training>(), It.IsAny<CancellationToken>()),
+        _trainingRepository.Verify(r => r.Add(It.IsAny<Training>()), Times.Never);
+        _unitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }

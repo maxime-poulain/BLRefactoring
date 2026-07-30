@@ -23,7 +23,8 @@ public class CreateTrainingCommandHandler(
     ITrainingRepository trainingRepository,
     ITrainerRepository trainerRepository,
     IUniquenessTitleChecker titleChecker,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IUnitOfWork unitOfWork)
     : ICommandHandler<CreateTrainingCommand, Result>
 {
     public async ValueTask<Result> Handle(
@@ -54,7 +55,8 @@ public class CreateTrainingCommandHandler(
 
         return await trainingCreationResult.MatchAsync<Result>(async (training) =>
         {
-            await trainingRepository.SaveAsync(training, cancellationToken);
+            trainingRepository.Add(training);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
             return Result.Success();
         }, Result.FailureAsync);
     }

@@ -9,11 +9,11 @@ namespace BLRefactoring.DDD.Application.Tests.Helpers;
 public class TrainerServiceTestFixture
 {
     public Mock<ITrainerRepository> TrainerRepository { get; } = new();
-    public Mock<ITransactionManager> TransactionManager { get; } = new();
+    public Mock<IUnitOfWork> UnitOfWork { get; } = new();
     public Mock<ILogger<TrainerApplicationService>> Logger { get; } = new();
 
     public TrainerApplicationService CreateSut() => new(
         Logger.Object,
         TrainerRepository.Object,
-        TransactionManager.Object);
+        UnitOfWork.Object);
 }

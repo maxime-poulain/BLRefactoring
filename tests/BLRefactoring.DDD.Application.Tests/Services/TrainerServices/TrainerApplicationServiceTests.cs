@@ -37,7 +37,7 @@ public class TrainerApplicationServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_ValidRequest_CallsSaveAsync()
+    public async Task CreateAsync_ValidRequest_AddsTrainerAndCommitsOnce()
     {
         var request = new TrainerCreationRequest
         {
@@ -51,8 +51,9 @@ public class TrainerApplicationServiceTests
 
         await sut.CreateAsync(request);
 
-        _fixture.TrainerRepository.Verify(
-            r => r.SaveAsync(It.IsAny<Trainer>(), It.IsAny<CancellationToken>()),
+        _fixture.TrainerRepository.Verify(r => r.Add(It.IsAny<Trainer>()), Times.Once);
+        _fixture.UnitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -75,7 +76,7 @@ public class TrainerApplicationServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_InvalidRequest_DoesNotCallSaveAsync()
+    public async Task CreateAsync_InvalidRequest_DoesNotAddNorCommit()
     {
         var request = new TrainerCreationRequest
         {
@@ -89,8 +90,9 @@ public class TrainerApplicationServiceTests
 
         await sut.CreateAsync(request);
 
-        _fixture.TrainerRepository.Verify(
-            r => r.SaveAsync(It.IsAny<Trainer>(), It.IsAny<CancellationToken>()),
+        _fixture.TrainerRepository.Verify(r => r.Add(It.IsAny<Trainer>()), Times.Never);
+        _fixture.UnitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -172,7 +174,7 @@ public class TrainerApplicationServiceTests
     }
 
     [Fact]
-    public async Task DeleteAsync_ExistingTrainer_CallsBeginTransactionAsync()
+    public async Task DeleteAsync_ExistingTrainer_DeletesTrainer()
     {
         var trainer = new TrainerBuilder().BuildValid();
         _fixture.TrainerRepository
@@ -182,13 +184,11 @@ public class TrainerApplicationServiceTests
 
         await sut.DeleteAsync(trainer.Id);
 
-        _fixture.TransactionManager.Verify(
-            tm => tm.BeginTransactionAsync(It.IsAny<CancellationToken>()),
-            Times.Once);
+        _fixture.TrainerRepository.Verify(r => r.Delete(trainer), Times.Once);
     }
 
     [Fact]
-    public async Task DeleteAsync_ExistingTrainer_CallsDeleteAsync()
+    public async Task DeleteAsync_ExistingTrainer_CommitsOnce()
     {
         var trainer = new TrainerBuilder().BuildValid();
         _fixture.TrainerRepository
@@ -198,24 +198,8 @@ public class TrainerApplicationServiceTests
 
         await sut.DeleteAsync(trainer.Id);
 
-        _fixture.TrainerRepository.Verify(
-            r => r.DeleteAsync(trainer, It.IsAny<CancellationToken>()),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task DeleteAsync_ExistingTrainer_CallsCommitAsync()
-    {
-        var trainer = new TrainerBuilder().BuildValid();
-        _fixture.TrainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(trainer);
-        var sut = _fixture.CreateSut();
-
-        await sut.DeleteAsync(trainer.Id);
-
-        _fixture.TransactionManager.Verify(
-            tm => tm.CommitAsync(It.IsAny<CancellationToken>()),
+        _fixture.UnitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -233,57 +217,34 @@ public class TrainerApplicationServiceTests
     }
 
     [Fact]
-    public async Task DeleteAsync_RepositoryThrows_ReturnsFailure()
+    public async Task DeleteAsync_NonExistingTrainer_DoesNotCommit()
+    {
+        _fixture.TrainerRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Trainer?)null);
+        var sut = _fixture.CreateSut();
+
+        await sut.DeleteAsync(Guid.NewGuid());
+
+        _fixture.UnitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_SaveChangesThrows_ReturnsFailure()
     {
         var trainer = new TrainerBuilder().BuildValid();
         _fixture.TrainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
-        _fixture.TrainerRepository
-            .Setup(r => r.DeleteAsync(It.IsAny<Trainer>(), It.IsAny<CancellationToken>()))
+        _fixture.UnitOfWork
+            .Setup(uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("DB error"));
         var sut = _fixture.CreateSut();
 
         var result = await sut.DeleteAsync(trainer.Id);
 
         result.ShouldBeFailure();
-    }
-
-    [Fact]
-    public async Task DeleteAsync_RepositoryThrows_CallsRollBack()
-    {
-        var trainer = new TrainerBuilder().BuildValid();
-        _fixture.TrainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(trainer);
-        _fixture.TrainerRepository
-            .Setup(r => r.DeleteAsync(It.IsAny<Trainer>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Exception("DB error"));
-        var sut = _fixture.CreateSut();
-
-        await sut.DeleteAsync(trainer.Id);
-
-        _fixture.TransactionManager.Verify(
-            tm => tm.RollBackAsync(It.IsAny<CancellationToken>()),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task DeleteAsync_RepositoryThrows_DoesNotCallCommit()
-    {
-        var trainer = new TrainerBuilder().BuildValid();
-        _fixture.TrainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(trainer);
-        _fixture.TrainerRepository
-            .Setup(r => r.DeleteAsync(It.IsAny<Trainer>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Exception("DB error"));
-        var sut = _fixture.CreateSut();
-
-        await sut.DeleteAsync(trainer.Id);
-
-        _fixture.TransactionManager.Verify(
-            tm => tm.CommitAsync(It.IsAny<CancellationToken>()),
-            Times.Never);
     }
 }

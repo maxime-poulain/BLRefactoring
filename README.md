@@ -138,8 +138,9 @@ tests/
 - **Aggregates** with encapsulated business rules and factory methods
 - **Value Objects** with structural equality (`ValueObject` base class)
 - **Strongly-typed IDs** (`EntityId<T>`) to prevent primitive obsession
-- **Domain Events** raised by aggregates, published after `SaveChanges` via EF Core interceptor
-- **Repository pattern** with interfaces defined in the domain layer
+- **Domain Events** raised by aggregates, dispatched within `SaveChanges` (right before persistence) via EF Core interceptor, so handlers' changes are committed in the same transaction
+- **Repository pattern** with interfaces defined in the domain layer — repositories only stage changes in the change tracker
+- **Unit of Work** (`IUnitOfWork`) — a single `SaveChangesAsync()` per use case, called by the orchestrating command handler or application service, persists everything atomically
 
 ### CQRS (Command Query Responsibility Segregation)
 
@@ -166,8 +167,8 @@ The `DDDWithCqrs` stack separates reads from writes:
 
 ### Event-Driven Architecture
 
-- Domain events collected by aggregates → published post-persistence via `DomainEventInterceptor`
-- Event handlers for cross-aggregate side effects (e.g., cascade delete)
+- Domain events accumulated by aggregates → collected and dispatched in batch by `DomainEventInterceptor` right before persistence (`IDomainEventDispatcher`)
+- Event handlers run within the ambient `SaveChanges`: their changes are persisted in the same transaction as the original use case (e.g., cascade delete of a trainer's trainings)
 
 ---
 

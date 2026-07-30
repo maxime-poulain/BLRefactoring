@@ -39,29 +39,24 @@ public class TrainingRepository(TrainingContext trainingContext) : ITrainingRepo
             .FirstOrDefaultAsync(training => training.Id == trainingId, cancellationToken);
     }
 
-    public async Task SaveAsync(Training training, CancellationToken cancellationToken = default)
+    public void Add(Training training)
     {
-        if (training.IsTransient())
-        {
-            await trainingContext.Trainings.AddAsync(training, cancellationToken);
-        }
-        else
-        {
-            trainingContext.Trainings.Update(training);
-        }
-        await trainingContext.SaveChangesAsync(cancellationToken);
+        trainingContext.Trainings.Add(training);
     }
 
-    public async Task DeleteAsync(Training training, CancellationToken cancellationToken = default)
+    public void Update(Training training)
+    {
+        trainingContext.Trainings.Update(training);
+    }
+
+    public void Delete(Training training)
     {
         trainingContext.Trainings.Remove(training);
-        await trainingContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public Task DeleteAsync(IEnumerable<Training> trainings, CancellationToken cancellationToken = default)
+    public void Delete(IEnumerable<Training> trainings)
     {
         trainingContext.Trainings.RemoveRange(trainings);
-        return trainingContext.SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>

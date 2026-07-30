@@ -25,7 +25,7 @@ public class DeleteTrainerCommand : ICommand<Result>
 
 public class DeleteTrainerCommandHandler(
     ITrainerRepository trainerRepository,
-    ITransactionManager transactionManager)
+    IUnitOfWork unitOfWork)
     : ICommandHandler<DeleteTrainerCommand, Result>
 {
     public async ValueTask<Result> Handle(DeleteTrainerCommand request, CancellationToken cancellationToken)
@@ -37,33 +37,15 @@ public class DeleteTrainerCommandHandler(
             return Result.Failure(ErrorCode.NotFound, $"Trainer with id `{request.Id}` does not exist");
         }
 
-        // A domain event will be dispatched here.
-        // The DomainEvent handler associated will delete
-        // the trainer's trainings.
-        // Therefore we need a transaction.
-        // Since the operation happens in the same bounded context,
-        // techniques such saga does not apply here.
-        // We need to use a transaction.
-        // There are alternative to create it explicitly.
-        // For example a transaction might be created by a middleware.
-        // This, however would be applied to queries as well.
-        // We could have an attribute at the endpoint level that would
-        // instruct a transaction should be created during the execution.
+        // MarkForDeletion raises a TrainerDeletedDomainEvent. It is dispatched while
+        // the unit of work saves, right before persistence: its handler stages the
+        // deletion of the trainer's trainings in the same change tracker, so the
+        // trainer and its trainings are deleted atomically within the single implicit
+        // transaction of SaveChangesAsync. No explicit transaction is required.
+        // Unmanaged exceptions bubble up to the API layer.
         trainer.MarkForDeletion();
-        try
-        {
-            await transactionManager.BeginTransactionAsync(cancellationToken);
-            await trainerRepository.DeleteAsync(trainer, cancellationToken);
-            await transactionManager.CommitAsync(cancellationToken);
-        }
-        catch (Exception)
-        {
-            await transactionManager.RollBackAsync(cancellationToken);
-
-            // When an unmanaged exception is thrown.
-            // I prefer make it bubble up to the Api layer.
-            throw;
-        }
+        trainerRepository.Delete(trainer);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }

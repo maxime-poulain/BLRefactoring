@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.CQS;
@@ -19,7 +20,8 @@ public class EditTrainingCommand : ICommand<Result>
 
 public class EditTrainingCommandHandler(
     ITrainingRepository trainingRepository,
-    IUniquenessTitleChecker titleChecker)
+    IUniquenessTitleChecker titleChecker,
+    IUnitOfWork unitOfWork)
     : ICommandHandler<EditTrainingCommand, Result>
 {
     public async ValueTask<Result> Handle(
@@ -49,7 +51,8 @@ public class EditTrainingCommandHandler(
         return await result.MatchAsync<Result>(
             onSuccess: async () =>
             {
-                await trainingRepository.SaveAsync(training, cancellationToken);
+                trainingRepository.Update(training);
+                await unitOfWork.SaveChangesAsync(cancellationToken);
                 return Result.Success();
             },
             onFailure: Result.FailureAsync);

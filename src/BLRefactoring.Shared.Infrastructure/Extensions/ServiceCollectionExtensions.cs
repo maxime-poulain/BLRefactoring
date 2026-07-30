@@ -17,8 +17,8 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         return services
-            .AddSingleton<IDomainEventPublisher, MediatorDomainEventPublisher>()
-            .AddScoped<ITransactionManager, TransactionManager>()
+            .AddSingleton<IDomainEventDispatcher, MediatorDomainEventDispatcher>()
+            .AddScoped<IUnitOfWork, UnitOfWork>()
             .AddScoped<ITrainerRepository, TrainerRepository>()
             .AddScoped<ITrainingRepository, TrainingRepository>()
             .AddScoped<IUniquenessTitleChecker, TrainingRepository>()

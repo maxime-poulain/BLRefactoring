@@ -70,7 +70,7 @@ public class TrainingApplicationServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_ValidRequest_CallsSaveAsync()
+    public async Task CreateAsync_ValidRequest_AddsTrainingAndCommitsOnce()
     {
         SetupCurrentUser();
         SetupTrainerExists();
@@ -79,8 +79,9 @@ public class TrainingApplicationServiceTests
 
         await sut.CreateAsync(ValidCreationRequest());
 
-        _fixture.TrainingRepository.Verify(
-            r => r.SaveAsync(It.IsAny<Training>(), It.IsAny<CancellationToken>()),
+        _fixture.TrainingRepository.Verify(r => r.Add(It.IsAny<Training>()), Times.Once);
+        _fixture.UnitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -121,7 +122,7 @@ public class TrainingApplicationServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_InvalidTrainingData_DoesNotCallSaveAsync()
+    public async Task CreateAsync_InvalidTrainingData_DoesNotAddNorCommit()
     {
         SetupCurrentUser();
         SetupTrainerExists();
@@ -139,8 +140,9 @@ public class TrainingApplicationServiceTests
 
         await sut.CreateAsync(request);
 
-        _fixture.TrainingRepository.Verify(
-            r => r.SaveAsync(It.IsAny<Training>(), It.IsAny<CancellationToken>()),
+        _fixture.TrainingRepository.Verify(r => r.Add(It.IsAny<Training>()), Times.Never);
+        _fixture.UnitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -342,7 +344,7 @@ public class TrainingApplicationServiceTests
     }
 
     [Fact]
-    public async Task DeleteAsync_ExistingTraining_CallsDeleteAsync()
+    public async Task DeleteAsync_ExistingTraining_DeletesTrainingAndCommitsOnce()
     {
         var training = await new TrainingBuilder().BuildValidAsync();
         _fixture.TrainingRepository
@@ -352,8 +354,9 @@ public class TrainingApplicationServiceTests
 
         await sut.DeleteAsync(training.Id);
 
-        _fixture.TrainingRepository.Verify(
-            r => r.DeleteAsync(training, It.IsAny<CancellationToken>()),
+        _fixture.TrainingRepository.Verify(r => r.Delete(training), Times.Once);
+        _fixture.UnitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

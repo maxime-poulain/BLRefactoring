@@ -46,9 +46,7 @@ public class DeleteTrainingWhenTrainerDeletedEventHandlerTests
         var sut = CreateSut();
         await sut.Handle(domainEvent, CancellationToken.None);
 
-        _trainingRepository.Verify(
-            r => r.DeleteAsync(trainings, It.IsAny<CancellationToken>()),
-            Times.Once);
+        _trainingRepository.Verify(r => r.Delete(trainings), Times.Once);
     }
 
     [Fact]
@@ -64,7 +62,7 @@ public class DeleteTrainingWhenTrainerDeletedEventHandlerTests
         await sut.Handle(domainEvent, CancellationToken.None);
 
         _trainingRepository.Verify(
-            r => r.DeleteAsync(It.Is<ICollection<Training>>(c => c.Count == 0), It.IsAny<CancellationToken>()),
+            r => r.Delete(It.Is<IEnumerable<Training>>(c => !c.Any())),
             Times.Once);
     }
 }

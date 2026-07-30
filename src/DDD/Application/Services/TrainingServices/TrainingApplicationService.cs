@@ -65,7 +65,8 @@ public class TrainingApplicationService(
     ITrainerRepository trainerRepository,
     IUniquenessTitleChecker uniquenessTitleChecker,
     ITrainingRepository trainingRepository,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IUnitOfWork unitOfWork)
     : ITrainingApplicationService
 {
     /// <inheritdoc />
@@ -95,7 +96,8 @@ public class TrainingApplicationService(
 
         return await result.MatchAsync(async training =>
         {
-            await trainingRepository.SaveAsync(training, cancellationToken);
+            trainingRepository.Add(training);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
             return Result<TrainingDto>.Success(training.ToDto());
         }, Result<TrainingDto>.FailureAsync);
     }
@@ -143,7 +145,8 @@ public class TrainingApplicationService(
         return await result.MatchAsync(
             onSuccess: async () =>
             {
-                await trainingRepository.SaveAsync(training, cancellationToken);
+                trainingRepository.Update(training);
+                await unitOfWork.SaveChangesAsync(cancellationToken);
                 return Result<TrainingDto>.Success(training.ToDto());
             },
             onFailure: Result<TrainingDto>.FailureAsync);
@@ -175,7 +178,8 @@ public class TrainingApplicationService(
                 $"Training with id `{trainingId}` not found.");
         }
 
-        await trainingRepository.DeleteAsync(training, cancellationToken);
+        trainingRepository.Delete(training);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }
 }
