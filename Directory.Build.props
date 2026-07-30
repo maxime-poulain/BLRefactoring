@@ -1,0 +1,17 @@
+<Project>
+
+  <!--
+    Shared MSBuild properties for every project of the solution. MSBuild imports
+    this file automatically before each project body; a project can still
+    override any value locally. Only properties that are genuinely common
+    belong here — target frameworks stay in the csproj files (the backend
+    targets net10.0 while the Blazor hosts and generated clients target
+    net9.0), and per-project concerns (RunPostBuildEvent…) stay local.
+    https://learn.microsoft.com/visualstudio/msbuild/customize-by-directory
+  -->
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

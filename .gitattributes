@@ -1,0 +1,15 @@
+# Normalize every text file to LF, in the repository and in the working tree,
+# regardless of the contributor's OS or core.autocrlf setting. The whole
+# repository is already LF; this makes it a guarantee instead of an accident.
+* text=auto eol=lf
+
+# Binary assets (none tracked today — future-proofing for the Blazor apps):
+# never diffed, never normalized.
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.snk binary
