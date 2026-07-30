@@ -55,6 +55,9 @@ public class TrainerTests
         trainer.DomainEvents.Should().ContainSingle(e => e is TrainerCreatedDomainEvent);
         var domainEvent = trainer.DomainEvents.OfType<TrainerCreatedDomainEvent>().Single();
         domainEvent.TrainerId.Should().Be(trainer.Id);
+        domainEvent.Firstname.Should().Be(trainer.Name.Firstname);
+        domainEvent.Lastname.Should().Be(trainer.Name.Lastname);
+        domainEvent.Email.Should().Be(trainer.Email.FullAddress);
     }
 
     [Fact]

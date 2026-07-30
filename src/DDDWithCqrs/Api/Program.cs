@@ -2,6 +2,7 @@ using System.Text;
 using BLRefactoring.DDDWithCqrs.Api.Authorization;
 using BLRefactoring.DDDWithCqrs.Api.Middlewares;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
+using BLRefactoring.Shared.Application.EventHandlers;
 using BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator;
 using BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors;
 using BLRefactoring.Shared.CQS;
@@ -33,7 +34,8 @@ builder.Services.AddMediator(configuration =>
     [
         typeof(CreateTrainerCommand).Assembly,      // DDDWithCqrs.Application: commands + command handlers
         typeof(TrainerCreatedDomainEvent).Assembly, // Shared.Domain: domain events
-        typeof(MediatorCommandDispatcher).Assembly  // DDDWithCqrs.Infrastructure: query handlers
+        typeof(MediatorCommandDispatcher).Assembly, // DDDWithCqrs.Infrastructure: query handlers
+        typeof(SendWelcomeEmailWhenTrainerCreatedEventHandler).Assembly // Shared.Application: domain event handlers
     ];
     configuration.PipelineBehaviors = [typeof(ValidationPipelineBehavior<,>), typeof(NoTrackingDuringQueryExecutionBehavior<,>)];
     configuration.ServiceLifetime = ServiceLifetime.Transient;

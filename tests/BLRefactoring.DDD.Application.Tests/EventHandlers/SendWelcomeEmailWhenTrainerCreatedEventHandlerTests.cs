@@ -1,0 +1,34 @@
+using BLRefactoring.Shared;
+using BLRefactoring.Shared.Application.EventHandlers;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
+using Moq;
+using Xunit;
+
+namespace BLRefactoring.DDD.Application.Tests.EventHandlers;
+
+public class SendWelcomeEmailWhenTrainerCreatedEventHandlerTests
+{
+    private readonly Mock<IEmailSender> _emailSender = new();
+
+    private SendWelcomeEmailWhenTrainerCreatedEventHandler CreateSut() =>
+        new(_emailSender.Object);
+
+    [Fact]
+    public async Task Handle_SendsWelcomeEmailToNewTrainer()
+    {
+        var domainEvent = new TrainerCreatedDomainEvent(
+            TrainerId.Generate(), "John", "Doe", "john.doe@example.com");
+
+        var sut = CreateSut();
+        await sut.Handle(domainEvent, CancellationToken.None);
+
+        _emailSender.Verify(s => s.SendAsync(
+                It.Is<EmailMessage>(m =>
+                    m.Recipient == "john.doe@example.com"
+                    && m.Body.Contains("John")
+                    && m.Body.Contains("Doe")),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+}
