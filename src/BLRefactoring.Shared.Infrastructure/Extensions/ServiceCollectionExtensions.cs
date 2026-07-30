@@ -23,7 +23,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<ITrainerRepository, TrainerRepository>()
             .AddScoped<ITrainingRepository, TrainingRepository>()
             .AddScoped<IUniquenessTitleChecker, TrainingRepository>()
-            .AddDbContext<TrainingContext>((serviceProvider, options) =>
+            .AddDbContextPool<TrainingContext>((serviceProvider, options) =>
                 options.UseSqlServer(configuration.GetConnectionString("TrainingContext"))
                     .EnableSensitiveDataLogging()
                     .AddInterceptors(
