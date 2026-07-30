@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Domain;
 using BLRefactoring.Shared.Common.Results;
@@ -10,9 +9,7 @@ namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
 
 public class CreateTrainerCommand : ICommand<Result>
 {
-    [JsonIgnore]
     public Guid TrainerId { get; init; } = Guid.NewGuid();
-    [JsonIgnore]
     public Guid UserId { get; init; }
     public string Firstname { get; init; } = null!;
     public string Lastname { get; init; } = null!;
