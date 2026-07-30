@@ -115,7 +115,7 @@ public sealed class Training : AggregateRoot<TrainingId>
         _topics.Clear();
         _topics.AddRange(message.Topics.Select(Topic.FromName));
 
-        AddDomainEvent(new TrainingEditedDomainEvent(this));
+        AddDomainEvent(new TrainingEditedDomainEvent(Id, TrainerId));
 
         return Result.Success();
     }

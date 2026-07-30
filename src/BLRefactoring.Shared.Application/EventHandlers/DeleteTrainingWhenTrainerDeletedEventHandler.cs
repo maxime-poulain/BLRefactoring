@@ -16,7 +16,7 @@ public class DeleteTrainingWhenTrainerDeletedEventHandler(ITrainingRepository tr
         // We could have also made a TrainingRepository.DeleteByTrainer(trainerId) method.
         // The staged deletions are persisted by the ambient SaveChanges that dispatched
         // this event — event handlers never commit through IUnitOfWork themselves.
-        var trainings = await trainingRepository.GetByTrainerIdAsync(notification.Trainer.Id, cancellationToken);
+        var trainings = await trainingRepository.GetByTrainerIdAsync(notification.TrainerId, cancellationToken);
         trainingRepository.Delete(trainings);
     }
 }

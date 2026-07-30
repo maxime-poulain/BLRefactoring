@@ -20,7 +20,7 @@ public class DeleteTrainingWhenTrainerDeletedEventHandlerTests
     public async Task Handle_CallsGetByTrainerIdAsync()
     {
         var trainer = new TrainerBuilder().BuildValid();
-        var domainEvent = new TrainerDeletedDomainEvent(trainer);
+        var domainEvent = new TrainerDeletedDomainEvent(trainer.Id);
         _trainingRepository
             .Setup(r => r.GetByTrainerIdAsync(trainer.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Training>());
@@ -37,7 +37,7 @@ public class DeleteTrainingWhenTrainerDeletedEventHandlerTests
     public async Task Handle_CallsDeleteAsyncWithRetrievedTrainings()
     {
         var trainer = new TrainerBuilder().BuildValid();
-        var domainEvent = new TrainerDeletedDomainEvent(trainer);
+        var domainEvent = new TrainerDeletedDomainEvent(trainer.Id);
         var trainings = new List<Training>();
         _trainingRepository
             .Setup(r => r.GetByTrainerIdAsync(trainer.Id, It.IsAny<CancellationToken>()))
@@ -53,7 +53,7 @@ public class DeleteTrainingWhenTrainerDeletedEventHandlerTests
     public async Task Handle_NoTrainingsFound_StillCallsDeleteAsync()
     {
         var trainer = new TrainerBuilder().BuildValid();
-        var domainEvent = new TrainerDeletedDomainEvent(trainer);
+        var domainEvent = new TrainerDeletedDomainEvent(trainer.Id);
         _trainingRepository
             .Setup(r => r.GetByTrainerIdAsync(trainer.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Training>());
