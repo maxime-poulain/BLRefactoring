@@ -20,11 +20,13 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
     /// <param name="request">The training creation request containing training details.</param>
     /// <returns>
     /// 201 Created with the created training ID on success.
+    /// 409 Conflict when a training with the same title already exists for the trainer.
     /// 400 Bad Request with validation errors on failure.
     /// </returns>
     [Authorize]
     [HttpPost]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     public async Task<ActionResult> CreateTrainingAsync([FromBody] TrainingCreationRequest request)
     {
@@ -32,7 +34,9 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
 
         return result.Match<ActionResult>(
             (trainingDto) => CreatedAtAction("GetTrainingById", new { id = trainingDto.Id }, trainingDto.Id),
-            BadRequest);
+            errors => errors.Any(error => error.ErrorCode == ErrorCode.DuplicateTitle)
+                ? Conflict(errors)
+                : BadRequest(errors));
     }
 
     /// <summary>
@@ -86,11 +90,13 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
     /// 200 OK if the update was successful.
     /// 403 Forbidden if the current user is not the training owner.
     /// 404 Not Found if the training does not exist.
+    /// 409 Conflict when a training with the same title already exists for the trainer.
     /// 400 Bad Request on validation errors.
     /// </returns>
     [Authorize(Policy = "TrainingOwner")]
     [HttpPut("{trainingId:guid}")]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(TrainingDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult> UpdateTrainingAsync(
@@ -103,8 +109,13 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
         return result.Match<ActionResult>(Ok,
             errors =>
             {
-                return errors.Any(error => error.ErrorCode == ErrorCode.NotFound)
-                    ? NotFound(errors)
+                if (errors.Any(error => error.ErrorCode == ErrorCode.NotFound))
+                {
+                    return NotFound(errors);
+                }
+
+                return errors.Any(error => error.ErrorCode == ErrorCode.DuplicateTitle)
+                    ? Conflict(errors)
                     : BadRequest(errors);
             });
     }

@@ -22,6 +22,7 @@ public class TrainingController(
     [HttpPost]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status409Conflict)]
     public async Task<ActionResult> CreateTrainingAsync(CreateTrainingCommand command)
     {
         var trainingId = command.TrainingId;
@@ -29,7 +30,10 @@ public class TrainingController(
 
         return result.Match<ActionResult>(
             () => CreatedAtAction("GetTrainingById",
-                new { id = command.TrainingId }, trainingId), BadRequest);
+                new { id = command.TrainingId }, trainingId),
+            errors => errors.Any(e => e.ErrorCode == ErrorCode.DuplicateTitle)
+                ? Conflict(errors)
+                : BadRequest(errors));
     }
 
     [HttpGet("{id}")]
@@ -61,6 +65,7 @@ public class TrainingController(
     [HttpPut("{trainingId:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult> EditTrainingAsync(
@@ -72,7 +77,17 @@ public class TrainingController(
 
         return result.Match<ActionResult>(
             () => Ok(),
-            errors => errors.Any(e => e.ErrorCode == ErrorCode.NotFound) ? NotFound() : BadRequest(errors));
+            errors =>
+            {
+                if (errors.Any(e => e.ErrorCode == ErrorCode.NotFound))
+                {
+                    return NotFound();
+                }
+
+                return errors.Any(e => e.ErrorCode == ErrorCode.DuplicateTitle)
+                    ? Conflict(errors)
+                    : BadRequest(errors);
+            });
     }
 
     [HttpGet("by-trainer/{trainerId:guid}")]

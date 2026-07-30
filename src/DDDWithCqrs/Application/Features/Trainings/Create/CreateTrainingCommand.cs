@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Domain;
+using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.CQS;
@@ -57,7 +58,18 @@ public class CreateTrainingCommandHandler(
         return await trainingCreationResult.MatchAsync<Result>(async (training) =>
         {
             trainingRepository.Add(training);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+            catch (UniqueConstraintViolationException)
+            {
+                // A concurrent request slipped past the uniqueness pre-check;
+                // the unique index is the authoritative guard, so a lost race
+                // is the same business failure as a detected duplicate.
+                return Result.Failure(ErrorCode.DuplicateTitle,
+                    "A training with the same title already exists for this trainer.");
+            }
             return Result.Success();
         }, Result.FailureAsync);
     }

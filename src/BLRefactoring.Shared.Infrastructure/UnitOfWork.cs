@@ -1,4 +1,7 @@
+using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace BLRefactoring.Shared.Infrastructure;
 
@@ -8,7 +11,24 @@ namespace BLRefactoring.Shared.Infrastructure;
 /// </summary>
 public sealed class UnitOfWork(TrainingContext trainingContext) : IUnitOfWork
 {
+    // SQL Server error numbers for a duplicate key: 2601 is a unique index
+    // violation, 2627 a unique constraint (primary key included) violation.
+    private const int UniqueIndexViolation = 2601;
+    private const int UniqueConstraintViolation = 2627;
+
     /// <inheritdoc />
-    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        => trainingContext.SaveChangesAsync(cancellationToken);
+    public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await trainingContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (ex.GetBaseException()
+            is SqlException { Number: UniqueIndexViolation or UniqueConstraintViolation })
+        {
+            throw new UniqueConstraintViolationException(
+                "The database rejected the changes because a unique constraint was violated.",
+                ex);
+        }
+    }
 }

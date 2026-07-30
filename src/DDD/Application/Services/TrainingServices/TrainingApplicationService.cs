@@ -1,6 +1,7 @@
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Application.Dtos;
 using BLRefactoring.Shared.Application.Dtos.Training;
+using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.Domain;
@@ -98,7 +99,18 @@ public class TrainingApplicationService(
         return await result.MatchAsync(async training =>
         {
             trainingRepository.Add(training);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+            catch (UniqueConstraintViolationException)
+            {
+                // A concurrent request slipped past the uniqueness pre-check;
+                // the unique index is the authoritative guard, so a lost race
+                // is the same business failure as a detected duplicate.
+                return Result<TrainingDto>.Failure(ErrorCode.DuplicateTitle,
+                    "A training with the same title already exists for this trainer.");
+            }
             return Result<TrainingDto>.Success(training.ToDto());
         }, Result<TrainingDto>.FailureAsync);
     }
@@ -147,7 +159,18 @@ public class TrainingApplicationService(
             onSuccess: async () =>
             {
                 trainingRepository.Update(training);
-                await unitOfWork.SaveChangesAsync(cancellationToken);
+                try
+                {
+                    await unitOfWork.SaveChangesAsync(cancellationToken);
+                }
+                catch (UniqueConstraintViolationException)
+                {
+                    // A concurrent request slipped past the uniqueness pre-check;
+                    // the unique index is the authoritative guard, so a lost race
+                    // is the same business failure as a detected duplicate.
+                    return Result<TrainingDto>.Failure(ErrorCode.DuplicateTitle,
+                        "A training with the same title already exists for this trainer.");
+                }
                 return Result<TrainingDto>.Success(training.ToDto());
             },
             onFailure: Result<TrainingDto>.FailureAsync);
