@@ -97,6 +97,13 @@ public interface IAuditable
 /// Represents an object that has a collection of <see cref="IDomainEvent"/>.
 /// Usually the <see cref="IAggregateRoot"/> are the only model having <see cref="IDomainEvent"/>.
 /// </summary>
+/// <remarks>
+/// The contract is deliberately read-and-clear only: raising events is the exclusive
+/// privilege of the aggregate's own behavior methods (through the protected members of
+/// <see cref="AggregateRoot{TEntityId}"/>), so that every event is the outcome of a
+/// legitimate state transition. Consumers — typically the event-dispatching
+/// infrastructure — can only read the pending events and clear them once collected.
+/// </remarks>
 public interface IHasDomainEvents
 {
     /// <summary>
@@ -105,25 +112,7 @@ public interface IHasDomainEvents
     public IReadOnlyList<IDomainEvent> DomainEvents { get; }
 
     /// <summary>
-    /// Adds a domain event to the aggregate root.
-    /// </summary>
-    /// <param name="domainEvent">The domain event to add.</param>
-    void AddDomainEvent(IDomainEvent domainEvent);
-
-    /// <summary>
-    /// Adds a collection of domain events to the aggregate root.
-    /// </summary>
-    /// <param name="domainEvents">The collection of domain events to add.</param>
-    void AddDomainEvents(IEnumerable<IDomainEvent> domainEvents);
-
-    /// <summary>
     /// Clears the domain events raised by the aggregate root.
     /// </summary>
     void ClearDomainEvents();
-
-    /// <summary>
-    /// Removes a domain event from the aggregate root.
-    /// </summary>
-    /// <param name="domainEvent">The domain event to remove.</param>
-    void RemoveDomainEvent(IDomainEvent domainEvent);
 }

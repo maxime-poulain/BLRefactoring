@@ -25,14 +25,22 @@ public abstract class AggregateRoot<TEntityId> : Entity<TEntityId>, IAggregateRo
     /// <inheritdoc/>
     public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
-    /// <inheritdoc/>
-    public void AddDomainEvent(IDomainEvent domainEvent)
+    /// <summary>
+    /// Raises a domain event. Only the aggregate's own behavior methods may raise
+    /// events, so that every event is the outcome of a legitimate state transition.
+    /// </summary>
+    /// <param name="domainEvent">The domain event to raise.</param>
+    protected void AddDomainEvent(IDomainEvent domainEvent)
     {
         _domainEvents.Add(domainEvent);
     }
 
-    /// <inheritdoc/>
-    public void AddDomainEvents(IEnumerable<IDomainEvent> domainEvents)
+    /// <summary>
+    /// Raises a collection of domain events. Only the aggregate's own behavior
+    /// methods may raise events.
+    /// </summary>
+    /// <param name="domainEvents">The collection of domain events to raise.</param>
+    protected void AddDomainEvents(IEnumerable<IDomainEvent> domainEvents)
     {
         _domainEvents.AddRange(domainEvents);
     }
@@ -41,12 +49,6 @@ public abstract class AggregateRoot<TEntityId> : Entity<TEntityId>, IAggregateRo
     public void ClearDomainEvents()
     {
         _domainEvents.Clear();
-    }
-
-    /// <inheritdoc/>
-    public void RemoveDomainEvent(IDomainEvent domainEvent)
-    {
-        _domainEvents.Remove(domainEvent);
     }
 }
 

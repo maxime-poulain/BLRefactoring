@@ -1,6 +1,5 @@
 using BLRefactoring.Shared.Common;
 using FluentAssertions;
-using Mediator;
 using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Common;
@@ -9,7 +8,13 @@ public class AggregateRootTests
 {
     public class TestAggregateId : EntityId<TestAggregateId> { }
 
-    public class TestAggregate : AggregateRoot<TestAggregateId> { }
+    public class TestAggregate : AggregateRoot<TestAggregateId>
+    {
+        // AddDomainEvent/AddDomainEvents are protected: only the aggregate's own
+        // behavior methods may raise events. These test hooks play that role here.
+        public void RaiseEvent(IDomainEvent domainEvent) => AddDomainEvent(domainEvent);
+        public void RaiseEvents(IEnumerable<IDomainEvent> domainEvents) => AddDomainEvents(domainEvents);
+    }
 
     public class TestDomainEvent : IDomainEvent { }
 
@@ -27,7 +32,7 @@ public class AggregateRootTests
         var aggregate = new TestAggregate();
         var domainEvent = new TestDomainEvent();
 
-        aggregate.AddDomainEvent(domainEvent);
+        aggregate.RaiseEvent(domainEvent);
 
         aggregate.DomainEvents.Should().ContainSingle()
             .Which.Should().Be(domainEvent);
@@ -40,7 +45,7 @@ public class AggregateRootTests
         var event1 = new TestDomainEvent();
         var event2 = new TestDomainEvent();
 
-        aggregate.AddDomainEvents([event1, event2]);
+        aggregate.RaiseEvents([event1, event2]);
 
         aggregate.DomainEvents.Should().HaveCount(2);
         aggregate.DomainEvents.Should().Contain(event1);
@@ -51,38 +56,12 @@ public class AggregateRootTests
     public void ClearDomainEvents_RemovesAllEvents()
     {
         var aggregate = new TestAggregate();
-        aggregate.AddDomainEvent(new TestDomainEvent());
-        aggregate.AddDomainEvent(new TestDomainEvent());
+        aggregate.RaiseEvent(new TestDomainEvent());
+        aggregate.RaiseEvent(new TestDomainEvent());
 
         aggregate.ClearDomainEvents();
 
         aggregate.DomainEvents.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void RemoveDomainEvent_RemovesSpecificEvent()
-    {
-        var aggregate = new TestAggregate();
-        var event1 = new TestDomainEvent();
-        var event2 = new TestDomainEvent();
-        aggregate.AddDomainEvent(event1);
-        aggregate.AddDomainEvent(event2);
-
-        aggregate.RemoveDomainEvent(event1);
-
-        aggregate.DomainEvents.Should().ContainSingle()
-            .Which.Should().Be(event2);
-    }
-
-    [Fact]
-    public void RemoveDomainEvent_NonExistingEvent_DoesNotThrow()
-    {
-        var aggregate = new TestAggregate();
-        var domainEvent = new TestDomainEvent();
-
-        var act = () => aggregate.RemoveDomainEvent(domainEvent);
-
-        act.Should().NotThrow();
     }
 
     [Fact]
