@@ -9,6 +9,7 @@ using BLRefactoring.Shared.Infrastructure.ThirdParty.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace BLRefactoring.Shared.Infrastructure.Extensions;
 
@@ -23,11 +24,19 @@ public static class ServiceCollectionExtensions
             .AddScoped<ITrainingRepository, TrainingRepository>()
             .AddScoped<IUniquenessTitleChecker, TrainingRepository>()
             .AddDbContext<TrainingContext>((serviceProvider, options) =>
+            {
                 options.UseSqlServer(configuration.GetConnectionString("TrainingContext"))
-                    .EnableSensitiveDataLogging()
                     .AddInterceptors(
                         serviceProvider.GetRequiredService<DomainEventInterceptor>(),
-                        serviceProvider.GetRequiredService<AuditableEntitiesInterceptor>()))
+                        serviceProvider.GetRequiredService<AuditableEntitiesInterceptor>());
+
+                // Parameter values (emails, names, bios…) only ever reach the
+                // logs in Development; production logs stay free of personal data.
+                if (serviceProvider.GetRequiredService<IHostEnvironment>().IsDevelopment())
+                {
+                    options.EnableSensitiveDataLogging();
+                }
+            })
             .AddScoped<DomainEventInterceptor>()
             .AddSingleton<AuditableEntitiesInterceptor>()
             .AddScoped<ITokenService, TokenService>()
