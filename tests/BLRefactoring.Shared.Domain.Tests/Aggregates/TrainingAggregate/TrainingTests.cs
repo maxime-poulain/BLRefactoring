@@ -63,6 +63,20 @@ public class TrainingTests
     }
 
     [Fact]
+    public async Task CreateAsync_ValidData_RaisesTrainingCreatedEvent()
+    {
+        // Act
+        var training = await new TrainingBuilder().BuildValidAsync();
+
+        // Assert
+        training.DomainEvents.Should().ContainSingle(e => e is TrainingCreatedDomainEvent);
+        training.DomainEvents.Should().NotContain(e => e is TrainingEditedDomainEvent);
+        var domainEvent = training.DomainEvents.OfType<TrainingCreatedDomainEvent>().Single();
+        domainEvent.TrainingId.Should().Be(training.Id);
+        domainEvent.TrainerId.Should().Be(training.TrainerId);
+    }
+
+    [Fact]
     public async Task CreateAsync_NullMessage_ThrowsArgumentNullException()
     {
         // Arrange
@@ -177,6 +191,39 @@ public class TrainingTests
 
         // Assert
         result.ShouldBeSuccess();
+    }
+
+    [Fact]
+    public async Task EditAsync_ValidData_RaisesTrainingEditedEvent()
+    {
+        // Arrange
+        var training = await new TrainingBuilder().BuildValidAsync();
+        training.ClearDomainEvents();
+        var mockChecker = new Mock<IUniquenessTitleChecker>();
+        mockChecker.Setup(c => c.TitleForTrainerExists(
+                It.IsAny<TrainingTitle>(),
+                It.IsAny<TrainerId>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var message = new TrainingEditionMessage
+        {
+            Title = "A Different Valid Title",
+            Description = "Updated description for the training",
+            Prerequisites = "Updated prerequisites content",
+            AcquiredSkills = "Updated acquired skills content",
+            Topics = ["Marketing"]
+        };
+
+        // Act
+        await training.EditAsync(message, mockChecker.Object);
+
+        // Assert
+        training.DomainEvents.Should().ContainSingle(e => e is TrainingEditedDomainEvent);
+        training.DomainEvents.Should().NotContain(e => e is TrainingCreatedDomainEvent);
+        var domainEvent = training.DomainEvents.OfType<TrainingEditedDomainEvent>().Single();
+        domainEvent.TrainingId.Should().Be(training.Id);
+        domainEvent.TrainerId.Should().Be(training.TrainerId);
     }
 
     [Fact]
