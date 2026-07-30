@@ -81,14 +81,14 @@ public class TrainingTests
         // Arrange
         var message = new TrainingCreationMessage
         {
-            TrainingId = Guid.NewGuid(),
+            TrainingId = TrainingId.Generate(),
             Title = "Valid Title",
             Description = "Valid description",
             Prerequisites = "Valid prerequisites",
             AcquiredSkills = "Valid acquired skills",
             Topics = ["Programming"],
-            TrainerId = Guid.NewGuid(),
-            UserId = Guid.NewGuid()
+            TrainerId = TrainerId.Generate(),
+            UserId = UserId.Generate()
         };
 
         // Act

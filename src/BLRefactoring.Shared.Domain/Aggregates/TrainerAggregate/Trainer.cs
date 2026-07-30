@@ -51,9 +51,9 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     /// <returns>A <see cref="Result{T}"/> of type <see cref="Trainer"/>.</returns>
     public static Result<Trainer> Create(TrainerCreationMessage trainerCreationMessage)
     {
-        var trainer = new Trainer((TrainerId)trainerCreationMessage.TrainerId)
+        var trainer = new Trainer(trainerCreationMessage.TrainerId)
         {
-            UserId = (UserId)trainerCreationMessage.UserId
+            UserId = trainerCreationMessage.UserId
         };
         return CreateInternal(
             trainerCreationMessage.Firstname,

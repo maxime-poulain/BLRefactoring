@@ -54,8 +54,8 @@ public sealed class Training : AggregateRoot<TrainingId>
         ArgumentNullException.ThrowIfNull(titleChecker);
 
         var training = CreateDraft(
-            (TrainingId)trainingCreationMessage.TrainingId,
-            (TrainerId)trainingCreationMessage.TrainerId);
+            trainingCreationMessage.TrainingId,
+            trainingCreationMessage.TrainerId);
 
         var editionResult = await training.EditAsync(trainingCreationMessage, titleChecker, cancellationToken);
 
