@@ -27,6 +27,7 @@ public class TrainerBuilder
 
         return Trainer.Create(new TrainerCreationMessage
         {
+            TrainerId = Guid.NewGuid(),
             Firstname = _firstname,
             Lastname = _lastname,
             Email = _email,

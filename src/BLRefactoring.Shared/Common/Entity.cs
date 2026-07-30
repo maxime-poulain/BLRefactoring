@@ -10,7 +10,7 @@ public abstract class Entity<TEntityId> : Entity, IAuditable
     /// <summary>
     /// Gets the unique identifier for the entity.
     /// </summary>
-    public virtual TEntityId Id { get; init; } = EntityId<TEntityId>.Generate();
+    public TEntityId Id { get; }
 
     /// <summary>
     /// Gets or sets the date and time the entity was created.
@@ -22,8 +22,17 @@ public abstract class Entity<TEntityId> : Entity, IAuditable
     /// </summary>
     public DateTime? ModifiedOn { get; }
 
-    protected Entity()
+    /// <summary>
+    /// Initializes the entity with its identity. The identifier is supplied by the
+    /// caller — typically generated upfront by the layer issuing the creation
+    /// command — so the entity is never observable without an identity, and callers
+    /// know the primary key before any round-trip.
+    /// </summary>
+    /// <param name="id">The unique identifier of the entity.</param>
+    protected Entity(TEntityId id)
     {
+        ArgumentNullException.ThrowIfNull(id);
+        Id = id;
     }
 
     protected bool Equals(Entity<TEntityId> other)

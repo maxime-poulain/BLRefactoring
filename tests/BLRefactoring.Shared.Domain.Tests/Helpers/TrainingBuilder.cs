@@ -45,6 +45,7 @@ public class TrainingBuilder
         return await Training.CreateAsync(
             new TrainingCreationMessage
             {
+                TrainingId = Guid.NewGuid(),
                 Title = _title,
                 Description = _description,
                 Prerequisites = _prerequisites,

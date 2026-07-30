@@ -42,6 +42,7 @@ public class CreateTrainingCommandHandler(
 
         var trainingCreationMessage = new TrainingCreationMessage
         {
+            TrainingId = request.TrainingId,
             Title = request.Title,
             Description = request.Description,
             Prerequisites = request.Prerequisites,

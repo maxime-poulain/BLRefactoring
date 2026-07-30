@@ -83,6 +83,7 @@ public class TrainingApplicationService(
 
         var trainingCreationMessage = new TrainingCreationMessage
         {
+            TrainingId = Guid.NewGuid(),
             Title = request.Title,
             Description = request.Description,
             Prerequisites = request.Prerequisites,

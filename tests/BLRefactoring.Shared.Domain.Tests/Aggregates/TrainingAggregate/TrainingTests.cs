@@ -81,6 +81,7 @@ public class TrainingTests
         // Arrange
         var message = new TrainingCreationMessage
         {
+            TrainingId = Guid.NewGuid(),
             Title = "Valid Title",
             Description = "Valid description",
             Prerequisites = "Valid prerequisites",

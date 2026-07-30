@@ -33,9 +33,10 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     public UserId UserId { get; private set; } = null!;
 
     /// <summary>
-    /// Private constructor for ORM or serialization.
+    /// Private constructor used by the factories and by EF Core constructor
+    /// binding (the parameter name matches the <see cref="Entity{TEntityId}.Id"/> property).
     /// </summary>
-    private Trainer()
+    private Trainer(TrainerId id) : base(id)
     {
     }
 
@@ -50,7 +51,10 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     /// <returns>A <see cref="Result{T}"/> of type <see cref="Trainer"/>.</returns>
     public static Result<Trainer> Create(TrainerCreationMessage trainerCreationMessage)
     {
-        var trainer = new Trainer() { UserId = (UserId)trainerCreationMessage.UserId };
+        var trainer = new Trainer((TrainerId)trainerCreationMessage.TrainerId)
+        {
+            UserId = (UserId)trainerCreationMessage.UserId
+        };
         return CreateInternal(
             trainerCreationMessage.Firstname,
             trainerCreationMessage.Lastname,
@@ -76,7 +80,7 @@ public sealed class Trainer : AggregateRoot<TrainerId>
         string bio,
         Guid userId)
     {
-        var trainer = new Trainer() { Id = (TrainerId)id, UserId = (UserId)userId };
+        var trainer = new Trainer((TrainerId)id) { UserId = (UserId)userId };
         return CreateInternal(firstname, lastname, email, bio, trainer);
     }
 

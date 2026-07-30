@@ -34,6 +34,7 @@ public sealed class TrainerApplicationService(
     {
         var message = new TrainerCreationMessage
         {
+            TrainerId = Guid.NewGuid(),
             Firstname = request.Firstname,
             Lastname = request.Lastname,
             Email = request.Email,

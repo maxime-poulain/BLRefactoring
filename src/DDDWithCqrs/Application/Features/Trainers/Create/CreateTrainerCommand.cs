@@ -27,6 +27,7 @@ public class CreateTrainerCommandHandler(
     {
         var message = new TrainerCreationMessage
         {
+            TrainerId = request.TrainerId,
             Firstname = request.Firstname,
             Lastname = request.Lastname,
             Email = request.Email,
