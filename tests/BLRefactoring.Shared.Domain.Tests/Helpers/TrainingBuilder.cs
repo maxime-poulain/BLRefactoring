@@ -1,4 +1,5 @@
 using BLRefactoring.Shared.Common.Results;
+using BLRefactoring.Shared.Domain;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.Messages;
@@ -45,12 +46,13 @@ public class TrainingBuilder
         return await Training.CreateAsync(
             new TrainingCreationMessage
             {
+                TrainingId = TrainingId.Generate(),
                 Title = _title,
                 Description = _description,
                 Prerequisites = _prerequisites,
                 AcquiredSkills = _acquiredSkills,
-                TrainerId = _trainerId,
-                UserId = _userId,
+                TrainerId = TrainerId.Create(_trainerId),
+                UserId = UserId.Create(_userId),
                 Topics = _topics
             },
             mockChecker.Object);

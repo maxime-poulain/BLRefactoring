@@ -8,7 +8,7 @@ public class AggregateRootTests
 {
     public class TestAggregateId : EntityId<TestAggregateId> { }
 
-    public class TestAggregate : AggregateRoot<TestAggregateId>
+    public class TestAggregate() : AggregateRoot<TestAggregateId>(TestAggregateId.Generate())
     {
         // AddDomainEvent/AddDomainEvents are protected: only the aggregate's own
         // behavior methods may raise events. These test hooks play that role here.

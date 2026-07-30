@@ -3,6 +3,7 @@ using BLRefactoring.Shared.Application.Dtos;
 using BLRefactoring.Shared.Application.Dtos.Training;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
+using BLRefactoring.Shared.Domain;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.Messages;
@@ -83,13 +84,14 @@ public class TrainingApplicationService(
 
         var trainingCreationMessage = new TrainingCreationMessage
         {
+            TrainingId = TrainingId.Generate(),
             Title = request.Title,
             Description = request.Description,
             Prerequisites = request.Prerequisites,
             AcquiredSkills = request.AcquiredSkills,
-            TrainerId = currentUserService.TrainerId,
+            TrainerId = TrainerId.Create(currentUserService.TrainerId),
             Topics = request.Topics,
-            UserId = currentUserService.UserId
+            UserId = UserId.Create(currentUserService.UserId)
         };
 
         var result = await Training.CreateAsync(trainingCreationMessage, uniquenessTitleChecker, cancellationToken);

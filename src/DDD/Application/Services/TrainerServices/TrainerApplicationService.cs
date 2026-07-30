@@ -3,6 +3,7 @@ using BLRefactoring.Shared.Application.Dtos;
 using BLRefactoring.Shared.Application.Dtos.Trainer;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
+using BLRefactoring.Shared.Domain;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.Messages;
 using Microsoft.Extensions.Logging;
@@ -34,10 +35,11 @@ public sealed class TrainerApplicationService(
     {
         var message = new TrainerCreationMessage
         {
+            TrainerId = TrainerId.Generate(),
             Firstname = request.Firstname,
             Lastname = request.Lastname,
             Email = request.Email,
-            UserId = request.UserId,
+            UserId = UserId.Create(request.UserId),
             Bio = request.Bio
         };
 

@@ -1,4 +1,5 @@
 using BLRefactoring.Shared.Common.Results;
+using BLRefactoring.Shared.Domain;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.Messages;
 
@@ -27,11 +28,12 @@ public class TrainerBuilder
 
         return Trainer.Create(new TrainerCreationMessage
         {
+            TrainerId = TrainerId.Generate(),
             Firstname = _firstname,
             Lastname = _lastname,
             Email = _email,
             Bio = _bio,
-            UserId = _userId
+            UserId = UserId.Create(_userId)
         });
     }
 

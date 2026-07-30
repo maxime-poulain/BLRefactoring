@@ -22,6 +22,14 @@ public abstract class AggregateRoot<TEntityId> : Entity<TEntityId>, IAggregateRo
 {
     private readonly List<IDomainEvent> _domainEvents = [];
 
+    /// <summary>
+    /// Initializes the aggregate root with its identity.
+    /// </summary>
+    /// <param name="id">The unique identifier of the aggregate root.</param>
+    protected AggregateRoot(TEntityId id) : base(id)
+    {
+    }
+
     /// <inheritdoc/>
     public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 

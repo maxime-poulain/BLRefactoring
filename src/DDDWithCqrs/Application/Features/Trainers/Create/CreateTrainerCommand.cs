@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using BLRefactoring.Shared;
+using BLRefactoring.Shared.Domain;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.CQS;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
@@ -27,10 +28,11 @@ public class CreateTrainerCommandHandler(
     {
         var message = new TrainerCreationMessage
         {
+            TrainerId = TrainerId.Create(request.TrainerId),
             Firstname = request.Firstname,
             Lastname = request.Lastname,
             Email = request.Email,
-            UserId = request.UserId,
+            UserId = UserId.Create(request.UserId),
             Bio = "<>"
         };
 

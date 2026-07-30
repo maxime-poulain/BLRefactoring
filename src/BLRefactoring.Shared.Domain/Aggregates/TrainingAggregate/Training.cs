@@ -23,13 +23,12 @@ public sealed class Training : AggregateRoot<TrainingId>
 
     public TrainerId TrainerId { get; private set; } = null!;
 
-    private Training()
+    /// <summary>
+    /// Private constructor used by the factories and by EF Core constructor
+    /// binding (parameter names match the <c>Id</c> and <c>TrainerId</c> properties).
+    /// </summary>
+    private Training(TrainingId id, TrainerId trainerId) : base(id)
     {
-    } // Private constructor for ORM or serialization
-
-    private Training(TrainingId trainingId, TrainerId trainerId)
-    {
-        Id = trainingId;
         TrainerId = trainerId;
     }
 
@@ -55,8 +54,8 @@ public sealed class Training : AggregateRoot<TrainingId>
         ArgumentNullException.ThrowIfNull(titleChecker);
 
         var training = CreateDraft(
-            TrainingId.Create(Guid.NewGuid()),
-            (TrainerId)trainingCreationMessage.TrainerId);
+            trainingCreationMessage.TrainingId,
+            trainingCreationMessage.TrainerId);
 
         var editionResult = await training.EditAsync(trainingCreationMessage, titleChecker, cancellationToken);
 

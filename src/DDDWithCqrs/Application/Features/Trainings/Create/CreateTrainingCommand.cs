@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using BLRefactoring.Shared;
+using BLRefactoring.Shared.Domain;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.CQS;
@@ -31,8 +32,8 @@ public class CreateTrainingCommandHandler(
         CreateTrainingCommand request,
         CancellationToken cancellationToken)
     {
-        var trainerId = currentUserService.TrainerId;
-        var trainer = await trainerRepository.GetByIdAsync((TrainerId)trainerId, cancellationToken);
+        var trainerId = TrainerId.Create(currentUserService.TrainerId);
+        var trainer = await trainerRepository.GetByIdAsync(trainerId, cancellationToken);
 
         if (trainer == null)
         {
@@ -42,13 +43,14 @@ public class CreateTrainingCommandHandler(
 
         var trainingCreationMessage = new TrainingCreationMessage
         {
+            TrainingId = TrainingId.Create(request.TrainingId),
             Title = request.Title,
             Description = request.Description,
             Prerequisites = request.Prerequisites,
             AcquiredSkills = request.AcquiredSkills,
             TrainerId = trainerId,
             Topics = request.Topics,
-            UserId = currentUserService.UserId
+            UserId = UserId.Create(currentUserService.UserId)
         };
 
         var trainingCreationResult = await Training.CreateAsync(trainingCreationMessage, titleChecker);
