@@ -31,11 +31,15 @@ public class TrainerConfiguration : AggregateRootTypeConfiguration<Trainer, Trai
                 .HasMaxLength(50);
         });
 
+        // The Bio navigation is optional: the column must be nullable even though
+        // the value object's Value is non-nullable, so a null column round-trips
+        // as a null Bio instead of an empty value object.
         builder.OwnsOne(e => e.Bio, bioBuilder =>
         {
             bioBuilder.Property(e => e.Value)
                 .HasColumnName("Bio")
-                .HasMaxLength(500);
+                .HasMaxLength(500)
+                .IsRequired(false);
         });
 
         builder.Property(p => p.UserId)

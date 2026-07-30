@@ -58,7 +58,7 @@ public class AuthController(
         var creationResult = await trainerApplicationService.CreateAsync(
             new TrainerCreationRequest()
             {
-                Email = user.Email, Firstname = request.Firstname, Lastname = request.Lastname, UserId = user.Id, Bio = "<>"
+                Email = user.Email, Firstname = request.Firstname, Lastname = request.Lastname, UserId = user.Id
             }, cancellationToken);
 
         transactionScope.Complete();

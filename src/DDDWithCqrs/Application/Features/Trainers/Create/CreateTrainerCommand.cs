@@ -32,8 +32,7 @@ public class CreateTrainerCommandHandler(
             Firstname = request.Firstname,
             Lastname = request.Lastname,
             Email = request.Email,
-            UserId = UserId.Create(request.UserId),
-            Bio = "<>"
+            UserId = UserId.Create(request.UserId)
         };
 
         var trainerResult = Trainer.Create(message);
