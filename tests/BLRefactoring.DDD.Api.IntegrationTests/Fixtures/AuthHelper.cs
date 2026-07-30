@@ -1,6 +1,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using BLRefactoring.DDD.Api.Controller;
+using BLRefactoring.Shared.Infrastructure.ThirdParty.Identity;
 
 namespace BLRefactoring.DDD.Api.IntegrationTests.Fixtures;
 
