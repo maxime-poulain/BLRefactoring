@@ -7,17 +7,17 @@ using Xunit;
 
 namespace BLRefactoring.DDD.Application.Tests.EventHandlers;
 
-public class NotifyPreviousAddressWhenTrainerEmailChangedEventHandlerTests
+public class NotifyPreviousAddressWhenTrainerContactEmailChangedEventHandlerTests
 {
     private readonly Mock<IEmailSender> _emailSender = new();
 
-    private NotifyPreviousAddressWhenTrainerEmailChangedEventHandler CreateSut() =>
+    private NotifyPreviousAddressWhenTrainerContactEmailChangedEventHandler CreateSut() =>
         new(_emailSender.Object);
 
     [Fact]
     public async Task Handle_NotifiesThePreviousAddress()
     {
-        var domainEvent = new TrainerEmailChangedDomainEvent(
+        var domainEvent = new TrainerContactEmailChangedDomainEvent(
             TrainerId.Generate(), "old@example.com", "new@example.com");
 
         var sut = CreateSut();

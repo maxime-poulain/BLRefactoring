@@ -13,7 +13,13 @@ public class CreateTrainerCommand : ICommand<Result>
     public Guid UserId { get; init; }
     public string Firstname { get; init; } = null!;
     public string Lastname { get; init; } = null!;
-    public string Email { get; init; } = null!;
+
+    /// <summary>
+    /// The initial contact address of the trainer. At registration it is seeded
+    /// from the account email; the trainer can make it diverge afterwards through
+    /// their profile.
+    /// </summary>
+    public string ContactEmail { get; init; } = null!;
 }
 
 public class CreateTrainerCommandHandler(
@@ -28,7 +34,7 @@ public class CreateTrainerCommandHandler(
             TrainerId = TrainerId.Create(request.TrainerId),
             Firstname = request.Firstname,
             Lastname = request.Lastname,
-            Email = request.Email,
+            ContactEmail = request.ContactEmail,
             UserId = UserId.Create(request.UserId)
         };
 

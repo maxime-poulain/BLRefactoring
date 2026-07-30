@@ -11,10 +11,14 @@ public class TrainerConfiguration : AggregateRootTypeConfiguration<Trainer, Trai
     {
         builder.ToTable("Trainer");
 
-        builder.OwnsOne(e => e.Email, b =>
+        // No uniqueness constraint here, deliberately: the contact email is a
+        // business attribute of the profile, not a credential. Two trainers of the
+        // same organisation may legitimately publish the same address. Uniqueness
+        // is enforced by Identity on the account email, which is a different value.
+        builder.OwnsOne(e => e.ContactEmail, b =>
         {
             b.Property(e => e.FullAddress)
-                .HasColumnName("Email")
+                .HasColumnName("ContactEmail")
                 .IsRequired()
                 .HasMaxLength(320);
         });

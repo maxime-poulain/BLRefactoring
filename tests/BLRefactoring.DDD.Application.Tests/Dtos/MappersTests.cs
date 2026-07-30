@@ -16,11 +16,11 @@ public class MappersTests
     }
 
     [Fact]
-    public void TrainerToDto_MapsEmailCorrectly()
+    public void TrainerToDto_MapsContactEmailCorrectly()
     {
-        var trainer = new TrainerBuilder().WithEmail("test@example.com").BuildValid();
+        var trainer = new TrainerBuilder().WithContactEmail("test@example.com").BuildValid();
         var dto = trainer.ToDto();
-        dto.Email.Should().Be("test@example.com");
+        dto.ContactEmail.Should().Be("test@example.com");
     }
 
     [Fact]
