@@ -97,7 +97,7 @@ public sealed class TrainerApplicationService(
 
         if (trainer is null)
         {
-            return Result.Failure(ErrorCode.NotFound, $"Training with id `{id}` not found.");
+            return Result.Failure(ErrorCode.NotFound, $"Trainer with id `{id}` not found.");
         }
 
         try

@@ -4,7 +4,7 @@ using System.Reflection;
 using BLRefactoring.Shared.Common;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
-namespace BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Interceptor;
+namespace BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Interceptors;
 
 /// <summary>
 /// Interceptor for handling the "IsTransient" property of entities during the materialization process in Entity Framework.

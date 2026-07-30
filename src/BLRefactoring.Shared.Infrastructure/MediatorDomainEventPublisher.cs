@@ -3,7 +3,7 @@ using Mediator;
 
 namespace BLRefactoring.Shared.Infrastructure;
 
-public class MediatorRDomainDomainEventPublisher(IMediator mediator) : IDomainEventPublisher
+public class MediatorDomainEventPublisher(IMediator mediator) : IDomainEventPublisher
 {
     /// <inheritdoc />
     public async Task PublishAsync(IHasDomainEvents[] havingDomainEvents, CancellationToken cancellationToken)
