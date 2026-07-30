@@ -20,6 +20,13 @@ public interface ITrainerApplicationService
 {
     // Another possibility would have been to return just the Id of the newly created Trainer.
     Task<Result<TrainerDto>> CreateAsync(TrainerCreationRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Replaces the profile of the given trainer with the state described by
+    /// <paramref name="request"/>.
+    /// </summary>
+    Task<Result<TrainerDto>> EditAsync(Guid id, TrainerEditionRequest request, CancellationToken cancellationToken = default);
+
     Task<Result<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<TrainerDto[]> GetAllAsync(CancellationToken cancellationToken = default);
     Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
@@ -38,7 +45,7 @@ public sealed class TrainerApplicationService(
             TrainerId = TrainerId.Generate(),
             Firstname = request.Firstname,
             Lastname = request.Lastname,
-            Email = request.Email,
+            ContactEmail = request.ContactEmail,
             UserId = UserId.Create(request.UserId),
             Bio = request.Bio
         };
@@ -48,6 +55,33 @@ public sealed class TrainerApplicationService(
         return await result.MatchAsync(async trainer =>
         {
             trainerRepository.Add(trainer);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+            return Result<TrainerDto>.Success(trainer.ToDto());
+        }, Result<TrainerDto>.FailureAsync);
+    }
+
+    public async Task<Result<TrainerDto>> EditAsync(Guid id, TrainerEditionRequest request, CancellationToken cancellationToken = default)
+    {
+        var trainer = await trainerRepository.GetByIdAsync(TrainerId.Create(id), cancellationToken);
+
+        if (trainer is null)
+        {
+            return Result<TrainerDto>.Failure(ErrorCode.NotFound, $"Trainer with id `{id}` could not be found.");
+        }
+
+        var message = new TrainerEditionMessage
+        {
+            Firstname = request.Firstname,
+            Lastname = request.Lastname,
+            ContactEmail = request.ContactEmail,
+            Bio = request.Bio
+        };
+
+        // The aggregate raises one domain event per attribute that actually changed;
+        // their handlers run during SaveChangesAsync, before persistence.
+        return await trainer.Edit(message).MatchAsync(async () =>
+        {
+            trainerRepository.Update(trainer);
             await unitOfWork.SaveChangesAsync(cancellationToken);
             return Result<TrainerDto>.Success(trainer.ToDto());
         }, Result<TrainerDto>.FailureAsync);

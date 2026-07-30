@@ -29,9 +29,10 @@ public static class Mappers
         return new TrainerDto()
         {
             Id = trainer.Id.Value,
-            Email = trainer.Email.FullAddress,
+            ContactEmail = trainer.ContactEmail.FullAddress,
             Firstname = trainer.Name.Firstname,
-            Lastname = trainer.Name.Lastname
+            Lastname = trainer.Name.Lastname,
+            Bio = trainer.Bio?.Value
         };
     }
 }

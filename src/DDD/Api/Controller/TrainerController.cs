@@ -1,4 +1,5 @@
 using BLRefactoring.DDD.Application.Services.TrainerServices;
+using BLRefactoring.Shared;
 using BLRefactoring.Shared.Application.Dtos.Trainer;
 using BLRefactoring.Shared.Common.Errors;
 using Microsoft.AspNetCore.Mvc;
@@ -12,9 +13,45 @@ namespace BLRefactoring.DDD.Api.Controller;
 /// the identity user and its trainer atomically.
 /// </summary>
 /// <param name="trainerApplicationService">Application service for trainer operations.</param>
-public class TrainerController(ITrainerApplicationService trainerApplicationService)
+/// <param name="currentUserService">Provides the identity of the caller.</param>
+public class TrainerController(
+    ITrainerApplicationService trainerApplicationService,
+    ICurrentUserService currentUserService)
     : ApiControllerBase
 {
+    /// <summary>
+    /// Replaces the profile of the authenticated trainer.
+    /// </summary>
+    /// <param name="request">The new state of the profile.</param>
+    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
+    /// <returns>
+    /// 200 OK with the updated trainer.
+    /// 400 Bad Request on validation errors.
+    /// 404 Not Found if the token refers to a trainer that no longer exists.
+    /// </returns>
+    /// <remarks>
+    /// The trainer being edited is the one carried by the token rather than a route
+    /// parameter: a trainer only ever edits their own profile, so there is no
+    /// ownership to check and no identifier to tamper with.
+    /// Editing the contact email leaves the identity account untouched — it is not
+    /// the credential used to sign in.
+    /// </remarks>
+    [HttpPut("me")]
+    [ProducesResponseType(typeof(TrainerDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TrainerDto>> EditCurrentAsync(
+        [FromBody] TrainerEditionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await trainerApplicationService.EditAsync(
+            currentUserService.TrainerId, request, cancellationToken);
+
+        return result.Match<ActionResult>(Ok,
+            errors =>
+                errors.Any(error => error.ErrorCode == ErrorCode.NotFound) ? NotFound() : BadRequest(errors));
+    }
+
     /// <summary>
     /// Retrieves a trainer by its unique identifier.
     /// </summary>

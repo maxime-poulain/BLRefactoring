@@ -22,7 +22,7 @@ public class TrainerApplicationServiceTests
         {
             Firstname = "John",
             Lastname = "Doe",
-            Email = "john.doe@example.com",
+            ContactEmail = "john.doe@example.com",
             Bio = "Experienced trainer",
             UserId = Guid.NewGuid()
         };
@@ -33,7 +33,7 @@ public class TrainerApplicationServiceTests
         var dto = result.ShouldBeSuccess();
         dto.Firstname.Should().Be("John");
         dto.Lastname.Should().Be("Doe");
-        dto.Email.Should().Be("john.doe@example.com");
+        dto.ContactEmail.Should().Be("john.doe@example.com");
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class TrainerApplicationServiceTests
         {
             Firstname = "John",
             Lastname = "Doe",
-            Email = "john.doe@example.com",
+            ContactEmail = "john.doe@example.com",
             Bio = "Experienced trainer",
             UserId = Guid.NewGuid()
         };
@@ -64,7 +64,7 @@ public class TrainerApplicationServiceTests
         {
             Firstname = "J", // too short
             Lastname = "Doe",
-            Email = "john.doe@example.com",
+            ContactEmail = "john.doe@example.com",
             Bio = "Experienced trainer",
             UserId = Guid.NewGuid()
         };
@@ -82,7 +82,7 @@ public class TrainerApplicationServiceTests
         {
             Firstname = "J",
             Lastname = "Doe",
-            Email = "invalid-email",
+            ContactEmail = "invalid-email",
             Bio = "Experienced trainer",
             UserId = Guid.NewGuid()
         };
@@ -95,6 +95,105 @@ public class TrainerApplicationServiceTests
             uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
+    // -- EditAsync --
+
+    [Fact]
+    public async Task EditAsync_ExistingTrainer_ReturnsSuccessWithUpdatedDto()
+    {
+        var trainer = new TrainerBuilder().BuildValid();
+        _fixture.TrainerRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(trainer);
+        var sut = _fixture.CreateSut();
+
+        var result = await sut.EditAsync(trainer.Id.Value, EditionRequest(
+            firstname: "Jane",
+            lastname: "Smith",
+            contactEmail: "jane.smith@example.com",
+            bio: "Rewritten bio."));
+
+        var dto = result.ShouldBeSuccess();
+        dto.Firstname.Should().Be("Jane");
+        dto.Lastname.Should().Be("Smith");
+        dto.ContactEmail.Should().Be("jane.smith@example.com");
+        dto.Bio.Should().Be("Rewritten bio.");
+    }
+
+    [Fact]
+    public async Task EditAsync_ExistingTrainer_UpdatesTrainerAndCommitsOnce()
+    {
+        var trainer = new TrainerBuilder().BuildValid();
+        _fixture.TrainerRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(trainer);
+        var sut = _fixture.CreateSut();
+
+        await sut.EditAsync(trainer.Id.Value, EditionRequest(firstname: "Jane"));
+
+        _fixture.TrainerRepository.Verify(r => r.Update(trainer), Times.Once);
+        _fixture.UnitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task EditAsync_NullBio_ClearsTheBio()
+    {
+        var trainer = new TrainerBuilder().WithBio("A bio to clear.").BuildValid();
+        _fixture.TrainerRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(trainer);
+        var sut = _fixture.CreateSut();
+
+        var result = await sut.EditAsync(trainer.Id.Value, EditionRequest(bio: null));
+
+        result.ShouldBeSuccess().Bio.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task EditAsync_NonExistingTrainer_ReturnsNotFoundFailure()
+    {
+        _fixture.TrainerRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Trainer?)null);
+        var sut = _fixture.CreateSut();
+
+        var result = await sut.EditAsync(Guid.NewGuid(), EditionRequest());
+
+        result.ShouldContainError(ErrorCode.NotFound);
+    }
+
+    [Fact]
+    public async Task EditAsync_InvalidRequest_ReturnsFailureWithoutCommitting()
+    {
+        var trainer = new TrainerBuilder().BuildValid();
+        _fixture.TrainerRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(trainer);
+        var sut = _fixture.CreateSut();
+
+        var result = await sut.EditAsync(trainer.Id.Value, EditionRequest(contactEmail: "invalid-email"));
+
+        result.ShouldBeFailure();
+        _fixture.TrainerRepository.Verify(r => r.Update(It.IsAny<Trainer>()), Times.Never);
+        _fixture.UnitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    private static TrainerEditionRequest EditionRequest(
+        string firstname = "John",
+        string lastname = "Doe",
+        string contactEmail = "john.doe@example.com",
+        string? bio = "Experienced software trainer with 10 years of experience.")
+        => new()
+        {
+            Firstname = firstname,
+            Lastname = lastname,
+            ContactEmail = contactEmail,
+            Bio = bio
+        };
 
     // -- GetByIdAsync --
 
@@ -132,8 +231,8 @@ public class TrainerApplicationServiceTests
     [Fact]
     public async Task GetAllAsync_ReturnsAllTrainerDtos()
     {
-        var t1 = new TrainerBuilder().WithEmail("a@a.com").BuildValid();
-        var t2 = new TrainerBuilder().WithEmail("b@b.com").BuildValid();
+        var t1 = new TrainerBuilder().WithContactEmail("a@a.com").BuildValid();
+        var t2 = new TrainerBuilder().WithContactEmail("b@b.com").BuildValid();
         _fixture.TrainerRepository
             .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync([t1, t2]);

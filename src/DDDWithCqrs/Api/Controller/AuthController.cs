@@ -28,7 +28,9 @@ public class AuthController(
         {
             Firstname = request.Firstname,
             Lastname = request.Lastname,
-            Email = request.Email,
+            // The contact email starts out as the account email; the trainer can
+            // make it diverge later from their profile.
+            ContactEmail = request.Email,
             UserId = userId
         };
 

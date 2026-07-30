@@ -68,7 +68,7 @@ public class NoTrackingDuringQueryExecutionBehaviorTests : IDisposable
         {
             Firstname = "John",
             Lastname = "Doe",
-            Email = "john@example.com"
+            ContactEmail = "john@example.com"
         };
 
         QueryTrackingBehavior? trackingDuringExecution = null;

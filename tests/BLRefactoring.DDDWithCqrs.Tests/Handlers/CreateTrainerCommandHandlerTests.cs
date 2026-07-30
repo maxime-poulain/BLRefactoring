@@ -23,7 +23,7 @@ public class CreateTrainerCommandHandlerTests
         {
             Firstname = "John",
             Lastname = "Doe",
-            Email = "john.doe@example.com",
+            ContactEmail = "john.doe@example.com",
             UserId = Guid.NewGuid()
         };
         var sut = CreateSut();
@@ -44,7 +44,7 @@ public class CreateTrainerCommandHandlerTests
         {
             Firstname = "J", // too short — domain rejects
             Lastname = "Doe",
-            Email = "john.doe@example.com",
+            ContactEmail = "john.doe@example.com",
             UserId = Guid.NewGuid()
         };
         var sut = CreateSut();
@@ -61,7 +61,7 @@ public class CreateTrainerCommandHandlerTests
         {
             Firstname = "J",
             Lastname = "Doe",
-            Email = "invalid",
+            ContactEmail = "invalid",
             UserId = Guid.NewGuid()
         };
         var sut = CreateSut();

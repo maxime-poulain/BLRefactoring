@@ -15,7 +15,7 @@ public class CreateTrainerCommandValidatorTests
         {
             Firstname = "John",
             Lastname = "Doe",
-            Email = "john.doe@example.com"
+            ContactEmail = "john.doe@example.com"
         };
 
         var result = await _sut.ValidateAsync(command);
@@ -30,13 +30,13 @@ public class CreateTrainerCommandValidatorTests
         {
             Firstname = "John",
             Lastname = "Doe",
-            Email = ""
+            ContactEmail = ""
         };
 
         var result = await _sut.ValidateAsync(command);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Email");
+        result.Errors.Should().Contain(e => e.PropertyName == "ContactEmail");
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class CreateTrainerCommandValidatorTests
         {
             Firstname = "",
             Lastname = "Doe",
-            Email = "john@example.com"
+            ContactEmail = "john@example.com"
         };
 
         var result = await _sut.ValidateAsync(command);

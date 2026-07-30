@@ -27,7 +27,9 @@ public class AuthController(
         var creationResult = await trainerApplicationService.CreateAsync(
             new TrainerCreationRequest
             {
-                Email = request.Email,
+                // The contact email starts out as the account email; the trainer can
+                // make it diverge later from their profile.
+                ContactEmail = request.Email,
                 Firstname = request.Firstname,
                 Lastname = request.Lastname,
                 UserId = userId

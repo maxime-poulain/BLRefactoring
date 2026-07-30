@@ -13,8 +13,9 @@ public static class TrainerProjections
     public static readonly Expression<Func<Trainer, TrainerDto>> ToDto = trainer => new TrainerDto
     {
         Id = trainer.Id.Value,
-        Email = trainer.Email.FullAddress,
+        ContactEmail = trainer.ContactEmail.FullAddress,
         Firstname = trainer.Name.Firstname,
-        Lastname = trainer.Name.Lastname
+        Lastname = trainer.Name.Lastname,
+        Bio = trainer.Bio == null ? null : trainer.Bio.Value
     };
 }

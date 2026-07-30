@@ -26,7 +26,7 @@ public class ValidationPipelineBehaviorTests
         {
             Firstname = "John",
             Lastname = "Doe",
-            Email = "john@example.com"
+            ContactEmail = "john@example.com"
         };
 
         MessageHandlerDelegate<CreateTrainerCommand, Result> next =
@@ -82,7 +82,7 @@ public class ValidationPipelineBehaviorTests
         {
             Firstname = "John",
             Lastname = "Doe",
-            Email = "john@example.com"
+            ContactEmail = "john@example.com"
         };
 
         var nextCalled = false;

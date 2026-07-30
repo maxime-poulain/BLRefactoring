@@ -109,9 +109,15 @@ tests/
 | `TrainerId` | Typed ID | Strongly-typed identifier |
 | `Email` | Value Object | Validated email address (local part + domain) |
 | `Name` | Value Object | First name / last name |
-| `Bio` | Value Object | Trainer biography |
+| `Bio` | Value Object | Trainer biography (optional) |
 
-**Domain Events:** `TrainerCreated`, `TrainerDeleted`, `TrainerEmailChanged`, `TrainerNameChanged`
+The trainer's `ContactEmail` is the address they publish, deliberately distinct from
+the email of their identity account: authentication belongs to the Identity context,
+which the aggregate only ever references through `UserId`. A trainer can therefore
+expose a professional address without disclosing the one they sign in with, and
+editing it has no effect whatsoever on how they log in.
+
+**Domain Events:** `TrainerCreated`, `TrainerDeleted`, `TrainerContactEmailChanged`, `TrainerNameChanged`
 
 ### Training Aggregate
 

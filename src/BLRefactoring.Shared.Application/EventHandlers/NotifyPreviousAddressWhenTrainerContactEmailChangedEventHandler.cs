@@ -4,8 +4,7 @@ using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
 namespace BLRefactoring.Shared.Application.EventHandlers;
 
 /// <summary>
-/// Sends a security notification to the previous email address when a trainer's
-/// email changes.
+/// Notifies the previous contact address when a trainer's contact email changes.
 /// </summary>
 /// <remarks>
 /// Illustrates a security-driven use of a domain event: warning the old address
@@ -14,15 +13,15 @@ namespace BLRefactoring.Shared.Application.EventHandlers;
 /// address — the aggregate has already forgotten the old one by the time the
 /// event is handled.
 /// </remarks>
-public sealed class NotifyPreviousAddressWhenTrainerEmailChangedEventHandler(IEmailSender emailSender)
-    : IDomainEventHandler<TrainerEmailChangedDomainEvent>
+public sealed class NotifyPreviousAddressWhenTrainerContactEmailChangedEventHandler(IEmailSender emailSender)
+    : IDomainEventHandler<TrainerContactEmailChangedDomainEvent>
 {
-    public async ValueTask Handle(TrainerEmailChangedDomainEvent notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(TrainerContactEmailChangedDomainEvent notification, CancellationToken cancellationToken)
     {
         var message = new EmailMessage(
-            notification.OldEmail,
-            "Your email address was changed",
-            $"The email address of your trainer account was changed to {notification.NewEmail}. " +
+            notification.OldContactEmail,
+            "Your contact email address was changed",
+            $"The contact email address of your trainer profile was changed to {notification.NewContactEmail}. " +
             "If you did not request this change, please contact support immediately.");
 
         await emailSender.SendAsync(message, cancellationToken);

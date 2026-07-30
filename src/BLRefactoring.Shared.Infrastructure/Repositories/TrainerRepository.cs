@@ -40,7 +40,7 @@ public class TrainerRepository(TrainingContext trainingContext) : ITrainerReposi
         // Owned Entities are by default included in the query.
         // However, we are explicitly including them here for the sake of clarity.
         return trainingContext.Trainers
-            .Include(trainer => trainer.Email)
+            .Include(trainer => trainer.ContactEmail)
             .Include(trainer => trainer.Name)
             .ToListAsync(cancellationToken);
     }
