@@ -27,7 +27,7 @@ public interface ITrainerApplicationService
 public sealed class TrainerApplicationService(
     ILogger<TrainerApplicationService> logger,
     ITrainerRepository trainerRepository,
-    ITransactionManager transactionManager)
+    IUnitOfWork unitOfWork)
     : ITrainerApplicationService
 {
     public async Task<Result<TrainerDto>> CreateAsync(TrainerCreationRequest request, CancellationToken cancellationToken = default)
@@ -45,7 +45,8 @@ public sealed class TrainerApplicationService(
 
         return await result.MatchAsync(async trainer =>
         {
-            await trainerRepository.SaveAsync(trainer, cancellationToken);
+            trainerRepository.Add(trainer);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
             return Result<TrainerDto>.Success(trainer.ToDto());
         }, Result<TrainerDto>.FailureAsync);
     }
@@ -68,29 +69,13 @@ public sealed class TrainerApplicationService(
         return trainers.Select(x => x.ToDto()).ToArray();
     }
 
-    // This operation works across two different aggregates (Trainer and its Training).
-    // In a typical DDD approach, each aggregate should be a transactional boundary by itself.
-    // Hence, ideally, we wouldn't need a TransactionManager to coordinate the operations.
-    // Instead, we use domain events to maintain consistency between aggregates.
-    //
-    // When a Trainer is marked for deletion, a TrainerDeletedDomainEvent is added.
-    // This event, when published, can be handled to delete the associated Training.
-    //
-    // To ensure this, we rely on the eventual consistency provided by the domain events.
-    // The Trainer is deleted first, and then the domain event is published.
-    // The Training deletion occurs separately as a result of handling the published event.
-    //
-    // This approach does require us to handle potential failures in event handling.
-    // For instance, the deletion of the Training might fail even after the Trainer is deleted.
-    // To address this, we can use techniques like event retries, idempotent handlers,
-    // or other fault tolerance strategies.
-    //
-    // Finally, the SaveChangesAsync method is designed to first persist the changes to the database
-    // and then publish the domain events. Note that these two operations are not part of the same
-    // transaction. This might lead to a situation where the Trainer is deleted, but the
-    // TrainerDeletedDomainEvent is not published due to an error, leading to an inconsistent state.
-    // An Outbox pattern can be used to ensure that the local database transaction and the event
-    // publishing are treated atomically.
+    // This operation works across two different aggregates (Trainer and its Trainings).
+    // When the Trainer is marked for deletion, a TrainerDeletedDomainEvent is added to it.
+    // The event is dispatched by the infrastructure while the unit of work saves,
+    // right before persistence: its handler stages the deletion of the trainer's
+    // trainings in the same change tracker, so the trainer and its trainings are
+    // deleted atomically, within the single implicit transaction of SaveChangesAsync.
+    // No explicit transaction management is required.
     public async Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var trainer = await trainerRepository.GetByIdAsync((TrainerId)id, cancellationToken);
@@ -102,44 +87,15 @@ public sealed class TrainerApplicationService(
 
         try
         {
-            await transactionManager.BeginTransactionAsync(cancellationToken);
             trainer.MarkForDeletion();
-            await trainerRepository.DeleteAsync(trainer, cancellationToken);
-            await transactionManager.CommitAsync(cancellationToken);
+            trainerRepository.Delete(trainer);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex)
         {
-            await transactionManager.RollBackAsync(cancellationToken);
             logger.LogError(ex, "An error occurred while deleting the trainer with id `{TrainerId}`.", id);
             return Result.Failure(ErrorCode.Unspecified, "An error occurred while deleting the trainer.");
         }
         return Result.Success();
-    }
-
-    public async Task<Result<TrainerDto>> UpdateAsync(TrainerDto trainerDto, CancellationToken cancellationToken = default)
-    {
-        var trainer = await trainerRepository.GetByIdAsync((TrainerId)trainerDto.Id, cancellationToken);
-
-        if (trainer is null)
-        {
-            return Result<TrainerDto>.Failure(ErrorCode.NotFound, $"Trainer with id `{trainerDto.Id}` not found.");
-        }
-
-        //trainer.Edit(trainerDto.Firstname, trainerDto.Lastname, trainerDto.Email);
-
-        try
-        {
-            await transactionManager.BeginTransactionAsync(cancellationToken);
-            await trainerRepository.SaveAsync(trainer, cancellationToken);
-            await transactionManager.CommitAsync(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            await transactionManager.RollBackAsync(cancellationToken);
-            //logger.LogError(ex, "An error occurred while updating the trainer with id `{TrainerId}`.", id);
-            return Result<TrainerDto>.Failure(ErrorCode.Unspecified, "An error occurred while updating the trainer.");
-        }
-
-        return Result<TrainerDto>.Success(trainer.ToDto());
     }
 }

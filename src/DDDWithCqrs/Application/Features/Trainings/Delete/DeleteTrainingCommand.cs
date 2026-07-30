@@ -1,3 +1,4 @@
+using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.CQS;
@@ -10,7 +11,9 @@ public class DeleteTrainingCommand(Guid id) : ICommand<Result>
     public Guid Id { get; init; } = id;
 }
 
-public class DeleteTrainingCommandHandler(ITrainingRepository trainingRepository)
+public class DeleteTrainingCommandHandler(
+    ITrainingRepository trainingRepository,
+    IUnitOfWork unitOfWork)
     : ICommandHandler<DeleteTrainingCommand, Result>
 {
     public async ValueTask<Result> Handle(DeleteTrainingCommand request, CancellationToken cancellationToken)
@@ -22,7 +25,8 @@ public class DeleteTrainingCommandHandler(ITrainingRepository trainingRepository
             return Result.Failure(ErrorCode.NotFound, $"Training with id `{request.Id}` does not exist");
         }
 
-        await trainingRepository.DeleteAsync(new List<Training>() { training }, cancellationToken);
+        trainingRepository.Delete(training);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }
 }

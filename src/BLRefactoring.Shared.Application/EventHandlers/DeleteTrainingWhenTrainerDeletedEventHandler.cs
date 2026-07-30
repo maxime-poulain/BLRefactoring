@@ -14,7 +14,9 @@ public class DeleteTrainingWhenTrainerDeletedEventHandler(ITrainingRepository tr
     public async ValueTask Handle(TrainerDeletedDomainEvent notification, CancellationToken cancellationToken)
     {
         // We could have also made a TrainingRepository.DeleteByTrainer(trainerId) method.
+        // The staged deletions are persisted by the ambient SaveChanges that dispatched
+        // this event — event handlers never commit through IUnitOfWork themselves.
         var trainings = await trainingRepository.GetByTrainerIdAsync(notification.Trainer.Id, cancellationToken);
-        await trainingRepository.DeleteAsync(trainings, cancellationToken);
+        trainingRepository.Delete(trainings);
     }
 }

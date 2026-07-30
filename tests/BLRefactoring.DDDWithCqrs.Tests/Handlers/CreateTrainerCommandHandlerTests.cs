@@ -1,4 +1,5 @@
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
+using BLRefactoring.Shared;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Tests.Helpers;
 using FluentAssertions;
@@ -10,11 +11,13 @@ namespace BLRefactoring.DDDWithCqrs.Tests.Handlers;
 public class CreateTrainerCommandHandlerTests
 {
     private readonly Mock<ITrainerRepository> _trainerRepository = new();
+    private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
-    private CreateTrainerCommandHandler CreateSut() => new(_trainerRepository.Object);
+    private CreateTrainerCommandHandler CreateSut() =>
+        new(_trainerRepository.Object, _unitOfWork.Object);
 
     [Fact]
-    public async Task Handle_ValidCommand_ReturnsSuccessAndCallsSave()
+    public async Task Handle_ValidCommand_ReturnsSuccessAddsTrainerAndCommitsOnce()
     {
         var command = new CreateTrainerCommand
         {
@@ -27,8 +30,9 @@ public class CreateTrainerCommandHandlerTests
         var result = await sut.Handle(command, CancellationToken.None);
 
         result.ShouldBeSuccess();
-        _trainerRepository.Verify(
-            r => r.SaveAsync(It.IsAny<Trainer>(), It.IsAny<CancellationToken>()),
+        _trainerRepository.Verify(r => r.Add(It.IsAny<Trainer>()), Times.Once);
+        _unitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -49,7 +53,7 @@ public class CreateTrainerCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_InvalidDomainData_DoesNotCallSave()
+    public async Task Handle_InvalidDomainData_DoesNotAddNorCommit()
     {
         var command = new CreateTrainerCommand
         {
@@ -61,8 +65,9 @@ public class CreateTrainerCommandHandlerTests
 
         await sut.Handle(command, CancellationToken.None);
 
-        _trainerRepository.Verify(
-            r => r.SaveAsync(It.IsAny<Trainer>(), It.IsAny<CancellationToken>()),
+        _trainerRepository.Verify(r => r.Add(It.IsAny<Trainer>()), Times.Never);
+        _unitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }

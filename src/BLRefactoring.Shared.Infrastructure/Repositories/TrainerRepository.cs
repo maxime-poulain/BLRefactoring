@@ -25,18 +25,14 @@ public class TrainerRepository(TrainingContext trainingContext) : ITrainerReposi
             .ConfigureAwait(false);
     }
 
-    public async Task SaveAsync(Trainer trainer, CancellationToken cancellationToken = default)
+    public void Add(Trainer trainer)
     {
-        if (trainer.IsTransient())
-        {
-            await trainingContext.Trainers.AddAsync(trainer, cancellationToken);
-        }
-        else
-        {
-            trainingContext.Trainers.Update(trainer);
-        }
+        trainingContext.Trainers.Add(trainer);
+    }
 
-        await trainingContext.SaveChangesAsync(cancellationToken);
+    public void Update(Trainer trainer)
+    {
+        trainingContext.Trainers.Update(trainer);
     }
 
     public Task<List<Trainer>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -49,10 +45,9 @@ public class TrainerRepository(TrainingContext trainingContext) : ITrainerReposi
             .ToListAsync(cancellationToken);
     }
 
-    public async Task DeleteAsync(Trainer trainer, CancellationToken cancellationToken = default)
+    public void Delete(Trainer trainer)
     {
-        trainingContext.Remove(trainer);
-        await trainingContext.SaveChangesAsync(cancellationToken);
+        trainingContext.Trainers.Remove(trainer);
     }
 
     /// <inheritdoc />

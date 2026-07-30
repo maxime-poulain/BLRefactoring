@@ -1,72 +1,87 @@
-﻿using BLRefactoring.Shared.Common;
+using BLRefactoring.Shared.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Interceptors;
 
 /// <summary>
-/// Interceptor for handling domain events after saving changes in the DbContext.
-/// This interceptor ensures that domain events are published automatically
-/// without requiring explicit calls in the DbContext.
+/// Collects the domain events accumulated by the tracked aggregates and dispatches
+/// them right before the changes are saved, so that everything — the original
+/// changes and those made by the event handlers — is persisted in the same
+/// <c>SaveChanges</c> call, within a single transaction.
 /// </summary>
-public sealed class DomainEventInterceptor(IDomainEventPublisher publisher) : SaveChangesInterceptor
+/// <remarks>
+/// <para>
+/// Events are drained in rounds: each round snapshots the pending events, clears
+/// them from their aggregates, then dispatches the batch. Handlers may raise new
+/// events on other aggregates; the loop repeats until no pending event remains.
+/// </para>
+/// <para>
+/// Because dispatching happens before persistence, a failing handler aborts the
+/// whole save: nothing is persisted. Domain event handlers must therefore never
+/// call <see cref="IUnitOfWork"/> themselves — they participate in the ambient
+/// save triggered by the orchestrating use case.
+/// </para>
+/// </remarks>
+public sealed class DomainEventInterceptor(IDomainEventDispatcher dispatcher) : SaveChangesInterceptor
 {
-    /// <summary>
-    /// Asynchronously handles the logic after changes are saved to the database.
-    /// Publishes domain events for entities implementing <see cref="IHasDomainEvents"/>.
-    /// </summary>
-    /// <param name="eventData">The event data related to the save operation.</param>
-    /// <param name="result">The result of the save operation.</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <returns>The result of the save operation.</returns>
-    public override async ValueTask<int> SavedChangesAsync(
-        SaveChangesCompletedEventData eventData,
-        int result,
+    /// <inheritdoc />
+    public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
+        DbContextEventData eventData,
+        InterceptionResult<int> result,
         CancellationToken cancellationToken = default)
     {
         if (eventData.Context is not null)
         {
-            await PublishDomainEventsAsync(eventData.Context, cancellationToken);
+            await DispatchDomainEventsAsync(eventData.Context, cancellationToken);
         }
 
-        return await base.SavedChangesAsync(eventData, result, cancellationToken);
+        return await base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
-    /// <summary>
-    /// Handles the logic after changes are saved to the database.
-    /// Publishes domain events for entities implementing <see cref="IHasDomainEvents"/>.
-    /// </summary>
-    /// <param name="eventData">The event data related to the save operation.</param>
-    /// <param name="result">The result of the save operation.</param>
-    /// <returns>The result of the save operation.</returns>
-    public override int SavedChanges(SaveChangesCompletedEventData eventData, int result)
+    /// <inheritdoc />
+    public override InterceptionResult<int> SavingChanges(
+        DbContextEventData eventData,
+        InterceptionResult<int> result)
     {
         if (eventData.Context is not null)
         {
-            PublishDomainEventsAsync(eventData.Context, CancellationToken.None)
+            DispatchDomainEventsAsync(eventData.Context, CancellationToken.None)
                 .GetAwaiter()
                 .GetResult();
         }
 
-        return base.SavedChanges(eventData, result);
+        return base.SavingChanges(eventData, result);
     }
 
     /// <summary>
-    /// Publishes domain events for all entities tracked by the DbContext
-    /// that implement <see cref="IHasDomainEvents"/>.
+    /// Drains and dispatches the domain events of all tracked aggregates, in rounds,
+    /// until no aggregate has pending events left.
     /// </summary>
-    /// <param name="context">The DbContext instance.</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    private async Task PublishDomainEventsAsync(DbContext context, CancellationToken cancellationToken)
+    private async Task DispatchDomainEventsAsync(DbContext context, CancellationToken cancellationToken)
     {
-        // Retrieve all entities with domain events from the change tracker.
-        var entitiesWithEvents = context.ChangeTracker
-            .Entries<IHasDomainEvents>()
-            .Select(entry => entry.Entity)
-            .ToArray();
+        while (true)
+        {
+            var domainEvents = new List<IDomainEvent>();
 
-        // Publish the domain events using the provided IEventPublisher.
-        await publisher.PublishAsync(entitiesWithEvents, cancellationToken);
+            var entitiesWithEvents = context.ChangeTracker
+                .Entries<IHasDomainEvents>()
+                .Select(entry => entry.Entity)
+                .Where(entity => entity.DomainEvents.Count > 0)
+                .ToArray();
+
+            foreach (var entity in entitiesWithEvents)
+            {
+                domainEvents.AddRange(entity.DomainEvents);
+                entity.ClearDomainEvents();
+            }
+
+            if (domainEvents.Count == 0)
+            {
+                return;
+            }
+
+            await dispatcher.DispatchAsync(domainEvents, cancellationToken);
+        }
     }
 }

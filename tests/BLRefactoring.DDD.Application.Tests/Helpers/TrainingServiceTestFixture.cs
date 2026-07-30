@@ -12,10 +12,12 @@ public class TrainingServiceTestFixture
     public Mock<IUniquenessTitleChecker> TitleChecker { get; } = new();
     public Mock<ITrainingRepository> TrainingRepository { get; } = new();
     public Mock<ICurrentUserService> CurrentUserService { get; } = new();
+    public Mock<IUnitOfWork> UnitOfWork { get; } = new();
 
     public TrainingApplicationService CreateSut() => new(
         TrainerRepository.Object,
         TitleChecker.Object,
         TrainingRepository.Object,
-        CurrentUserService.Object);
+        CurrentUserService.Object,
+        UnitOfWork.Object);
 }

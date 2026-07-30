@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.CQS;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
@@ -17,7 +18,9 @@ public class CreateTrainerCommand : ICommand<Result>
     public string Email { get; init; } = null!;
 }
 
-public class CreateTrainerCommandHandler(ITrainerRepository trainerRepository)
+public class CreateTrainerCommandHandler(
+    ITrainerRepository trainerRepository,
+    IUnitOfWork unitOfWork)
     : ICommandHandler<CreateTrainerCommand, Result>
 {
     public async ValueTask<Result> Handle(CreateTrainerCommand request, CancellationToken cancellationToken)
@@ -35,7 +38,8 @@ public class CreateTrainerCommandHandler(ITrainerRepository trainerRepository)
 
         return await trainerResult.MatchAsync(async trainer =>
         {
-            await trainerRepository.SaveAsync(trainer, cancellationToken);
+            trainerRepository.Add(trainer);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
             return Result.Success();
         }, Result.FailureAsync);
     }

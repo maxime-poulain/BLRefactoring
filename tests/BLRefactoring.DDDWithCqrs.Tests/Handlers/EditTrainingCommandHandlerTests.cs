@@ -1,4 +1,5 @@
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Edit;
+using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
@@ -24,8 +25,10 @@ public class EditTrainingCommandHandlerTests
             .ReturnsAsync(false);
     }
 
+    private readonly Mock<IUnitOfWork> _unitOfWork = new();
+
     private EditTrainingCommandHandler CreateSut() =>
-        new(_trainingRepository.Object, _titleChecker.Object);
+        new(_trainingRepository.Object, _titleChecker.Object, _unitOfWork.Object);
 
     [Fact]
     public async Task Handle_ValidCommand_ReturnsSuccessAndCallsSave()
@@ -49,8 +52,9 @@ public class EditTrainingCommandHandlerTests
         var result = await sut.Handle(command, CancellationToken.None);
 
         result.ShouldBeSuccess();
-        _trainingRepository.Verify(
-            r => r.SaveAsync(It.IsAny<Training>(), It.IsAny<CancellationToken>()),
+        _trainingRepository.Verify(r => r.Update(training), Times.Once);
+        _unitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -75,8 +79,9 @@ public class EditTrainingCommandHandlerTests
         var result = await sut.Handle(command, CancellationToken.None);
 
         result.ShouldContainError(ErrorCode.NotFound);
-        _trainingRepository.Verify(
-            r => r.SaveAsync(It.IsAny<Training>(), It.IsAny<CancellationToken>()),
+        _trainingRepository.Verify(r => r.Update(It.IsAny<Training>()), Times.Never);
+        _unitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -102,8 +107,9 @@ public class EditTrainingCommandHandlerTests
         var result = await sut.Handle(command, CancellationToken.None);
 
         result.ShouldBeFailure();
-        _trainingRepository.Verify(
-            r => r.SaveAsync(It.IsAny<Training>(), It.IsAny<CancellationToken>()),
+        _trainingRepository.Verify(r => r.Update(It.IsAny<Training>()), Times.Never);
+        _unitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -135,8 +141,9 @@ public class EditTrainingCommandHandlerTests
         var result = await sut.Handle(command, CancellationToken.None);
 
         result.ShouldBeFailure();
-        _trainingRepository.Verify(
-            r => r.SaveAsync(It.IsAny<Training>(), It.IsAny<CancellationToken>()),
+        _trainingRepository.Verify(r => r.Update(It.IsAny<Training>()), Times.Never);
+        _unitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }
