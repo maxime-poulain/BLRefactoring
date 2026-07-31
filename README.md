@@ -79,7 +79,7 @@ else.
 
 ### Solution layout
 
-Twenty projects: fifteen under `src/`, five under `tests/`. The backend and all tests target
+Twenty-two projects: fifteen under `src/`, seven under `tests/`. The backend and all tests target
 **net10.0**; the Blazor pair and the generated clients target **net9.0**.
 
 | Project | Responsibility |
@@ -96,7 +96,7 @@ Twenty projects: fifteen under `src/`, five under `tests/`. The backend and all 
 | `DDD.Domain`, `DDD.Infrastructure`, `DDDWithCqrs.Domain` | Routing projects with no source files; the domain and infrastructure they stand for live in the `BLRefactoring.Shared.*` projects |
 | `BLRefactoring.GeneratedClients` | NSwag-generated typed HTTP clients, checked in as source |
 | `BLRefactoring.Blazor` / `.Client` | Blazor WebAssembly front end built with MudBlazor, and its host |
-| `tests/*` | Five test projects — see [Testing](#testing) |
+| `tests/*` | Seven test projects — see [Testing](#testing) |
 
 ### Project dependency graph
 
@@ -622,14 +622,28 @@ The two filters are exact inverses, so between them every test runs exactly once
 | `BLRefactoring.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers | 73 |
 | `BLRefactoring.DDDWithCqrs.Tests` | Command handlers, validators, pipeline behaviours | 49 |
 | `BLRefactoring.Shared.Infrastructure.Tests` | Entity-tag encoding and parsing | 11 |
-| `BLRefactoring.DDD.Api.IntegrationTests` | HTTP end to end against a real SQL Server | 32 |
+| `BLRefactoring.DDD.Api.IntegrationTests` | The layered host, HTTP end to end against a real SQL Server | 32 |
+| `BLRefactoring.DDDWithCqrs.Api.IntegrationTests` | The CQRS host, same treatment | 37 |
+| `BLRefactoring.Api.TestKit` | Not a test project: the fixtures both integration suites share | — |
 
-**364 unit test cases, 32 integration tests.**
+**364 unit test cases, 69 integration tests.**
 
 The integration tests start SQL Server through **Testcontainers** — no manual setup, no shared
 environment — and **Respawn** empties the database before each test, so every one of them starts
 from a known state. The test host wires the same EF Core interceptors as production, so domain
-events really are dispatched: the trainer-deletion cascade is asserted end to end.
+events really are dispatched: the trainer-deletion cascade is asserted end to end, on both hosts.
+
+**Both stacks are covered, and only over HTTP.** No test dispatches a command or calls a handler
+directly, so every assertion also crosses routing, model binding, JWT authentication, the
+`TrainingOwner` policy and — on the CQRS host — `GlobalExceptionHandlerMiddleware` and
+`FluentValidationMiddleware`. That last pair is why the two suites are not copies of each other:
+an invalid field on the layered host is caught by the value objects and answered with the
+domain's error collection, while on the CQRS host it is caught earlier by a FluentValidation
+validator inside `ValidationPipelineBehavior` and answered with a different payload entirely.
+
+`BLRefactoring.Api.TestKit` holds the shared fixtures — the Testcontainers host, the Respawn
+checkpoint, the registration and conditional-request helpers — generic over the entry point.
+Only the `Program` type differs between the two suites.
 
 ---
 

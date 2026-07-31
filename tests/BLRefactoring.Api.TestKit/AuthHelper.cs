@@ -1,9 +1,15 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.Identity;
+using Microsoft.AspNetCore.Mvc.Testing;
 
-namespace BLRefactoring.DDD.Api.IntegrationTests.Fixtures;
+namespace BLRefactoring.Api.TestKit;
 
+/// <summary>
+/// Registration and sign-in over HTTP. Both stacks derive their auth controllers from the
+/// same <c>AuthControllerBase</c>, so the routes and payloads are identical and this helper
+/// serves either one.
+/// </summary>
 public static class AuthHelper
 {
     private static int _counter;
@@ -40,7 +46,9 @@ public static class AuthHelper
         return loginResponse!.Token;
     }
 
-    public static async Task<HttpClient> RegisterAndGetAuthenticatedClientAsync(ApiFactory factory)
+    public static async Task<HttpClient> RegisterAndGetAuthenticatedClientAsync<TEntryPoint>(
+        WebApplicationFactory<TEntryPoint> factory)
+        where TEntryPoint : class
     {
         var client = factory.CreateClient();
         var request = CreateUniqueRegisterRequest();

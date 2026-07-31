@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Test infrastructure shared by the integration suites of both API stacks. It holds no
+    tests of its own, and the name stays clear of "IntegrationTests" so neither CI filter
+    tries to select it.
+
+    IsTestProject must be false rather than merely absent. Left unset, `dotnet test` on the
+    solution still runs VSTest against this assembly; its test host then fails to start
+    because a class library's deps.json lists transitive package assemblies that were never
+    copied beside it, and the whole run aborts — with both real suites passing, which makes
+    the failure read like anything but this.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsTestProject>false</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Respawn" />
+    <PackageReference Include="Testcontainers.MsSql" />
+    <PackageReference Include="xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\BLRefactoring.Shared.Infrastructure\BLRefactoring.Shared.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
