@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
-namespace BLRefactoring.Shared.Infrastructure.ThirdParty.Identity;
+namespace BLRefactoring.Shared.Api.Identity;
 
 /// <summary>
 /// Interface defining the contract for a token service.

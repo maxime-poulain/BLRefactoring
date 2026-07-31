@@ -1,5 +1,6 @@
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetById;
 using BLRefactoring.Shared.Application.Dtos.Training;
+using BLRefactoring.Shared.Application.Projections;
 using BLRefactoring.Shared.CQS;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
@@ -16,7 +17,7 @@ public class GetTrainingByIdQueryHandler(TrainingContext trainingContext)
 
         return await trainingContext.Trainings
             .Where(training => training.Id == trainingId)
-            .Select(TrainingProjections.ToDto)
+            .Select(TrainingProjections.ToDtoExpression)
             .FirstOrDefaultAsync(cancellationToken);
     }
 }

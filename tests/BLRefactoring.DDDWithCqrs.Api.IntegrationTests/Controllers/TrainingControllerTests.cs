@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Fixtures;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers;
+using BLRefactoring.Shared.Application.Dtos.Trainer;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Create;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Edit;
 using BLRefactoring.Shared.Application.Dtos.Training;

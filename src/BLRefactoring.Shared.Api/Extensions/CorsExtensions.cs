@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace BLRefactoring.Shared.Infrastructure.Extensions;
+namespace BLRefactoring.Shared.Api.Extensions;
 
 /// <summary>
 /// The browser-facing policy of an API host: which origins may call it.

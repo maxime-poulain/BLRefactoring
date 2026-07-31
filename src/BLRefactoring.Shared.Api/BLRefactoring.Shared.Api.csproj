@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+    </PropertyGroup>
+
+    <!--
+      Everything an API host needs and that both of them would otherwise copy: the controller
+      bases, the authorization policy, the CORS and identity wiring, the HTTP side of optimistic
+      concurrency. It exists so that BLRefactoring.Shared.Infrastructure can go back to being
+      about persistence alone — it used to carry MVC and authentication for the sole benefit of
+      AuthControllerBase, and a policy declared in one host's Program.cs only protects that host.
+    -->
+    <ItemGroup>
+      <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+      <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+      <!-- Referenced explicitly rather than through the JwtBearer package: TokenService writes
+           tokens with JwtSecurityTokenHandler, which is a different concern from validating them. -->
+      <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\BLRefactoring.Shared.Infrastructure\BLRefactoring.Shared.Infrastructure.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,5 +1,6 @@
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetByTopic;
 using BLRefactoring.Shared.Application.Dtos.Training;
+using BLRefactoring.Shared.Application.Projections;
 using BLRefactoring.Shared.CQS;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +16,7 @@ public class GetTrainingsByTopicQueryHandler(TrainingContext trainingContext)
     {
         return await trainingContext.Trainings
             .Where(training => training.Topics.Any(topic => topic.Name == request.Topic))
-            .Select(TrainingProjections.ToDto)
+            .Select(TrainingProjections.ToDtoExpression)
             .ToListAsync(cancellationToken);
     }
 }

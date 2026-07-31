@@ -1,4 +1,6 @@
-using BLRefactoring.Shared.Infrastructure.Http;
+using BLRefactoring.Shared.Api.Authorization;
+using BLRefactoring.Shared.Api.Controllers;
+using BLRefactoring.Shared.Api.Http;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Create;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Delete;
@@ -68,7 +70,7 @@ public class TrainingController(
         return await queryDispatcher.DispatchAsync(new GetAllTrainingsQuery(), cancellationToken);
     }
 
-    [Authorize(Policy = "TrainingOwner")]
+    [Authorize(Policy = TrainingOwnerPolicy.Name)]
     [HttpPut("{trainingId:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
@@ -126,7 +128,7 @@ public class TrainingController(
         return await queryDispatcher.DispatchAsync(new GetTrainingsByTopicQuery(topic), cancellationToken);
     }
 
-    [Authorize(Policy = "TrainingOwner")]
+    [Authorize(Policy = TrainingOwnerPolicy.Name)]
     [HttpDelete("{trainingId:guid}")]
     [ProducesResponseType(typeof(void), StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]

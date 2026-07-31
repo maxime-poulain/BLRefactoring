@@ -1,5 +1,6 @@
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers;
+using BLRefactoring.Shared.Application.Dtos.Trainer;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetAll;
+using BLRefactoring.Shared.Application.Projections;
 using BLRefactoring.Shared.CQS;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,7 @@ public class GetAllTrainersQueryHandler(TrainingContext trainingContext)
     public async ValueTask<List<TrainerDto>> Handle(GetAllTrainersQuery request, CancellationToken cancellationToken)
     {
         return await trainingContext.Trainers
-            .Select(TrainerProjections.ToDto)
+            .Select(TrainerProjections.ToDtoExpression)
             .ToListAsync(cancellationToken);
     }
 }

@@ -2,7 +2,7 @@ using BLRefactoring.Shared.Common.Errors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BLRefactoring.Shared.Infrastructure.Http;
+namespace BLRefactoring.Shared.Api.Http;
 
 /// <summary>
 /// The HTTP side of optimistic concurrency: publishing the version a caller read

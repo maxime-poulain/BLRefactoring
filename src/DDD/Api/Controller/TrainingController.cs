@@ -1,4 +1,6 @@
-using BLRefactoring.Shared.Infrastructure.Http;
+using BLRefactoring.Shared.Api.Authorization;
+using BLRefactoring.Shared.Api.Controllers;
+using BLRefactoring.Shared.Api.Http;
 using BLRefactoring.DDD.Application.Services.TrainingServices;
 using BLRefactoring.Shared.Application.Dtos.Training;
 using BLRefactoring.Shared.Common.Errors;
@@ -112,7 +114,7 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
     /// when the training was read, so an edit based on a stale copy is rejected
     /// instead of silently overwriting someone else's changes.
     /// </remarks>
-    [Authorize(Policy = "TrainingOwner")]
+    [Authorize(Policy = TrainingOwnerPolicy.Name)]
     [HttpPut("{trainingId:guid}")]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status409Conflict)]
@@ -202,7 +204,7 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
     /// 400 Bad Request on validation errors.
     /// </returns>
 
-    [Authorize(Policy = "TrainingOwner")]
+    [Authorize(Policy = TrainingOwnerPolicy.Name)]
     [HttpDelete("{trainingId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]

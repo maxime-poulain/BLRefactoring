@@ -1,11 +1,12 @@
 using System.Transactions;
+using BLRefactoring.Shared.Api.Identity;
 using BLRefactoring.Shared.Common.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BLRefactoring.Shared.Infrastructure.ThirdParty.Identity;
+namespace BLRefactoring.Shared.Api.Controllers;
 
 /// <summary>
 /// Shared implementation of the authentication endpoints (registration and login).
