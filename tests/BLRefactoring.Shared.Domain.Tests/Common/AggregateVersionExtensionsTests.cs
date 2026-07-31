@@ -24,9 +24,9 @@ public class AggregateVersionExtensionsTests
     }
 
     [Fact]
-    public void IsAtVersion_ComparesContentRatherThanReference()
+    public async Task IsAtVersion_ComparesContentRatherThanReference()
     {
-        var training = new TrainingBuilder().BuildValidAsync().GetAwaiter().GetResult();
+        var training = await new TrainingBuilder().BuildValidAsync();
 
         // A version read back from an ETag is a fresh array; only its bytes matter.
         training.IsAtVersion([.. training.RowVersion]).Should().BeTrue();
