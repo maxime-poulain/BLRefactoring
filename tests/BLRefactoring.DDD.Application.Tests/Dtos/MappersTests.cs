@@ -1,6 +1,6 @@
+using AwesomeAssertions;
 using BLRefactoring.Shared.Application.Dtos;
 using BLRefactoring.Shared.Domain.Tests.Helpers;
-using FluentAssertions;
 using Xunit;
 
 namespace BLRefactoring.DDD.Application.Tests.Dtos;

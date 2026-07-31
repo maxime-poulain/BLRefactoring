@@ -1,9 +1,9 @@
+using AwesomeAssertions;
 using BLRefactoring.Shared.Application.EventHandlers;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.Domain.Tests.Helpers;
-using FluentAssertions;
 using Moq;
 using Xunit;
 

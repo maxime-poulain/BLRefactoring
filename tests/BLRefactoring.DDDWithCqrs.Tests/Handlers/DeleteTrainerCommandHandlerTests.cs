@@ -1,9 +1,9 @@
+using AwesomeAssertions;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Delete;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Tests.Helpers;
-using FluentAssertions;
 using Moq;
 using Xunit;
 

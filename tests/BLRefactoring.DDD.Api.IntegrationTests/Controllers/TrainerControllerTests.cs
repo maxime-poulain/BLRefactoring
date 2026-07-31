@@ -1,10 +1,10 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using AwesomeAssertions;
 using BLRefactoring.DDD.Api.IntegrationTests.Fixtures;
 using BLRefactoring.Shared.Application.Dtos.Trainer;
 using BLRefactoring.Shared.Application.Dtos.Training;
-using FluentAssertions;
 using Xunit;
 
 namespace BLRefactoring.DDD.Api.IntegrationTests.Controllers;

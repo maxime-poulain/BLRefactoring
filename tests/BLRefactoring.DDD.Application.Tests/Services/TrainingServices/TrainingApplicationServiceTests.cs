@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using BLRefactoring.Shared.Common;
 using BLRefactoring.DDD.Application.Tests.Helpers;
 using BLRefactoring.Shared.Application.Dtos.Training;
@@ -6,7 +7,6 @@ using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 using BLRefactoring.Shared.Domain.Tests.Helpers;
-using FluentAssertions;
 using Moq;
 using Xunit;
 

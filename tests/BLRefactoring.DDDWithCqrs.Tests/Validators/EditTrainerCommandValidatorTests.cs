@@ -1,5 +1,5 @@
+using AwesomeAssertions;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Edit;
-using FluentAssertions;
 using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Validators;

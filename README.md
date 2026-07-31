@@ -531,7 +531,7 @@ Trainers are created only through registration; there is no `POST /Trainer`.
 | `Microsoft.AspNetCore.Authentication.JwtBearer` | Bearer token authentication |
 | `NSwag.AspNetCore`, `Swashbuckle.AspNetCore`, `Scalar.AspNetCore` | OpenAPI documents and UI |
 | `MudBlazor` | Component library of the Blazor WebAssembly front end |
-| `xunit`, `FluentAssertions`, `Moq` | Testing |
+| `xunit`, `AwesomeAssertions`, `Moq` | Testing — `AwesomeAssertions` is the Apache 2.0 community fork of FluentAssertions, whose 8.x line moved to a commercial licence |
 | `Testcontainers.MsSql` | A real SQL Server per integration test run |
 | `Respawn` | Database reset between integration tests |
 
