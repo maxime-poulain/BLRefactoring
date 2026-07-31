@@ -77,21 +77,29 @@ flowchart TB
 `BLRefactoring.Shared.Domain` references exactly one project — the shared kernel — and nothing
 else.
 
+The two API hosts are thin. What they have in common — controller bases, the `TrainingOwner`
+policy, CORS, Identity and JWT wiring, the HTTP side of optimistic concurrency — lives in
+`BLRefactoring.Shared.Api`, so a rule can only be written once. Duplicating it across two
+`Program.cs` is how the CQRS host ended up with no CORS policy at all while the layered one had
+one, and how it kept relying on an `IHttpContextAccessor` it never registered. Persistence stayed
+in `BLRefactoring.Shared.Infrastructure`, which carries no ASP.NET Core framework reference.
+
 ### Solution layout
 
-Twenty-two projects: fifteen under `src/`, seven under `tests/`. The backend and all tests target
+Twenty-three projects: sixteen under `src/`, seven under `tests/`. The backend and all tests target
 **net10.0**; the Blazor pair and the generated clients target **net9.0**.
 
 | Project | Responsibility |
 |---|---|
 | `BLRefactoring.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, and the cross-cutting ports `IUnitOfWork`, `ICurrentUserService`, `IEmailSender`, `ITrainingSearchIndexer`, plus the CQS marker interfaces |
 | `BLRefactoring.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, `IUniquenessTitleChecker` |
-| `BLRefactoring.Shared.Application` | Value-object factories, DTOs and mappers, and the six domain event handlers — all shared by both stacks |
-| `BLRefactoring.Shared.Infrastructure` | EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, ASP.NET Identity, JWT issuance, HTTP concurrency helpers |
+| `BLRefactoring.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections and the six domain event handlers — all shared by both stacks |
+| `BLRefactoring.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the identity store |
+| `BLRefactoring.Shared.Api` | What both REST hosts would otherwise copy: the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, HTTP concurrency helpers |
 | `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService` |
 | `DDD.Api` | REST host for the layered stack — NSwag/OpenAPI, CORS, JWT bearer |
 | `DDDWithCqrs.Application` | Commands, command handlers, FluentValidation validators |
-| `DDDWithCqrs.Infrastructure` | **Query handlers** and projections, Mediator dispatchers, pipeline behaviours |
+| `DDDWithCqrs.Infrastructure` | **Query handlers**, Mediator dispatchers, pipeline behaviours |
 | `DDDWithCqrs.Api` | REST host for the CQRS stack — Swashbuckle, JWT bearer, exception and validation middleware |
 | `DDD.Domain`, `DDD.Infrastructure`, `DDDWithCqrs.Domain` | Routing projects with no source files; the domain and infrastructure they stand for live in the `BLRefactoring.Shared.*` projects |
 | `BLRefactoring.GeneratedClients` | NSwag-generated typed HTTP clients, checked in as source |
@@ -106,6 +114,7 @@ flowchart LR
     Domain["Shared.Domain"]
     SharedApp["Shared.Application"]
     SharedInfra["Shared.Infrastructure"]
+    SharedApi["Shared.Api"]
 
     DddDomain["DDD.Domain"]
     DddApp["DDD.Application"]
@@ -124,6 +133,7 @@ flowchart LR
     Domain --> Kernel
     SharedApp --> Domain
     SharedInfra --> Domain
+    SharedApi --> SharedInfra
 
     DddDomain --> Kernel
     DddApp --> SharedApp
@@ -131,6 +141,7 @@ flowchart LR
     DddInfra --> SharedInfra
     DddInfra --> DddApp
     DddApi --> DddInfra
+    DddApi --> SharedApi
 
     CqrsDomain --> Kernel
     CqrsApp --> SharedApp
@@ -139,6 +150,7 @@ flowchart LR
     CqrsInfra --> Kernel
     CqrsInfra --> CqrsApp
     CqrsApi --> CqrsInfra
+    CqrsApi --> SharedApi
 
     BlazorClient --> Clients
     BlazorHost --> BlazorClient
@@ -323,6 +335,21 @@ application layer's job, done once for both stacks by `TrainerProfileFactory` an
 field, accumulate all errors in a single pass, resolve topic names against the closed set, and
 either return the value objects or the complete list of what was wrong.
 
+### Turning domain concepts back into output
+
+The reverse direction is written once too, in `BLRefactoring.Shared.Application/Projections/`.
+Each aggregate has a single `Expression<Func<TAggregate, TDto>>`, consumed two ways: the CQRS
+query handlers hand it to EF Core, which folds it into the `SELECT` list so no aggregate is ever
+materialised, while the layered application services call the same expression compiled once into
+a delegate.
+
+The expression is the source and the delegate the derivative, never the reverse — an expression
+can always be compiled, a compiled delegate can never be translated to SQL. The two stacks used
+to hold their own copy of the mapping, so a field added to a DTO could reach one of them and stay
+silently `null` on the other. The price of the arrangement is that the mapping must remain
+EF-translatable, which is stricter than C#: null-conditional access is the usual casualty, and
+the trainer's bio is read through a ternary for that reason.
+
 ### Domain events and the unit of work
 
 Events are raised inside aggregates and dispatched by an EF Core interceptor **during**
@@ -496,7 +523,9 @@ and a **`trainer_id`** claim that lets the API resolve the caller's trainer with
 A single authorization policy, `TrainingOwner`, guards the training write endpoints. It checks
 ownership only: a training that does not exist lets the policy succeed so the action can answer
 `404` rather than `403`, since the existence of a training is not a secret — the collection is
-readable by any authenticated caller.
+readable by any authenticated caller. The policy, its handler and its name are declared once in
+`BLRefactoring.Shared.Api` and registered by both hosts through `AddTrainingOwnerAuthorization`,
+so neither can end up guarding an endpoint with a policy the other has since changed.
 
 The trainer endpoints need no policy at all, because none of them takes an identifier and none of
 them destroys anything: reading and editing one's own profile are addressed as `/Trainer/me` and
@@ -636,7 +665,7 @@ The two filters are exact inverses, so between them every test runs exactly once
 | `BLRefactoring.Shared.Domain.Tests` | Aggregates, value objects, typed identifiers, `Result`, specifications |
 | `BLRefactoring.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers |
 | `BLRefactoring.DDDWithCqrs.Tests` | Command handlers, validators, pipeline behaviours |
-| `BLRefactoring.Shared.Infrastructure.Tests` | Entity-tag encoding and parsing |
+| `BLRefactoring.Shared.Api.Tests` | Entity-tag encoding and parsing |
 | `BLRefactoring.DDD.Api.IntegrationTests` | The layered host, HTTP end to end against a real SQL Server |
 | `BLRefactoring.DDDWithCqrs.Api.IntegrationTests` | The CQRS host, same treatment |
 | `BLRefactoring.Api.TestKit` | Not a test project: the fixtures both integration suites share |

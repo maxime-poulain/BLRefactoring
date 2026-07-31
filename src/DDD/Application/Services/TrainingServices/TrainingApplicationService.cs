@@ -1,5 +1,5 @@
 using BLRefactoring.Shared;
-using BLRefactoring.Shared.Application.Dtos;
+using BLRefactoring.Shared.Application.Projections;
 using BLRefactoring.Shared.Application.Dtos.Training;
 using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Common.Errors;

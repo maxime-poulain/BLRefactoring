@@ -1,5 +1,6 @@
-using BLRefactoring.Shared.Infrastructure.Http;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers;
+using BLRefactoring.Shared.Api.Controllers;
+using BLRefactoring.Shared.Api.Http;
+using BLRefactoring.Shared.Application.Dtos.Trainer;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Edit;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetAll;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetById;

@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers;
+using BLRefactoring.Shared.Application.Dtos.Trainer;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetAll;
 using BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors;

@@ -1,4 +1,4 @@
-namespace BLRefactoring.Shared.Infrastructure.Http;
+namespace BLRefactoring.Shared.Api.Http;
 
 /// <summary>
 /// Converts an aggregate's row version to and from an HTTP entity tag.

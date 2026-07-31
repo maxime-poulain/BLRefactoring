@@ -1,18 +1,26 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
     </PropertyGroup>
 
+    <!--
+      No FrameworkReference to Microsoft.AspNetCore.App: this project is about persistence, and
+      everything that needed MVC, authentication or authorization moved to
+      BLRefactoring.Shared.Api. Microsoft.AspNetCore.Identity.EntityFrameworkCore stays — it is
+      the store behind TrainingIdentityDbContext, and unlike the JwtBearer package it does not
+      drag the ASP.NET Core shared framework in with it.
+    -->
     <ItemGroup>
-      <!-- Needed by the abstract AuthControllerBase shared by both API hosts. -->
-      <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
       <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+      <!--
+        AddInfrastructure asks IHostEnvironment whether it is running in Development before
+        enabling EF Core's sensitive-data logging. That abstraction used to arrive through the
+        ASP.NET Core framework reference; now that persistence no longer carries the whole web
+        framework, the one piece it genuinely needs is requested on its own.
+      -->
+      <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     </ItemGroup>
 
     <ItemGroup>

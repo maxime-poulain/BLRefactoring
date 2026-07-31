@@ -1,11 +1,11 @@
 using AwesomeAssertions;
-using BLRefactoring.Shared.Application.Dtos;
+using BLRefactoring.Shared.Application.Projections;
 using BLRefactoring.Shared.Domain.Tests.Helpers;
 using Xunit;
 
 namespace BLRefactoring.DDD.Application.Tests.Dtos;
 
-public class MappersTests
+public class ProjectionsTests
 {
     [Fact]
     public void TrainerToDto_MapsIdCorrectly()
@@ -37,6 +37,25 @@ public class MappersTests
         var trainer = new TrainerBuilder().WithLastname("Smith").Build();
         var dto = trainer.ToDto();
         dto.Lastname.Should().Be("Smith");
+    }
+
+    [Fact]
+    public void TrainerToDto_MapsBioCorrectly()
+    {
+        var trainer = new TrainerBuilder().WithBio("Trains people for a living.").Build();
+        var dto = trainer.ToDto();
+        dto.Bio.Should().Be("Trains people for a living.");
+    }
+
+    // The absent bio deserves its own case: the projection reads it through a ternary rather than
+    // `?.`, which an expression tree forbids, and that ternary is the one branch the compiled
+    // mapper did not exercise before both stacks started sharing a single expression.
+    [Fact]
+    public void TrainerToDto_WithoutBio_MapsToNull()
+    {
+        var trainer = new TrainerBuilder().WithoutBio().Build();
+        var dto = trainer.ToDto();
+        dto.Bio.Should().BeNull();
     }
 
     [Fact]

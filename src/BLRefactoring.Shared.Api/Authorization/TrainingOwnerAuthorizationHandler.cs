@@ -1,8 +1,18 @@
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 
-namespace BLRefactoring.DDD.Api.Authorization;
+namespace BLRefactoring.Shared.Api.Authorization;
 
+/// <summary>
+/// Decides the <see cref="TrainingOwnerPolicy"/>: the caller must be the trainer who owns
+/// the training named in the route.
+/// </summary>
+/// <remarks>
+/// Shared by both hosts. It used to exist as two identical copies, one per API project, which
+/// is the worst possible arrangement for a rule of this kind: a fix to the ownership check on
+/// one host leaves the other exposed, and nothing about the code says so.
+/// </remarks>
 public class TrainingOwnerAuthorizationHandler(
     IHttpContextAccessor httpContextAccessor,
     ITrainingRepository trainingRepository)

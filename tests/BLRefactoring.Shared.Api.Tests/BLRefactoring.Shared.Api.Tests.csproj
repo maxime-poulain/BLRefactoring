@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\BLRefactoring.Shared.Infrastructure\BLRefactoring.Shared.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\BLRefactoring.Shared.Api\BLRefactoring.Shared.Api.csproj" />
   </ItemGroup>
 
 </Project>

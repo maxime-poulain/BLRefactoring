@@ -1,6 +1,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using BLRefactoring.Shared.Infrastructure.ThirdParty.Identity;
+using BLRefactoring.Shared.Api.Controllers;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace BLRefactoring.Api.TestKit;

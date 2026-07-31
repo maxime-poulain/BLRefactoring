@@ -1,5 +1,6 @@
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetAll;
 using BLRefactoring.Shared.Application.Dtos.Training;
+using BLRefactoring.Shared.Application.Projections;
 using BLRefactoring.Shared.CQS;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,7 @@ public class GetAllTrainingsQueryHandler(TrainingContext trainingContext)
     {
         // In real life use pagination.
         return await trainingContext.Trainings
-            .Select(TrainingProjections.ToDto)
+            .Select(TrainingProjections.ToDtoExpression)
             .ToListAsync(cancellationToken);
     }
 }

@@ -5,7 +5,6 @@ using BLRefactoring.Shared.Infrastructure.Repositories;
 using BLRefactoring.Shared.Infrastructure.Services;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Interceptors;
-using BLRefactoring.Shared.Infrastructure.ThirdParty.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,8 +42,6 @@ public static class ServiceCollectionExtensions
             })
             .AddScoped<DomainEventInterceptor>()
             .AddSingleton<AuditableEntitiesInterceptor>()
-            .AddScoped<ITokenService, TokenService>()
-            .AddScoped<ICurrentUserService, CurrentUserService>()
             .AddSingleton<IEmailSender, FakeEmailSender>()
             .AddSingleton<ITrainingSearchIndexer, FakeTrainingSearchIndexer>();
     }

@@ -1,4 +1,5 @@
-using BLRefactoring.Shared.Infrastructure.Http;
+using BLRefactoring.Shared.Api.Controllers;
+using BLRefactoring.Shared.Api.Http;
 using BLRefactoring.DDD.Application.Services.TrainerServices;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Application.Dtos.Trainer;

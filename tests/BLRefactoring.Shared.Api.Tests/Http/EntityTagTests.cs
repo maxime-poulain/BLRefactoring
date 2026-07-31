@@ -1,8 +1,8 @@
 using AwesomeAssertions;
-using BLRefactoring.Shared.Infrastructure.Http;
+using BLRefactoring.Shared.Api.Http;
 using Xunit;
 
-namespace BLRefactoring.Shared.Infrastructure.Tests.Http;
+namespace BLRefactoring.Shared.Api.Tests.Http;
 
 public class EntityTagTests
 {

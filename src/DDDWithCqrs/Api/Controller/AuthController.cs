@@ -1,7 +1,8 @@
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.Infrastructure.ThirdParty.Identity;
+using BLRefactoring.Shared.Api.Controllers;
+using BLRefactoring.Shared.Api.Identity;
 using Microsoft.AspNetCore.Identity;
 
 namespace BLRefactoring.DDDWithCqrs.Api.Controller;
