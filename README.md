@@ -583,6 +583,7 @@ Each API expects:
 | `Jwt:Key` | Signing key. The host **fails fast at startup** with an explicit message when it is missing |
 | `Jwt:Issuer`, `Jwt:Audience` | Token validation parameters |
 | `Jwt:ExpireMinutes` | Token lifetime |
+| `Cors:AllowedOrigins` | Origins allowed to call the API from a browser. Absent or empty means no cross-origin caller is accepted, and the host logs a warning at startup |
 
 Supply them through `appsettings.Development.json`, user secrets, or environment variables — the
 `docker compose` service passes them as `ConnectionStrings__TrainingContext`, `Jwt__Key` and so
@@ -620,9 +621,9 @@ The two filters are exact inverses, so between them every test runs exactly once
 | `BLRefactoring.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers | 73 |
 | `BLRefactoring.DDDWithCqrs.Tests` | Command handlers, validators, pipeline behaviours | 49 |
 | `BLRefactoring.Shared.Infrastructure.Tests` | Entity-tag encoding and parsing | 11 |
-| `BLRefactoring.DDD.Api.IntegrationTests` | HTTP end to end against a real SQL Server | 29 |
+| `BLRefactoring.DDD.Api.IntegrationTests` | HTTP end to end against a real SQL Server | 32 |
 
-**364 unit test cases, 29 integration tests.**
+**364 unit test cases, 32 integration tests.**
 
 The integration tests start SQL Server through **Testcontainers** — no manual setup, no shared
 environment — and **Respawn** empties the database before each test, so every one of them starts
