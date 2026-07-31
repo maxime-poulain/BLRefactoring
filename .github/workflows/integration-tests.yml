@@ -1,0 +1,68 @@
+name: Integration Tests
+
+# Kept out of the pull-request path on purpose: these tests start a real SQL Server
+# through Testcontainers, which costs several minutes of image pull and startup on a
+# hosted runner. The CI workflow stays fast and unconditional; this one runs on demand
+# and once a night.
+on:
+  workflow_dispatch:
+  schedule:
+    # 03:17 UTC daily. Deliberately off the hour: scheduled workflows queue behind the
+    # platform-wide spike at :00. A nightly run bounds how long a regression can hide
+    # to a day — a suite nobody is forced to run is a suite that quietly rots.
+    # Note: GitHub only ever schedules workflows from the default branch, and disables
+    # the schedule after 60 days without repository activity.
+    - cron: '17 3 * * *'
+
+# The workflow only reads the repository; GITHUB_TOKEN gets nothing more.
+permissions:
+  contents: read
+
+# One run at a time. Queue rather than cancel: these runs are long, and killing one
+# that is nearly finished wastes more than it saves.
+concurrency:
+  group: integration-tests
+  cancel-in-progress: false
+
+jobs:
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    # A container that never becomes healthy would otherwise hang until the six-hour
+    # platform limit.
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      # No `services:` block here on purpose: Testcontainers starts and disposes the
+      # SQL Server container itself, and Docker is already available on the runner.
+      # The filter is the exact inverse of the one in ci.yml, so between the two
+      # workflows every test runs exactly once.
+      - name: Integration tests
+        run: >-
+          dotnet test --no-build --configuration Release --verbosity normal
+          --filter "FullyQualifiedName~IntegrationTests"
+          --logger "trx;LogFileName=integration-tests.trx"
+          --results-directory ./TestResults
+
+      # Published even on failure: this suite is slow and mostly triggered by hand, so
+      # the report has to be readable without paying for another run.
+      - name: Publish test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: TestResults/
+          retention-days: 7
