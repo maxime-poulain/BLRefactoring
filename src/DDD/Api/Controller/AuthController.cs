@@ -1,5 +1,5 @@
+using BLRefactoring.DDD.Api.Mappings;
 using BLRefactoring.DDD.Application.Services.TrainerServices;
-using BLRefactoring.Shared.Application.Dtos.Trainer;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.Api.Controllers;
 using BLRefactoring.Shared.Api.Identity;
@@ -26,15 +26,7 @@ public class AuthController(
         CancellationToken cancellationToken = default)
     {
         var creationResult = await trainerApplicationService.CreateAsync(
-            new TrainerCreationRequest
-            {
-                // The contact email starts out as the account email; the trainer can
-                // make it diverge later from their profile.
-                ContactEmail = request.Email,
-                Firstname = request.Firstname,
-                Lastname = request.Lastname,
-                UserId = userId
-            }, cancellationToken);
+            request.ToApplicationRequest(userId), cancellationToken);
 
         return creationResult.Match(_ => Result.Success(), Result.Failure);
     }

@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using BLRefactoring.DDD.Api.IntegrationTests.Fixtures;
-using BLRefactoring.Shared.Application.Dtos.Training;
+using BLRefactoring.Shared.Api.Contracts.Trainings;
 using Xunit;
 
 namespace BLRefactoring.DDD.Api.IntegrationTests.Controllers;
@@ -14,7 +14,7 @@ namespace BLRefactoring.DDD.Api.IntegrationTests.Controllers;
 [Collection("Api")]
 public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(factory)
 {
-    private static TrainingCreationRequest CreateValidTrainingRequest(string? title = null) => new()
+    private static CreateTrainingRequestHttp CreateValidTrainingRequest(string? title = null) => new()
     {
         Title = title ?? $"Training {Guid.NewGuid():N}"[..25],
         Description = "A valid training description for integration testing",
@@ -40,7 +40,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
     public async Task Create_InvalidData_Returns400()
     {
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var request = new TrainingCreationRequest
+        var request = new CreateTrainingRequestHttp
         {
             Title = "ab",
             Description = "",
@@ -108,7 +108,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         var response = await client.GetAsync($"/Training/{trainingId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var dto = await response.Content.ReadFromJsonAsync<TrainingDto>();
+        var dto = await response.Content.ReadFromJsonAsync<TrainingResponseHttp>();
         dto!.Id.Should().Be(trainingId);
     }
 
@@ -133,7 +133,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         var createResponse = await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
         var trainingId = await createResponse.Content.ReadFromJsonAsync<Guid>();
 
-        var editRequest = new TrainingEditionRequest
+        var editRequest = new EditTrainingRequestHttp
         {
             Title = $"Updated {Guid.NewGuid():N}"[..25],
             Description = "Updated description for the training",
@@ -156,7 +156,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         var createResponse = await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
         var trainingId = await createResponse.Content.ReadFromJsonAsync<Guid>();
 
-        var response = await client.PutAsJsonAsync($"/Training/{trainingId}", new TrainingEditionRequest
+        var response = await client.PutAsJsonAsync($"/Training/{trainingId}", new EditTrainingRequestHttp
         {
             Title = $"Updated {Guid.NewGuid():N}"[..25],
             Description = "Updated description for the training",
@@ -180,7 +180,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         var staleTag = await client.GetETagAsync($"/Training/{trainingId}");
 
         var firstTitle = $"First {Guid.NewGuid():N}"[..25];
-        var first = await client.PutWithIfMatchAsync($"/Training/{trainingId}", new TrainingEditionRequest
+        var first = await client.PutWithIfMatchAsync($"/Training/{trainingId}", new EditTrainingRequestHttp
         {
             Title = firstTitle,
             Description = "The edit that got there first",
@@ -190,7 +190,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         }, staleTag);
         first.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var second = await client.PutWithIfMatchAsync($"/Training/{trainingId}", new TrainingEditionRequest
+        var second = await client.PutWithIfMatchAsync($"/Training/{trainingId}", new EditTrainingRequestHttp
         {
             Title = $"Second {Guid.NewGuid():N}"[..25],
             Description = "The edit that must be refused",
@@ -202,7 +202,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         second.StatusCode.Should().Be(HttpStatusCode.PreconditionFailed);
 
         var reread = await client.GetAsync($"/Training/{trainingId}");
-        var training = await reread.Content.ReadFromJsonAsync<TrainingDto>();
+        var training = await reread.Content.ReadFromJsonAsync<TrainingResponseHttp>();
         training!.Title.Should().Be(firstTitle, "the second edit must not have overwritten the first");
     }
 
@@ -214,7 +214,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         var trainingId = await createResponse.Content.ReadFromJsonAsync<Guid>();
 
         var otherClient = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var editRequest = new TrainingEditionRequest
+        var editRequest = new EditTrainingRequestHttp
         {
             Title = $"Hacked {Guid.NewGuid():N}"[..25],
             Description = "Should not be allowed",
@@ -253,7 +253,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         var response = await client.GetAsync("/Training/by-topic/Programming");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var trainings = await response.Content.ReadFromJsonAsync<List<TrainingDto>>();
+        var trainings = await response.Content.ReadFromJsonAsync<List<TrainingResponseHttp>>();
         trainings.Should().NotBeEmpty();
     }
 
@@ -266,7 +266,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
 
         var trainersResponse = await client.GetAsync("/Trainer/all");
-        var trainers = await trainersResponse.Content.ReadFromJsonAsync<List<Shared.Application.Dtos.Trainer.TrainerDto>>();
+        var trainers = await trainersResponse.Content.ReadFromJsonAsync<List<TrainerResponseHttp>>();
         var trainerId = trainers!.First().Id;
 
         var response = await client.GetAsync($"/Training/by-trainer/{trainerId}");

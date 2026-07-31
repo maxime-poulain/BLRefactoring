@@ -2,10 +2,8 @@ using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Fixtures;
-using BLRefactoring.Shared.Application.Dtos.Trainer;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Create;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Edit;
-using BLRefactoring.Shared.Application.Dtos.Training;
+using BLRefactoring.Shared.Api.Contracts.Trainers;
+using BLRefactoring.Shared.Api.Contracts.Trainings;
 using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Controllers;
@@ -16,7 +14,7 @@ namespace BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Controllers;
 [Collection("Api")]
 public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(factory)
 {
-    private static CreateTrainingCommand ValidCreation(string? title = null) => new()
+    private static CreateTrainingRequestHttp ValidCreation(string? title = null) => new()
     {
         Title = title ?? $"Training {Guid.NewGuid():N}"[..25],
         Description = "A valid training description for integration testing",
@@ -25,7 +23,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         Topics = ["Programming"]
     };
 
-    private static EditTrainingCommand ValidEdition(string? title = null) => new()
+    private static EditTrainingRequestHttp ValidEdition(string? title = null) => new()
     {
         Title = title ?? $"Updated {Guid.NewGuid():N}"[..25],
         Description = "Updated description for the training",
@@ -58,7 +56,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
     {
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
 
-        var response = await client.PostAsJsonAsync("/Training", new CreateTrainingCommand
+        var response = await client.PostAsJsonAsync("/Training", new CreateTrainingRequestHttp
         {
             Title = "ab",
             Description = "",
@@ -105,7 +103,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Headers.ETag.Should().NotBeNull();
-        var dto = await response.Content.ReadFromJsonAsync<TrainingDto>();
+        var dto = await response.Content.ReadFromJsonAsync<TrainingResponseHttp>();
         dto!.Id.Should().Be(trainingId);
     }
 
@@ -128,7 +126,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         var response = await client.GetAsync("/Training/all");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var trainings = await response.Content.ReadFromJsonAsync<List<TrainingDto>>();
+        var trainings = await response.Content.ReadFromJsonAsync<List<TrainingResponseHttp>>();
         trainings.Should().ContainSingle();
     }
 
@@ -137,12 +135,12 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
     {
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         await CreateTrainingAsync(client);
-        var me = (await client.GetFromJsonAsync<TrainerDto>("/Trainer/me"))!;
+        var me = (await client.GetFromJsonAsync<TrainerResponseHttp>("/Trainer/me"))!;
 
         var response = await client.GetAsync($"/Training/by-trainer/{me.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var trainings = await response.Content.ReadFromJsonAsync<List<TrainingDto>>();
+        var trainings = await response.Content.ReadFromJsonAsync<List<TrainingResponseHttp>>();
         trainings.Should().ContainSingle();
     }
 
@@ -155,7 +153,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         var response = await client.GetAsync("/Training/by-topic/Programming");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var trainings = await response.Content.ReadFromJsonAsync<List<TrainingDto>>();
+        var trainings = await response.Content.ReadFromJsonAsync<List<TrainingResponseHttp>>();
         trainings.Should().ContainSingle();
     }
 
@@ -176,7 +174,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         // and nothing is read back. A caller who wants the new version must GET again.
         (await response.Content.ReadAsStringAsync()).Should().BeEmpty();
 
-        var reread = await client.GetFromJsonAsync<TrainingDto>($"/Training/{trainingId}");
+        var reread = await client.GetFromJsonAsync<TrainingResponseHttp>($"/Training/{trainingId}");
         reread!.Title.Should().Be("Renamed Training");
     }
 
@@ -206,7 +204,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
 
         second.StatusCode.Should().Be(HttpStatusCode.PreconditionFailed);
 
-        var reread = await client.GetFromJsonAsync<TrainingDto>($"/Training/{trainingId}");
+        var reread = await client.GetFromJsonAsync<TrainingResponseHttp>($"/Training/{trainingId}");
         reread!.Title.Should().Be("First Edit Wins", "the second edit must not have overwritten the first");
     }
 

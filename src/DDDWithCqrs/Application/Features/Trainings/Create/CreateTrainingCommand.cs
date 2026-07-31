@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Domain;
 using BLRefactoring.Shared.Common;
@@ -13,7 +12,7 @@ namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Create;
 
 public class CreateTrainingCommand : ICommand<Result>
 {
-    [JsonIgnore] public Guid TrainingId { get; init; } = Guid.NewGuid();
+    public Guid TrainingId { get; init; } = Guid.NewGuid();
     public string Title { get; init; } = null!;
     public List<string> Topics { get; init; } = [];
     public string Description { get; init; } = null!;

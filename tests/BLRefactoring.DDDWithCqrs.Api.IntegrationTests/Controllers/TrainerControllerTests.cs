@@ -3,8 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Fixtures;
-using BLRefactoring.Shared.Application.Dtos.Trainer;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Edit;
+using BLRefactoring.Shared.Api.Contracts.Trainers;
 using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Controllers;
@@ -21,7 +20,7 @@ namespace BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Controllers;
 [Collection("Api")]
 public class TrainerControllerTests(ApiFactory factory) : IntegrationTest(factory)
 {
-    private static EditTrainerCommand ValidEdition(string firstname = "Edited", string lastname = "Profile") => new()
+    private static EditTrainerRequestHttp ValidEdition(string firstname = "Edited", string lastname = "Profile") => new()
     {
         Firstname = firstname,
         Lastname = lastname,
@@ -39,7 +38,7 @@ public class TrainerControllerTests(ApiFactory factory) : IntegrationTest(factor
         var response = await client.GetAsync("/Trainer/all");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var trainers = await response.Content.ReadFromJsonAsync<List<TrainerDto>>();
+        var trainers = await response.Content.ReadFromJsonAsync<List<TrainerResponseHttp>>();
         trainers.Should().NotBeNull();
     }
 
@@ -59,13 +58,13 @@ public class TrainerControllerTests(ApiFactory factory) : IntegrationTest(factor
     public async Task GetById_ExistingTrainer_Returns200WithETag()
     {
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var me = (await client.GetFromJsonAsync<TrainerDto>("/Trainer/me"))!;
+        var me = (await client.GetFromJsonAsync<TrainerResponseHttp>("/Trainer/me"))!;
 
         var response = await client.GetAsync($"/Trainer/{me.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Headers.ETag.Should().NotBeNull("the caller needs it to edit conditionally later");
-        var dto = await response.Content.ReadFromJsonAsync<TrainerDto>();
+        var dto = await response.Content.ReadFromJsonAsync<TrainerResponseHttp>();
         dto!.Id.Should().Be(me.Id);
     }
 
@@ -93,7 +92,7 @@ public class TrainerControllerTests(ApiFactory factory) : IntegrationTest(factor
 
         // The command answers only whether the write succeeded; the representation comes
         // back from the query side. This asserts that read-back actually happens.
-        var dto = await response.Content.ReadFromJsonAsync<TrainerDto>();
+        var dto = await response.Content.ReadFromJsonAsync<TrainerResponseHttp>();
         dto!.Firstname.Should().Be("Edited");
         dto.Lastname.Should().Be("Profile");
         dto.ContactEmail.Should().Be("edited.profile@example.com");
@@ -112,7 +111,7 @@ public class TrainerControllerTests(ApiFactory factory) : IntegrationTest(factor
 
         var entityTag = await client.GetETagAsync("/Trainer/me");
 
-        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerCommand
+        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerRequestHttp
         {
             Firstname = "Test",
             Lastname = "User",
@@ -134,7 +133,7 @@ public class TrainerControllerTests(ApiFactory factory) : IntegrationTest(factor
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var entityTag = await client.GetETagAsync("/Trainer/me");
 
-        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerCommand
+        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerRequestHttp
         {
             Firstname = "Edited",
             Lastname = "Profile",
@@ -180,7 +179,7 @@ public class TrainerControllerTests(ApiFactory factory) : IntegrationTest(factor
 
         second.StatusCode.Should().Be(HttpStatusCode.PreconditionFailed);
 
-        var reread = await client.GetFromJsonAsync<TrainerDto>("/Trainer/me");
+        var reread = await client.GetFromJsonAsync<TrainerResponseHttp>("/Trainer/me");
         reread!.Firstname.Should().Be("First", "the second edit must not have overwritten the first");
     }
 
@@ -194,7 +193,7 @@ public class TrainerControllerTests(ApiFactory factory) : IntegrationTest(factor
         // answer 204. This test is what keeps self-deletion from creeping back in: 405 rather
         // than 404, because the matching GET routes still exist.
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var me = (await client.GetFromJsonAsync<TrainerDto>("/Trainer/me"))!;
+        var me = (await client.GetFromJsonAsync<TrainerResponseHttp>("/Trainer/me"))!;
 
         var onMe = await client.DeleteAsync("/Trainer/me");
         var onIdentifier = await client.DeleteAsync($"/Trainer/{me.Id}");

@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Fixtures;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Edit;
+using BLRefactoring.Shared.Api.Contracts.Trainers;
 using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Controllers;
@@ -50,7 +50,7 @@ public class ValidationPipelineTests(ApiFactory factory) : IntegrationTest(facto
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var entityTag = await client.GetETagAsync("/Trainer/me");
 
-        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerCommand
+        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerRequestHttp
         {
             Firstname = "Edited",
             Lastname = "Profile",
@@ -58,7 +58,7 @@ public class ValidationPipelineTests(ApiFactory factory) : IntegrationTest(facto
         }, entityTag);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await InvalidPropertiesAsync(response)).Should().Contain(nameof(EditTrainerCommand.ContactEmail));
+        (await InvalidPropertiesAsync(response)).Should().Contain(nameof(EditTrainerRequestHttp.ContactEmail));
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public class ValidationPipelineTests(ApiFactory factory) : IntegrationTest(facto
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var entityTag = await client.GetETagAsync("/Trainer/me");
 
-        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerCommand
+        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerRequestHttp
         {
             Firstname = string.Empty,
             Lastname = string.Empty,
@@ -80,9 +80,9 @@ public class ValidationPipelineTests(ApiFactory factory) : IntegrationTest(facto
         // round-trip per mistake.
         (await InvalidPropertiesAsync(response)).Should().Contain(
         [
-            nameof(EditTrainerCommand.Firstname),
-            nameof(EditTrainerCommand.Lastname),
-            nameof(EditTrainerCommand.ContactEmail)
+            nameof(EditTrainerRequestHttp.Firstname),
+            nameof(EditTrainerRequestHttp.Lastname),
+            nameof(EditTrainerRequestHttp.ContactEmail)
         ]);
     }
 
@@ -92,7 +92,7 @@ public class ValidationPipelineTests(ApiFactory factory) : IntegrationTest(facto
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var before = await client.GetETagAsync("/Trainer/me");
 
-        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerCommand
+        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerRequestHttp
         {
             Firstname = "Rejected",
             Lastname = "Edit",

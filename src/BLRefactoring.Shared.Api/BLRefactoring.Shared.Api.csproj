@@ -23,7 +23,14 @@
       <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
     </ItemGroup>
 
+    <!--
+      The application layer is referenced so the HTTP contracts can be mapped to and from it in
+      one place. The dependency runs the way the layering requires — the API knows the application
+      layer, never the reverse — and it now stops at Contracts/Mappings instead of running through
+      every controller signature.
+    -->
     <ItemGroup>
+      <ProjectReference Include="..\BLRefactoring.Shared.Application\BLRefactoring.Shared.Application.csproj" />
       <ProjectReference Include="..\BLRefactoring.Shared.Infrastructure\BLRefactoring.Shared.Infrastructure.csproj" />
     </ItemGroup>
 
