@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add MudBlazor services
 builder.Services.AddMudServices();
 
-builder.Services.AddDependencies(builder.Configuration);
+builder.Services.AddDependencies();
 
 // This host authenticates nobody. It serves the WebAssembly application and its static
 // assets; the browser then talks to the API directly, carrying the JWT it holds in

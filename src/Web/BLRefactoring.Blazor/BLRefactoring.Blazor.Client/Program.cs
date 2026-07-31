@@ -6,6 +6,6 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
 builder.Services.AddMudServices();
 
-builder.Services.AddDependencies(builder.Configuration);
+builder.Services.AddDependencies();
 
 await builder.Build().RunAsync();
