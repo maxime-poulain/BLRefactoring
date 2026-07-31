@@ -1,3 +1,4 @@
+using BLRefactoring.Shared.Infrastructure.Http;
 using BLRefactoring.DDD.Application.Services.TrainerServices;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Application.Dtos.Trainer;
@@ -20,6 +21,37 @@ public class TrainerController(
     : ApiControllerBase
 {
     /// <summary>
+    /// Retrieves the profile of the authenticated trainer.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
+    /// <returns>
+    /// 200 OK with the profile and the <c>ETag</c> to send back when editing it.
+    /// 404 Not Found if the token refers to a trainer that no longer exists.
+    /// </returns>
+    /// <remarks>
+    /// The counterpart of <c>PUT /Trainer/me</c>: since editing requires the version
+    /// the caller read, they need a way to read their own profile without knowing
+    /// their identifier.
+    /// </remarks>
+    [HttpGet("me")]
+    [ProducesResponseType(typeof(TrainerDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TrainerDto>> GetCurrentAsync(CancellationToken cancellationToken)
+    {
+        var result = await trainerApplicationService.GetByIdAsync(
+            currentUserService.TrainerId, cancellationToken);
+
+        return result.Match<ActionResult>(
+            trainer =>
+            {
+                this.SetETag(trainer.RowVersion);
+                return Ok(trainer);
+            },
+            errors =>
+                errors.Any(error => error.ErrorCode == ErrorCode.NotFound) ? NotFound() : BadRequest(errors));
+    }
+
+    /// <summary>
     /// Replaces the profile of the authenticated trainer.
     /// </summary>
     /// <param name="request">The new state of the profile.</param>
@@ -35,21 +67,45 @@ public class TrainerController(
     /// ownership to check and no identifier to tamper with.
     /// Editing the contact email leaves the identity account untouched — it is not
     /// the credential used to sign in.
+    /// The request must carry an <c>If-Match</c> holding the <c>ETag</c> returned
+    /// when the profile was read, so an edit based on a stale copy is rejected
+    /// instead of silently overwriting someone else's changes.
     /// </remarks>
     [HttpPut("me")]
     [ProducesResponseType(typeof(TrainerDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status412PreconditionFailed)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status428PreconditionRequired)]
     public async Task<ActionResult<TrainerDto>> EditCurrentAsync(
         [FromBody] TrainerEditionRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await trainerApplicationService.EditAsync(
-            currentUserService.TrainerId, request, cancellationToken);
+        if (!this.TryGetExpectedVersion(out var expectedVersion))
+        {
+            return this.PreconditionRequired();
+        }
 
-        return result.Match<ActionResult>(Ok,
+        var result = await trainerApplicationService.EditAsync(
+            currentUserService.TrainerId, request, expectedVersion, cancellationToken);
+
+        return result.Match<ActionResult>(
+            trainer =>
+            {
+                this.SetETag(trainer.RowVersion);
+                return Ok(trainer);
+            },
             errors =>
-                errors.Any(error => error.ErrorCode == ErrorCode.NotFound) ? NotFound() : BadRequest(errors));
+            {
+                if (errors.Any(error => error.ErrorCode == ErrorCode.NotFound))
+                {
+                    return NotFound();
+                }
+
+                return errors.Any(error => error.ErrorCode == ErrorCode.ConcurrencyConflict)
+                    ? this.PreconditionFailed(errors)
+                    : BadRequest(errors);
+            });
     }
 
     /// <summary>
@@ -69,7 +125,14 @@ public class TrainerController(
     {
         var result = await trainerApplicationService.GetByIdAsync(id, cancellationToken);
 
-        return result.Match<ActionResult>(Ok,
+        // The ETag published here is what the caller must send back as If-Match
+        // when they later edit this profile.
+        return result.Match<ActionResult>(
+            trainer =>
+            {
+                this.SetETag(trainer.RowVersion);
+                return Ok(trainer);
+            },
             errors =>
                 errors.Any(error => error.ErrorCode == ErrorCode.NotFound) ? NotFound() : BadRequest(errors));
     }

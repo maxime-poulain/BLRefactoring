@@ -1,3 +1,4 @@
+using BLRefactoring.Shared.Infrastructure.Http;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Delete;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Edit;
@@ -21,6 +22,31 @@ public class TrainerController(
     : ApiControllerBase
 {
     /// <summary>
+    /// Retrieves the profile of the authenticated trainer.
+    /// </summary>
+    /// <remarks>
+    /// The counterpart of <c>PUT /Trainer/me</c>: since editing requires the version
+    /// the caller read, they need a way to read their own profile without knowing
+    /// their identifier.
+    /// </remarks>
+    [HttpGet("me")]
+    [ProducesResponseType(typeof(TrainerDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TrainerDto>> GetCurrentAsync(CancellationToken cancellationToken)
+    {
+        var trainer = await queryDispatcher.DispatchAsync(
+            new GetTrainerByIdQuery(currentUserService.TrainerId), cancellationToken);
+
+        if (trainer is null)
+        {
+            return NotFound();
+        }
+
+        this.SetETag(trainer.RowVersion);
+        return Ok(trainer);
+    }
+
+    /// <summary>
     /// Replaces the profile of the authenticated trainer.
     /// </summary>
     /// <remarks>
@@ -36,11 +62,19 @@ public class TrainerController(
     [ProducesResponseType(typeof(TrainerDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status412PreconditionFailed)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status428PreconditionRequired)]
     public async Task<ActionResult<TrainerDto>> EditCurrentAsync(
         [FromBody] EditTrainerCommand command,
         CancellationToken cancellationToken)
     {
+        if (!this.TryGetExpectedVersion(out var expectedVersion))
+        {
+            return this.PreconditionRequired();
+        }
+
         command.TrainerId = currentUserService.TrainerId;
+        command.ExpectedVersion = expectedVersion;
 
         var result = await commandDispatcher.DispatchAsync(command, cancellationToken);
 
@@ -50,12 +84,18 @@ public class TrainerController(
                 var trainer = await queryDispatcher.DispatchAsync(
                     new GetTrainerByIdQuery(command.TrainerId), cancellationToken);
 
-                return trainer is null ? NotFound() : Ok(trainer);
+                if (trainer is null)
+                {
+                    return NotFound();
+                }
+
+                this.SetETag(trainer.RowVersion);
+                return Ok(trainer);
             },
             onFailure: errors => ValueTask.FromResult<ActionResult>(
-                errors.Any(error => error.ErrorCode == ErrorCode.NotFound)
-                    ? NotFound()
-                    : BadRequest(errors)));
+                errors.Any(error => error.ErrorCode == ErrorCode.NotFound) ? NotFound()
+                : errors.Any(error => error.ErrorCode == ErrorCode.ConcurrencyConflict) ? this.PreconditionFailed(errors)
+                : BadRequest(errors)));
     }
 
     [HttpGet("{id}")]
@@ -69,6 +109,9 @@ public class TrainerController(
             return NotFound();
         }
 
+        // The ETag published here is what the caller must send back as If-Match
+        // when they later edit this profile.
+        this.SetETag(trainer.RowVersion);
         return Ok(trainer);
     }
 

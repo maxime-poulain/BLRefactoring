@@ -9,6 +9,7 @@ public static class Mappers
     {
         return new TrainingDto
         {
+            RowVersion = training.RowVersion,
             Id = training.Id.Value,
             Title = training.Title.Value,
             TrainerId = training.TrainerId.Value,
@@ -28,6 +29,7 @@ public static class Mappers
     {
         return new TrainerDto()
         {
+            RowVersion = trainer.RowVersion,
             Id = trainer.Id.Value,
             ContactEmail = trainer.ContactEmail.FullAddress,
             Firstname = trainer.Name.Firstname,

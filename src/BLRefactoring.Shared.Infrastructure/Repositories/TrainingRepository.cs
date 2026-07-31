@@ -44,6 +44,10 @@ public class TrainingRepository(TrainingContext trainingContext) : ITrainingRepo
         trainingContext.Trainings.Add(training);
     }
 
+    // Marking the aggregate modified is what makes optimistic concurrency work here,
+    // not just a formality on an already-tracked instance: it guarantees an UPDATE on
+    // the Training row, and therefore a check of its concurrency token, even when the
+    // edition only touched owned rows in another table such as TrainingTopic.
     public void Update(Training training)
     {
         trainingContext.Trainings.Update(training);

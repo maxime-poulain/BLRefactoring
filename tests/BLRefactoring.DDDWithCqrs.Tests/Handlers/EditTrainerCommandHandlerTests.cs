@@ -1,3 +1,4 @@
+using BLRefactoring.Shared.Common;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Edit;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common.Errors;
@@ -95,6 +96,43 @@ public class EditTrainerCommandHandlerTests
         _unitOfWork.Verify(
             uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_StaleVersion_ReturnsConcurrencyConflictWithoutCommitting()
+    {
+        var trainer = new TrainerBuilder().Build();
+        GivenTrainer(trainer);
+        var sut = CreateSut();
+
+        var command = Command(trainer.Id.Value, firstname: "Jane");
+        command.ExpectedVersion = [1, 2, 3, 4, 5, 6, 7, 8];
+
+        var result = await sut.Handle(command, CancellationToken.None);
+
+        result.ShouldContainError(ErrorCode.ConcurrencyConflict);
+        _unitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_StoreReportsAConflict_ReturnsConcurrencyConflict()
+    {
+        // The pre-check passed, but another request won the race before the update
+        // reached the row: the concurrency token is the authoritative guard, and
+        // both paths must surface the same business failure.
+        var trainer = new TrainerBuilder().Build();
+        GivenTrainer(trainer);
+        _unitOfWork
+            .Setup(uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ConcurrencyConflictException("conflict", new Exception()));
+        var sut = CreateSut();
+
+        var result = await sut.Handle(
+            Command(trainer.Id.Value, firstname: "Jane"), CancellationToken.None);
+
+        result.ShouldContainError(ErrorCode.ConcurrencyConflict);
     }
 
     private void GivenTrainer(Trainer trainer) =>

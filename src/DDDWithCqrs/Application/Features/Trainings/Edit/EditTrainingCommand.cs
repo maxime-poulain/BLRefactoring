@@ -12,6 +12,12 @@ namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Edit;
 public class EditTrainingCommand : ICommand<Result>
 {
     [JsonIgnore] public Guid TrainingId { get; set; }
+
+    /// <summary>
+    /// The version the caller read the training at, taken from the <c>If-Match</c>
+    /// header rather than the body.
+    /// </summary>
+    [JsonIgnore] public byte[] ExpectedVersion { get; set; } = [];
     public string Title { get; init; } = null!;
     public List<string> Topics { get; init; } = [];
     public string Description { get; init; } = null!;
@@ -36,6 +42,11 @@ public class EditTrainingCommandHandler(
         {
             return Result.Failure(ErrorCode.NotFound,
                 $"Training with id `{request.TrainingId}` not found.");
+        }
+
+        if (!training.IsAtVersion(request.ExpectedVersion))
+        {
+            return Result.Failure(ErrorCode.ConcurrencyConflict, ConcurrencyMessage);
         }
 
         var detailsResult = TrainingDetailsFactory.Create(
@@ -68,8 +79,17 @@ public class EditTrainingCommandHandler(
                     return Result.Failure(ErrorCode.DuplicateTitle,
                         "A training with the same title already exists for this trainer.");
                 }
+                catch (ConcurrencyConflictException)
+                {
+                    // Same layering for the version: the concurrency token is the
+                    // authoritative guard behind the pre-check above.
+                    return Result.Failure(ErrorCode.ConcurrencyConflict, ConcurrencyMessage);
+                }
                 return Result.Success();
             },
             onFailure: Result.FailureAsync);
     }
+
+    private const string ConcurrencyMessage =
+        "The training was modified by someone else since it was read. Reload it and try again.";
 }

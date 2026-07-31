@@ -1,3 +1,4 @@
+using BLRefactoring.Shared.Common;
 using BLRefactoring.DDD.Application.Tests.Helpers;
 using BLRefactoring.Shared.Application.Dtos.Trainer;
 using BLRefactoring.Shared.Common.Errors;
@@ -111,7 +112,7 @@ public class TrainerApplicationServiceTests
             firstname: "Jane",
             lastname: "Smith",
             contactEmail: "jane.smith@example.com",
-            bio: "Rewritten bio."));
+            bio: "Rewritten bio."), trainer.RowVersion);
 
         var dto = result.ShouldBeSuccess();
         dto.Firstname.Should().Be("Jane");
@@ -129,7 +130,7 @@ public class TrainerApplicationServiceTests
             .ReturnsAsync(trainer);
         var sut = _fixture.CreateSut();
 
-        await sut.EditAsync(trainer.Id.Value, EditionRequest(firstname: "Jane"));
+        await sut.EditAsync(trainer.Id.Value, EditionRequest(firstname: "Jane"), trainer.RowVersion);
 
         _fixture.TrainerRepository.Verify(r => r.Update(trainer), Times.Once);
         _fixture.UnitOfWork.Verify(
@@ -146,7 +147,7 @@ public class TrainerApplicationServiceTests
             .ReturnsAsync(trainer);
         var sut = _fixture.CreateSut();
 
-        var result = await sut.EditAsync(trainer.Id.Value, EditionRequest(bio: null));
+        var result = await sut.EditAsync(trainer.Id.Value, EditionRequest(bio: null), trainer.RowVersion);
 
         result.ShouldBeSuccess().Bio.Should().BeNull();
     }
@@ -159,7 +160,7 @@ public class TrainerApplicationServiceTests
             .ReturnsAsync((Trainer?)null);
         var sut = _fixture.CreateSut();
 
-        var result = await sut.EditAsync(Guid.NewGuid(), EditionRequest());
+        var result = await sut.EditAsync(Guid.NewGuid(), EditionRequest(), []);
 
         result.ShouldContainError(ErrorCode.NotFound);
     }
@@ -173,13 +174,52 @@ public class TrainerApplicationServiceTests
             .ReturnsAsync(trainer);
         var sut = _fixture.CreateSut();
 
-        var result = await sut.EditAsync(trainer.Id.Value, EditionRequest(contactEmail: "invalid-email"));
+        var result = await sut.EditAsync(trainer.Id.Value, EditionRequest(contactEmail: "invalid-email"), trainer.RowVersion);
 
         result.ShouldBeFailure();
         _fixture.TrainerRepository.Verify(r => r.Update(It.IsAny<Trainer>()), Times.Never);
         _fixture.UnitOfWork.Verify(
             uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task EditAsync_StaleVersion_ReturnsConcurrencyConflictWithoutCommitting()
+    {
+        var trainer = new TrainerBuilder().Build();
+        _fixture.TrainerRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(trainer);
+        var sut = _fixture.CreateSut();
+
+        var result = await sut.EditAsync(
+            trainer.Id.Value, EditionRequest(firstname: "Jane"), [1, 2, 3, 4, 5, 6, 7, 8]);
+
+        result.ShouldContainError(ErrorCode.ConcurrencyConflict);
+        _fixture.UnitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task EditAsync_StoreReportsAConflict_ReturnsConcurrencyConflict()
+    {
+        // The pre-check passed, but another request won the race before the update
+        // reached the row: the concurrency token is the authoritative guard, and
+        // both paths must surface the same business failure.
+        var trainer = new TrainerBuilder().Build();
+        _fixture.TrainerRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(trainer);
+        _fixture.UnitOfWork
+            .Setup(uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ConcurrencyConflictException("conflict", new Exception()));
+        var sut = _fixture.CreateSut();
+
+        var result = await sut.EditAsync(
+            trainer.Id.Value, EditionRequest(firstname: "Jane"), trainer.RowVersion);
+
+        result.ShouldContainError(ErrorCode.ConcurrencyConflict);
     }
 
     private static TrainerEditionRequest EditionRequest(

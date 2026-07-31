@@ -1,3 +1,4 @@
+using BLRefactoring.Shared.Common;
 using System.Text.Json.Serialization;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common.Errors;
@@ -19,6 +20,12 @@ public class EditTrainerCommand : ICommand<Result>
     /// request body, hence never bound from JSON.
     /// </summary>
     [JsonIgnore] public Guid TrainerId { get; set; }
+
+    /// <summary>
+    /// The version the caller read the profile at, taken from the <c>If-Match</c>
+    /// header rather than the body.
+    /// </summary>
+    [JsonIgnore] public byte[] ExpectedVersion { get; set; } = [];
 
     public string Firstname { get; init; } = null!;
     public string Lastname { get; init; } = null!;
@@ -48,6 +55,11 @@ public class EditTrainerCommandHandler(
                 $"Trainer with id `{request.TrainerId}` could not be found.");
         }
 
+        if (!trainer.IsAtVersion(request.ExpectedVersion))
+        {
+            return Result.Failure(ErrorCode.ConcurrencyConflict, ConcurrencyMessage);
+        }
+
         var profileResult = TrainerProfileFactory.Create(
             request.Firstname, request.Lastname, request.ContactEmail, request.Bio);
 
@@ -59,9 +71,23 @@ public class EditTrainerCommandHandler(
                 trainer.Edit(profile.Name, profile.ContactEmail, profile.Bio);
 
                 trainerRepository.Update(trainer);
-                await unitOfWork.SaveChangesAsync(cancellationToken);
+                try
+                {
+                    await unitOfWork.SaveChangesAsync(cancellationToken);
+                }
+                catch (ConcurrencyConflictException)
+                {
+                    // A concurrent request slipped past the version pre-check; the
+                    // concurrency token is the authoritative guard, so a lost race
+                    // is the same business failure as a detected stale version.
+                    return Result.Failure(ErrorCode.ConcurrencyConflict, ConcurrencyMessage);
+                }
+
                 return Result.Success();
             },
             onFailure: Result.FailureAsync);
     }
+
+    private const string ConcurrencyMessage =
+        "The trainer was modified by someone else since it was read. Reload it and try again.";
 }

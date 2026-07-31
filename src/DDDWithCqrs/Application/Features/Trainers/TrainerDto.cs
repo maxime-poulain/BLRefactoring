@@ -1,7 +1,19 @@
+using System.Text.Json.Serialization;
+
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers;
 
 public class TrainerDto
 {
+    /// <summary>
+    /// The version of the aggregate this representation was read at.
+    /// </summary>
+    /// <remarks>
+    /// Carried to the controller so it can emit an <c>ETag</c>, and deliberately
+    /// kept out of the JSON body: the version is a transport concern, not part of
+    /// the business contract.
+    /// </remarks>
+    [JsonIgnore] public byte[] RowVersion { get; init; } = [];
+
     public Guid Id { get; init; }
     public string Firstname { get; init; } = null!;
     public string Lastname { get; init; } = null!;

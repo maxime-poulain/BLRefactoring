@@ -60,13 +60,15 @@ public class TrainerControllerTests(ApiFactory factory)
     {
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
 
-        var response = await client.PutAsJsonAsync("/Trainer/me", new TrainerEditionRequest
+        var entityTag = await client.GetETagAsync("/Trainer/me");
+
+        var response = await client.PutWithIfMatchAsync("/Trainer/me", new TrainerEditionRequest
         {
             Firstname = "Edited",
             Lastname = "Profile",
             ContactEmail = "edited.profile@example.com",
             Bio = "A freshly written bio."
-        });
+        }, entityTag);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var dto = await response.Content.ReadFromJsonAsync<TrainerDto>();
@@ -86,12 +88,14 @@ public class TrainerControllerTests(ApiFactory factory)
         var token = await AuthHelper.LoginAsync(client, request.Username, request.Password);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var response = await client.PutAsJsonAsync("/Trainer/me", new TrainerEditionRequest
+        var entityTag = await client.GetETagAsync("/Trainer/me");
+
+        var response = await client.PutWithIfMatchAsync("/Trainer/me", new TrainerEditionRequest
         {
             Firstname = "Test",
             Lastname = "User",
             ContactEmail = "a.completely.different@example.com"
-        });
+        }, entityTag);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // The contact email is a business attribute, not a credential: signing in
@@ -107,12 +111,14 @@ public class TrainerControllerTests(ApiFactory factory)
     {
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
 
-        var response = await client.PutAsJsonAsync("/Trainer/me", new TrainerEditionRequest
+        var entityTag = await client.GetETagAsync("/Trainer/me");
+
+        var response = await client.PutWithIfMatchAsync("/Trainer/me", new TrainerEditionRequest
         {
             Firstname = "Edited",
             Lastname = "Profile",
             ContactEmail = "not-an-email"
-        });
+        }, entityTag);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -130,6 +136,51 @@ public class TrainerControllerTests(ApiFactory factory)
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task EditMe_WithoutIfMatch_Returns428()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
+
+        var response = await client.PutAsJsonAsync("/Trainer/me", new TrainerEditionRequest
+        {
+            Firstname = "Edited",
+            Lastname = "Profile",
+            ContactEmail = "edited.profile@example.com"
+        });
+
+        // An unconditional write would let the caller overwrite changes they never saw.
+        response.StatusCode.Should().Be(HttpStatusCode.PreconditionRequired);
+    }
+
+    [Fact]
+    public async Task EditMe_WithStaleIfMatch_Returns412AndKeepsTheFirstEdit()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
+
+        // Both callers read the same version, as two users would from their form.
+        var staleTag = await client.GetETagAsync("/Trainer/me");
+
+        var first = await client.PutWithIfMatchAsync("/Trainer/me", new TrainerEditionRequest
+        {
+            Firstname = "First",
+            Lastname = "Edit",
+            ContactEmail = "first.edit@example.com"
+        }, staleTag);
+        first.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var second = await client.PutWithIfMatchAsync("/Trainer/me", new TrainerEditionRequest
+        {
+            Firstname = "Second",
+            Lastname = "Edit",
+            ContactEmail = "second.edit@example.com"
+        }, staleTag);
+
+        second.StatusCode.Should().Be(HttpStatusCode.PreconditionFailed);
+
+        var reread = await client.GetFromJsonAsync<TrainerDto>("/Trainer/me");
+        reread!.Firstname.Should().Be("First", "the second edit must not have overwritten the first");
     }
 
     // -- Delete --

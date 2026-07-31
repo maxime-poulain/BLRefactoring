@@ -1,3 +1,4 @@
+using BLRefactoring.Shared.Infrastructure.Http;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Create;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Delete;
@@ -50,6 +51,10 @@ public class TrainingController(
         {
             return NotFound();
         }
+
+        // The ETag published here is what the caller must send back as If-Match
+        // when they later edit this training.
+        this.SetETag(training.RowVersion);
         return Ok(training);
     }
 
@@ -68,11 +73,19 @@ public class TrainingController(
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status412PreconditionFailed)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status428PreconditionRequired)]
     public async Task<ActionResult> EditTrainingAsync(
         Guid trainingId,
         [FromBody] EditTrainingCommand command)
     {
+        if (!this.TryGetExpectedVersion(out var expectedVersion))
+        {
+            return this.PreconditionRequired();
+        }
+
         command.TrainingId = trainingId;
+        command.ExpectedVersion = expectedVersion;
         var result = await commandDispatcher.DispatchAsync(command);
 
         return result.Match<ActionResult>(
@@ -82,6 +95,11 @@ public class TrainingController(
                 if (errors.Any(e => e.ErrorCode == ErrorCode.NotFound))
                 {
                     return NotFound();
+                }
+
+                if (errors.Any(e => e.ErrorCode == ErrorCode.ConcurrencyConflict))
+                {
+                    return this.PreconditionFailed(errors);
                 }
 
                 return errors.Any(e => e.ErrorCode == ErrorCode.DuplicateTitle)

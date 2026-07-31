@@ -36,6 +36,15 @@ public abstract class AggregateRootTypeConfiguration<TEntity, TEntityId> : IEnti
         builder.Property(e => e.ModifiedOn)
             .HasPrecision(2);
 
+        // Optimistic concurrency, declared once for every aggregate root: the
+        // aggregate is the consistency boundary, so it is the unit of concurrency
+        // control. IsRowVersion maps to SQL Server's rowversion column, which the
+        // server bumps on every update, and makes it the concurrency token — EF
+        // adds it to the WHERE clause of UPDATE and DELETE, so a statement that
+        // matches no row means someone else got there first.
+        builder.Property(e => e.RowVersion)
+            .IsRowVersion();
+
         ConfigureAggregate(builder);
     }
 }
