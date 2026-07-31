@@ -8,17 +8,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddMudServices();
 
 builder.Services.AddDependencies(builder.Configuration);
-builder.Services
-    .AddAuthentication(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie();
-// Authorization is enforced client-side by AuthorizeRouteView; server just needs the services registered.
-// DefaultPolicy allows all requests through so the WASM app can load and handle auth itself.
-builder.Services.AddAuthorization(options =>
-{
-    options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
-        .RequireAssertion(_ => true)
-        .Build();
-});
+
+// This host authenticates nobody. It serves the WebAssembly application and its static
+// assets; the browser then talks to the API directly, carrying the JWT it holds in
+// localStorage. Authorization is decided client-side by AuthorizeRouteView, and the API
+// enforces it for real on every request.
+//
+// A cookie authentication scheme used to be registered here, together with a default policy
+// that authorized everything. Nothing consumed either of them, and together they suggested a
+// server-side authentication model this application does not have.
 
 // Add services to the container.
 builder.Services.AddRazorComponents().AddInteractiveWebAssemblyComponents();
