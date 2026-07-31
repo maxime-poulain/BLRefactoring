@@ -530,7 +530,7 @@ Trainers are created only through registration; there is no `POST /Trainer`.
 | `Microsoft.AspNetCore.Identity.EntityFrameworkCore` | User accounts, password hashing, lockout |
 | `Microsoft.AspNetCore.Authentication.JwtBearer` | Bearer token authentication |
 | `NSwag.AspNetCore`, `Swashbuckle.AspNetCore`, `Scalar.AspNetCore` | OpenAPI documents and UI |
-| `MudBlazor`, `Blazored.LocalStorage` | Blazor WebAssembly front end |
+| `MudBlazor` | Component library of the Blazor WebAssembly front end |
 | `xunit`, `FluentAssertions`, `Moq` | Testing |
 | `Testcontainers.MsSql` | A real SQL Server per integration test run |
 | `Respawn` | Database reset between integration tests |

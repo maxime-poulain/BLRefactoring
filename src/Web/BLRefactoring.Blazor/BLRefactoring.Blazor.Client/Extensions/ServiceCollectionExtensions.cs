@@ -1,4 +1,3 @@
-using Blazored.LocalStorage;
 using BLRefactoring.Blazor.Client.Infrastructure;
 using BLRefactoring.GeneratedClients;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -11,8 +10,9 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddDependencies(this IServiceCollection services, IConfiguration configuration)
     {
+        // IJSRuntime, which JwtTokenService uses to reach localStorage, is registered by the
+        // Blazor host itself — there is nothing to add here for storage.
         return services
-            .AddBlazoredLocalStorage()
             .AddServices(configuration)
             .AddBLRefactoringBlazorClient(configuration);
     }
