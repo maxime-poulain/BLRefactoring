@@ -8,18 +8,14 @@ public class JwtTokenHandler(IJwtTokenService jwtTokenService) : DelegatingHandl
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var token = await jwtTokenService.GetTokenAsync();
+        // No guard against prerendering here: it is off by design, so this handler only ever
+        // runs once the application is interactive and JavaScript interop is available.
+        // Swallowing InvalidOperationException would now hide genuine interop failures.
+        var token = await jwtTokenService.GetTokenAsync();
 
-            if (!string.IsNullOrEmpty(token))
-            {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            }
-        }
-        catch (InvalidOperationException)
+        if (!string.IsNullOrEmpty(token))
         {
-            // JavaScript interop is not available during server-side prerendering
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
 
         return await base.SendAsync(request, cancellationToken);
