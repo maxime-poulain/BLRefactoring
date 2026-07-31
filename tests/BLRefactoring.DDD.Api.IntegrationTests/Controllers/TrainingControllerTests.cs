@@ -12,7 +12,7 @@ namespace BLRefactoring.DDD.Api.IntegrationTests.Controllers;
 /// Validates HTTP endpoints for training CRUD operations including authorization.
 /// </summary>
 [Collection("Api")]
-public class TrainingControllerTests(ApiFactory factory)
+public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(factory)
 {
     private static TrainingCreationRequest CreateValidTrainingRequest(string? title = null) => new()
     {
@@ -28,7 +28,7 @@ public class TrainingControllerTests(ApiFactory factory)
     [Fact]
     public async Task Create_ValidData_Returns201()
     {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var request = CreateValidTrainingRequest();
 
         var response = await client.PostAsJsonAsync("/Training", request);
@@ -39,7 +39,7 @@ public class TrainingControllerTests(ApiFactory factory)
     [Fact]
     public async Task Create_InvalidData_Returns400()
     {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var request = new TrainingCreationRequest
         {
             Title = "ab",
@@ -57,7 +57,7 @@ public class TrainingControllerTests(ApiFactory factory)
     [Fact]
     public async Task Create_NoToken_Returns401()
     {
-        var client = factory.CreateClient();
+        var client = Factory.CreateClient();
         var request = CreateValidTrainingRequest();
 
         var response = await client.PostAsJsonAsync("/Training", request);
@@ -70,7 +70,7 @@ public class TrainingControllerTests(ApiFactory factory)
     [Fact]
     public async Task GetById_Existing_Returns200()
     {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var createResponse = await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
         var trainingId = await createResponse.Content.ReadFromJsonAsync<Guid>();
 
@@ -86,7 +86,7 @@ public class TrainingControllerTests(ApiFactory factory)
     [Fact]
     public async Task GetAll_Returns200()
     {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
 
         var response = await client.GetAsync("/Training/all");
 
@@ -98,7 +98,7 @@ public class TrainingControllerTests(ApiFactory factory)
     [Fact]
     public async Task Edit_AsOwner_Returns200()
     {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var createResponse = await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
         var trainingId = await createResponse.Content.ReadFromJsonAsync<Guid>();
 
@@ -121,7 +121,7 @@ public class TrainingControllerTests(ApiFactory factory)
     [Fact]
     public async Task Edit_WithoutIfMatch_Returns428()
     {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var createResponse = await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
         var trainingId = await createResponse.Content.ReadFromJsonAsync<Guid>();
 
@@ -141,7 +141,7 @@ public class TrainingControllerTests(ApiFactory factory)
     [Fact]
     public async Task Edit_WithStaleIfMatch_Returns412AndKeepsTheFirstEdit()
     {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var createResponse = await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
         var trainingId = await createResponse.Content.ReadFromJsonAsync<Guid>();
 
@@ -178,11 +178,11 @@ public class TrainingControllerTests(ApiFactory factory)
     [Fact]
     public async Task Edit_AsNonOwner_Returns403()
     {
-        var ownerClient = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
+        var ownerClient = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var createResponse = await ownerClient.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
         var trainingId = await createResponse.Content.ReadFromJsonAsync<Guid>();
 
-        var otherClient = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
+        var otherClient = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var editRequest = new TrainingEditionRequest
         {
             Title = $"Hacked {Guid.NewGuid():N}"[..25],
@@ -202,7 +202,7 @@ public class TrainingControllerTests(ApiFactory factory)
     [Fact]
     public async Task Delete_AsOwner_Returns204()
     {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var createResponse = await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
         var trainingId = await createResponse.Content.ReadFromJsonAsync<Guid>();
 
@@ -216,7 +216,7 @@ public class TrainingControllerTests(ApiFactory factory)
     [Fact]
     public async Task GetByTopic_Returns200()
     {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
 
         var response = await client.GetAsync("/Training/by-topic/Programming");
@@ -231,7 +231,7 @@ public class TrainingControllerTests(ApiFactory factory)
     [Fact]
     public async Task GetByTrainerId_Returns200()
     {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
 
         var trainersResponse = await client.GetAsync("/Trainer/all");

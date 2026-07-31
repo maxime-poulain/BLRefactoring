@@ -8,14 +8,14 @@ using Xunit;
 namespace BLRefactoring.DDD.Api.IntegrationTests.Controllers;
 
 [Collection("Api")]
-public class AuthControllerTests(ApiFactory factory)
+public class AuthControllerTests(ApiFactory factory) : IntegrationTest(factory)
 {
     // -- Register --
 
     [Fact]
     public async Task Register_ValidData_Returns200()
     {
-        var client = factory.CreateClient();
+        var client = Factory.CreateClient();
         var request = AuthHelper.CreateUniqueRegisterRequest();
 
         var response = await AuthHelper.RegisterAsync(client, request);
@@ -26,7 +26,7 @@ public class AuthControllerTests(ApiFactory factory)
     [Fact]
     public async Task Register_DuplicateEmail_Returns400()
     {
-        var client = factory.CreateClient();
+        var client = Factory.CreateClient();
         var request = AuthHelper.CreateUniqueRegisterRequest();
 
         await AuthHelper.RegisterAsync(client, request);
@@ -50,7 +50,7 @@ public class AuthControllerTests(ApiFactory factory)
     [Fact]
     public async Task Register_PasswordMismatch_Returns400()
     {
-        var client = factory.CreateClient();
+        var client = Factory.CreateClient();
         var request = new RegisterRequest
         {
             Username = "mismatch_user",
@@ -71,7 +71,7 @@ public class AuthControllerTests(ApiFactory factory)
     [Fact]
     public async Task Login_ValidCredentials_ReturnsToken()
     {
-        var client = factory.CreateClient();
+        var client = Factory.CreateClient();
         var request = AuthHelper.CreateUniqueRegisterRequest();
         await AuthHelper.RegisterAsync(client, request);
 
@@ -89,7 +89,7 @@ public class AuthControllerTests(ApiFactory factory)
     [Fact]
     public async Task Login_InvalidPassword_Returns401()
     {
-        var client = factory.CreateClient();
+        var client = Factory.CreateClient();
         var request = AuthHelper.CreateUniqueRegisterRequest();
         await AuthHelper.RegisterAsync(client, request);
 
