@@ -16,6 +16,7 @@ two different problems.
 - [Architecture](#architecture)
 - [Domain model](#domain-model)
 - [How it works](#how-it-works)
+- [Outbox](#outbox)
 - [Persistence](#persistence)
 - [Security](#security)
 - [API reference](#api-reference)
@@ -86,7 +87,7 @@ Twenty-two projects: fifteen under `src/`, seven under `tests/`. The backend and
 |---|---|
 | `BLRefactoring.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, and the cross-cutting ports `IUnitOfWork`, `ICurrentUserService`, `IEmailSender`, `ITrainingSearchIndexer`, plus the CQS marker interfaces |
 | `BLRefactoring.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, `IUniquenessTitleChecker` |
-| `BLRefactoring.Shared.Application` | Value-object factories, DTOs and mappers, and the six domain event handlers — all shared by both stacks |
+| `BLRefactoring.Shared.Application` | Value-object factories, DTOs and mappers, the domain event handlers and the integration event contracts and their handlers — all shared by both stacks |
 | `BLRefactoring.Shared.Infrastructure` | EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, ASP.NET Identity, JWT issuance, HTTP concurrency helpers |
 | `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService` |
 | `DDD.Api` | REST host for the layered stack — NSwag/OpenAPI, CORS, JWT bearer |
@@ -249,12 +250,12 @@ stacks:
 
 | Handler | Reacts to | Effect |
 |---|---|---|
-| `SendWelcomeEmailWhenTrainerCreatedEventHandler` | `TrainerCreatedDomainEvent` | Welcome email through `IEmailSender` |
-| `NotifyPreviousAddressWhenTrainerContactEmailChangedEventHandler` | `TrainerContactEmailChangedDomainEvent` | Warns the **previous** address — possible only because the event carries both values |
+| `EnqueueTrainerRegisteredWhenTrainerCreatedEventHandler` | `TrainerCreatedDomainEvent` | Queues `TrainerRegisteredIntegrationEvent` — see [Outbox](#outbox) |
+| `EnqueueContactEmailChangedWhenTrainerContactEmailChangedEventHandler` | `TrainerContactEmailChangedDomainEvent` | Queues both addresses — the previous one cannot be recovered once the change commits |
 | `AuditWhenTrainerNameChangedEventHandler` | `TrainerNameChangedDomainEvent` | Structured audit trail |
 | `DeleteTrainingWhenTrainerDeletedEventHandler` | `TrainerDeletedDomainEvent` | Deletes the trainer's trainings — cross-aggregate consistency without a database cascade |
-| `IndexTrainingWhenTrainingCreatedEventHandler` | `TrainingCreatedDomainEvent` | Search-index upsert through `ITrainingSearchIndexer` |
-| `ReindexTrainingWhenTrainingEditedEventHandler` | `TrainingEditedDomainEvent` | Same upsert, kept separate so the two reactions can evolve independently |
+| `EnqueueTrainingPublishedWhenTrainingCreatedEventHandler` | `TrainingCreatedDomainEvent` | Queues `TrainingPublishedIntegrationEvent` |
+| `EnqueueTrainingRevisedWhenTrainingEditedEventHandler` | `TrainingEditedDomainEvent` | Queues `TrainingRevisedIntegrationEvent`, kept distinct so the two facts can evolve apart |
 
 `IEmailSender` and `ITrainingSearchIndexer` are ports declared in the shared kernel; their
 implementations only write to the log, so the project depends on no SMTP server or search engine.
@@ -349,6 +350,50 @@ sequenceDiagram
 
 The loop matters: a handler may itself change an aggregate that raises new events, and draining
 continues until none is left.
+
+### Outbox
+
+Dispatching before the commit is right for cross-aggregate consistency and wrong for anything
+that leaves the process. A welcome email sent from a domain event handler is already gone by the
+time the transaction rolls back — delivered for a trainer that never existed.
+
+So the two are separated. Domain events stay in-process and pre-commit. Anything reaching the
+outside world becomes an **integration event**, queued as a row of the same transaction and
+published afterwards by a background service.
+
+```mermaid
+sequenceDiagram
+    participant Agg as Aggregate
+    participant H as Domain event handler
+    participant Queue as Outbox
+    participant DB as SQL Server
+    participant P as OutboxProcessor
+    participant Ext as Email, search index, bus
+
+    Agg->>H: domain event, inside SavingChangesAsync
+    H->>Queue: Enqueue integration event
+    Queue->>DB: staged in the same change tracker
+    DB-->>DB: single commit — fact and announcement, or neither
+    P->>DB: poll the pending rows
+    P->>Ext: publish
+    P->>DB: mark ProcessedOn
+```
+
+Delivery is **at least once**: a message published just before a crash, before its `ProcessedOn`
+is written, is published again on restart. Handlers must tolerate a repeat. Making it exactly
+once would need the external effect and the marking to share a transaction, which stops being
+possible the moment the effect leaves the database.
+
+Processed rows are kept rather than deleted, so the table doubles as an audit trail and replay
+stays possible; a filtered index keeps the queue fast regardless of how long that trail grows.
+
+**What a message carries is a contract, not a model.** Identifiers stay strongly typed and
+serialise as bare values — `"trainerId": "d4b6b8d2-…"`, never a wrapper object — because their
+one rule, that an identifier cannot be empty, will hold for as long as the concept does; reading
+goes back through `Create`, so the invariant survives the round trip. Value objects carrying
+business rules do **not** cross: `Name` and `Email` are flattened to strings by the handler that
+builds the event. Tighten a length limit and every pending message built from the old rule would
+otherwise stop deserialising — a message written yesterday would depend on today's rules.
 
 ### A write, end to end
 
@@ -464,6 +509,7 @@ EF Core maps the model without letting persistence concerns leak into it:
 | `MakeTrainerBioOptional` | `Bio` becomes nullable, with a data fix for existing rows |
 | `RenameTrainerEmailToContactEmail` | Renames the column, preserving data |
 | `AddAggregateRowVersion` | Adds the `rowversion` column to both aggregates |
+| `AddOutboxMessage` | The outbox queue, with a filtered index on the pending rows |
 
 ASP.NET Identity lives in its own `DbContext` with its own migration.
 
@@ -622,11 +668,11 @@ The two filters are exact inverses, so between them every test runs exactly once
 | `BLRefactoring.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers | 73 |
 | `BLRefactoring.DDDWithCqrs.Tests` | Command handlers, validators, pipeline behaviours | 49 |
 | `BLRefactoring.Shared.Infrastructure.Tests` | Entity-tag encoding and parsing | 11 |
-| `BLRefactoring.DDD.Api.IntegrationTests` | The layered host, HTTP end to end against a real SQL Server | 32 |
+| `BLRefactoring.DDD.Api.IntegrationTests` | The layered host, HTTP end to end against a real SQL Server | 36 |
 | `BLRefactoring.DDDWithCqrs.Api.IntegrationTests` | The CQRS host, same treatment | 37 |
 | `BLRefactoring.Api.TestKit` | Not a test project: the fixtures both integration suites share | — |
 
-**364 unit test cases, 69 integration tests.**
+**373 unit test cases, 73 integration tests.**
 
 The integration tests start SQL Server through **Testcontainers** — no manual setup, no shared
 environment — and **Respawn** empties the database before each test, so every one of them starts

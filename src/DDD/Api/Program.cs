@@ -3,6 +3,7 @@ using BLRefactoring.DDD.Api.Authorization;
 using BLRefactoring.DDD.Application.Services.TrainerServices;
 using BLRefactoring.DDD.Application.Services.TrainingServices;
 using BLRefactoring.Shared.Application.EventHandlers;
+using BLRefactoring.Shared.Application.Extensions;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
 using BLRefactoring.Shared.Infrastructure.Extensions;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
@@ -59,6 +60,7 @@ builder.Services.AddTransient<ITrainingApplicationService, TrainingApplicationSe
 builder.Services.AddTransient<ITrainerApplicationService, TrainerApplicationService>();
 
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddIntegrationEventHandlers();
 
 builder.Services.AddDbContext<TrainingIdentityDbContext>(options =>
 {

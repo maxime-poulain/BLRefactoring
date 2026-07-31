@@ -1,6 +1,7 @@
 ﻿using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
+using BLRefactoring.Shared.Infrastructure.Outbox;
 using BLRefactoring.Shared.Infrastructure.Repositories;
 using BLRefactoring.Shared.Infrastructure.Services;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
@@ -42,6 +43,26 @@ public static class ServiceCollectionExtensions
             .AddScoped<ITokenService, TokenService>()
             .AddScoped<ICurrentUserService, CurrentUserService>()
             .AddSingleton<IEmailSender, FakeEmailSender>()
-            .AddSingleton<ITrainingSearchIndexer, FakeTrainingSearchIndexer>();
+            .AddSingleton<ITrainingSearchIndexer, FakeTrainingSearchIndexer>()
+            .AddOutbox();
+    }
+
+    /// <summary>
+    /// Registers the outbox: the writer, the dispatcher and the handlers it feeds, plus the
+    /// background service that drains the queue.
+    /// </summary>
+    /// <remarks>
+    /// The handlers themselves are not registered here: they live in the application layer,
+    /// which infrastructure does not reference. <see cref="AddIntegrationEventHandlers"/> in
+    /// that layer wires them, and <see cref="IntegrationEventDispatcher"/> resolves them from
+    /// the container by runtime type.
+    /// </remarks>
+    private static IServiceCollection AddOutbox(this IServiceCollection services)
+    {
+        return services
+            .AddSingleton(TimeProvider.System)
+            .AddScoped<IOutbox, Outbox.Outbox>()
+            .AddScoped<IIntegrationEventDispatcher, IntegrationEventDispatcher>()
+            .AddHostedService<OutboxProcessor>();
     }
 }
