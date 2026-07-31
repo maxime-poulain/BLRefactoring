@@ -64,7 +64,7 @@ public sealed class DomainEventInterceptor(IDomainEventDispatcher dispatcher) : 
     /// Drains and dispatches the domain events of all tracked aggregates, in rounds,
     /// until no aggregate has pending events left.
     /// </summary>
-    private async Task DispatchDomainEventsAsync(DbContext context, CancellationToken cancellationToken)
+    private async Task DispatchDomainEventsAsync(DbContext context, CancellationToken cancellationToken = default)
     {
         while (true)
         {

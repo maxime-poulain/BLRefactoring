@@ -31,7 +31,7 @@ public class TrainerController(
     [HttpGet("me")]
     [ProducesResponseType(typeof(TrainerDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<TrainerDto>> GetCurrentAsync(CancellationToken cancellationToken)
+    public async Task<ActionResult<TrainerDto>> GetCurrentAsync(CancellationToken cancellationToken = default)
     {
         var trainer = await queryDispatcher.DispatchAsync(
             new GetTrainerByIdQuery(currentUserService.TrainerId), cancellationToken);
@@ -65,7 +65,7 @@ public class TrainerController(
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status428PreconditionRequired)]
     public async Task<ActionResult<TrainerDto>> EditCurrentAsync(
         [FromBody] EditTrainerCommand command,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         if (!this.TryGetExpectedVersion(out var expectedVersion))
         {
@@ -100,7 +100,7 @@ public class TrainerController(
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(TrainerDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var trainer = await queryDispatcher.DispatchAsync(new GetTrainerByIdQuery(id), cancellationToken);
         if (trainer is null)
@@ -117,7 +117,7 @@ public class TrainerController(
     [HttpGet("all")]
     [ProducesResponseType(typeof(List<TrainerDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<List<TrainerDto>>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<ActionResult<List<TrainerDto>>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return Ok(await queryDispatcher.DispatchAsync(new GetAllTrainersQuery(), cancellationToken));
     }

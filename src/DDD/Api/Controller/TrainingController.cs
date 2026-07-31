@@ -87,7 +87,7 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
     [HttpGet("all")]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(List<TrainingDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<TrainingDto>>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<ActionResult<List<TrainingDto>>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return Ok(await trainingApplicationService.GetAllAsync(cancellationToken));
     }
@@ -170,7 +170,7 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
     [HttpGet("by-trainer/{trainerId:guid}")]
     [ProducesResponseType(typeof(List<TrainingDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(List<Error>), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken = default)
     {
         var result = await trainingApplicationService.GetByTrainerIdAsync(trainerId, cancellationToken);
         return result.Match<IActionResult>(Ok,BadRequest);
@@ -185,7 +185,7 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
     [Authorize]
     [HttpGet("by-topic/{topic}")]
     [ProducesResponseType(typeof(List<TrainingDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetByTopicAsync(string topic, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetByTopicAsync(string topic, CancellationToken cancellationToken = default)
     {
         var trainings = await trainingApplicationService.GetByTopicAsync(topic, cancellationToken);
         return Ok(trainings);

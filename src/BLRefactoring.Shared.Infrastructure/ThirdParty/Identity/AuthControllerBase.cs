@@ -30,7 +30,7 @@ public abstract class AuthControllerBase(
     protected abstract Task<Result> CreateTrainerAsync(
         RegisterRequest request,
         Guid userId,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Registers a new user with the provided username, email, and password.

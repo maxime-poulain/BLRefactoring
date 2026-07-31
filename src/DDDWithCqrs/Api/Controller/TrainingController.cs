@@ -26,7 +26,7 @@ public class TrainingController(
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status409Conflict)]
     public async Task<ActionResult> CreateTrainingAsync(
         CreateTrainingCommand command,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         var trainingId = command.TrainingId;
         var result = await commandDispatcher.DispatchAsync(command, cancellationToken);
@@ -43,7 +43,7 @@ public class TrainingController(
     [ProducesResponseType(typeof(TrainingDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<TrainingDto>> GetTrainingByIdAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<TrainingDto>> GetTrainingByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var training = await queryDispatcher.DispatchAsync(new GetTrainingByIdQuery(id), cancellationToken);
 
@@ -63,7 +63,7 @@ public class TrainingController(
     [HttpGet("all")]
     [ProducesResponseType(typeof(List<TrainingDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<List<TrainingDto>>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<ActionResult<List<TrainingDto>>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await queryDispatcher.DispatchAsync(new GetAllTrainingsQuery(), cancellationToken);
     }
@@ -80,7 +80,7 @@ public class TrainingController(
     public async Task<ActionResult> EditTrainingAsync(
         Guid trainingId,
         [FromBody] EditTrainingCommand command,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         if (!this.TryGetExpectedVersion(out var expectedVersion))
         {
@@ -114,14 +114,14 @@ public class TrainingController(
     [HttpGet("by-trainer/{trainerId:guid}")]
     [ProducesResponseType(typeof(List<TrainingDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<List<TrainingDto>>> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken)
+    public async Task<ActionResult<List<TrainingDto>>> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken = default)
     {
         return await queryDispatcher.DispatchAsync(new GetTrainingsByTrainerIdQuery(trainerId), cancellationToken);
     }
 
     [HttpGet("by-topic/{topic}")]
     [ProducesResponseType(typeof(List<TrainingDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<TrainingDto>>> GetByTopicAsync(string topic, CancellationToken cancellationToken)
+    public async Task<ActionResult<List<TrainingDto>>> GetByTopicAsync(string topic, CancellationToken cancellationToken = default)
     {
         return await queryDispatcher.DispatchAsync(new GetTrainingsByTopicQuery(topic), cancellationToken);
     }
@@ -132,7 +132,7 @@ public class TrainingController(
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult> DeleteAsync(Guid trainingId, CancellationToken cancellationToken)
+    public async Task<ActionResult> DeleteAsync(Guid trainingId, CancellationToken cancellationToken = default)
     {
         var deletionResult = await commandDispatcher.DispatchAsync(
             new DeleteTrainingCommand(trainingId), cancellationToken);
