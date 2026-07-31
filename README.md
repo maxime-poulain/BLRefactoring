@@ -588,6 +588,18 @@ Supply them through `appsettings.Development.json`, user secrets, or environment
 `docker compose` service passes them as `ConnectionStrings__TrainingContext`, `Jwt__Key` and so
 on.
 
+The Blazor front end expects one key of its own:
+
+| Key | Purpose |
+|---|---|
+| `Api:BaseAddress` | Address of the REST API the WebAssembly client calls |
+
+It lives in `BLRefactoring.Blazor.Client/wwwroot/appsettings.Development.json`, served as a
+static asset and downloaded by the WebAssembly runtime at startup — the browser cannot read the
+server's `appsettings.json`. Like the API settings above, it sits in the environment-specific
+file: a `localhost` address is a development fact, and every environment names its own API
+rather than inheriting a default that would fail obscurely in production.
+
 ---
 
 ## Testing
