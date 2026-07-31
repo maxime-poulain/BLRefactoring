@@ -45,6 +45,7 @@
     <PackageVersion Include="MudBlazor" Version="9.7.0" />
     <PackageVersion Include="NSwag.AspNetCore" Version="14.7.1" />
     <PackageVersion Include="NSwag.MSBuild" Version="14.7.1" />
+    <PackageVersion Include="Respawn" Version="7.0.0" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.16.16" />
     <!--
       Transitive-only pin: EF Core Sqlite still ships the bundle 2.1.11, whose
