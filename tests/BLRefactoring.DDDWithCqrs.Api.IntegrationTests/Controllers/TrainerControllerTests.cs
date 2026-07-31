@@ -5,8 +5,6 @@ using AwesomeAssertions;
 using BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Fixtures;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Edit;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Create;
-using BLRefactoring.Shared.Application.Dtos.Training;
 using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Controllers;
@@ -189,51 +187,20 @@ public class TrainerControllerTests(ApiFactory factory) : IntegrationTest(factor
     // -- Delete --
 
     [Fact]
-    public async Task Delete_ExistingTrainer_Returns204()
+    public async Task Delete_IsNotExposed_OnAnyRoute()
     {
+        // Removing a trainer is an administrative decision, and no role is entitled to it yet, so
+        // the API exposes nothing at all — neither on `me` nor on an identifier. Both used to
+        // answer 204. This test is what keeps self-deletion from creeping back in: 405 rather
+        // than 404, because the matching GET routes still exist.
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var me = (await client.GetFromJsonAsync<TrainerDto>("/Trainer/me"))!;
 
-        var response = await client.DeleteAsync($"/Trainer/{me.Id}");
+        var onMe = await client.DeleteAsync("/Trainer/me");
+        var onIdentifier = await client.DeleteAsync($"/Trainer/{me.Id}");
 
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-    }
-
-    [Fact]
-    public async Task Delete_NonExistent_Returns404()
-    {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-
-        var response = await client.DeleteAsync($"/Trainer/{Guid.NewGuid()}");
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
-    public async Task Delete_TrainerWithTrainings_AlsoDeletesTheirTrainings()
-    {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-
-        var creation = await client.PostAsJsonAsync("/Training", new CreateTrainingCommand
-        {
-            Title = "A Training To Cascade",
-            Description = "A valid training description for testing purposes",
-            Prerequisites = "Basic programming knowledge required",
-            AcquiredSkills = "Advanced design patterns mastery",
-            Topics = ["Programming"]
-        });
-        creation.EnsureSuccessStatusCode();
-
-        var me = (await client.GetFromJsonAsync<TrainerDto>("/Trainer/me"))!;
-
-        var response = await client.DeleteAsync($"/Trainer/{me.Id}");
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-
-        // No foreign key cascades Trainer -> Training in the database, deliberately.
-        // If the training is gone, TrainerDeletedDomainEvent was dispatched during
-        // SaveChanges and its handler removed it — proving the EF interceptors are wired
-        // on this host too, not only on the layered one.
-        var remaining = await client.GetFromJsonAsync<List<TrainingDto>>("/Training/all");
-        remaining.Should().BeEmpty();
+        onMe.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
+        onIdentifier.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
+        (await client.GetAsync("/Trainer/me")).StatusCode.Should().Be(HttpStatusCode.OK);
     }
 }

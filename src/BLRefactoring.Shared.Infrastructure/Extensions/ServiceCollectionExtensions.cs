@@ -22,7 +22,11 @@ public static class ServiceCollectionExtensions
             .AddScoped<IUnitOfWork, UnitOfWork>()
             .AddScoped<ITrainerRepository, TrainerRepository>()
             .AddScoped<ITrainingRepository, TrainingRepository>()
-            .AddScoped<IUniquenessTitleChecker, TrainingRepository>()
+            // Resolved through ITrainingRepository rather than registered a second time against
+            // the same implementation: two registrations mean two instances per request, and the
+            // only reason that was harmless is that both happened to share the DbContext.
+            .AddScoped<IUniquenessTitleChecker>(serviceProvider =>
+                (TrainingRepository)serviceProvider.GetRequiredService<ITrainingRepository>())
             .AddDbContext<TrainingContext>((serviceProvider, options) =>
             {
                 options.UseSqlServer(configuration.GetConnectionString("TrainingContext"))

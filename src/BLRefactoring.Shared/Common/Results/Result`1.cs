@@ -11,9 +11,9 @@ namespace BLRefactoring.Shared.Common.Results;
 /// <typeparam name="TValue">The type of the value in case of a successful result.</typeparam>
 public abstract class Result<TValue>
 {
-    public bool HasErrors() => Match(
-        _ => false,
-        _ => true);
+    // Deliberately no IsSuccess/HasErrors and no Value: Match and Switch are the only ways in,
+    // so an unchecked failure cannot slip through. HasErrors() used to be the one hole in that
+    // rule, and nothing outside the tests went through it.
 
     /// <summary>
     /// Matches the current result to either a success or failure case, allowing for explicit handling of both outcomes.

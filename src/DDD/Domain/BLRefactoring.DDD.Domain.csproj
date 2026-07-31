@@ -5,10 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="EmailValidation" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\BLRefactoring.Shared\BLRefactoring.Shared.csproj" />
   </ItemGroup>
 

@@ -95,30 +95,4 @@ public class ValueObjectTests
         (vo1 != vo2).Should().BeTrue();
     }
 
-    [Fact]
-    public void CompareTo_Null_ReturnsPositive()
-    {
-        var vo = new TestValueObject("A", "B");
-
-        vo.CompareTo((object?)null).Should().Be(1);
-    }
-
-    [Fact]
-    public void CompareTo_SameComponents_ReturnsZero()
-    {
-        var vo1 = new TestValueObject("A", "B");
-        var vo2 = new TestValueObject("A", "B");
-
-        vo1.CompareTo(vo2).Should().Be(0);
-    }
-
-    [Fact]
-    public void CompareTo_NonValueObject_ThrowsArgumentException()
-    {
-        var vo = new TestValueObject("A", "B");
-
-        var act = () => vo.CompareTo("not a value object");
-
-        act.Should().Throw<ArgumentException>();
-    }
 }

@@ -26,14 +26,6 @@ public interface IRepository<TAggregate> where TAggregate : class, IAggregateRoo
     Task<List<TAggregate>> GetAsync(ISpecification<TAggregate> spec, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Retrieves the first aggregate matching the given specification, or <c>null</c> if none is found.
-    /// </summary>
-    /// <param name="spec">The specification defining the query criteria.</param>
-    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-    /// <returns>The first matching aggregate, or <c>null</c>.</returns>
-    Task<TAggregate?> FirstOrDefaultAsync(ISpecification<TAggregate> spec, CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Determines whether any aggregate matches the given specification.
     /// </summary>
     /// <param name="spec">The specification defining the query criteria.</param>

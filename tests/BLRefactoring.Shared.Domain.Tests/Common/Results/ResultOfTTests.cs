@@ -20,14 +20,6 @@ public class ResultOfTTests
     }
 
     [Fact]
-    public void Success_HasErrors_ReturnsFalse()
-    {
-        var result = Result<string>.Success("hello");
-
-        result.HasErrors().Should().BeFalse();
-    }
-
-    [Fact]
     public void Success_Bind_AppliesFunction()
     {
         var result = Result<string>.Success("hello");
@@ -66,15 +58,6 @@ public class ResultOfTTests
     }
 
     [Fact]
-    public void Failure_HasErrors_ReturnsTrue()
-    {
-        var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
-        var result = Result<string>.Failure(errors);
-
-        result.HasErrors().Should().BeTrue();
-    }
-
-    [Fact]
     public void Failure_Bind_PropagatesErrors()
     {
         var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
@@ -88,7 +71,7 @@ public class ResultOfTTests
         });
 
         bindCalled.Should().BeFalse();
-        bound.HasErrors().Should().BeTrue();
+        bound.Match(_ => false, propagated => propagated.SequenceEqual(errors)).Should().BeTrue();
     }
 
     [Fact]

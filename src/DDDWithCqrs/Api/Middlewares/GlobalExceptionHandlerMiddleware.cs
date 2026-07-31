@@ -22,7 +22,7 @@ public class GlobalExceptionHandlerMiddleware(
     {
         await LogUnhandledException(context, exception);
 
-        const string errorResponse = "An expected error occurred while processing the request. Try again later.";
+        const string errorResponse = "An unexpected error occurred while processing the request. Try again later.";
         context.Response.StatusCode = StatusCodes.Status500InternalServerError;
         await context.Response.WriteAsJsonAsync(errorResponse);
     }

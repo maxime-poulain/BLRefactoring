@@ -19,25 +19,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-// The origins come from configuration rather than code, so a deployment names its own front
-// end instead of requiring a rebuild. The policy used to allow any origin, which made its
-// name a promise the code did not keep.
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("BlazorClient", policy =>
-    {
-        // Deliberately no AllowCredentials: the JWT travels in the Authorization header, not in
-        // a cookie, so credentials buy nothing here. Adding it would also make ASP.NET Core
-        // reject any wildcard origin at startup, and the usual workaround for that error is a
-        // policy that reflects the caller's origin back — which allows everyone while looking
-        // restrictive.
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
-});
+// Shared with the CQRS host so the two cannot drift: a policy defined in one Program.cs only
+// protects that host. See CorsExtensions for why the origins come from configuration.
+builder.Services.AddApiCors(builder.Configuration);
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
@@ -121,17 +105,6 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
-// A warning rather than a throw, unlike Jwt:Key: this API is perfectly usable without a browser
-// front end — Swagger is same-origin and the integration tests run in-process. But staying
-// silent would leave a misconfiguration to surface as an opaque CORS error in a browser
-// console, which is a miserable thing to debug.
-if (allowedOrigins.Length == 0)
-{
-    app.Logger.LogWarning(
-        "No 'Cors:AllowedOrigins' configured: every cross-origin browser request will be " +
-        "refused. Set the key if a browser front end needs to call this API.");
-}
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -141,7 +114,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors("BlazorClient");
+app.UseApiCors();
 
 app.UseAuthentication();
 app.UseAuthorization();

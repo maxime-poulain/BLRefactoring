@@ -24,10 +24,12 @@ public class TrainingController(
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult> CreateTrainingAsync(CreateTrainingCommand command)
+    public async Task<ActionResult> CreateTrainingAsync(
+        CreateTrainingCommand command,
+        CancellationToken cancellationToken)
     {
         var trainingId = command.TrainingId;
-        var result = await commandDispatcher.DispatchAsync(command);
+        var result = await commandDispatcher.DispatchAsync(command, cancellationToken);
 
         return result.Match<ActionResult>(
             () => CreatedAtAction("GetTrainingById",
@@ -41,9 +43,9 @@ public class TrainingController(
     [ProducesResponseType(typeof(TrainingDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<TrainingDto>> GetTrainingByIdAsync(Guid id)
+    public async Task<ActionResult<TrainingDto>> GetTrainingByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        var training = await queryDispatcher.DispatchAsync(new GetTrainingByIdQuery(id));
+        var training = await queryDispatcher.DispatchAsync(new GetTrainingByIdQuery(id), cancellationToken);
 
         // Using a monad such Maybe<T,None> could be an alternative
         // to avoid potential null reference exception.
@@ -61,9 +63,9 @@ public class TrainingController(
     [HttpGet("all")]
     [ProducesResponseType(typeof(List<TrainingDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<List<TrainingDto>>> GetAllAsync()
+    public async Task<ActionResult<List<TrainingDto>>> GetAllAsync(CancellationToken cancellationToken)
     {
-        return await queryDispatcher.DispatchAsync(new GetAllTrainingsQuery());
+        return await queryDispatcher.DispatchAsync(new GetAllTrainingsQuery(), cancellationToken);
     }
 
     [Authorize(Policy = "TrainingOwner")]
@@ -77,7 +79,8 @@ public class TrainingController(
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status428PreconditionRequired)]
     public async Task<ActionResult> EditTrainingAsync(
         Guid trainingId,
-        [FromBody] EditTrainingCommand command)
+        [FromBody] EditTrainingCommand command,
+        CancellationToken cancellationToken)
     {
         if (!this.TryGetExpectedVersion(out var expectedVersion))
         {
@@ -86,7 +89,7 @@ public class TrainingController(
 
         command.TrainingId = trainingId;
         command.ExpectedVersion = expectedVersion;
-        var result = await commandDispatcher.DispatchAsync(command);
+        var result = await commandDispatcher.DispatchAsync(command, cancellationToken);
 
         return result.Match<ActionResult>(
             () => Ok(),
@@ -111,16 +114,16 @@ public class TrainingController(
     [HttpGet("by-trainer/{trainerId:guid}")]
     [ProducesResponseType(typeof(List<TrainingDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<List<TrainingDto>>> GetByTrainerIdAsync(Guid trainerId)
+    public async Task<ActionResult<List<TrainingDto>>> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken)
     {
-        return await queryDispatcher.DispatchAsync(new GetTrainingsByTrainerIdQuery(trainerId));
+        return await queryDispatcher.DispatchAsync(new GetTrainingsByTrainerIdQuery(trainerId), cancellationToken);
     }
 
     [HttpGet("by-topic/{topic}")]
     [ProducesResponseType(typeof(List<TrainingDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<TrainingDto>>> GetByTopicAsync(string topic)
+    public async Task<ActionResult<List<TrainingDto>>> GetByTopicAsync(string topic, CancellationToken cancellationToken)
     {
-        return await queryDispatcher.DispatchAsync(new GetTrainingsByTopicQuery(topic));
+        return await queryDispatcher.DispatchAsync(new GetTrainingsByTopicQuery(topic), cancellationToken);
     }
 
     [Authorize(Policy = "TrainingOwner")]
@@ -129,9 +132,10 @@ public class TrainingController(
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult> DeleteAsync(Guid trainingId)
+    public async Task<ActionResult> DeleteAsync(Guid trainingId, CancellationToken cancellationToken)
     {
-        var deletionResult = await commandDispatcher.DispatchAsync(new DeleteTrainingCommand(trainingId));
+        var deletionResult = await commandDispatcher.DispatchAsync(
+            new DeleteTrainingCommand(trainingId), cancellationToken);
 
         return deletionResult.Match<ActionResult>(
             NoContent,

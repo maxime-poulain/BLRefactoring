@@ -41,7 +41,10 @@ public class TrainingBuilder
     }
 
     public IReadOnlyCollection<Topic> BuildTopics()
-        => _topics.Select(name => Topic.FromName(name)).ToList();
+        => _topics.Select(name => Topic.TryFromName(name, out var topic)
+                ? topic
+                : throw new ArgumentException($"Topic with name '{name}' does not exist."))
+            .ToList();
 
     public async Task<Result<Training>> BuildAsync()
     {

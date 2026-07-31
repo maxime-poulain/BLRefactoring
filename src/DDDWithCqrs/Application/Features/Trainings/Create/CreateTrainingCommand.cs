@@ -34,12 +34,11 @@ public class CreateTrainingCommandHandler(
         CancellationToken cancellationToken)
     {
         var trainerId = TrainerId.Create(currentUserService.TrainerId);
-        var trainer = await trainerRepository.GetByIdAsync(trainerId, cancellationToken);
 
-        if (trainer == null)
+        if (!await trainerRepository.ExistsAsync(trainerId, cancellationToken))
         {
             return Result.Failure(ErrorCode.NotFound,
-                $"Trainer `{trainerId}` was not found");
+                $"Trainer with id `{trainerId.Value}` not found.");
         }
 
         var detailsResult = TrainingDetailsFactory.Create(

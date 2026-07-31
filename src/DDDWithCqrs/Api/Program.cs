@@ -22,6 +22,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+// Shared with the layered host so the two cannot drift: a policy defined in one Program.cs only
+// protects that host. See CorsExtensions for why the origins come from configuration.
+builder.Services.AddApiCors(builder.Configuration);
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -106,6 +111,15 @@ builder.Services.AddAuthorization(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+
+// The exception handlers come first, so that everything downstream is covered: authentication,
+// authorization, routing and the actions alike. Registered after the authentication middlewares —
+// where they used to sit — they let anything thrown while authenticating escape to the host.
+// The global handler stays outside the validation one, which turns a ValidationException into a
+// 400 before the global handler would turn it into a 500.
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+app.UseMiddleware<FluentValidationMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -114,11 +128,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Before authentication on purpose: an unauthenticated cross-origin call must still be answered
+// with the CORS headers, or the browser reports a CORS failure instead of the 401 it received.
+app.UseApiCors();
+
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
-app.UseMiddleware<FluentValidationMiddleware>();
 
 app.MapControllers();
 

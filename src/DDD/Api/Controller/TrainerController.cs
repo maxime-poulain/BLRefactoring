@@ -8,10 +8,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace BLRefactoring.DDD.Api.Controller;
 
 /// <summary>
-/// API controller for managing trainer resources.
-/// Provides REST endpoints for reading and deleting trainer records.
-/// Trainers are only created through the registration flow, which creates
-/// the identity user and its trainer atomically.
+/// API controller for reading and editing trainer resources.
+/// Trainers are only created through the registration flow, which creates the identity user and
+/// its trainer atomically, and no endpoint deletes one: removing a trainer is an administrative
+/// decision, not something a trainer performs on themselves.
 /// </summary>
 /// <param name="trainerApplicationService">Application service for trainer operations.</param>
 /// <param name="currentUserService">Provides the identity of the caller.</param>
@@ -148,26 +148,5 @@ public class TrainerController(
     public async Task<ActionResult<List<TrainerDto>>> GetAllAsync(CancellationToken cancellationToken)
     {
         return Ok(await trainerApplicationService.GetAllAsync(cancellationToken));
-    }
-
-    /// <summary>
-    /// Deletes an existing trainer.
-    /// </summary>
-    /// <param name="id">The unique identifier of the trainer to delete.</param>
-    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
-    /// <returns>
-    /// 204 No Content if the deletion was successful.
-    /// 404 Not Found if the trainer does not exist.
-    /// 400 Bad Request on validation errors.
-    /// </returns>
-    [HttpDelete("{id}")]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(List<TrainerDto>), StatusCodes.Status204NoContent)]
-    public async Task<ActionResult> DeleteAsync(Guid id, CancellationToken cancellationToken)
-    {
-        var result = await trainerApplicationService.DeleteAsync(id, cancellationToken);
-
-        return result.Match<ActionResult>(NoContent,
-            errors => errors.Any(error => error.ErrorCode == ErrorCode.NotFound) ? NotFound() : BadRequest(errors));
     }
 }

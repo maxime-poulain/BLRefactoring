@@ -4,12 +4,15 @@
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
 
+  <!--
+    Ardalis.SmartEnum backs ErrorCode; Mediator.Abstractions backs IDomainEvent and the CQS
+    marker interfaces. Nothing else: EmailValidation moved to the domain project, next to the
+    Email value object that actually calls it, and neither Microsoft.Extensions.Logging nor
+    DependencyInjection was ever referenced from a single file here.
+  -->
   <ItemGroup>
     <PackageReference Include="Ardalis.SmartEnum" />
-    <PackageReference Include="EmailValidation" />
     <PackageReference Include="Mediator.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 
 </Project>

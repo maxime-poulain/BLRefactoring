@@ -1,6 +1,5 @@
 using BLRefactoring.Shared.Infrastructure.Http;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Delete;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Edit;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetAll;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetById;
@@ -121,27 +120,5 @@ public class TrainerController(
     public async Task<ActionResult<List<TrainerDto>>> GetAllAsync(CancellationToken cancellationToken)
     {
         return Ok(await queryDispatcher.DispatchAsync(new GetAllTrainersQuery(), cancellationToken));
-    }
-
-    [HttpDelete("{id:guid}")]
-    [ProducesResponseType(typeof(void), StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> DeleteAsync([FromRoute] Guid id, CancellationToken cancellationToken)
-    {
-        var result = await commandDispatcher.DispatchAsync(new DeleteTrainerCommand(id), cancellationToken);
-
-        return result.Match<ActionResult>(
-            NoContent,
-            errors =>
-            {
-                if (errors.Any(error => error.ErrorCode == ErrorCode.NotFound))
-                {
-                    return NotFound();
-                }
-
-                return BadRequest(errors);
-            }
-            );
     }
 }

@@ -43,23 +43,23 @@ public class TrainingIdTests
     [Fact]
     public void ExplicitConversion_FromGuid_CreatesValidatedId()
     {
-        // Arrange
+        // The idiom this codebase writes at its boundaries: `TrainingId id = (TrainingId)someGuid`.
+        // The cast is deliberate — turning a loose Guid into an identifier can fail, and an
+        // implicit conversion would hide both the intent and the failure.
         var guid = Guid.NewGuid();
 
-        // Act
         var trainingId = (TrainingId)guid;
 
-        // Assert
         trainingId.Value.Should().Be(guid);
     }
 
     [Fact]
     public void ExplicitConversion_FromEmptyGuid_Throws()
     {
-        // Act
+        // Same validation as Create: the conversion is a different spelling of it, not a
+        // shortcut around it.
         var act = () => (TrainingId)Guid.Empty;
 
-        // Assert
         act.Should().Throw<ArgumentException>();
     }
 

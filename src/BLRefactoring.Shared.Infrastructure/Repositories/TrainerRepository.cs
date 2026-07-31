@@ -25,6 +25,11 @@ public class TrainerRepository(TrainingContext trainingContext) : ITrainerReposi
             .ConfigureAwait(false);
     }
 
+    public Task<bool> ExistsAsync(TrainerId id, CancellationToken cancellationToken = default)
+    {
+        return trainingContext.Trainers.AnyAsync(trainer => trainer.Id == id, cancellationToken);
+    }
+
     public void Add(Trainer trainer)
     {
         trainingContext.Trainers.Add(trainer);
@@ -40,12 +45,10 @@ public class TrainerRepository(TrainingContext trainingContext) : ITrainerReposi
 
     public Task<List<Trainer>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        // Owned Entities are by default included in the query.
-        // However, we are explicitly including them here for the sake of clarity.
-        return trainingContext.Trainers
-            .Include(trainer => trainer.ContactEmail)
-            .Include(trainer => trainer.Name)
-            .ToListAsync(cancellationToken);
+        // No Include: owned types are part of the entity and come back with it. Naming two of
+        // the three here — Name and ContactEmail, but not Bio — read like a deliberate partial
+        // load, which it never was.
+        return trainingContext.Trainers.ToListAsync(cancellationToken);
     }
 
     public void Delete(Trainer trainer)
@@ -58,13 +61,6 @@ public class TrainerRepository(TrainingContext trainingContext) : ITrainerReposi
     {
         return await SpecificationEvaluator.GetQuery(trainingContext.Trainers, spec)
             .ToListAsync(cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public async Task<Trainer?> FirstOrDefaultAsync(ISpecification<Trainer> spec, CancellationToken cancellationToken = default)
-    {
-        return await SpecificationEvaluator.GetQuery(trainingContext.Trainers, spec)
-            .FirstOrDefaultAsync(cancellationToken);
     }
 
     /// <inheritdoc />

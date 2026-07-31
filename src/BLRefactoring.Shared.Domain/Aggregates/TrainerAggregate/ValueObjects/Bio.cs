@@ -1,12 +1,19 @@
-﻿using BLRefactoring.Shared.Common;
+using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
-using Microsoft.EntityFrameworkCore;
 
 namespace BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 
-[Owned]
-public class Bio : ValueObject
+/// <summary>
+/// The free-text presentation a trainer writes about themselves.
+/// </summary>
+/// <remarks>
+/// How this is stored is none of the domain's business: <c>TrainerConfiguration</c> maps it as an
+/// owned type, in the infrastructure. This class used to carry EF Core's <c>[Owned]</c> attribute
+/// as well — redundant with that mapping, and the single reason the domain project referenced a
+/// persistence package at all.
+/// </remarks>
+public sealed class Bio : ValueObject
 {
     public string Value { get; init; } = null!;
 

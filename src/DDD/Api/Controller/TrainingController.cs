@@ -19,6 +19,7 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
     /// Creates a new training.
     /// </summary>
     /// <param name="request">The training creation request containing training details.</param>
+    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
     /// <returns>
     /// 201 Created with the created training ID on success.
     /// 409 Conflict when a training with the same title already exists for the trainer.
@@ -29,9 +30,11 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
-    public async Task<ActionResult> CreateTrainingAsync([FromBody] TrainingCreationRequest request)
+    public async Task<ActionResult> CreateTrainingAsync(
+        [FromBody] TrainingCreationRequest request,
+        CancellationToken cancellationToken = default)
     {
-        var result = await trainingApplicationService.CreateAsync(request);
+        var result = await trainingApplicationService.CreateAsync(request, cancellationToken);
 
         return result.Match<ActionResult>(
             (trainingDto) => CreatedAtAction("GetTrainingById", new { id = trainingDto.Id }, trainingDto.Id),

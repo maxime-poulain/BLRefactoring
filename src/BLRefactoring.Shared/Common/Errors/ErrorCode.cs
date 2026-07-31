@@ -28,7 +28,6 @@ public class ErrorCode : SmartEnum<ErrorCode>
     public static readonly ErrorCode InvalidTopic = new("InvalidTopic", 6);
 
     // Trainer error codes.
-    public static readonly ErrorCode InvalidTrainer = new("InvalidTrainer", 100);
     public static readonly ErrorCode InvalidEmail = new("InvalidEmail", 101);
     public static readonly ErrorCode BioEmpty = new("BioEmpty", 102);
     public static readonly ErrorCode BioExceeds500Characters = new("BioExceeds500Characters", 103);

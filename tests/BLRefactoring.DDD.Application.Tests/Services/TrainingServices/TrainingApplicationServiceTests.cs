@@ -26,13 +26,9 @@ public class TrainingApplicationServiceTests
 
     private void SetupTrainerExists()
     {
-        var trainer = new TrainerBuilder()
-            .WithId(_trainerId)
-            .WithUserId(_userId)
-            .Build();
         _fixture.TrainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(trainer);
+            .Setup(r => r.ExistsAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
     }
 
     private void SetupTitleUnique()
@@ -87,17 +83,17 @@ public class TrainingApplicationServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_TrainerNotFound_ReturnsFailure()
+    public async Task CreateAsync_TrainerNotFound_ReturnsNotFoundFailure()
     {
         SetupCurrentUser();
         _fixture.TrainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Trainer?)null);
+            .Setup(r => r.ExistsAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
         var sut = _fixture.CreateSut();
 
         var result = await sut.CreateAsync(ValidCreationRequest());
 
-        result.ShouldBeFailure();
+        result.ShouldContainError(ErrorCode.NotFound);
     }
 
     [Fact]
@@ -158,7 +154,7 @@ public class TrainingApplicationServiceTests
         await sut.CreateAsync(ValidCreationRequest());
 
         _fixture.TrainerRepository.Verify(
-            r => r.GetByIdAsync(TrainerId.Create(_trainerId), It.IsAny<CancellationToken>()),
+            r => r.ExistsAsync(TrainerId.Create(_trainerId), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

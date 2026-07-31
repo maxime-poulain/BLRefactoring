@@ -12,15 +12,15 @@ public class TrainingConfiguration : AggregateRootTypeConfiguration<Training, Tr
     {
         builder.ToTable("Training");
 
-        builder.Property(training => training.Title)
-            .HasMaxLength(100)
-            .IsRequired();
-
         builder.Property(training => training.TrainerId)
             .HasConversion(
                 id => id.Value,
                 value => TrainerId.Create(value));
 
+        // The column is wider than the rule the value object enforces (30 characters), on
+        // purpose: the length that matters is checked by TrainingTitle before anything reaches
+        // here, and leaving the column roomier means tightening or relaxing that rule does not
+        // drag a migration along.
         builder.Property(training => training.Title)
             .HasConversion(
                 title => title.Value,
