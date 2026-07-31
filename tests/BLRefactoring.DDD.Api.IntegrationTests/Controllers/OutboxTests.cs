@@ -6,7 +6,7 @@ using BLRefactoring.Shared.Infrastructure.Outbox;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace BLRefactoring.DDD.Api.IntegrationTests.Controllers;
@@ -100,7 +100,13 @@ public class OutboxTests(ApiFactory factory) : IntegrationTest(factory)
         (await AuthHelper.RegisterAsync(client, AuthHelper.CreateUniqueRegisterRequest()))
             .EnsureSuccessStatusCode();
 
-        var processor = Factory.Services.GetServices<IHostedService>().OfType<OutboxProcessor>().Single();
+        // Built rather than resolved: the fixture removes the hosted service so the queue only
+        // moves when a test says so, and constructing it here says exactly that.
+        var processor = new OutboxProcessor(
+            Factory.Services.GetRequiredService<IServiceScopeFactory>(),
+            Factory.Services.GetRequiredService<ILogger<OutboxProcessor>>(),
+            Factory.Services.GetRequiredService<TimeProvider>());
+
         await processor.ProcessPendingAsync(CancellationToken.None);
 
         var processed = await PendingMessagesAsync();

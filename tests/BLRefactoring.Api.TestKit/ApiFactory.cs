@@ -1,12 +1,14 @@
 using System.Data.Common;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Interceptors;
+using BLRefactoring.Shared.Infrastructure.Outbox;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.Identity;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Respawn;
 using Respawn.Graph;
 using Testcontainers.MsSql;
@@ -47,9 +49,36 @@ public abstract class ApiFactory<TEntryPoint> : WebApplicationFactory<TEntryPoin
                     serviceProvider.GetRequiredService<AuditableEntitiesInterceptor>()));
 
             ReplaceDbContext<TrainingIdentityDbContext>(services);
+
+            StopTheOutboxFromDrainingItself(services);
         });
 
         builder.UseEnvironment("Development");
+    }
+
+    /// <summary>
+    /// Removes the outbox's background service, so the queue only moves when a test says so.
+    /// </summary>
+    /// <remarks>
+    /// Left registered, the host starts it: it drains immediately and then every ten seconds,
+    /// across a suite that runs for the best part of a minute. A tick landing between a request
+    /// and its assertion turns "this message is still pending" into a failure — intermittently,
+    /// which is worse than always, because a green run would prove nothing.
+    /// <para>
+    /// Removing it does not weaken the suite. The tests already drive
+    /// <c>OutboxProcessor.ProcessPendingAsync</c> themselves, which is what makes "draining twice
+    /// does not republish" a real assertion rather than a race against a concurrent tick.
+    /// </para>
+    /// </remarks>
+    private static void StopTheOutboxFromDrainingItself(IServiceCollection services)
+    {
+        foreach (var descriptor in services
+                     .Where(descriptor => descriptor.ServiceType == typeof(IHostedService)
+                                          && descriptor.ImplementationType == typeof(OutboxProcessor))
+                     .ToArray())
+        {
+            services.Remove(descriptor);
+        }
     }
 
     private void ReplaceDbContext<TContext>(
