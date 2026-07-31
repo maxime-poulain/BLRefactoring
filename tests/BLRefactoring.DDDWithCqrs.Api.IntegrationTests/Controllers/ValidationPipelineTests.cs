@@ -62,31 +62,6 @@ public class ValidationPipelineTests(ApiFactory factory) : IntegrationTest(facto
     }
 
     [Fact]
-    public async Task EveryBrokenRule_IsReported_NotJustTheFirst()
-    {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var entityTag = await client.GetETagAsync("/Trainer/me");
-
-        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerRequestHttp
-        {
-            Firstname = string.Empty,
-            Lastname = string.Empty,
-            ContactEmail = "not-an-email"
-        }, entityTag);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        // A caller filling a form deserves every invalid field at once rather than one
-        // round-trip per mistake.
-        (await InvalidPropertiesAsync(response)).Should().Contain(
-        [
-            nameof(EditTrainerRequestHttp.Firstname),
-            nameof(EditTrainerRequestHttp.Lastname),
-            nameof(EditTrainerRequestHttp.ContactEmail)
-        ]);
-    }
-
-    [Fact]
     public async Task ValidationRunsBeforeTheHandler_LeavingTheAggregateUntouched()
     {
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);

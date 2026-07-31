@@ -19,8 +19,7 @@ public class EditTrainerCommandValidatorTests
     [Fact]
     public async Task Validate_EmptyTrainerId_HasError()
     {
-        var command = Command();
-        command.TrainerId = Guid.Empty;
+        var command = Command(trainerId: Guid.Empty);
 
         var result = await _sut.ValidateAsync(command);
 
@@ -65,13 +64,14 @@ public class EditTrainerCommandValidatorTests
     }
 
     private static EditTrainerCommand Command(
+        Guid? trainerId = null,
         string firstname = "John",
         string lastname = "Doe",
         string contactEmail = "john.doe@example.com",
         string? bio = "Experienced software trainer.")
         => new()
         {
-            TrainerId = Guid.NewGuid(),
+            TrainerId = trainerId ?? Guid.NewGuid(),
             Firstname = firstname,
             Lastname = lastname,
             ContactEmail = contactEmail,

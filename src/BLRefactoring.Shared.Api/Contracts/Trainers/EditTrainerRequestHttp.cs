@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace BLRefactoring.Shared.Api.Contracts.Trainers;
 
 /// <summary>
@@ -14,26 +16,39 @@ namespace BLRefactoring.Shared.Api.Contracts.Trainers;
 /// <c>[JsonIgnore]</c> — a serialisation concern inside an application message.
 /// </para>
 /// <para>
-/// No <c>required</c> modifier, deliberately. A missing field must reach the layer that decides
-/// what is valid — the value objects on the layered stack, the FluentValidation validators on the
-/// CQRS one — rather than be turned into a binding error by the framework, which would answer
-/// with a payload neither stack produces.
+/// The constraints are declared as attributes so that <c>[ApiController]</c> answers a
+/// <c>ValidationProblemDetails</c> keyed by field name before the action runs — what a form on
+/// the other end needs to mark the offending input rather than show one message for the whole
+/// submission. They also reach the OpenAPI document, and therefore the generated clients.
+/// </para>
+/// <para>
+/// They mirror the bounds the value objects enforce, and mirroring is all they do: the domain
+/// stays the judge, and rejects on its own terms anything reaching it by another route. What is
+/// deliberately absent is any check on the shape of the address — .NET's <c>[EmailAddress]</c>
+/// and the domain's validator disagree, notably on a quoted local part containing an <c>@</c>,
+/// and an API that refuses what the domain accepts would be worse than one that asks later.
 /// </para>
 /// </remarks>
 public sealed class EditTrainerRequestHttp
 {
+    [Required]
+    [StringLength(50, MinimumLength = 2)]
     public string Firstname { get; init; } = null!;
 
+    [Required]
+    [StringLength(50, MinimumLength = 2)]
     public string Lastname { get; init; } = null!;
 
     /// <summary>
     /// The address at which the trainer wishes to be contacted. Editing it has no effect on the
     /// identity account used to sign in.
     /// </summary>
+    [Required]
     public string ContactEmail { get; init; } = null!;
 
     /// <summary>
     /// The new bio, or <see langword="null"/> to clear it.
     /// </summary>
+    [StringLength(500)]
     public string? Bio { get; init; }
 }

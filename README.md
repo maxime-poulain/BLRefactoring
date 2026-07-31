@@ -94,6 +94,16 @@ it, which is why those commands carried `[JsonIgnore]`: a serialisation concern 
 application message. The published API and the internals can now change without each other's
 permission, and the two hosts cannot drift on it, since the contract they serve is one object.
 
+The request contracts declare their constraints as **data annotations**, so `[ApiController]`
+rejects a malformed body at model binding with a `ValidationProblemDetails` keyed by field name,
+before any command or application service sees it. The shape matters as much as the check: a form
+on the other end can mark each offending input rather than show one message for the whole
+submission, and the annotations reach the OpenAPI document, so generated clients inherit the same
+constraints. They mirror the bounds the value objects enforce — the domain stays the judge and
+rejects on its own terms anything that reaches it another way. What they deliberately do not
+check is the shape of an email address: .NET's `[EmailAddress]` and the domain's validator
+disagree, and an API refusing what the domain accepts would be worse than one asking later.
+
 ### Solution layout
 
 Twenty-three projects: sixteen under `src/`, seven under `tests/`. The backend and all tests target
