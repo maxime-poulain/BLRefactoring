@@ -6,7 +6,7 @@ namespace BLRefactoring.Shared.Domain.Tests.Common;
 
 public class ValueObjectTests
 {
-    private class TestValueObject : ValueObject
+    private sealed class TestValueObject : ValueObject
     {
         public string Component1 { get; }
         public string Component2 { get; }

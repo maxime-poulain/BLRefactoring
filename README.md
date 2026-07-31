@@ -24,6 +24,7 @@ two different problems.
 - [Testing](#testing)
 - [Continuous integration](#continuous-integration)
 - [Repository conventions](#repository-conventions)
+- [Licence](#licence)
 
 ---
 
@@ -656,3 +657,13 @@ no longer compiles fails the pipeline even when its tests are not run. Both work
 - **Line endings** are normalised to LF by `.gitattributes`, in the repository and the working
   tree, whatever the contributor's platform.
 - **Commits** are imperative one-liners, squash-merged from a pull request.
+- **The build carries no warnings.** Analyzer severities are set high on purpose, so a warning
+  means something to look at rather than noise to scroll past. EF Core migrations are exempt —
+  `.editorconfig` marks them as generated, since they are.
+
+---
+
+## Licence
+
+[MIT](LICENSE).
+

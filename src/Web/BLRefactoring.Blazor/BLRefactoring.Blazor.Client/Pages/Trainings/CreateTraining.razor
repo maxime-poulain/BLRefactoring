@@ -225,7 +225,7 @@
 
     private async Task HandleSubmit()
     {
-        await _form.Validate();
+        await _form.ValidateAsync();
         ValidateTopics();
 
         if (!_isValid || !HasSelectedTopics) return;

@@ -309,3 +309,10 @@ dotnet_diagnostic.IDE2000.severity = warning
 
 # CA2016: Forward the 'CancellationToken' parameter to methods that take one
 dotnet_diagnostic.CA2016.severity = suggestion
+
+# EF Core migrations are generated, not written. Holding them to the analyzer rules
+# that govern hand-written code produces warnings nobody should act on — editing the
+# file only postpones them, since the next `dotnet ef migrations add` emits the same
+# shapes again. Marking the folder as generated is the mechanism meant for this.
+[**/Migrations/*.cs]
+generated_code = true
