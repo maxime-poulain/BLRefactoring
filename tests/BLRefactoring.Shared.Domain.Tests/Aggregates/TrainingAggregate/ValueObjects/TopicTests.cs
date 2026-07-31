@@ -1,3 +1,4 @@
+using System.Reflection;
 using AwesomeAssertions;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 using Xunit;
@@ -7,51 +8,47 @@ namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainingAggregate.ValueOb
 public class TopicTests
 {
     [Fact]
-    public void FromName_Programming_ReturnsCorrectTopic()
+    public void GetTopics_ContainsEveryTopicDeclaredOnTheType()
     {
-        // Act
-        var topic = Topic.FromName("Programming");
+        // The set behind GetTopics() is written by hand. A topic declared as a field but left out
+        // of it would be invisible to the whole application: TryFromName would reject its name, no
+        // training could carry it, no query could filter on it — and no test would notice, since
+        // any test that restates the expected list is wrong in exactly the same way.
+        // Reflection is the one reader that cannot forget, because it reads the declarations
+        // themselves. It runs here, once, at test time — it used to run in the domain, rebuilding
+        // the set on first use.
+        var declared = typeof(Topic)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(field => field.FieldType == typeof(Topic))
+            .Select(field => (Topic)field.GetValue(null)!);
 
-        // Assert
-        topic.Name.Should().Be("Programming");
+        // Equivalence rather than equality: reflection makes no promise about field order, and
+        // this way the assertion also fails on a topic listed in the set but no longer declared.
+        Topic.GetTopics().Should().BeEquivalentTo(declared);
     }
 
     [Fact]
-    public void FromName_WrongCasing_Throws()
+    public void GetTopics_HandsOutASetTheCallerCannotChange()
     {
-        // Topics are matched case-sensitively: a name with the wrong casing
-        // means a misbehaving client and must be rejected.
-        var act = () => Topic.FromName("programming");
-
-        act.Should().Throw<ArgumentException>();
-    }
-
-    [Fact]
-    public void FromName_InvalidName_ThrowsArgumentException()
-    {
-        // Act
-        var act = () => Topic.FromName("InvalidTopic");
-
-        // Assert
-        act.Should().Throw<ArgumentException>();
-    }
-
-    [Fact]
-    public void GetTopics_ReturnsAllSixTopics()
-    {
-        // Act
+        // The set is static: a caller who emptied it would empty it for every other caller in
+        // the process. GetTopics() used to hand out the very List it had cached.
         var topics = Topic.GetTopics();
+        var countBefore = topics.Count;
 
-        // Assert
-        topics.Should().HaveCount(6);
+        var clear = () => ((ICollection<Topic>)topics).Clear();
+
+        clear.Should().Throw<NotSupportedException>();
+        // Deliberately not pinned to a number: adding a topic is a legitimate change, and it
+        // should not have to be reflected in a test about immutability.
+        Topic.GetTopics().Should().HaveCount(countBefore);
     }
 
     [Fact]
     public void Equality_SameName_AreEqual()
     {
         // Arrange
-        var topic1 = Topic.FromName("Programming");
-        var topic2 = Topic.FromName("Programming");
+        Topic.TryFromName("Programming", out var topic1);
+        Topic.TryFromName("Programming", out var topic2);
 
         // Assert
         topic1.Should().Be(topic2);

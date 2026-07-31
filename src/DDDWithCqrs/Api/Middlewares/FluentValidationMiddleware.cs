@@ -4,20 +4,13 @@ using FluentValidation;
 
 namespace BLRefactoring.DDDWithCqrs.Api.Middlewares;
 
-public class FluentValidationMiddleware
+public class FluentValidationMiddleware(RequestDelegate next)
 {
-    private readonly RequestDelegate _next;
-
-    public FluentValidationMiddleware(RequestDelegate next, ILogger<GlobalExceptionHandlerMiddleware> logger)
-    {
-        _next = next;
-    }
-
     public async Task InvokeAsync(HttpContext context)
     {
         try
         {
-            await _next(context);
+            await next(context);
         }
         catch (ValidationException e)
         {

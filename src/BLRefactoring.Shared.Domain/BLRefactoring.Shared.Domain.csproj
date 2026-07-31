@@ -4,12 +4,18 @@
         <TargetFramework>net10.0</TargetFramework>
     </PropertyGroup>
 
+    <!--
+      The domain references the shared kernel and one format-checking library, used inside the
+      Email value object. Nothing about persistence, HTTP or messaging: it used to reference
+      Microsoft.EntityFrameworkCore.Abstractions, for a single [Owned] attribute that the EF
+      configuration already declared.
+    -->
     <ItemGroup>
       <ProjectReference Include="..\BLRefactoring.Shared\BLRefactoring.Shared.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" />
+      <PackageReference Include="EmailValidation" />
     </ItemGroup>
 
 </Project>

@@ -3,8 +3,16 @@ using BLRefactoring.Shared.Common.Results;
 
 namespace BLRefactoring.Shared.Common.Errors;
 
-/// <inheritdoc cref="IErrorCollection"/>
-public sealed class ErrorCollection : IErrorCollection, IReadOnlyErrorCollection
+/// <summary>
+/// A mutable collection of <see cref="Error"/>, used to accumulate everything that went wrong in
+/// one pass instead of stopping at the first problem.
+/// </summary>
+/// <remarks>
+/// Consumers only ever see it as <see cref="IReadOnlyErrorCollection"/>. It used to implement a
+/// mutable <c>IErrorCollection</c> interface as well, alongside an <c>AsReadOnly()</c> that
+/// returned <c>this</c> — a read-only view any caller could cast straight back to a mutable one.
+/// </remarks>
+public sealed class ErrorCollection : IReadOnlyErrorCollection
 {
     private readonly List<Error> _errors;
 
@@ -27,26 +35,39 @@ public sealed class ErrorCollection : IErrorCollection, IReadOnlyErrorCollection
         _errors = new List<Error>(errors);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Adds an <see cref="Error"/> to the collection.
+    /// </summary>
+    /// <param name="error">The error to add. Must not be null.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="error"/> is null.</exception>
     public void Add(Error error)
     {
         ArgumentNullException.ThrowIfNull(error);
         _errors.Add(error);
     }
 
+    /// <summary>
+    /// Adds an error to the collection from an error code and a message.
+    /// </summary>
     public void Add(ErrorCode errorCode, string errorMessage)
     {
         Add(new Error(errorCode, errorMessage));
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Adds a collection of <see cref="Error"/> to the collection.
+    /// </summary>
+    /// <param name="errors">The errors to add. Must not be null.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="errors"/> is null.</exception>
     public void AddErrors(IEnumerable<Error> errors)
     {
         ArgumentNullException.ThrowIfNull(errors);
         _errors.AddRange(errors);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Adds the errors carried by a failed <see cref="Result"/>, and nothing for a successful one.
+    /// </summary>
     public void AddErrors(Result result)
     {
         ArgumentNullException.ThrowIfNull(result);
@@ -56,12 +77,6 @@ public sealed class ErrorCollection : IErrorCollection, IReadOnlyErrorCollection
             AddErrors(errors);
             return this;
         });
-    }
-
-    /// <inheritdoc/>
-    public IReadOnlyErrorCollection AsReadOnly()
-    {
-        return this;
     }
 
     /// <summary>
@@ -96,9 +111,6 @@ public sealed class ErrorCollection : IErrorCollection, IReadOnlyErrorCollection
             onSuccess();
     }
 
-    public Error this[int index]
-    {
-        get => _errors[index];
-        set => _errors[index] = value;
-    }
+    /// <inheritdoc/>
+    public Error this[int index] => _errors[index];
 }

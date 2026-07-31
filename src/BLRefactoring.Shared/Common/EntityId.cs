@@ -4,73 +4,50 @@ using System.Reflection;
 namespace BLRefactoring.Shared.Common;
 
 /// <summary>
-/// Represents the identifier of an <see cref="Entity"/>.
-/// The value of the identifier is a <see cref="Guid"/>.
-/// A <see cref="EntityId{TEntityId}"/> is a ValueObject,
-/// even though it does not inherit from <see cref="ValueObject"/>.
-/// </summary>
-/// <typeparam name="TEntityId">The actual type of the id.</typeparam>
-public abstract class EntityId<TEntityId> : EntityId<TEntityId, Guid>
-    where TEntityId : EntityId<TEntityId, Guid>
-{
-    protected EntityId(Guid value) : base(value)
-    {
-    }
-
-    /// <summary>
-    /// Generates a new instance of a <typeparamref name="TEntityId"/> with an
-    /// auto-generated <see cref="Guid"/>.
-    /// </summary>
-    /// <returns>
-    /// A new instance of the <typeparamref name="TEntityId"/> class with an
-    /// auto-generated <see cref="Guid"/>.
-    /// </returns>
-    public static TEntityId Generate() => Create(Guid.NewGuid());
-}
-
-/// <summary>
-/// Represents the identifier of a <see cref="EntityId{TEntityId,TValue}"/>.
-/// An <see cref="EntityId{TEntityId,TValue}"/> can have any kind of <typeparamref name="TValue"/>
-/// as long as it is a value type.
-/// <see cref="EntityId{TEntityId,TValue}"/> is a ValueObject,
-/// even though it does not inherit from <see cref="ValueObject"/>.
+/// Represents the identifier of an <see cref="Entity"/>, backed by a <see cref="Guid"/>.
+/// An <see cref="EntityId{TEntityId}"/> is a value object, even though it does not inherit from
+/// <see cref="ValueObject"/>.
 /// </summary>
 /// <remarks>
-/// <see cref="Create"/> (and <c>Generate</c> for <see cref="Guid"/>-based ids) is the
-/// single construction path: it validates the value and instantiates the derived type
-/// through its non-public constructor via a cached compiled factory. Derived id types
-/// declare a private constructor taking <typeparamref name="TValue"/> and chaining the
-/// base constructor, which makes bare instantiation (<c>new TrainerId()</c>) a compile
-/// error and an empty identifier unrepresentable.
+/// <para>
+/// <see cref="Create"/> and <see cref="Generate"/> are the construction paths: they validate the
+/// value and instantiate the derived type through its non-public constructor, via a factory
+/// compiled once per identifier type. Derived id types declare a private constructor taking a
+/// <see cref="Guid"/> and chaining the base constructor, which makes bare instantiation
+/// (<c>new TrainerId()</c>) a compile error and an empty identifier unrepresentable.
+/// </para>
+/// <para>
+/// Every identifier in this solution is a <see cref="Guid"/> and is meant to stay one, so the
+/// underlying type is fixed here rather than left as a second type parameter. The class used to
+/// carry one, together with the <c>struct, IComparable&lt;T&gt;, IEquatable&lt;T&gt;</c>
+/// constraints it needed and a second class whose only purpose was to pin it to
+/// <see cref="Guid"/>. Nothing ever instantiated it with anything else.
+/// </para>
 /// </remarks>
-/// <typeparam name="TEntityId">The derived type that inherits from <see cref="EntityId{TEntityId,TValue}"/></typeparam>
-/// <typeparam name="TValue">The type of the value of the id.</typeparam>
-public abstract class EntityId<TEntityId, TValue> :
-    IEquatable<EntityId<TEntityId, TValue>>,
+/// <typeparam name="TEntityId">The derived type that inherits from <see cref="EntityId{TEntityId}"/>.</typeparam>
+public abstract class EntityId<TEntityId> :
+    IEquatable<EntityId<TEntityId>>,
     IComparable,
-    IComparable<EntityId<TEntityId, TValue>>
-    where TEntityId : EntityId<TEntityId, TValue>
-    where TValue : struct, IComparable<TValue>, IEquatable<TValue>
+    IComparable<EntityId<TEntityId>>
+    where TEntityId : EntityId<TEntityId>
 {
-    private static readonly Func<TValue, TEntityId> Factory = BuildFactory();
+    private static readonly Func<Guid, TEntityId> Factory = BuildFactory();
 
     /// <summary>
-    /// Gets the unique identifier value of the <see cref="Entity{TEntityId}"/>.
-    /// The value is of type <typeparamref name="TValue"/>.
+    /// Gets the underlying value of the identifier.
     /// </summary>
-    public TValue Value { get; }
+    public Guid Value { get; }
 
     /// <summary>
-    /// Initializes the identifier with a non-default value.
+    /// Initializes the identifier with a non-empty value.
     /// </summary>
     /// <param name="value">The value of the identifier.</param>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="value"/> is the default value of
-    /// <typeparamref name="TValue"/> (e.g. <see cref="Guid.Empty"/>).
+    /// Thrown when <paramref name="value"/> is <see cref="Guid.Empty"/>.
     /// </exception>
-    protected EntityId(TValue value)
+    protected EntityId(Guid value)
     {
-        if (value.Equals(default))
+        if (value == Guid.Empty)
         {
             throw new ArgumentException(
                 $"A {typeof(TEntityId).Name} cannot be empty.", nameof(value));
@@ -83,47 +60,58 @@ public abstract class EntityId<TEntityId, TValue> :
     /// Creates a new instance of the <typeparamref name="TEntityId"/> class
     /// with the specified <paramref name="value"/>.
     /// </summary>
-    /// <param name="value">The value for the new instance. Must not be the default value.</param>
-    /// <returns>
-    /// A new instance of the <typeparamref name="TEntityId"/> class
-    /// with the specified <paramref name="value"/>.
-    /// </returns>
+    /// <param name="value">The value for the new instance. Must not be <see cref="Guid.Empty"/>.</param>
+    /// <returns>A new <typeparamref name="TEntityId"/> holding <paramref name="value"/>.</returns>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="value"/> is the default value of <typeparamref name="TValue"/>.
+    /// Thrown when <paramref name="value"/> is <see cref="Guid.Empty"/>.
     /// </exception>
-    public static TEntityId Create(TValue value) => Factory(value);
+    public static TEntityId Create(Guid value) => Factory(value);
 
     /// <summary>
-    /// Explicitly converts a value into a <typeparamref name="TEntityId"/> with the
-    /// same validation as <see cref="Create"/>. C# requires the enclosing type as the
-    /// conversion target, so the operator returns the base type; a cast such as
-    /// <c>(TrainerId)guid</c> combines this conversion with a reference downcast —
-    /// safe, since <see cref="Create"/> builds the derived type.
+    /// Generates a new <typeparamref name="TEntityId"/> with a fresh <see cref="Guid"/>.
     /// </summary>
-    public static explicit operator EntityId<TEntityId, TValue>(TValue value) => Create(value);
+    /// <remarks>
+    /// Identifiers are generated by the caller before the write, so the primary key is known
+    /// without a database round-trip.
+    /// </remarks>
+    public static TEntityId Generate() => Create(Guid.NewGuid());
 
-    private static Func<TValue, TEntityId> BuildFactory()
+    /// <summary>
+    /// Converts a <see cref="Guid"/> into an identifier, with the same validation as
+    /// <see cref="Create"/>.
+    /// </summary>
+    /// <remarks>
+    /// C# requires a conversion operator to be declared in its source or target type, so an
+    /// operator living on this generic base can only produce the base type. A cast such as
+    /// <c>(TrainerId)guid</c> therefore combines this conversion with a reference downcast —
+    /// safe, since <see cref="Create"/> builds the derived type, and invisible at the call site.
+    /// Declaring it here rather than on each identifier keeps every present and future id type
+    /// convertible without three copies to remember.
+    /// </remarks>
+    public static explicit operator EntityId<TEntityId>(Guid value) => Create(value);
+
+    private static Func<Guid, TEntityId> BuildFactory()
     {
         var constructor = typeof(TEntityId).GetConstructor(
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
             binder: null,
-            [typeof(TValue)],
+            [typeof(Guid)],
             modifiers: null);
 
         if (constructor is null)
         {
             throw new InvalidOperationException(
                 $"{typeof(TEntityId).Name} must declare a constructor taking a single " +
-                $"{typeof(TValue).Name} and chaining the base constructor.");
+                $"{nameof(Guid)} and chaining the base constructor.");
         }
 
-        var value = Expression.Parameter(typeof(TValue), "value");
+        var value = Expression.Parameter(typeof(Guid), "value");
         return Expression
-            .Lambda<Func<TValue, TEntityId>>(Expression.New(constructor, value), value)
+            .Lambda<Func<Guid, TEntityId>>(Expression.New(constructor, value), value)
             .Compile();
     }
 
-    public bool Equals(EntityId<TEntityId, TValue>? other)
+    public bool Equals(EntityId<TEntityId>? other)
     {
         if (other is null)
         {
@@ -155,7 +143,7 @@ public abstract class EntityId<TEntityId, TValue> :
             return false;
         }
 
-        return Equals((EntityId<TEntityId, TValue>)obj);
+        return Equals((EntityId<TEntityId>)obj);
     }
 
     public override int GetHashCode()
@@ -170,10 +158,10 @@ public abstract class EntityId<TEntityId, TValue> :
             return CompareTo(entityId);
         }
 
-        throw new ArgumentException("Object must be of type " + nameof(TEntityId));
+        throw new ArgumentException($"Object must be of type {typeof(TEntityId).Name}", nameof(obj));
     }
 
-    public int CompareTo(EntityId<TEntityId, TValue>? other)
+    public int CompareTo(EntityId<TEntityId>? other)
     {
         if (other is null)
         {
@@ -188,13 +176,9 @@ public abstract class EntityId<TEntityId, TValue> :
         return Value.CompareTo(other.Value);
     }
 
-    public static bool operator ==(
-        EntityId<TEntityId, TValue>? left,
-        EntityId<TEntityId, TValue>? right)
+    public static bool operator ==(EntityId<TEntityId>? left, EntityId<TEntityId>? right)
         => Equals(left, right);
 
-    public static bool operator !=(
-        EntityId<TEntityId, TValue>? left,
-        EntityId<TEntityId, TValue>? right)
+    public static bool operator !=(EntityId<TEntityId>? left, EntityId<TEntityId>? right)
         => !Equals(left, right);
 }

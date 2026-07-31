@@ -75,13 +75,13 @@ public class TrainingApplicationService(
     /// <inheritdoc />
     public async Task<Result<TrainingDto>> CreateAsync(TrainingCreationRequest request, CancellationToken cancellationToken = default)
     {
-        var trainer = await trainerRepository.GetByIdAsync(TrainerId.Create(currentUserService.TrainerId), cancellationToken);
+        var trainerId = TrainerId.Create(currentUserService.TrainerId);
 
-        if (trainer is null)
+        if (!await trainerRepository.ExistsAsync(trainerId, cancellationToken))
         {
             return Result<TrainingDto>.Failure(
-                ErrorCode.Unspecified,
-                $"Trainer with id `{currentUserService.TrainerId}` not found.");
+                ErrorCode.NotFound,
+                $"Trainer with id `{trainerId.Value}` not found.");
         }
 
         var detailsResult = TrainingDetailsFactory.Create(
@@ -90,7 +90,7 @@ public class TrainingApplicationService(
         var result = await detailsResult.MatchAsync(
             async details => await Training.CreateAsync(
                 TrainingId.Generate(),
-                TrainerId.Create(currentUserService.TrainerId),
+                trainerId,
                 details.Title,
                 details.Description,
                 details.Prerequisites,

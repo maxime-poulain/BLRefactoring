@@ -27,9 +27,17 @@ namespace BLRefactoring.Shared.Common;
 /// "Value Objects represent some concept or idea, where the concept is defined by the state of its properties.
 /// Two Value Objects are considered equal if they have the same properties. They are typically immutable, so they cannot be changed once created."
 /// </para>
+/// <para>
+/// Equality only, deliberately. Value objects used to implement <see cref="IComparable"/> as
+/// well, over a component-by-component comparison that fell back to <c>Equals(other) ? 0 : -1</c>
+/// for any component that was not itself comparable — which reports <c>a &lt; b</c> and
+/// <c>b &lt; a</c> at the same time and breaks any sort built on it. Nothing ever ordered a value
+/// object, so the surface went rather than being fixed. One that genuinely needs ordering can
+/// implement <see cref="IComparable{T}"/> itself, over components it knows how to compare.
+/// </para>
 /// </remarks>
 [Serializable]
-public abstract class ValueObject : IEquatable<ValueObject>, IComparable, IComparable<ValueObject>
+public abstract class ValueObject : IEquatable<ValueObject>
 {
     private int? _cachedHashCode;
 
@@ -62,57 +70,6 @@ public abstract class ValueObject : IEquatable<ValueObject>, IComparable, ICompa
 
         _cachedHashCode = hash.ToHashCode();
         return _cachedHashCode.Value;
-    }
-
-    public virtual int CompareTo(object? obj)
-    {
-        if (obj is null) return 1;
-        if (ReferenceEquals(this, obj)) return 0;
-
-        if (obj is not ValueObject other)
-            throw new ArgumentException(
-                $"Object must be of type {nameof(ValueObject)}");
-
-        if (GetType() != other.GetType())
-            return string.Compare(GetType().ToString(),
-                other.GetType().ToString(), StringComparison.Ordinal);
-
-        return CompareComponents(other);
-    }
-
-    public virtual int CompareTo(ValueObject? other)
-    {
-        if (other is null) return 1;
-        if (ReferenceEquals(this, other)) return 0;
-
-        return CompareComponents(other);
-    }
-
-    private int CompareComponents(ValueObject other)
-    {
-        var components = GetEqualityComponents().ToArray();
-        var otherComponents = other.GetEqualityComponents().ToArray();
-
-        for (var i = 0; i < components.Length; i++)
-        {
-            var comparison = CompareValues(components[i], otherComponents[i]);
-            if (comparison != 0)
-                return comparison;
-        }
-
-        return 0;
-    }
-
-    private static int CompareValues(object? left, object? right)
-    {
-        if (left is null && right is null) return 0;
-        if (left is null) return -1;
-        if (right is null) return 1;
-
-        if (left is IComparable comparable)
-            return comparable.CompareTo(right);
-
-        return left.Equals(right) ? 0 : -1;
     }
 
     public static bool operator ==(ValueObject? left, ValueObject? right)

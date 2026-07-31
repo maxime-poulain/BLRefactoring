@@ -38,8 +38,8 @@ public class CreateTrainingCommandHandlerTests
     {
         var trainer = new TrainerBuilder().Build();
         _trainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(trainer);
+            .Setup(r => r.ExistsAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         _currentUserService.Setup(s => s.TrainerId).Returns(trainer.Id.Value);
         _currentUserService.Setup(s => s.UserId).Returns(Guid.NewGuid());
         var sut = CreateSut();
@@ -67,8 +67,8 @@ public class CreateTrainingCommandHandlerTests
     {
         var trainerId = Guid.NewGuid();
         _trainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Trainer?)null);
+            .Setup(r => r.ExistsAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
         _currentUserService.Setup(s => s.TrainerId).Returns(trainerId);
         _currentUserService.Setup(s => s.UserId).Returns(Guid.NewGuid());
         var sut = CreateSut();
@@ -93,8 +93,8 @@ public class CreateTrainingCommandHandlerTests
     {
         var trainer = new TrainerBuilder().Build();
         _trainerRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(trainer);
+            .Setup(r => r.ExistsAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         _currentUserService.Setup(s => s.TrainerId).Returns(trainer.Id.Value);
         _currentUserService.Setup(s => s.UserId).Returns(Guid.NewGuid());
         var sut = CreateSut();

@@ -32,13 +32,6 @@ public class TrainingRepository(TrainingContext trainingContext) : ITrainingRepo
         return await AnyAsync(spec, cancellationToken);
     }
 
-    // GetByTrainingIdAsync
-    public async Task<Training?> GetByTrainerIdAsync(TrainingId trainingId, CancellationToken cancellationToken = default)
-    {
-        return await trainingContext.Trainings
-            .FirstOrDefaultAsync(training => training.Id == trainingId, cancellationToken);
-    }
-
     public void Add(Training training)
     {
         trainingContext.Trainings.Add(training);
@@ -83,13 +76,6 @@ public class TrainingRepository(TrainingContext trainingContext) : ITrainingRepo
     {
         return await SpecificationEvaluator.GetQuery(trainingContext.Trainings, spec)
             .ToListAsync(cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public async Task<Training?> FirstOrDefaultAsync(ISpecification<Training> spec, CancellationToken cancellationToken = default)
-    {
-        return await SpecificationEvaluator.GetQuery(trainingContext.Trainings, spec)
-            .FirstOrDefaultAsync(cancellationToken);
     }
 
     /// <inheritdoc />

@@ -20,7 +20,8 @@ namespace BLRefactoring.Api.TestKit;
 /// <see cref="DbContext"/> it replaces live in the shared infrastructure and are common to
 /// both hosts, leaving <typeparamref name="TEntryPoint"/> as the only difference.
 /// </summary>
-public abstract class ApiFactory<TEntryPoint> : WebApplicationFactory<TEntryPoint>, IAsyncLifetime, IResettableDatabase
+public abstract class ApiFactory<TEntryPoint>
+    : WebApplicationFactory<TEntryPoint>, IAsyncLifetime, IResettableDatabase, IServiceScopeSource
     where TEntryPoint : class
 {
     private readonly MsSqlContainer _msSqlContainer = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest")
@@ -105,6 +106,9 @@ public abstract class ApiFactory<TEntryPoint> : WebApplicationFactory<TEntryPoin
     /// state instead of inheriting whatever its predecessors left behind.
     /// </summary>
     public Task ResetDatabaseAsync() => _respawner.ResetAsync(_connection);
+
+    /// <inheritdoc />
+    public IServiceScope CreateScope() => Services.CreateScope();
 
     public new async Task DisposeAsync()
     {

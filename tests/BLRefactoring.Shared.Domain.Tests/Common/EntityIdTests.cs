@@ -76,7 +76,7 @@ public class EntityIdTests
     {
         var id = TrainerId.Create(Guid.NewGuid());
 
-        id.CompareTo((EntityId<TrainerId, Guid>?)null).Should().Be(1);
+        id.CompareTo((EntityId<TrainerId>?)null).Should().Be(1);
     }
 
     [Fact]

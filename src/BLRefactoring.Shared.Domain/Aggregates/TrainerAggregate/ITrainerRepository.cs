@@ -31,6 +31,18 @@ public interface ITrainerRepository : IRepository<Trainer>
     Task<Trainer?> GetByUserIdAsync(UserId userId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Tells whether a <see cref="Trainer"/> with the given <paramref name="id"/> exists.
+    /// </summary>
+    /// <remarks>
+    /// Answers the only question a use case that merely guards on the trainer's existence
+    /// actually asks. Loading the aggregate to test a null reference reads a name, a contact
+    /// address and a bio for nothing, and tracks an entity nothing will change.
+    /// </remarks>
+    /// <param name="id">The identifier to look for.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    Task<bool> ExistsAsync(TrainerId id, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Stages a new <see cref="Trainer"/> entity for insertion.
     /// </summary>
     /// <param name="trainer">The <see cref="Trainer"/> entity to add.</param>

@@ -40,6 +40,18 @@ public class EmailTests
     }
 
     [Fact]
+    public void LocalPartAndDomain_SplitOnTheLastSeparator()
+    {
+        // A quoted local part may itself contain an `@`; a domain never contains an unquoted one.
+        // So the separator is the last `@`, not the first — splitting on the first reported a
+        // domain of `b"` for this address.
+        var email = Email.Create("\"a@b\"@example.com").ShouldBeSuccess();
+
+        email.LocalPart.Should().Be("\"a@b\"");
+        email.Domain.Should().Be("example.com");
+    }
+
+    [Fact]
     public void Create_NullEmail_ReturnsFailure()
     {
         // Act

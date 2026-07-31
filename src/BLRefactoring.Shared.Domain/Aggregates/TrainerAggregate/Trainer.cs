@@ -116,8 +116,16 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     }
 
     /// <summary>
-    /// Marks the trainer for deletion.
+    /// Marks the trainer for deletion, announcing the fact so that what depends on the trainer —
+    /// their trainings, first of all — can be dealt with in the same unit of work.
     /// </summary>
+    /// <remarks>
+    /// No use case reaches this today, and that is deliberate rather than an oversight. Removing a
+    /// trainer is an administrative decision: a trainer never deletes themselves, and no endpoint
+    /// exposes the operation until there is a role entitled to it. What the aggregate states here
+    /// is the rule itself — a trainer does not disappear silently, their trainings go with them —
+    /// and that rule holds whoever ends up triggering it.
+    /// </remarks>
     public void MarkForDeletion()
     {
         AddDomainEvent(new TrainerDeletedDomainEvent(Id));

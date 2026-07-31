@@ -55,6 +55,37 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
     }
 
     [Fact]
+    public async Task Create_DuplicateTitleForSameTrainer_Returns409()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        const string title = "A Duplicated Title";
+        var first = await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest(title));
+        first.EnsureSuccessStatusCode();
+
+        var response = await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest(title));
+
+        // Title uniqueness per trainer is the one rule the aggregate cannot settle alone: it
+        // crosses the whole stack, from IUniquenessTitleChecker down to the unique index. The
+        // CQRS suite asserted it; this host was taking it on trust.
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task Create_SameTitleForAnotherTrainer_Returns201()
+    {
+        const string title = "A Shared Title";
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        (await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest(title)))
+            .EnsureSuccessStatusCode();
+
+        // The rule is scoped to a trainer, not global: the unique index is on (TrainerId, Title).
+        var otherClient = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        var response = await otherClient.PostAsJsonAsync("/Training", CreateValidTrainingRequest(title));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    [Fact]
     public async Task Create_NoToken_Returns401()
     {
         var client = Factory.CreateClient();
