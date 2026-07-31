@@ -1,5 +1,5 @@
+using AwesomeAssertions;
 using BLRefactoring.Shared.Common;
-using FluentAssertions;
 using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Common;

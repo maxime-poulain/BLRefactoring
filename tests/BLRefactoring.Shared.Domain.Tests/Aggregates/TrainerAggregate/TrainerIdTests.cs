@@ -1,5 +1,5 @@
+using AwesomeAssertions;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
-using FluentAssertions;
 using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainerAggregate;

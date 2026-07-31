@@ -1,7 +1,7 @@
+using AwesomeAssertions;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.Specifications;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 using BLRefactoring.Shared.Domain.Tests.Helpers;
-using FluentAssertions;
 using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Specifications;

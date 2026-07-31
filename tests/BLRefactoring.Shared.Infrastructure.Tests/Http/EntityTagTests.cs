@@ -1,5 +1,5 @@
+using AwesomeAssertions;
 using BLRefactoring.Shared.Infrastructure.Http;
-using FluentAssertions;
 using Xunit;
 
 namespace BLRefactoring.Shared.Infrastructure.Tests.Http;

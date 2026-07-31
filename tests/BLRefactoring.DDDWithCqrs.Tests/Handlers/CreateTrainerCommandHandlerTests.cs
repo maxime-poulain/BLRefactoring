@@ -1,8 +1,8 @@
+using AwesomeAssertions;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Tests.Helpers;
-using FluentAssertions;
 using Moq;
 using Xunit;
 

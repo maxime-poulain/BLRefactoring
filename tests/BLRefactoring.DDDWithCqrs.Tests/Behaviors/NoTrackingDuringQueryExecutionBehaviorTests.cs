@@ -1,10 +1,10 @@
+using AwesomeAssertions;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetAll;
 using BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
-using FluentAssertions;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
