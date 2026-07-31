@@ -22,7 +22,7 @@ public class AuthController(
     protected override async Task<Result> CreateTrainerAsync(
         RegisterRequest request,
         Guid userId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         var creationResult = await trainerApplicationService.CreateAsync(
             new TrainerCreationRequest

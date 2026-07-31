@@ -100,7 +100,7 @@ public sealed class Training : AggregateRoot<TrainingId>
         AcquiredSkills acquiredSkills,
         IReadOnlyCollection<Topic> topics,
         IUniquenessTitleChecker titleChecker,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(title);
         ArgumentNullException.ThrowIfNull(description);

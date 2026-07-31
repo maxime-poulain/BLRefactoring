@@ -36,7 +36,7 @@ public class TrainerController(
     [HttpGet("me")]
     [ProducesResponseType(typeof(TrainerDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<TrainerDto>> GetCurrentAsync(CancellationToken cancellationToken)
+    public async Task<ActionResult<TrainerDto>> GetCurrentAsync(CancellationToken cancellationToken = default)
     {
         var result = await trainerApplicationService.GetByIdAsync(
             currentUserService.TrainerId, cancellationToken);
@@ -79,7 +79,7 @@ public class TrainerController(
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status428PreconditionRequired)]
     public async Task<ActionResult<TrainerDto>> EditCurrentAsync(
         [FromBody] TrainerEditionRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         if (!this.TryGetExpectedVersion(out var expectedVersion))
         {
@@ -121,7 +121,7 @@ public class TrainerController(
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(TrainerDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await trainerApplicationService.GetByIdAsync(id, cancellationToken);
 
@@ -145,7 +145,7 @@ public class TrainerController(
     [HttpGet("all")]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(List<TrainerDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<TrainerDto>>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<ActionResult<List<TrainerDto>>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return Ok(await trainerApplicationService.GetAllAsync(cancellationToken));
     }
