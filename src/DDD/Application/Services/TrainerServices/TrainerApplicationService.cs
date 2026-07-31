@@ -1,3 +1,4 @@
+using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Application.Dtos;
 using BLRefactoring.Shared.Application.Dtos.Trainer;
@@ -23,9 +24,10 @@ public interface ITrainerApplicationService
 
     /// <summary>
     /// Replaces the profile of the given trainer with the state described by
-    /// <paramref name="request"/>.
+    /// <paramref name="request"/>, provided nobody else changed it since
+    /// <paramref name="expectedVersion"/> was read.
     /// </summary>
-    Task<Result<TrainerDto>> EditAsync(Guid id, TrainerEditionRequest request, CancellationToken cancellationToken = default);
+    Task<Result<TrainerDto>> EditAsync(Guid id, TrainerEditionRequest request, byte[] expectedVersion, CancellationToken cancellationToken = default);
 
     Task<Result<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<TrainerDto[]> GetAllAsync(CancellationToken cancellationToken = default);
@@ -58,13 +60,18 @@ public sealed class TrainerApplicationService(
         }, Result<TrainerDto>.FailureAsync);
     }
 
-    public async Task<Result<TrainerDto>> EditAsync(Guid id, TrainerEditionRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<TrainerDto>> EditAsync(Guid id, TrainerEditionRequest request, byte[] expectedVersion, CancellationToken cancellationToken = default)
     {
         var trainer = await trainerRepository.GetByIdAsync(TrainerId.Create(id), cancellationToken);
 
         if (trainer is null)
         {
             return Result<TrainerDto>.Failure(ErrorCode.NotFound, $"Trainer with id `{id}` could not be found.");
+        }
+
+        if (!trainer.IsAtVersion(expectedVersion))
+        {
+            return Result<TrainerDto>.Failure(ErrorCode.ConcurrencyConflict, ConcurrencyMessage);
         }
 
         var profileResult = TrainerProfileFactory.Create(
@@ -77,10 +84,24 @@ public sealed class TrainerApplicationService(
             trainer.Edit(profile.Name, profile.ContactEmail, profile.Bio);
 
             trainerRepository.Update(trainer);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+            catch (ConcurrencyConflictException)
+            {
+                // A concurrent request slipped past the version pre-check; the
+                // concurrency token is the authoritative guard, so a lost race is
+                // the same business failure as a detected stale version.
+                return Result<TrainerDto>.Failure(ErrorCode.ConcurrencyConflict, ConcurrencyMessage);
+            }
+
             return Result<TrainerDto>.Success(trainer.ToDto());
         }, Result<TrainerDto>.FailureAsync);
     }
+
+    private const string ConcurrencyMessage =
+        "The trainer was modified by someone else since it was read. Reload it and try again.";
 
     public async Task<Result<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {

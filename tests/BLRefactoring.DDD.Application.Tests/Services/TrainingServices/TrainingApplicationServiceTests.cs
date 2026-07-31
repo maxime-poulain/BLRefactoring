@@ -1,3 +1,4 @@
+using BLRefactoring.Shared.Common;
 using BLRefactoring.DDD.Application.Tests.Helpers;
 using BLRefactoring.Shared.Application.Dtos.Training;
 using BLRefactoring.Shared.Common.Errors;
@@ -247,7 +248,7 @@ public class TrainingApplicationServiceTests
             Topics = ["Design"]
         };
 
-        var result = await sut.EditAsync(training.Id.Value, request);
+        var result = await sut.EditAsync(training.Id.Value, request, training.RowVersion);
 
         result.ShouldBeSuccess().Title.Should().Be("Updated Title Here");
     }
@@ -269,10 +270,65 @@ public class TrainingApplicationServiceTests
             Topics = ["Design"]
         };
 
-        var result = await sut.EditAsync(Guid.NewGuid(), request);
+        var result = await sut.EditAsync(Guid.NewGuid(), request, []);
 
         var errors = result.ShouldBeFailure();
         errors.Should().Contain(e => e.ErrorCode == ErrorCode.NotFound);
+    }
+
+    [Fact]
+    public async Task EditAsync_StaleVersion_ReturnsConcurrencyConflictWithoutCommitting()
+    {
+        var training = await new TrainingBuilder().BuildValidAsync();
+        _fixture.TrainingRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainingId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(training);
+        var sut = _fixture.CreateSut();
+
+        var request = new TrainingEditionRequest
+        {
+            Title = "Updated Title Here",
+            Description = "Updated description content here",
+            Prerequisites = "Updated prerequisites content",
+            AcquiredSkills = "Updated acquired skills content",
+            Topics = ["Design"]
+        };
+
+        var result = await sut.EditAsync(training.Id.Value, request, [1, 2, 3, 4, 5, 6, 7, 8]);
+
+        result.ShouldContainError(ErrorCode.ConcurrencyConflict);
+        _fixture.UnitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task EditAsync_StoreReportsAConflict_ReturnsConcurrencyConflict()
+    {
+        // The pre-check passed, but another request won the race before the update
+        // reached the row: the concurrency token is the authoritative guard, and
+        // both paths must surface the same business failure.
+        var training = await new TrainingBuilder().BuildValidAsync();
+        _fixture.TrainingRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainingId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(training);
+        _fixture.UnitOfWork
+            .Setup(uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ConcurrencyConflictException("conflict", new Exception()));
+        var sut = _fixture.CreateSut();
+
+        var request = new TrainingEditionRequest
+        {
+            Title = "Updated Title Here",
+            Description = "Updated description content here",
+            Prerequisites = "Updated prerequisites content",
+            AcquiredSkills = "Updated acquired skills content",
+            Topics = ["Design"]
+        };
+
+        var result = await sut.EditAsync(training.Id.Value, request, training.RowVersion);
+
+        result.ShouldContainError(ErrorCode.ConcurrencyConflict);
     }
 
     [Fact]
@@ -293,7 +349,7 @@ public class TrainingApplicationServiceTests
             Topics = ["Programming"]
         };
 
-        var result = await sut.EditAsync(training.Id.Value, request);
+        var result = await sut.EditAsync(training.Id.Value, request, training.RowVersion);
 
         result.ShouldBeFailure();
     }

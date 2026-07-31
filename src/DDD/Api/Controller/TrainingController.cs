@@ -1,3 +1,4 @@
+using BLRefactoring.Shared.Infrastructure.Http;
 using BLRefactoring.DDD.Application.Services.TrainingServices;
 using BLRefactoring.Shared.Application.Dtos.Training;
 using BLRefactoring.Shared.Common.Errors;
@@ -53,11 +54,19 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(TrainingDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> GetTrainingByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await trainingApplicationService.GetByIdAsync(id, cancellationToken);
 
-        return result.Match<ActionResult>(trainingDto => Ok(trainingDto),
+        // The ETag published here is what the caller must send back as If-Match
+        // when they later edit this training.
+        return result.Match<ActionResult>(
+            trainingDto =>
+            {
+                this.SetETag(trainingDto.RowVersion);
+                return Ok(trainingDto);
+            },
             errors =>
             {
                 return errors.Any(error => error.ErrorCode == ErrorCode.NotFound)
@@ -91,27 +100,52 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
     /// 403 Forbidden if the current user is not the training owner.
     /// 404 Not Found if the training does not exist.
     /// 409 Conflict when a training with the same title already exists for the trainer.
+    /// 412 Precondition Failed when the training changed since the caller read it.
+    /// 428 Precondition Required when the request carries no If-Match header.
     /// 400 Bad Request on validation errors.
     /// </returns>
+    /// <remarks>
+    /// The request must carry an <c>If-Match</c> holding the <c>ETag</c> returned
+    /// when the training was read, so an edit based on a stale copy is rejected
+    /// instead of silently overwriting someone else's changes.
+    /// </remarks>
     [Authorize(Policy = "TrainingOwner")]
     [HttpPut("{trainingId:guid}")]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(TrainingDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status412PreconditionFailed)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status428PreconditionRequired)]
     public async Task<ActionResult> UpdateTrainingAsync(
         Guid trainingId,
         [FromBody] TrainingEditionRequest request,
         CancellationToken cancellationToken = default)
     {
-        var result = await trainingApplicationService.EditAsync(trainingId, request, cancellationToken);
+        if (!this.TryGetExpectedVersion(out var expectedVersion))
+        {
+            return this.PreconditionRequired();
+        }
 
-        return result.Match<ActionResult>(Ok,
+        var result = await trainingApplicationService.EditAsync(
+            trainingId, request, expectedVersion, cancellationToken);
+
+        return result.Match<ActionResult>(
+            training =>
+            {
+                this.SetETag(training.RowVersion);
+                return Ok(training);
+            },
             errors =>
             {
                 if (errors.Any(error => error.ErrorCode == ErrorCode.NotFound))
                 {
                     return NotFound(errors);
+                }
+
+                if (errors.Any(error => error.ErrorCode == ErrorCode.ConcurrencyConflict))
+                {
+                    return this.PreconditionFailed(errors);
                 }
 
                 return errors.Any(error => error.ErrorCode == ErrorCode.DuplicateTitle)

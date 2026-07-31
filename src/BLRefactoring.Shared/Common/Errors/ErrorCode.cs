@@ -10,6 +10,11 @@ public class ErrorCode : SmartEnum<ErrorCode>
     public static readonly ErrorCode Unspecified = new("Unspecified", -1);
     public static readonly ErrorCode NotFound = new("NotFound", -2);
 
+    /// <summary>
+    /// The aggregate was modified by someone else since the caller read it.
+    /// </summary>
+    public static readonly ErrorCode ConcurrencyConflict = new("ConcurrencyConflict", -3);
+
     protected ErrorCode(string name, int value) : base(name, value)
     {
     }

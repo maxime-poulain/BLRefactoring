@@ -23,6 +23,14 @@ public sealed class UnitOfWork(TrainingContext trainingContext) : IUnitOfWork
         {
             return await trainingContext.SaveChangesAsync(cancellationToken);
         }
+        // Checked before the DbUpdateException branch below: a concurrency failure
+        // is a DbUpdateException too, and this is the more specific case.
+        catch (DbUpdateConcurrencyException ex)
+        {
+            throw new ConcurrencyConflictException(
+                "The aggregate was modified by someone else since it was read.",
+                ex);
+        }
         catch (DbUpdateException ex) when (ex.GetBaseException()
             is SqlException { Number: UniqueIndexViolation or UniqueConstraintViolation })
         {

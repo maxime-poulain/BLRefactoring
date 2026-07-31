@@ -42,7 +42,7 @@ public interface ITrainingApplicationService
     /// <summary>
     /// Edits an existing training identified by <paramref name="trainingId"/>.
     /// </summary>
-    Task<Result<TrainingDto>> EditAsync(Guid trainingId, TrainingEditionRequest request, CancellationToken cancellationToken = default);
+    Task<Result<TrainingDto>> EditAsync(Guid trainingId, TrainingEditionRequest request, byte[] expectedVersion, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retrieves all trainings belonging to the specified trainer.
@@ -136,7 +136,7 @@ public class TrainingApplicationService(
     }
 
     /// <inheritdoc />
-    public async Task<Result<TrainingDto>> EditAsync(Guid trainingId, TrainingEditionRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<TrainingDto>> EditAsync(Guid trainingId, TrainingEditionRequest request, byte[] expectedVersion, CancellationToken cancellationToken = default)
     {
         var training = await trainingRepository.GetByIdAsync(TrainingId.Create(trainingId), cancellationToken);
 
@@ -145,6 +145,11 @@ public class TrainingApplicationService(
             return Result<TrainingDto>.Failure(
                 ErrorCode.NotFound,
                 $"Training with id `{trainingId}` not found.");
+        }
+
+        if (!training.IsAtVersion(expectedVersion))
+        {
+            return Result<TrainingDto>.Failure(ErrorCode.ConcurrencyConflict, ConcurrencyMessage);
         }
 
         var detailsResult = TrainingDetailsFactory.Create(
@@ -176,6 +181,12 @@ public class TrainingApplicationService(
                     // is the same business failure as a detected duplicate.
                     return Result<TrainingDto>.Failure(ErrorCode.DuplicateTitle,
                         "A training with the same title already exists for this trainer.");
+                }
+                catch (ConcurrencyConflictException)
+                {
+                    // Same layering for the version: the concurrency token is the
+                    // authoritative guard behind the pre-check above.
+                    return Result<TrainingDto>.Failure(ErrorCode.ConcurrencyConflict, ConcurrencyMessage);
                 }
                 return Result<TrainingDto>.Success(training.ToDto());
             },
@@ -220,4 +231,7 @@ public class TrainingApplicationService(
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }
+
+    private const string ConcurrencyMessage =
+        "The training was modified by someone else since it was read. Reload it and try again.";
 }

@@ -30,6 +30,9 @@ public class TrainerRepository(TrainingContext trainingContext) : ITrainerReposi
         trainingContext.Trainers.Add(trainer);
     }
 
+    // Marking the aggregate modified guarantees an UPDATE on the Trainer row, and
+    // therefore a check of its concurrency token, whatever part of the aggregate the
+    // edition actually touched.
     public void Update(Trainer trainer)
     {
         trainingContext.Trainers.Update(trainer);

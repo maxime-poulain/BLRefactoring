@@ -111,9 +111,68 @@ public class TrainingControllerTests(ApiFactory factory)
             Topics = ["Design"]
         };
 
-        var response = await client.PutAsJsonAsync($"/Training/{trainingId}", editRequest);
+        var entityTag = await client.GetETagAsync($"/Training/{trainingId}");
+        var response = await client.PutWithIfMatchAsync($"/Training/{trainingId}", editRequest, entityTag);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Headers.ETag.Should().NotBeNull("the caller needs the new version to edit again");
+    }
+
+    [Fact]
+    public async Task Edit_WithoutIfMatch_Returns428()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
+        var createResponse = await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
+        var trainingId = await createResponse.Content.ReadFromJsonAsync<Guid>();
+
+        var response = await client.PutAsJsonAsync($"/Training/{trainingId}", new TrainingEditionRequest
+        {
+            Title = $"Updated {Guid.NewGuid():N}"[..25],
+            Description = "Updated description for the training",
+            Prerequisites = "Updated prerequisites",
+            AcquiredSkills = "Updated acquired skills",
+            Topics = ["Design"]
+        });
+
+        // An unconditional write would let the caller overwrite changes they never saw.
+        response.StatusCode.Should().Be(HttpStatusCode.PreconditionRequired);
+    }
+
+    [Fact]
+    public async Task Edit_WithStaleIfMatch_Returns412AndKeepsTheFirstEdit()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(factory);
+        var createResponse = await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
+        var trainingId = await createResponse.Content.ReadFromJsonAsync<Guid>();
+
+        // Both callers read the same version, as two users would from their form.
+        var staleTag = await client.GetETagAsync($"/Training/{trainingId}");
+
+        var firstTitle = $"First {Guid.NewGuid():N}"[..25];
+        var first = await client.PutWithIfMatchAsync($"/Training/{trainingId}", new TrainingEditionRequest
+        {
+            Title = firstTitle,
+            Description = "The edit that got there first",
+            Prerequisites = "Updated prerequisites",
+            AcquiredSkills = "Updated acquired skills",
+            Topics = ["Design"]
+        }, staleTag);
+        first.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var second = await client.PutWithIfMatchAsync($"/Training/{trainingId}", new TrainingEditionRequest
+        {
+            Title = $"Second {Guid.NewGuid():N}"[..25],
+            Description = "The edit that must be refused",
+            Prerequisites = "Updated prerequisites",
+            AcquiredSkills = "Updated acquired skills",
+            Topics = ["Design"]
+        }, staleTag);
+
+        second.StatusCode.Should().Be(HttpStatusCode.PreconditionFailed);
+
+        var reread = await client.GetAsync($"/Training/{trainingId}");
+        var training = await reread.Content.ReadFromJsonAsync<TrainingDto>();
+        training!.Title.Should().Be(firstTitle, "the second edit must not have overwritten the first");
     }
 
     [Fact]

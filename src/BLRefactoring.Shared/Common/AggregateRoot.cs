@@ -31,6 +31,9 @@ public abstract class AggregateRoot<TEntityId> : Entity<TEntityId>, IAggregateRo
     }
 
     /// <inheritdoc/>
+    public byte[] RowVersion { get; private set; } = [];
+
+    /// <inheritdoc/>
     public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
     /// <summary>
@@ -65,4 +68,16 @@ public abstract class AggregateRoot<TEntityId> : Entity<TEntityId>, IAggregateRo
 /// </summary>
 public interface IAggregateRoot : IHasDomainEvents
 {
+    /// <summary>
+    /// The version of the aggregate as it was read, maintained by the store.
+    /// </summary>
+    /// <remarks>
+    /// The aggregate is the consistency boundary, so it is also the unit of
+    /// concurrency control: one version guards the root and everything it owns.
+    /// This is technical metadata rather than a business concept — it sits here
+    /// next to <c>CreatedOn</c>/<c>ModifiedOn</c> for the same reason, and no
+    /// business rule ever reads it. Callers compare it to decide whether the
+    /// aggregate they are about to change is still the one they read.
+    /// </remarks>
+    byte[] RowVersion { get; }
 }
