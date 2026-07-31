@@ -1,6 +1,6 @@
 using System.Net.Http.Json;
 
-namespace BLRefactoring.DDD.Api.IntegrationTests.Fixtures;
+namespace BLRefactoring.Api.TestKit;
 
 /// <summary>
 /// Helpers for the conditional-request dance every edit now goes through: read the

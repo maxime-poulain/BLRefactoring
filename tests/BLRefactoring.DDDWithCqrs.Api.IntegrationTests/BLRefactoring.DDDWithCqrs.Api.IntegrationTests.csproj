@@ -14,15 +14,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\DDD\Api\BLRefactoring.DDD.Api.csproj" />
+    <ProjectReference Include="..\..\src\DDDWithCqrs\Api\BLRefactoring.DDDWithCqrs.Api.csproj" />
     <ProjectReference Include="..\BLRefactoring.Api.TestKit\BLRefactoring.Api.TestKit.csproj" />
   </ItemGroup>
 
-  <!--
-    The test kit is used by every file of this suite; a global using keeps its helpers
-    reachable without repeating the directive, and left the existing tests untouched when
-    the fixtures moved out.
-  -->
   <ItemGroup>
     <Using Include="BLRefactoring.Api.TestKit" />
   </ItemGroup>
