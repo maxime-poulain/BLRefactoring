@@ -105,8 +105,7 @@ public class EditTrainerCommandHandlerTests
         GivenTrainer(trainer);
         var sut = CreateSut();
 
-        var command = Command(trainer.Id.Value, firstname: "Jane");
-        command.ExpectedVersion = [1, 2, 3, 4, 5, 6, 7, 8];
+        var command = Command(trainer.Id.Value, expectedVersion: [1, 2, 3, 4, 5, 6, 7, 8], firstname: "Jane");
 
         var result = await sut.Handle(command, CancellationToken.None);
 
@@ -142,6 +141,7 @@ public class EditTrainerCommandHandlerTests
 
     private static EditTrainerCommand Command(
         Guid trainerId,
+        byte[]? expectedVersion = null,
         string firstname = "John",
         string lastname = "Doe",
         string contactEmail = "john.doe@example.com",
@@ -149,6 +149,7 @@ public class EditTrainerCommandHandlerTests
         => new()
         {
             TrainerId = trainerId,
+            ExpectedVersion = expectedVersion ?? [],
             Firstname = firstname,
             Lastname = lastname,
             ContactEmail = contactEmail,

@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace BLRefactoring.Shared.Application.Dtos.Training;
 
 public class TrainingDto
@@ -8,11 +6,11 @@ public class TrainingDto
     /// The version of the aggregate this representation was read at.
     /// </summary>
     /// <remarks>
-    /// Carried to the controller so it can emit an <c>ETag</c>, and deliberately
-    /// kept out of the JSON body: the version is a transport concern, not part of
-    /// the business contract.
+    /// Carried to the API layer, which publishes it as an <c>ETag</c> and leaves it out of the
+    /// response contract. This read model is no longer serialised to callers, so it no longer
+    /// needs to say so.
     /// </remarks>
-    [JsonIgnore] public byte[] RowVersion { get; set; } = [];
+    public byte[] RowVersion { get; set; } = [];
 
     public required Guid Id { get; set; }
     public required string Title { get; set; } = string.Empty;

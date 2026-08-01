@@ -1,15 +1,10 @@
+using BLRefactoring.DDDWithCqrs.Api.Mappings;
 using BLRefactoring.Shared.Api.Authorization;
+using BLRefactoring.Shared.Api.Contracts.Errors;
+using BLRefactoring.Shared.Api.Contracts.Mappings;
+using BLRefactoring.Shared.Api.Contracts.Trainings;
 using BLRefactoring.Shared.Api.Controllers;
 using BLRefactoring.Shared.Api.Http;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainings;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Create;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Delete;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Edit;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetAll;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetById;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetByTopic;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetByTrainerId;
-using BLRefactoring.Shared.Application.Dtos.Training;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.CQS;
 using Microsoft.AspNetCore.Authorization;
@@ -17,6 +12,15 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BLRefactoring.DDDWithCqrs.Api.Controller;
 
+/// <summary>
+/// REST endpoints for trainings, on the CQRS stack.
+/// </summary>
+/// <remarks>
+/// Commands and queries are built by <see cref="HttpToApplicationMappings"/> rather than bound
+/// from the request. The edition endpoints in particular used to receive a command straight from
+/// the body and then have their route identifier and expected version assigned onto it; the
+/// mapping composes the three explicitly instead.
+/// </remarks>
 public class TrainingController(
     ICommandDispatcher commandDispatcher,
     IQueryDispatcher queryDispatcher)
@@ -24,30 +28,32 @@ public class TrainingController(
 {
     [HttpPost]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status409Conflict)]
     public async Task<ActionResult> CreateTrainingAsync(
-        CreateTrainingCommand command,
+        [FromBody] CreateTrainingRequestHttp request,
         CancellationToken cancellationToken = default)
     {
+        var command = request.ToCommand();
         var trainingId = command.TrainingId;
+
         var result = await commandDispatcher.DispatchAsync(command, cancellationToken);
 
         return result.Match<ActionResult>(
-            () => CreatedAtAction("GetTrainingById",
-                new { id = command.TrainingId }, trainingId),
+            () => CreatedAtAction("GetTrainingById", new { id = trainingId }, trainingId),
             errors => errors.Any(e => e.ErrorCode == ErrorCode.DuplicateTitle)
-                ? Conflict(errors)
-                : BadRequest(errors));
+                ? Conflict(errors.ToHttp())
+                : BadRequest(errors.ToHttp()));
     }
 
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(TrainingDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(TrainingResponseHttp), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<TrainingDto>> GetTrainingByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<TrainingResponseHttp>> GetTrainingByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var training = await queryDispatcher.DispatchAsync(new GetTrainingByIdQuery(id), cancellationToken);
+        var training = await queryDispatcher.DispatchAsync(
+            HttpToApplicationMappings.ToGetTrainingByIdQuery(id), cancellationToken);
 
         // Using a monad such Maybe<T,None> could be an alternative
         // to avoid potential null reference exception.
@@ -59,29 +65,32 @@ public class TrainingController(
         // The ETag published here is what the caller must send back as If-Match
         // when they later edit this training.
         this.SetETag(training.RowVersion);
-        return Ok(training);
+        return Ok(training.ToHttp());
     }
 
     [HttpGet("all")]
-    [ProducesResponseType(typeof(List<TrainingDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<List<TrainingDto>>> GetAllAsync(CancellationToken cancellationToken = default)
+    [ProducesResponseType(typeof(List<TrainingResponseHttp>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<List<TrainingResponseHttp>>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await queryDispatcher.DispatchAsync(new GetAllTrainingsQuery(), cancellationToken);
+        var trainings = await queryDispatcher.DispatchAsync(
+            HttpToApplicationMappings.ToGetAllTrainingsQuery(), cancellationToken);
+
+        return Ok(trainings.ToHttp());
     }
 
     [Authorize(Policy = TrainingOwnerPolicy.Name)]
     [HttpPut("{trainingId:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status412PreconditionFailed)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status428PreconditionRequired)]
+    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status412PreconditionFailed)]
+    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status428PreconditionRequired)]
     public async Task<ActionResult> EditTrainingAsync(
         Guid trainingId,
-        [FromBody] EditTrainingCommand command,
+        [FromBody] EditTrainingRequestHttp request,
         CancellationToken cancellationToken = default)
     {
         if (!this.TryGetExpectedVersion(out var expectedVersion))
@@ -89,9 +98,8 @@ public class TrainingController(
             return this.PreconditionRequired();
         }
 
-        command.TrainingId = trainingId;
-        command.ExpectedVersion = expectedVersion;
-        var result = await commandDispatcher.DispatchAsync(command, cancellationToken);
+        var result = await commandDispatcher.DispatchAsync(
+            request.ToCommand(trainingId, expectedVersion), cancellationToken);
 
         return result.Match<ActionResult>(
             () => Ok(),
@@ -104,43 +112,49 @@ public class TrainingController(
 
                 if (errors.Any(e => e.ErrorCode == ErrorCode.ConcurrencyConflict))
                 {
-                    return this.PreconditionFailed(errors);
+                    return this.PreconditionFailed(errors.ToHttp());
                 }
 
                 return errors.Any(e => e.ErrorCode == ErrorCode.DuplicateTitle)
-                    ? Conflict(errors)
-                    : BadRequest(errors);
+                    ? Conflict(errors.ToHttp())
+                    : BadRequest(errors.ToHttp());
             });
     }
 
     [HttpGet("by-trainer/{trainerId:guid}")]
-    [ProducesResponseType(typeof(List<TrainingDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<List<TrainingDto>>> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken = default)
+    [ProducesResponseType(typeof(List<TrainingResponseHttp>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<List<TrainingResponseHttp>>> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken = default)
     {
-        return await queryDispatcher.DispatchAsync(new GetTrainingsByTrainerIdQuery(trainerId), cancellationToken);
+        var trainings = await queryDispatcher.DispatchAsync(
+            HttpToApplicationMappings.ToGetTrainingsByTrainerIdQuery(trainerId), cancellationToken);
+
+        return Ok(trainings.ToHttp());
     }
 
     [HttpGet("by-topic/{topic}")]
-    [ProducesResponseType(typeof(List<TrainingDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<TrainingDto>>> GetByTopicAsync(string topic, CancellationToken cancellationToken = default)
+    [ProducesResponseType(typeof(List<TrainingResponseHttp>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<TrainingResponseHttp>>> GetByTopicAsync(string topic, CancellationToken cancellationToken = default)
     {
-        return await queryDispatcher.DispatchAsync(new GetTrainingsByTopicQuery(topic), cancellationToken);
+        var trainings = await queryDispatcher.DispatchAsync(
+            HttpToApplicationMappings.ToGetTrainingsByTopicQuery(topic), cancellationToken);
+
+        return Ok(trainings.ToHttp());
     }
 
     [Authorize(Policy = TrainingOwnerPolicy.Name)]
     [HttpDelete("{trainingId:guid}")]
     [ProducesResponseType(typeof(void), StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult> DeleteAsync(Guid trainingId, CancellationToken cancellationToken = default)
     {
         var deletionResult = await commandDispatcher.DispatchAsync(
-            new DeleteTrainingCommand(trainingId), cancellationToken);
+            HttpToApplicationMappings.ToDeleteTrainingCommand(trainingId), cancellationToken);
 
         return deletionResult.Match<ActionResult>(
             NoContent,
-            errors => errors.Any(e => e.ErrorCode == ErrorCode.NotFound) ? NotFound() : BadRequest(errors));
+            errors => errors.Any(e => e.ErrorCode == ErrorCode.NotFound) ? NotFound() : BadRequest(errors.ToHttp()));
     }
 }

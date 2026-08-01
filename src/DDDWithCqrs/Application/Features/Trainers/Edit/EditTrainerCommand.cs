@@ -1,5 +1,4 @@
 using BLRefactoring.Shared.Common;
-using System.Text.Json.Serialization;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
@@ -16,16 +15,15 @@ namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Edit;
 public class EditTrainerCommand : ICommand<Result>
 {
     /// <summary>
-    /// The trainer being edited. Taken from the caller's token rather than the
-    /// request body, hence never bound from JSON.
+    /// The trainer being edited, resolved from the caller's token by the API layer.
     /// </summary>
-    [JsonIgnore] public Guid TrainerId { get; set; }
+    public Guid TrainerId { get; init; }
 
     /// <summary>
-    /// The version the caller read the profile at, taken from the <c>If-Match</c>
-    /// header rather than the body.
+    /// The version the caller read the profile at, taken from the <c>If-Match</c> header by the
+    /// API layer.
     /// </summary>
-    [JsonIgnore] public byte[] ExpectedVersion { get; set; } = [];
+    public byte[] ExpectedVersion { get; init; } = [];
 
     public string Firstname { get; init; } = null!;
     public string Lastname { get; init; } = null!;

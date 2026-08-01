@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Common.Errors;
@@ -11,13 +10,13 @@ namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Edit;
 
 public class EditTrainingCommand : ICommand<Result>
 {
-    [JsonIgnore] public Guid TrainingId { get; set; }
+    public Guid TrainingId { get; init; }
 
     /// <summary>
-    /// The version the caller read the training at, taken from the <c>If-Match</c>
-    /// header rather than the body.
+    /// The version the caller read the training at, taken from the <c>If-Match</c> header by the
+    /// API layer.
     /// </summary>
-    [JsonIgnore] public byte[] ExpectedVersion { get; set; } = [];
+    public byte[] ExpectedVersion { get; init; } = [];
     public string Title { get; init; } = null!;
     public List<string> Topics { get; init; } = [];
     public string Description { get; init; } = null!;

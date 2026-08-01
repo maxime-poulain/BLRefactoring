@@ -1,4 +1,4 @@
-using BLRefactoring.Shared.Common.Errors;
+using BLRefactoring.Shared.Api.Contracts.Errors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -49,16 +49,30 @@ public static class ConcurrencyControllerExtensions
             StatusCodes.Status428PreconditionRequired,
             new[]
             {
-                new Error(
-                    ErrorCode.ConcurrencyConflict,
-                    "This request must carry an If-Match header holding the ETag returned when the resource was read.")
+                new ErrorResponseHttp
+                {
+                    ErrorMessage =
+                        "This request must carry an If-Match header holding the ETag returned when the resource was read.",
+                    ErrorCode = new ErrorCodeResponseHttp
+                    {
+                        Name = Common.Errors.ErrorCode.ConcurrencyConflict.Name,
+                        Value = Common.Errors.ErrorCode.ConcurrencyConflict.Value
+                    }
+                }
             });
     }
 
     /// <summary>
     /// 412, for a write whose <c>If-Match</c> no longer matches the stored version.
     /// </summary>
-    public static ActionResult PreconditionFailed(this ControllerBase controller, IReadOnlyErrorCollection errors)
+    /// <remarks>
+    /// Takes the published error contract rather than the kernel's collection: this helper writes
+    /// a response body, and response bodies are the API's vocabulary. Callers map with
+    /// <c>ToHttp()</c> before handing the errors over.
+    /// </remarks>
+    public static ActionResult PreconditionFailed(
+        this ControllerBase controller,
+        IEnumerable<ErrorResponseHttp> errors)
     {
         ArgumentNullException.ThrowIfNull(controller);
 

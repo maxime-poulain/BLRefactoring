@@ -1,4 +1,4 @@
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
+using BLRefactoring.DDDWithCqrs.Api.Mappings;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.CQS;
 using BLRefactoring.Shared.Api.Controllers;
@@ -25,16 +25,7 @@ public class AuthController(
         Guid userId,
         CancellationToken cancellationToken = default)
     {
-        var command = new CreateTrainerCommand
-        {
-            Firstname = request.Firstname,
-            Lastname = request.Lastname,
-            // The contact email starts out as the account email; the trainer can
-            // make it diverge later from their profile.
-            ContactEmail = request.Email,
-            UserId = userId
-        };
-
-        return await commandDispatcher.DispatchAsync(command, cancellationToken);
+        return await commandDispatcher.DispatchAsync(
+            request.ToCommand(userId), cancellationToken);
     }
 }

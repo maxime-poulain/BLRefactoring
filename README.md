@@ -84,6 +84,26 @@ policy, CORS, Identity and JWT wiring, the HTTP side of optimistic concurrency �
 one, and how it kept relying on an `IHttpContextAccessor` it never registered. Persistence stayed
 in `BLRefactoring.Shared.Infrastructure`, which carries no ASP.NET Core framework reference.
 
+**HTTP is a boundary, not a window.** The contracts the API publishes — `*RequestHttp` and
+`*ResponseHttp`, under `Shared.Api/Contracts/` — belong to the API and to nothing else. Commands,
+queries and application DTOs stop at that line: no controller names one, and each host maps the
+shared contracts onto its own vocabulary — the layered one to its application services, the CQRS
+one to its commands and queries. Before that, the CQRS controllers bound an `EditTrainingCommand`
+straight from the request body and then assigned its route identifier and expected version onto
+it, which is why those commands carried `[JsonIgnore]`: a serialisation concern lodged inside an
+application message. The published API and the internals can now change without each other's
+permission, and the two hosts cannot drift on it, since the contract they serve is one object.
+
+The request contracts declare their constraints as **data annotations**, so `[ApiController]`
+rejects a malformed body at model binding with a `ValidationProblemDetails` keyed by field name,
+before any command or application service sees it. The shape matters as much as the check: a form
+on the other end can mark each offending input rather than show one message for the whole
+submission, and the annotations reach the OpenAPI document, so generated clients inherit the same
+constraints. They mirror the bounds the value objects enforce — the domain stays the judge and
+rejects on its own terms anything that reaches it another way. What they deliberately do not
+check is the shape of an email address: .NET's `[EmailAddress]` and the domain's validator
+disagree, and an API refusing what the domain accepts would be worse than one asking later.
+
 ### Solution layout
 
 Twenty-three projects: sixteen under `src/`, seven under `tests/`. The backend and all tests target
@@ -95,7 +115,7 @@ Twenty-three projects: sixteen under `src/`, seven under `tests/`. The backend a
 | `BLRefactoring.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, `IUniquenessTitleChecker` |
 | `BLRefactoring.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections and the six domain event handlers — all shared by both stacks |
 | `BLRefactoring.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the identity store |
-| `BLRefactoring.Shared.Api` | What both REST hosts would otherwise copy: the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, HTTP concurrency helpers |
+| `BLRefactoring.Shared.Api` | The HTTP boundary: the `*RequestHttp` and `*ResponseHttp` contracts both hosts publish, their mappings to the application layer, the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, concurrency helpers |
 | `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService` |
 | `DDD.Api` | REST host for the layered stack — NSwag/OpenAPI, CORS, JWT bearer |
 | `DDDWithCqrs.Application` | Commands, command handlers, FluentValidation validators |

@@ -1,10 +1,10 @@
+using BLRefactoring.DDDWithCqrs.Api.Mappings;
+using BLRefactoring.Shared;
+using BLRefactoring.Shared.Api.Contracts.Errors;
+using BLRefactoring.Shared.Api.Contracts.Mappings;
+using BLRefactoring.Shared.Api.Contracts.Trainers;
 using BLRefactoring.Shared.Api.Controllers;
 using BLRefactoring.Shared.Api.Http;
-using BLRefactoring.Shared.Application.Dtos.Trainer;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Edit;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetAll;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetById;
-using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.CQS;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +15,12 @@ namespace BLRefactoring.DDDWithCqrs.Api.Controller;
 /// Trainers are only created through the registration flow, which creates
 /// the identity user and its trainer atomically.
 /// </summary>
+/// <remarks>
+/// No command or query appears in this file. They are built by
+/// <see cref="HttpToApplicationMappings"/> from the API's own contracts, which is what lets the
+/// published API and the CQRS messages change independently — and what removed the
+/// <c>[JsonIgnore]</c> attributes the commands used to need to be bound from a request body.
+/// </remarks>
 public class TrainerController(
     ICommandDispatcher commandDispatcher,
     IQueryDispatcher queryDispatcher,
@@ -30,12 +36,12 @@ public class TrainerController(
     /// their identifier.
     /// </remarks>
     [HttpGet("me")]
-    [ProducesResponseType(typeof(TrainerDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TrainerResponseHttp), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<TrainerDto>> GetCurrentAsync(CancellationToken cancellationToken = default)
+    public async Task<ActionResult<TrainerResponseHttp>> GetCurrentAsync(CancellationToken cancellationToken = default)
     {
         var trainer = await queryDispatcher.DispatchAsync(
-            new GetTrainerByIdQuery(currentUserService.TrainerId), cancellationToken);
+            HttpToApplicationMappings.ToGetTrainerByIdQuery(currentUserService.TrainerId), cancellationToken);
 
         if (trainer is null)
         {
@@ -43,7 +49,7 @@ public class TrainerController(
         }
 
         this.SetETag(trainer.RowVersion);
-        return Ok(trainer);
+        return Ok(trainer.ToHttp());
     }
 
     /// <summary>
@@ -59,13 +65,13 @@ public class TrainerController(
     /// is then read back through the query side rather than returned by the command.
     /// </remarks>
     [HttpPut("me")]
-    [ProducesResponseType(typeof(TrainerDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(TrainerResponseHttp), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status412PreconditionFailed)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status428PreconditionRequired)]
-    public async Task<ActionResult<TrainerDto>> EditCurrentAsync(
-        [FromBody] EditTrainerCommand command,
+    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status412PreconditionFailed)]
+    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status428PreconditionRequired)]
+    public async Task<ActionResult<TrainerResponseHttp>> EditCurrentAsync(
+        [FromBody] EditTrainerRequestHttp request,
         CancellationToken cancellationToken = default)
     {
         if (!this.TryGetExpectedVersion(out var expectedVersion))
@@ -73,16 +79,15 @@ public class TrainerController(
             return this.PreconditionRequired();
         }
 
-        command.TrainerId = currentUserService.TrainerId;
-        command.ExpectedVersion = expectedVersion;
-
-        var result = await commandDispatcher.DispatchAsync(command, cancellationToken);
+        var trainerId = currentUserService.TrainerId;
+        var result = await commandDispatcher.DispatchAsync(
+            request.ToCommand(trainerId, expectedVersion), cancellationToken);
 
         return await result.MatchAsync<ActionResult>(
             onSuccess: async () =>
             {
                 var trainer = await queryDispatcher.DispatchAsync(
-                    new GetTrainerByIdQuery(command.TrainerId), cancellationToken);
+                    HttpToApplicationMappings.ToGetTrainerByIdQuery(trainerId), cancellationToken);
 
                 if (trainer is null)
                 {
@@ -90,20 +95,22 @@ public class TrainerController(
                 }
 
                 this.SetETag(trainer.RowVersion);
-                return Ok(trainer);
+                return Ok(trainer.ToHttp());
             },
             onFailure: errors => ValueTask.FromResult<ActionResult>(
                 errors.Any(error => error.ErrorCode == ErrorCode.NotFound) ? NotFound()
-                : errors.Any(error => error.ErrorCode == ErrorCode.ConcurrencyConflict) ? this.PreconditionFailed(errors)
-                : BadRequest(errors)));
+                : errors.Any(error => error.ErrorCode == ErrorCode.ConcurrencyConflict) ? this.PreconditionFailed(errors.ToHttp())
+                : BadRequest(errors.ToHttp())));
     }
 
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(TrainerDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(TrainerResponseHttp), StatusCodes.Status200OK)]
+    public async Task<ActionResult<TrainerResponseHttp>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var trainer = await queryDispatcher.DispatchAsync(new GetTrainerByIdQuery(id), cancellationToken);
+        var trainer = await queryDispatcher.DispatchAsync(
+            HttpToApplicationMappings.ToGetTrainerByIdQuery(id), cancellationToken);
+
         if (trainer is null)
         {
             return NotFound();
@@ -112,14 +119,17 @@ public class TrainerController(
         // The ETag published here is what the caller must send back as If-Match
         // when they later edit this profile.
         this.SetETag(trainer.RowVersion);
-        return Ok(trainer);
+        return Ok(trainer.ToHttp());
     }
 
     [HttpGet("all")]
-    [ProducesResponseType(typeof(List<TrainerDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<List<TrainerDto>>> GetAllAsync(CancellationToken cancellationToken = default)
+    [ProducesResponseType(typeof(List<TrainerResponseHttp>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<List<TrainerResponseHttp>>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return Ok(await queryDispatcher.DispatchAsync(new GetAllTrainersQuery(), cancellationToken));
+        var trainers = await queryDispatcher.DispatchAsync(
+            HttpToApplicationMappings.ToGetAllTrainersQuery(), cancellationToken);
+
+        return Ok(trainers.ToHttp());
     }
 }
