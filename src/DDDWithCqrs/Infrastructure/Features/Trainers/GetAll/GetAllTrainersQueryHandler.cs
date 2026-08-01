@@ -1,19 +1,23 @@
-using BLRefactoring.Shared.Application.Dtos.Trainer;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetAll;
+using BLRefactoring.DDDWithCqrs.Application.Pagination;
+using BLRefactoring.DDDWithCqrs.Infrastructure.Pagination;
+using BLRefactoring.Shared.Application.Dtos.Trainer;
 using BLRefactoring.Shared.Application.Projections;
 using BLRefactoring.Shared.CQS;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
-using Microsoft.EntityFrameworkCore;
 
 namespace BLRefactoring.DDDWithCqrs.Infrastructure.Features.Trainers.GetAll;
 
 public class GetAllTrainersQueryHandler(TrainingContext trainingContext)
-    : IQueryHandler<GetAllTrainersQuery, List<TrainerDto>>
+    : IQueryHandler<GetAllTrainersQuery, PagedResult<TrainerDto>>
 {
-    public async ValueTask<List<TrainerDto>> Handle(GetAllTrainersQuery request, CancellationToken cancellationToken)
+    public async ValueTask<PagedResult<TrainerDto>> Handle(
+        GetAllTrainersQuery request,
+        CancellationToken cancellationToken)
     {
         return await trainingContext.Trainers
-            .Select(TrainerProjections.ToDtoExpression)
-            .ToListAsync(cancellationToken);
+            .NewestFirst<Trainer, TrainerId>()
+            .ToPagedResultAsync(TrainerProjections.ToDtoExpression, request, cancellationToken);
     }
 }

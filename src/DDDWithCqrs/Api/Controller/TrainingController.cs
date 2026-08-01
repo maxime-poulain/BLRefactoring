@@ -1,3 +1,4 @@
+using BLRefactoring.DDDWithCqrs.Api.Contracts;
 using BLRefactoring.DDDWithCqrs.Api.Mappings;
 using BLRefactoring.Shared.Api.Authorization;
 using BLRefactoring.Shared.Api.Contracts.Errors;
@@ -68,15 +69,20 @@ public class TrainingController(
         return Ok(training.ToHttp());
     }
 
+    /// <summary>
+    /// Returns one page of trainings, newest first.
+    /// </summary>
     [HttpGet("all")]
-    [ProducesResponseType(typeof(List<TrainingResponseHttp>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResponseHttp<TrainingResponseHttp>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<List<TrainingResponseHttp>>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<ActionResult<PagedResponseHttp<TrainingResponseHttp>>> GetAllAsync(
+        [FromQuery] PaginationRequestHttp pagination,
+        CancellationToken cancellationToken = default)
     {
-        var trainings = await queryDispatcher.DispatchAsync(
-            HttpToApplicationMappings.ToGetAllTrainingsQuery(), cancellationToken);
+        var page = await queryDispatcher.DispatchAsync(
+            pagination.ToGetAllTrainingsQuery(), cancellationToken);
 
-        return Ok(trainings.ToHttp());
+        return Ok(page.ToHttp(trainings => trainings.ToHttp()));
     }
 
     [Authorize(Policy = TrainingOwnerPolicy.Name)]
@@ -122,24 +128,30 @@ public class TrainingController(
     }
 
     [HttpGet("by-trainer/{trainerId:guid}")]
-    [ProducesResponseType(typeof(List<TrainingResponseHttp>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResponseHttp<TrainingResponseHttp>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<List<TrainingResponseHttp>>> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<PagedResponseHttp<TrainingResponseHttp>>> GetByTrainerIdAsync(
+        Guid trainerId,
+        [FromQuery] PaginationRequestHttp pagination,
+        CancellationToken cancellationToken = default)
     {
-        var trainings = await queryDispatcher.DispatchAsync(
-            HttpToApplicationMappings.ToGetTrainingsByTrainerIdQuery(trainerId), cancellationToken);
+        var page = await queryDispatcher.DispatchAsync(
+            pagination.ToGetTrainingsByTrainerIdQuery(trainerId), cancellationToken);
 
-        return Ok(trainings.ToHttp());
+        return Ok(page.ToHttp(trainings => trainings.ToHttp()));
     }
 
     [HttpGet("by-topic/{topic}")]
-    [ProducesResponseType(typeof(List<TrainingResponseHttp>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<TrainingResponseHttp>>> GetByTopicAsync(string topic, CancellationToken cancellationToken = default)
+    [ProducesResponseType(typeof(PagedResponseHttp<TrainingResponseHttp>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResponseHttp<TrainingResponseHttp>>> GetByTopicAsync(
+        string topic,
+        [FromQuery] PaginationRequestHttp pagination,
+        CancellationToken cancellationToken = default)
     {
-        var trainings = await queryDispatcher.DispatchAsync(
-            HttpToApplicationMappings.ToGetTrainingsByTopicQuery(topic), cancellationToken);
+        var page = await queryDispatcher.DispatchAsync(
+            pagination.ToGetTrainingsByTopicQuery(topic), cancellationToken);
 
-        return Ok(trainings.ToHttp());
+        return Ok(page.ToHttp(trainings => trainings.ToHttp()));
     }
 
     [Authorize(Policy = TrainingOwnerPolicy.Name)]

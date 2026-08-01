@@ -41,6 +41,8 @@ public static class ServiceCollectionExtensions
                 }
             })
             .AddScoped<DomainEventInterceptor>()
+            // The system clock, injected so the audit stamps can be driven by a test.
+            .AddSingleton(TimeProvider.System)
             .AddSingleton<AuditableEntitiesInterceptor>()
             .AddSingleton<IEmailSender, FakeEmailSender>()
             .AddSingleton<ITrainingSearchIndexer, FakeTrainingSearchIndexer>();

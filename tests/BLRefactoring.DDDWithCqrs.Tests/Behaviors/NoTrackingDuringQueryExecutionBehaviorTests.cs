@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using BLRefactoring.DDDWithCqrs.Application.Pagination;
 using BLRefactoring.Shared.Application.Dtos.Trainer;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetAll;
@@ -26,15 +27,15 @@ public class NoTrackingDuringQueryExecutionBehaviorTests : IDisposable
     [Fact]
     public async Task Handle_Query_SetsNoTrackingDuringExecution()
     {
-        var behavior = new NoTrackingDuringQueryExecutionBehavior<GetAllTrainersQuery, List<TrainerDto>>(_context);
+        var behavior = new NoTrackingDuringQueryExecutionBehavior<GetAllTrainersQuery, PagedResult<TrainerDto>>(_context);
         var query = new GetAllTrainersQuery();
 
         QueryTrackingBehavior? trackingDuringExecution = null;
 
-        MessageHandlerDelegate<GetAllTrainersQuery, List<TrainerDto>> next = (_, _) =>
+        MessageHandlerDelegate<GetAllTrainersQuery, PagedResult<TrainerDto>> next = (_, _) =>
         {
             trackingDuringExecution = _context.ChangeTracker.QueryTrackingBehavior;
-            return new ValueTask<List<TrainerDto>>(new List<TrainerDto>());
+            return new ValueTask<PagedResult<TrainerDto>>(new PagedResult<TrainerDto>([], Page: 1, PageSize: 20, TotalCount: 0));
         };
 
         await behavior.Handle(query, next, CancellationToken.None);
@@ -47,11 +48,11 @@ public class NoTrackingDuringQueryExecutionBehaviorTests : IDisposable
     {
         _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
 
-        var behavior = new NoTrackingDuringQueryExecutionBehavior<GetAllTrainersQuery, List<TrainerDto>>(_context);
+        var behavior = new NoTrackingDuringQueryExecutionBehavior<GetAllTrainersQuery, PagedResult<TrainerDto>>(_context);
         var query = new GetAllTrainersQuery();
 
-        MessageHandlerDelegate<GetAllTrainersQuery, List<TrainerDto>> next =
-            (_, _) => new ValueTask<List<TrainerDto>>(new List<TrainerDto>());
+        MessageHandlerDelegate<GetAllTrainersQuery, PagedResult<TrainerDto>> next =
+            (_, _) => new ValueTask<PagedResult<TrainerDto>>(new PagedResult<TrainerDto>([], Page: 1, PageSize: 20, TotalCount: 0));
 
         await behavior.Handle(query, next, CancellationToken.None);
 
