@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using BLRefactoring.DDDWithCqrs.Application.Pagination;
 using BLRefactoring.Shared.Application.Dtos.Trainer;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetAll;
@@ -102,14 +103,14 @@ public class ValidationPipelineBehaviorTests
     [Fact]
     public async Task Handle_QueryWithoutValidator_DoesNotThrow()
     {
-        var behavior = new ValidationPipelineBehavior<GetAllTrainersQuery, List<TrainerDto>>(
+        var behavior = new ValidationPipelineBehavior<GetAllTrainersQuery, PagedResult<TrainerDto>>(
             Enumerable.Empty<IValidator<GetAllTrainersQuery>>());
 
         var query = new GetAllTrainersQuery();
-        var expected = new List<TrainerDto>();
+        var expected = new PagedResult<TrainerDto>([], Page: 1, PageSize: 20, TotalCount: 0);
 
-        MessageHandlerDelegate<GetAllTrainersQuery, List<TrainerDto>> next =
-            (_, _) => new ValueTask<List<TrainerDto>>(expected);
+        MessageHandlerDelegate<GetAllTrainersQuery, PagedResult<TrainerDto>> next =
+            (_, _) => new ValueTask<PagedResult<TrainerDto>>(expected);
 
         var result = await behavior.Handle(query, next, CancellationToken.None);
 

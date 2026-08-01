@@ -27,6 +27,7 @@
     <Project Path="tests/BLRefactoring.DDD.Api.IntegrationTests/BLRefactoring.DDD.Api.IntegrationTests.csproj" />
     <Project Path="tests/BLRefactoring.DDDWithCqrs.Tests/BLRefactoring.DDDWithCqrs.Tests.csproj" />
     <Project Path="tests/BLRefactoring.Shared.Api.Tests/BLRefactoring.Shared.Api.Tests.csproj" />
+    <Project Path="tests/BLRefactoring.Shared.Infrastructure.Tests/BLRefactoring.Shared.Infrastructure.Tests.csproj" />
     <Project Path="tests/BLRefactoring.Api.TestKit/BLRefactoring.Api.TestKit.csproj" />
     <Project Path="tests/BLRefactoring.DDDWithCqrs.Api.IntegrationTests/BLRefactoring.DDDWithCqrs.Api.IntegrationTests.csproj" />
   </Folder>

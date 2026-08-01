@@ -1,3 +1,4 @@
+using BLRefactoring.DDDWithCqrs.Api.Contracts;
 using BLRefactoring.DDDWithCqrs.Api.Mappings;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Api.Contracts.Errors;
@@ -122,14 +123,19 @@ public class TrainerController(
         return Ok(trainer.ToHttp());
     }
 
+    /// <summary>
+    /// Returns one page of trainers, newest first.
+    /// </summary>
     [HttpGet("all")]
-    [ProducesResponseType(typeof(List<TrainerResponseHttp>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResponseHttp<TrainerResponseHttp>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<List<TrainerResponseHttp>>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<ActionResult<PagedResponseHttp<TrainerResponseHttp>>> GetAllAsync(
+        [FromQuery] PaginationRequestHttp pagination,
+        CancellationToken cancellationToken = default)
     {
-        var trainers = await queryDispatcher.DispatchAsync(
-            HttpToApplicationMappings.ToGetAllTrainersQuery(), cancellationToken);
+        var page = await queryDispatcher.DispatchAsync(
+            pagination.ToGetAllTrainersQuery(), cancellationToken);
 
-        return Ok(trainers.ToHttp());
+        return Ok(page.ToHttp(trainers => trainers.ToHttp()));
     }
 }

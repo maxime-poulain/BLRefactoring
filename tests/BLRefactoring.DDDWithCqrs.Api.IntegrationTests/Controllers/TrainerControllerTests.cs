@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Fixtures;
+using BLRefactoring.DDDWithCqrs.Api.Contracts;
 using BLRefactoring.Shared.Api.Contracts.Trainers;
 using Xunit;
 
@@ -38,7 +39,7 @@ public class TrainerControllerTests(ApiFactory factory) : IntegrationTest(factor
         var response = await client.GetAsync("/Trainer/all");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var trainers = await response.Content.ReadFromJsonAsync<List<TrainerResponseHttp>>();
+        var trainers = (await response.Content.ReadFromJsonAsync<PagedResponseHttp<TrainerResponseHttp>>())!.Items;
         trainers.Should().NotBeNull();
     }
 

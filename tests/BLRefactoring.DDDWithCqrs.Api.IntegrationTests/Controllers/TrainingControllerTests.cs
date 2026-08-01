@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Fixtures;
+using BLRefactoring.DDDWithCqrs.Api.Contracts;
 using BLRefactoring.Shared.Api.Contracts.Trainers;
 using BLRefactoring.Shared.Api.Contracts.Trainings;
 using Xunit;
@@ -126,7 +127,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         var response = await client.GetAsync("/Training/all");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var trainings = await response.Content.ReadFromJsonAsync<List<TrainingResponseHttp>>();
+        var trainings = (await response.Content.ReadFromJsonAsync<PagedResponseHttp<TrainingResponseHttp>>())!.Items;
         trainings.Should().ContainSingle();
     }
 
@@ -140,7 +141,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         var response = await client.GetAsync($"/Training/by-trainer/{me.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var trainings = await response.Content.ReadFromJsonAsync<List<TrainingResponseHttp>>();
+        var trainings = (await response.Content.ReadFromJsonAsync<PagedResponseHttp<TrainingResponseHttp>>())!.Items;
         trainings.Should().ContainSingle();
     }
 
@@ -153,7 +154,7 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         var response = await client.GetAsync("/Training/by-topic/Programming");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var trainings = await response.Content.ReadFromJsonAsync<List<TrainingResponseHttp>>();
+        var trainings = (await response.Content.ReadFromJsonAsync<PagedResponseHttp<TrainingResponseHttp>>())!.Items;
         trainings.Should().ContainSingle();
     }
 

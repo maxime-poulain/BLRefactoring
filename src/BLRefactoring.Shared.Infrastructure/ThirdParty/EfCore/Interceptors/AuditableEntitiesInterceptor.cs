@@ -1,14 +1,19 @@
-﻿using BLRefactoring.Shared.Common;
+using BLRefactoring.Shared.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Interceptors;
 
-
 /// <summary>
-/// Interceptor that automatically sets CreatedOn and ModifiedOn properties for auditable entities.
+/// Stamps <see cref="IAuditable.CreatedOn"/> and <see cref="IAuditable.ModifiedOn"/> as entities
+/// are saved.
 /// </summary>
-public sealed class AuditableEntitiesInterceptor : SaveChangesInterceptor
+/// <param name="timeProvider">
+/// The clock the stamps are read from. Injected rather than reached for statically, which is what
+/// makes the stamping testable: a test supplies a clock it controls and asserts what was written,
+/// where <c>DateTime.UtcNow</c> left nothing to assert against.
+/// </param>
+public sealed class AuditableEntitiesInterceptor(TimeProvider timeProvider) : SaveChangesInterceptor
 {
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
@@ -35,23 +40,32 @@ public sealed class AuditableEntitiesInterceptor : SaveChangesInterceptor
         return base.SavingChanges(eventData, result);
     }
 
-    private static void UpdateAuditableEntities(DbContext context)
+    /// <remarks>
+    /// The clock is read once per entity, inside the loop, so each carries the instant it was
+    /// stamped at rather than one reading shared by the batch.
+    /// <para>
+    /// It does not make <c>CreatedOn</c> a unique value, and nothing here should be taken to say
+    /// otherwise. <see cref="TimeProvider.GetUtcNow"/> reads the system clock, which advances at
+    /// the platform's timer interval — around 15.6 ms on Windows by default — so successive calls
+    /// within one tick return the same instant, and two concurrent saves collide just as easily.
+    /// Anything needing a total order over rows must still break ties on the identifier.
+    /// </para>
+    /// </remarks>
+    private void UpdateAuditableEntities(DbContext context)
     {
-        var now = DateTime.UtcNow;
         var entries = context.ChangeTracker.Entries<IAuditable>();
 
         foreach (var entry in entries)
         {
             if (entry.State == EntityState.Added)
             {
-                entry.Property(nameof(IAuditable.CreatedOn)).CurrentValue = now;
+                entry.Property(nameof(IAuditable.CreatedOn)).CurrentValue = timeProvider.GetUtcNow().UtcDateTime;
                 entry.Property(nameof(IAuditable.ModifiedOn)).IsModified = false;
-
             }
 
             if (entry.State == EntityState.Modified)
             {
-                entry.Property(nameof(IAuditable.ModifiedOn)).CurrentValue = now;
+                entry.Property(nameof(IAuditable.ModifiedOn)).CurrentValue = timeProvider.GetUtcNow().UtcDateTime;
                 entry.Property(nameof(IAuditable.CreatedOn)).IsModified = false;
             }
         }

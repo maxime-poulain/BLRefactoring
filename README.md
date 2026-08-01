@@ -94,6 +94,21 @@ it, which is why those commands carried `[JsonIgnore]`: a serialisation concern 
 application message. The published API and the internals can now change without each other's
 permission, and the two hosts cannot drift on it, since the contract they serve is one object.
 
+**Paging is the query side's, and only the query side's.** The CQRS host answers its list endpoints
+with a page and its metadata; the layered host still answers a plain array. That asymmetry is
+deliberate and is the clearest thing this repository has to say about the two approaches. Paging
+belongs where reads are shaped for a screen, and the CQRS stack has such a place; the layered one
+reads through repositories, whose job is to hand back aggregates. Teaching them to return pages
+would grow the domain's surface for a need no use case has — no rule in this domain operates on
+aggregates by the page — and being able to add it to one side without touching the write model, the
+aggregates or the repositories is precisely what separating reads from writes buys.
+
+Pages also need an order no two rows can tie on, or `OFFSET`/`FETCH` lets the server put a row on
+two pages and another on none. `ToPagedResultAsync` therefore takes an `IOrderedQueryable`, which
+only `NewestFirst` produces, so a handler cannot page without ordering first — the mistake is
+unwritable rather than discouraged. The decision, and the alternatives weighed against it, are
+recorded in [ADR 0001](docs/adr/0001-paginate-on-the-query-side-over-a-total-order.md).
+
 The request contracts declare their constraints as **data annotations**, so `[ApiController]`
 rejects a malformed body at model binding with a `ValidationProblemDetails` keyed by field name,
 before any command or application service sees it. The shape matters as much as the check: a form
@@ -567,6 +582,7 @@ login.
 | `GET` | `/Trainer/me` | The caller's own profile, with an `ETag` |
 | `PUT` | `/Trainer/me` | Requires `If-Match`. `200`, `400`, `404`, `412`, `428` |
 | `GET` | `/Trainer/{id}` | `200` with an `ETag`, or `404` |
+| `GET` | `/Trainer/all`, `/Training/all`, `/Training/by-trainer/{id}`, `/Training/by-topic/{topic}` | On the CQRS host: one page, `?page=` and `?pageSize=` (default 20, maximum 100), answered as `{ items, page, pageSize, totalCount, totalPages, hasNextPage, hasPreviousPage }`. On the layered host: the plain array |
 | `GET` | `/Trainer/all` | `200` |
 | `POST` | `/Training` | `201` with the new identifier, `409` on a duplicate title, `400` otherwise |
 | `GET` | `/Training/{id}` | `200` with an `ETag`, or `404` |
@@ -741,6 +757,9 @@ no longer compiles fails the pipeline even when its tests are not run. Both work
 - **Line endings** are normalised to LF by `.gitattributes`, in the repository and the working
   tree, whatever the contributor's platform.
 - **Commits** are imperative one-liners, squash-merged from a pull request.
+- **Architecture decision records** live in [`docs/adr/`](docs/adr/), one numbered file per
+  decision, each recording the alternatives and why they lost. A decision that changes gets a new
+  record superseding the old one; merged records are not rewritten.
 - **The build carries no warnings.** Analyzer severities are set high on purpose, so a warning
   means something to look at rather than noise to scroll past. EF Core migrations are exempt —
   `.editorconfig` marks them as generated, since they are.
