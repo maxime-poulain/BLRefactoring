@@ -93,14 +93,20 @@ public static class ProblemResultExtensions
     /// </summary>
     /// <remarks>
     /// Not <c>errors</c>, which is the name RFC 7807's own <c>ValidationProblemDetails</c> uses for
-    /// a map of field name to messages — and which the CQRS host produces for a FluentValidation
-    /// failure. The two shapes were arriving under one name: <c>PUT /Trainer/me</c> with a
-    /// malformed email answered <c>errors: {"ContactEmail": [...]}</c> on one host and
-    /// <c>errors: [{errorCode, errorMessage}]</c> on the other, so a client that deserialised
-    /// <c>errors</c> worked against one host and threw against the other.
+    /// a map of field name to messages. The two shapes were arriving under one name:
+    /// <c>PUT /Trainer/me</c> with a malformed email answered <c>errors: {"ContactEmail": [...]}</c>
+    /// on one host and <c>errors: [{errorCode, errorMessage}]</c> on the other, so a client that
+    /// deserialised <c>errors</c> worked against one host and threw against the other.
     /// <para>
     /// Renaming the domain half is the cheaper of the two fixes and the more honest one: the field
     /// map is the standard's meaning of <c>errors</c>, and these codes are ours.
+    /// </para>
+    /// <para>
+    /// That request now answers <c>domainErrors</c> on both hosts: the CQRS validation behaviour
+    /// returns a failed <c>Result</c> rather than throwing, so a rejected command leaves through
+    /// here like every other business failure. What still publishes the field map is what the
+    /// standard means by it — the data annotations on the request contracts, Identity's rejections,
+    /// and the query validators, which have no <c>Result</c> to fail into.
     /// </para>
     /// </remarks>
     public const string DomainErrorsExtension = "domainErrors";

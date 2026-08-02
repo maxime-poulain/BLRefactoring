@@ -471,6 +471,15 @@ validator**, even an empty one, or dispatch fails loudly rather than silently sk
 The layered stack has no request-validation layer — its only guards are the value objects and the
 factories above.
 
+**A rejected command answers like every other failure.** `ValidationPipelineBehavior` returns a
+failed `Result` carrying `ErrorCodes.Validation` rather than throwing, so the rejection leaves
+through the single place a business failure becomes a body and is published under `domainErrors`.
+It used to throw, and the same endpoint then published two error shapes depending on which rule the
+caller broke — a malformed email as a field map, a bio too long as domain codes. Queries still throw:
+they answer with the data they read and have no failed state to return, so their three identifier
+guards remain the one path into `ValidationExceptionHandler`. See
+[ADR 0016](docs/adr/0016-let-a-rejected-command-fail-like-every-other-command.md).
+
 ### Optimistic concurrency
 
 Every aggregate root carries a `RowVersion`, declared once for all of them in
@@ -793,10 +802,11 @@ handlers. Two go further down: `DomainEventPipelineTests` resolves the repositor
 work from the host's container, because the cascade it proves lost its endpoint when trainer
 deletion left the API and a pipeline nothing exercises is a pipeline nobody notices breaking; and
 `TimestampPrecisionTests` reads the stored rows directly, because what it is about is what the
-column kept, which no response can show. Validation is why the two suites are not copies of each other:
-an invalid field on the layered host is caught by the value objects and answered with the
-domain's error collection, while on the CQRS host it is caught earlier by a FluentValidation
-validator inside `ValidationPipelineBehavior` and answered with a different payload entirely.
+column kept, which no response can show. Validation is where the two suites still differ, though far
+less than they did: an invalid field on the layered host is caught by the value objects, while on the
+CQRS host a FluentValidation validator inside `ValidationPipelineBehavior` catches it first. Both now
+answer the same shape — a `domainErrors` document — since that behaviour returns a failed `Result`
+rather than throwing; what differs is the code inside it, because two different layers judged.
 
 `BLRefactoring.Api.TestKit` holds the shared fixtures — the Testcontainers host, the Respawn
 checkpoint, the registration and conditional-request helpers — generic over the entry point.
