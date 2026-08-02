@@ -1,4 +1,3 @@
-using System.Reflection;
 using BLRefactoring.Architecture.Tests.Framework;
 using Xunit;
 

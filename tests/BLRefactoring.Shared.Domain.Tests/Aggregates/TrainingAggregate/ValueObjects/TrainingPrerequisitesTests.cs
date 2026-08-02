@@ -1,5 +1,4 @@
 using AwesomeAssertions;
-using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.Domain.Tests.Helpers;

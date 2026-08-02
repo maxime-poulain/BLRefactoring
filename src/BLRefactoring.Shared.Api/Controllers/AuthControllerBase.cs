@@ -57,7 +57,7 @@ public abstract class AuthControllerBase(
     /// A registration creates something, so it answers <c>201</c> and says where. This used to be a
     /// <c>204</c>, argued from the account having no address of its own — which is true of the
     /// identity user and false of what the caller actually gets: registration creates a *trainer*,
-    /// and a trainer is addressable at <c>/Trainer/{id}</c>. That is the <c>Location</c>, and the
+    /// and a trainer is addressable at <c>/Trainer/me</c>. That is the <c>Location</c>, and the
     /// identifier is repeated in the body so a caller need not parse a URL to get it — the shape
     /// <c>POST /Training</c> already publishes.
     /// <para>

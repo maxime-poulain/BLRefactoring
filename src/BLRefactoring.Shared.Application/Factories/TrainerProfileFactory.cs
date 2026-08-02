@@ -19,6 +19,9 @@ public static class TrainerProfileFactory
     /// <summary>
     /// Builds the value objects making up a trainer's profile.
     /// </summary>
+    /// <param name="firstname">The raw first name.</param>
+    /// <param name="lastname">The raw last name.</param>
+    /// <param name="contactEmail">The raw contact address.</param>
     /// <param name="bio">
     /// The raw bio. <see langword="null"/> means "no bio", which is valid — at
     /// creation none was provided, on edition the existing one is cleared.

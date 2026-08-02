@@ -31,12 +31,20 @@ client="src/BLRefactoring.GeneratedClients/Clients.Generated.cs"
 
 echo "==> Restoring the pinned NSwag CLI"
 dotnet tool restore
+# TreatWarningsAsErrors is off for this one build, deliberately. It exists to emit a JSON
+# document, not to judge the code: it compiles nine of the twenty-six projects, in Debug, and it
+# runs before the build in all three workflows. A warning in Shared.Domain would therefore fail a
+# step called "Regenerate the HTTP client", and the first hypothesis every reader forms would be
+# wrong — `set -e` would even swallow this script's own diagnostics on the way out. The gate is
+# the Release build of the whole solution, fifty lines later, and it catches the same warning in
+# the same run. See ADR 0019.
 
 echo "==> Building $api_project and emitting its OpenAPI document"
 OPENAPI_GENERATION=1 ASPNETCORE_ENVIRONMENT=Development \
     dotnet build "$api_project" \
     --configuration Debug \
-    -p:OpenApiGenerateDocuments=true
+    -p:OpenApiGenerateDocuments=true \
+    -p:TreatWarningsAsErrors=false
 
 if [[ ! -f "$document" ]]; then
     echo "The build did not produce $document." >&2

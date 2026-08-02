@@ -1,4 +1,3 @@
-using AwesomeAssertions;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;

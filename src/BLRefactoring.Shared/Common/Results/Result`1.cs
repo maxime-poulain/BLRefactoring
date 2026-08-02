@@ -184,7 +184,6 @@ public abstract class Result<TValue>
             Func<IReadOnlyErrorCollection, TResult> onFailure
         ) => onSuccess(value);
 
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override ValueTask<TResult> MatchAsync<TResult>(
             Func<TValue, ValueTask<TResult>> onSuccess,

@@ -1,4 +1,3 @@
-using BLRefactoring.Api.TestKit;
 using Xunit;
 
 namespace BLRefactoring.DDD.Api.IntegrationTests.Fixtures;

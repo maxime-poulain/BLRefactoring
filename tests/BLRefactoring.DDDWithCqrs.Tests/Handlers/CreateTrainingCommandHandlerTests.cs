@@ -1,4 +1,3 @@
-using AwesomeAssertions;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Create;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common.Errors;

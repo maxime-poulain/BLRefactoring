@@ -966,9 +966,14 @@ one the analysis of `master` produces.
 - **Architecture decision records** live in [`docs/adr/`](docs/adr/), one numbered file per
   decision, each recording the alternatives and why they lost. A decision that changes gets a new
   record superseding the old one; merged records are not rewritten.
-- **The build is kept free of warnings.** Analyzer severities are set high on purpose, so a warning
-  means something to look at rather than noise to scroll past. EF Core migrations are exempt —
-  `.editorconfig` marks them as generated, since they are.
+- **The build fails on a warning.** `.editorconfig` sets seventy-three analyzer rules high on
+  purpose, and `Directory.Build.props` turns a warning into an error, so the severities written
+  there are rules rather than preferences — an architecture rule checks that they stay that way.
+  Every rule is either enforced or demoted with its reason beside it; there is no third category.
+  EF Core migrations are exempt, and the generated HTTP client with them, because nobody writes
+  either. See [ADR 0019](docs/adr/0019-enforce-the-ruleset-this-repository-already-declared.md),
+  which records what the census found — including that the ruleset had been declaring a rule twice
+  and silently demoting it.
 
 ---
 

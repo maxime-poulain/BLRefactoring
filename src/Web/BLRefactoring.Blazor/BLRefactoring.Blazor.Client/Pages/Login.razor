@@ -1,4 +1,4 @@
-﻿@page "/login"
+@page "/login"
 @using BLRefactoring.Blazor.Client.Infrastructure
 @inject IBffSessionClient SessionClient
 @inject BffAuthenticationStateProvider AuthStateProvider
@@ -61,7 +61,7 @@
 
 @code {
     /// <summary>
-    /// Where to go once signed in, as <see cref="RedirectToLogin"/> recorded it.
+    /// Where to go once signed in, as <c>RedirectToLogin</c> recorded it.
     /// </summary>
     /// <remarks>
     /// Only a path is honoured. The value arrives from the address bar, so anything that could name

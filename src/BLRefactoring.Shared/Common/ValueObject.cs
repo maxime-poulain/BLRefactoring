@@ -45,9 +45,20 @@ public abstract class ValueObject : IEquatable<ValueObject>
 
     public bool Equals(ValueObject? other)
     {
-        if (other is null) return false;
-        if (ReferenceEquals(this, other)) return true;
-        if (GetType() != other.GetType()) return false;
+        if (other is null)
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
+        if (GetType() != other.GetType())
+        {
+            return false;
+        }
 
         return GetEqualityComponents().SequenceEqual(other.GetEqualityComponents());
     }
@@ -60,7 +71,9 @@ public abstract class ValueObject : IEquatable<ValueObject>
     public sealed override int GetHashCode()
     {
         if (_cachedHashCode.HasValue)
+        {
             return _cachedHashCode.Value;
+        }
 
         var hash = new HashCode();
         foreach (var component in GetEqualityComponents())
