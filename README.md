@@ -1,6 +1,8 @@
 # BLRefactoring
 
 [![CI](https://github.com/maxime-poulain/BLRefactoring/actions/workflows/ci.yml/badge.svg)](https://github.com/maxime-poulain/BLRefactoring/actions/workflows/ci.yml)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=maxime-poulain_BLRefactoring&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=maxime-poulain_BLRefactoring)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=maxime-poulain_BLRefactoring&metric=coverage)](https://sonarcloud.io/component_measures?id=maxime-poulain_BLRefactoring&metric=coverage)
 
 A .NET 10 reference implementation that runs **two application styles over one shared domain
 model**: a classic layered DDD stack and a CQRS stack. Both expose the same trainer/training
@@ -836,6 +838,15 @@ no longer compiles fails the pipeline even when its tests are not run. `integrat
 declares `permissions: contents: read`; `ci.yml` needs `contents: write` for one step, and one
 only — the client commit described below.
 
+**One run per commit.** A branch of this repository fires both `push` and `pull_request` for the
+same commit once a pull request is open, and the two land in different concurrency groups, so
+neither cancels the other: the same build was being paid for twice to answer the same question.
+`ci.yml` therefore skips its pull-request run when the head branch belongs to this repository —
+the push run has already built that commit and posted the check. What the `pull_request` trigger is
+kept for is the one case `push` cannot reach: **a fork**, whose pushes fire nothing here. The other
+two workflows never doubled — `sonar.yml` pushes only on `master`, and `integration-tests.yml` has
+no pull-request trigger at all.
+
 **CI writes the HTTP client.** On a push it regenerates the client from the API's own OpenAPI
 document and commits the result, so a controller change carries its client with it. The API is the
 source of truth and consumers are expected to follow — a regenerated client can rename a type and
@@ -860,6 +871,18 @@ assertions mostly cross the HTTP boundary. See
 **Until the repository is connected, the analysis is skipped rather than failed.** A guard job reads
 `SONAR_TOKEN`; when it is absent the analysis job never starts, so a repository without the secret
 shows a neutral skip instead of a red check about a missing secret.
+
+**What is measured, and what is not.** Two families are excluded, and both because nobody writes
+them: the generated HTTP client (2 400 lines of NSwag output) and the EF Core migrations (2 500
+more, a fifth of everything that would otherwise be counted as production code). Their snapshots are
+near-identical by construction, so they would decide the duplication figure; nothing hand-written
+covers them, so they would decide the coverage figure; and an issue raised in either is fixed by
+regenerating, never by editing. Test projects need no exclusion — the .NET scanner recognises them
+and keeps them out of the coverage denominator on its own, architecture tests included.
+
+Test *results* are published alongside coverage, from the same run: `--logger trx` feeds
+`sonar.cs.vstest.reportsPaths`, so the dashboard reports how many tests ran and how long they took,
+not only which lines they reached.
 
 #### One-time setup
 

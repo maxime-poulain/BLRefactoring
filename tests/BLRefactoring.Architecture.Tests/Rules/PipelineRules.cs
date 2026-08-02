@@ -4,19 +4,24 @@ using Xunit;
 namespace BLRefactoring.Architecture.Tests.Rules;
 
 /// <summary>
-/// What the pipeline has to keep true for the analysis to mean anything.
+/// What the pipeline has to keep true to be worth running.
 /// </summary>
 /// <remarks>
-/// Both of these guard a failure that is green. A test project with no coverage collector reports
-/// nothing rather than failing, and the gate reads the silence as uncovered code; a generated file
-/// that stops being excluded is measured like hand-written code, and the duplication figure becomes
-/// a statement about NSwag's output. Neither is visible in a diff, and neither makes a run red —
-/// they make the numbers wrong, which is worse, because a wrong number is still believed.
+/// Every rule here guards a failure that is <em>green</em>. A test project with no coverage
+/// collector reports nothing rather than failing, and the gate reads the silence as uncovered code;
+/// a generated file that stops being excluded is measured like hand-written code, and the
+/// duplication figure becomes a statement about NSwag's output; a workflow that builds the same
+/// commit twice answers correctly, at twice the price. None of them is visible in a diff and none
+/// makes a run red — they make the numbers wrong or the bill high, and a wrong number is still
+/// believed.
 /// </remarks>
 public sealed class PipelineRules
 {
     private static string Workflow { get; } =
         Path.Combine(SourceTree.RepositoryRoot, ".github", "workflows", "sonar.yml");
+
+    private static string ContinuousIntegration { get; } =
+        Path.Combine(SourceTree.RepositoryRoot, ".github", "workflows", "ci.yml");
 
     [Fact]
     [ArchitectureRule("0017",
@@ -32,6 +37,37 @@ public sealed class PipelineRules
                 "collector. Its lines would be reported as covered by nothing at all, which the " +
                 "quality gate cannot tell apart from code nobody tested")
             .ShouldHold();
+
+    [Fact]
+    [ArchitectureRule("README#continuous-integration",
+        "one run per commit: a branch of this repository is built by its push, a fork by its pull request")]
+    public void TheBuild_DoesNotRunTwiceForOneCommit()
+    {
+        // ci.yml by name rather than every workflow, because the defect is an overlap between two
+        // branch sets rather than the presence of two triggers. sonar.yml declares both and needs
+        // no guard: it pushes only on master, and a pull request's head branch is never master.
+        // Telling those two apart means resolving branch patterns, which a scan cannot do — so the
+        // one file where the sets do overlap is named here.
+        var text = SourceTree.ReadText(ContinuousIntegration);
+
+        // The opening half of the job's condition, not the head-repository comparison it ends on:
+        // that comparison also appears on the two steps that tell a fork from a branch, so a rule
+        // matching it would have gone on passing with the job-level guard deleted.
+        const string Guard = "github.event_name != 'pull_request' ||";
+
+        new[] { SourceTree.Relative(ContinuousIntegration) }
+            .Selected("workflow whose triggers overlap")
+            .Where(_ =>
+                text.Contains("  push:", StringComparison.Ordinal) &&
+                text.Contains("  pull_request:", StringComparison.Ordinal) &&
+                !text.Contains(Guard, StringComparison.Ordinal))
+            .Select(file =>
+                $"'{file}' fires on both push and pull_request without skipping the case where both " +
+                "reach the same commit. A branch of this repository triggers each once a pull " +
+                "request is open, and the two runs land in different concurrency groups, so neither " +
+                "cancels the other and one build is paid for twice")
+            .ShouldHold();
+    }
 
     [Fact]
     [ArchitectureRule("0018",
@@ -72,9 +108,16 @@ public sealed class PipelineRules
             (Setting: "branches: [master]",
              Wrong: "analyses no push to master, so there is no baseline for a pull request to be " +
                     "compared against"),
-            (Setting: "sonar.exclusions",
-             Wrong: "excludes nothing, so the generated client is measured like code somebody wrote " +
-                    "— two thousand machine-written lines deciding the duplication figure")
+            (Setting: "src/BLRefactoring.GeneratedClients/**",
+             Wrong: "measures the generated client like code somebody wrote — two thousand four " +
+                    "hundred lines of NSwag output deciding the duplication figure"),
+            (Setting: "**/Migrations/**",
+             Wrong: "measures the EF Core migrations like code somebody wrote — two thousand five " +
+                    "hundred lines, a fifth of this repository's production code, that nobody " +
+                    "writes and nothing covers"),
+            (Setting: "sonar.cs.vstest.reportsPaths",
+             Wrong: "publishes no test results, so the dashboard reports zero tests for a " +
+                    "repository whose argument is its test suite")
         }
             .Selected("setting the analysis depends on")
             .Where(rule => !text.Contains(rule.Setting, StringComparison.Ordinal))
