@@ -14,10 +14,22 @@ namespace BLRefactoring.Shared.Application.EventHandlers;
 /// A real system might append to a dedicated audit store; structured logging is
 /// enough to demonstrate the pattern.
 /// </remarks>
+/// <summary>
+/// Reacts to the event: records that a trainer renamed themselves.
+/// <para>
+/// Dispatched inside the unit of work, before the transaction commits, so anything this handler
+/// writes joins the same transaction as the change that raised the event.
+/// </para>
+/// </summary>
 public sealed class AuditWhenTrainerNameChangedEventHandler(
     ILogger<AuditWhenTrainerNameChangedEventHandler> logger)
     : IDomainEventHandler<TrainerNameChangedDomainEvent>
 {
+    /// <summary>
+    /// Runs the reaction.
+    /// </summary>
+    /// <param name="notification">The event that was raised.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     public ValueTask Handle(TrainerNameChangedDomainEvent notification, CancellationToken cancellationToken)
     {
         logger.LogInformation(

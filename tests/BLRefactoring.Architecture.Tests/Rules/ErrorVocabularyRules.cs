@@ -42,6 +42,9 @@ public sealed class ErrorVocabularyRules
             .Where(declaration => declaration.FieldType == typeof(ErrorCode))
             .Select(declaration => (holder, declaration, (ErrorCode)declaration.GetValue(null)!)));
 
+    /// <summary>
+    /// Every code, is declared on a holder.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0015",
         "a code is declared by a holder, so that the set of codes is a set somebody can read")]
@@ -58,6 +61,9 @@ public sealed class ErrorVocabularyRules
                     "holder, where nobody looking for the vocabulary would find it"))
             .ShouldHold();
 
+    /// <summary>
+    /// No code, is built at a call site.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0015",
         "nothing builds a code inline: a code that no holder declares is a code nobody can grep for")]
@@ -76,6 +82,9 @@ public sealed class ErrorVocabularyRules
                 "owns it — inline, a misspelling is a new code and nothing says so")
             .ShouldHold();
 
+    /// <summary>
+    /// Every domain code, names its owner.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0015",
         "a code declared by an aggregate carries that aggregate's name, so no two owners collide")]
@@ -90,6 +99,9 @@ public sealed class ErrorVocabularyRules
                 $"not begin with '{entry.Holder.Name[..^"ErrorCodes".Length]}.'")
             .ShouldHold();
 
+    /// <summary>
+    /// Every kernel code, belongs to nobody.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0015",
         "the kernel declares only what belongs to nobody, so its codes carry no owner at all")]
@@ -103,6 +115,9 @@ public sealed class ErrorVocabularyRules
                 "holds is one that is true of any aggregate — if it has an owner, it belongs with them")
             .ShouldHold();
 
+    /// <summary>
+    /// No two codes, share a value.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0015",
         "two codes never share a value, or a client branching on one gets the other")]

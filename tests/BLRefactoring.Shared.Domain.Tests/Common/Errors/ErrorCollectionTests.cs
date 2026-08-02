@@ -6,8 +6,14 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Common.Errors;
 
+/// <summary>
+/// Behaviour covered for <c>ErrorCollection</c>.
+/// </summary>
 public sealed class ErrorCollectionTests
 {
+    /// <summary>
+    /// New error collection, is empty.
+    /// </summary>
     [Fact]
     public void NewErrorCollection_IsEmpty()
     {
@@ -16,6 +22,9 @@ public sealed class ErrorCollectionTests
         collection.Count().Should().Be(0);
     }
 
+    /// <summary>
+    /// Add, error, increases count.
+    /// </summary>
     [Fact]
     public void Add_Error_IncreasesCount()
     {
@@ -27,6 +36,9 @@ public sealed class ErrorCollectionTests
         collection.Count().Should().Be(1);
     }
 
+    /// <summary>
+    /// Add, error code and message, creates and adds error.
+    /// </summary>
     [Fact]
     public void Add_ErrorCodeAndMessage_CreatesAndAddsError()
     {
@@ -39,6 +51,9 @@ public sealed class ErrorCollectionTests
         collection.First().ErrorMessage.Should().Be("test error");
     }
 
+    /// <summary>
+    /// Add errors, collection, adds all errors.
+    /// </summary>
     [Fact]
     public void AddErrors_Collection_AddsAllErrors()
     {
@@ -54,6 +69,9 @@ public sealed class ErrorCollectionTests
         collection.Count().Should().Be(2);
     }
 
+    /// <summary>
+    /// Add errors, null collection, throws argument null exception.
+    /// </summary>
     [Fact]
     public void AddErrors_NullCollection_ThrowsArgumentNullException()
     {
@@ -64,6 +82,9 @@ public sealed class ErrorCollectionTests
         act.Should().Throw<ArgumentNullException>();
     }
 
+    /// <summary>
+    /// Add errors, from failure result, adds errors.
+    /// </summary>
     [Fact]
     public void AddErrors_FromFailureResult_AddsErrors()
     {
@@ -77,6 +98,9 @@ public sealed class ErrorCollectionTests
         collection.First().ErrorMessage.Should().Be("failure error");
     }
 
+    /// <summary>
+    /// Add errors, from success result, does not add errors.
+    /// </summary>
     [Fact]
     public void AddErrors_FromSuccessResult_DoesNotAddErrors()
     {
@@ -88,6 +112,9 @@ public sealed class ErrorCollectionTests
         collection.Count().Should().Be(0);
     }
 
+    /// <summary>
+    /// To result, with errors, returns failure.
+    /// </summary>
     [Fact]
     public void ToResult_WithErrors_ReturnsFailure()
     {
@@ -98,6 +125,9 @@ public sealed class ErrorCollectionTests
         result.ShouldBeFailure();
     }
 
+    /// <summary>
+    /// To result, without errors, returns success.
+    /// </summary>
     [Fact]
     public void ToResult_WithoutErrors_ReturnsSuccess()
     {
@@ -108,6 +138,9 @@ public sealed class ErrorCollectionTests
         result.ShouldBeSuccess();
     }
 
+    /// <summary>
+    /// Match, with errors, calls on failure.
+    /// </summary>
     [Fact]
     public void Match_WithErrors_CallsOnFailure()
     {
@@ -120,6 +153,9 @@ public sealed class ErrorCollectionTests
         matched.Should().Be("failure");
     }
 
+    /// <summary>
+    /// Match, without errors, calls on success.
+    /// </summary>
     [Fact]
     public void Match_WithoutErrors_CallsOnSuccess()
     {
@@ -132,6 +168,9 @@ public sealed class ErrorCollectionTests
         matched.Should().Be("success");
     }
 
+    /// <summary>
+    /// Indexer, get, returns correct error.
+    /// </summary>
     [Fact]
     public void Indexer_Get_ReturnsCorrectError()
     {
@@ -143,6 +182,9 @@ public sealed class ErrorCollectionTests
         collection[1].Should().Be(error2);
     }
 
+    /// <summary>
+    /// Enumerator, iterates all errors.
+    /// </summary>
     [Fact]
     public void Enumerator_IteratesAllErrors()
     {

@@ -13,6 +13,9 @@ namespace BLRefactoring.Architecture.Tests.Traceability;
 /// </remarks>
 public sealed class SuiteSelfRules
 {
+    /// <summary>
+    /// Every rule, names what it defends.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0013",
         "every rule names the decision it defends, or the coverage rule cannot see it")]
@@ -25,6 +28,9 @@ public sealed class SuiteSelfRules
                 "passes, and it counts towards defending nothing")
             .ShouldHold();
 
+    /// <summary>
+    /// No rule of this suite, is selected by the slow workflow.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#continuous-integration",
         "the two workflow filters are exact inverses, so between them every test runs exactly once")]
@@ -42,6 +48,9 @@ public sealed class SuiteSelfRules
                 "workflow and skipped by the fast one, which is the opposite of where it belongs")
             .ShouldHold();
 
+    /// <summary>
+    /// Every rule, quotes the decision it defends.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0013",
         "a rule states what it defends in the record's own words, not in a number nobody can read")]

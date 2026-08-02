@@ -44,6 +44,9 @@ public sealed class SealingRules
             .Select(baseType => baseType!.IsGenericType ? baseType.GetGenericTypeDefinition() : baseType)
             .ToHashSet();
 
+    /// <summary>
+    /// Every class nobody inherits, is sealed.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0014",
         "a class nobody inherits is sealed, so that an open one means somebody meant it")]
@@ -59,6 +62,9 @@ public sealed class SealingRules
                 "that inherits it is missing")
             .ShouldHold();
 
+    /// <summary>
+    /// Every abstract class, is actually inherited.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0014",
         "an abstract class exists to be inherited, so one that nobody inherits is dead")]

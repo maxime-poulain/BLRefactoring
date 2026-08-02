@@ -29,6 +29,9 @@ public sealed class ValidationPipelineBehavior<TRequest, TResponse>(
     IEnumerable<IValidator<TRequest>> validators) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull, IMessage
 {
+    /// <summary>
+    /// Runs the command.
+    /// </summary>
     public async ValueTask<TResponse> Handle(TRequest message, MessageHandlerDelegate<TRequest, TResponse> next, CancellationToken cancellationToken)
     {
         var requestType = message.GetType();

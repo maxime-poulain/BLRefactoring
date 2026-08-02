@@ -34,6 +34,9 @@ public sealed class OpenApiDocumentGenerationTests
             Environment.SetEnvironmentVariable(OpenApiDocumentGeneration.EnvironmentVariable, _previous);
     }
 
+    /// <summary>
+    /// Ordinary process, is not mistaken for generation.
+    /// </summary>
     [Fact]
     public void OrdinaryProcess_IsNotMistakenForGeneration()
     {
@@ -45,6 +48,9 @@ public sealed class OpenApiDocumentGenerationTests
         OpenApiDocumentGeneration.IsInProgress().Should().BeFalse();
     }
 
+    /// <summary>
+    /// The variable the script sets, turns the guard on.
+    /// </summary>
     [Fact]
     public void TheVariableTheScriptSets_TurnsTheGuardOn()
     {
@@ -53,6 +59,9 @@ public sealed class OpenApiDocumentGenerationTests
         OpenApiDocumentGeneration.IsInProgress().Should().BeTrue();
     }
 
+    /// <summary>
+    /// An empty value, does not count.
+    /// </summary>
     [Theory]
     [InlineData("")]
     [InlineData("   ")]

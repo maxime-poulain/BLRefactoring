@@ -8,6 +8,9 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Handlers;
 
+/// <summary>
+/// Behaviour covered for <c>DeleteTrainingCommandHandler</c>.
+/// </summary>
 public sealed class DeleteTrainingCommandHandlerTests
 {
     private readonly Mock<ITrainingRepository> _trainingRepository = new();
@@ -16,6 +19,9 @@ public sealed class DeleteTrainingCommandHandlerTests
     private DeleteTrainingCommandHandler CreateSut() =>
         new(_trainingRepository.Object, _unitOfWork.Object);
 
+    /// <summary>
+    /// Handle, existing training, returns success.
+    /// </summary>
     [Fact]
     public async Task Handle_ExistingTraining_ReturnsSuccess()
     {
@@ -34,6 +40,9 @@ public sealed class DeleteTrainingCommandHandlerTests
             Times.Once);
     }
 
+    /// <summary>
+    /// Handle, non existing training, returns not found failure.
+    /// </summary>
     [Fact]
     public async Task Handle_NonExistingTraining_ReturnsNotFoundFailure()
     {

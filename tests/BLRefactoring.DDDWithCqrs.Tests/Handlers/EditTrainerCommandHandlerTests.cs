@@ -10,6 +10,9 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Handlers;
 
+/// <summary>
+/// Behaviour covered for <c>EditTrainerCommandHandler</c>.
+/// </summary>
 public sealed class EditTrainerCommandHandlerTests
 {
     private readonly Mock<ITrainerRepository> _trainerRepository = new();
@@ -20,6 +23,9 @@ public sealed class EditTrainerCommandHandlerTests
     private EditTrainerCommandHandler CreateSut() =>
         new(_trainerRepository.Object, _currentUserService.Object, _unitOfWork.Object);
 
+    /// <summary>
+    /// Edit trainer command handler tests.
+    /// </summary>
     public EditTrainerCommandHandlerTests()
     {
         // The trainer being edited is no longer a field on the command: the handler resolves it.
@@ -29,6 +35,9 @@ public sealed class EditTrainerCommandHandlerTests
         _currentUserService.SetupGet(service => service.TrainerId).Returns(_callerId);
     }
 
+    /// <summary>
+    /// Handle, valid command, returns success updates trainer and commits once.
+    /// </summary>
     [Fact]
     public async Task Handle_ValidCommand_ReturnsSuccessUpdatesTrainerAndCommitsOnce()
     {
@@ -48,6 +57,9 @@ public sealed class EditTrainerCommandHandlerTests
             Times.Once);
     }
 
+    /// <summary>
+    /// Handle, changed contact email, updates the contact address.
+    /// </summary>
     [Fact]
     public async Task Handle_ChangedContactEmail_UpdatesTheContactAddress()
     {
@@ -62,6 +74,9 @@ public sealed class EditTrainerCommandHandlerTests
         trainer.ContactEmail.FullAddress.Should().Be("jane.smith@example.com");
     }
 
+    /// <summary>
+    /// Handle, null bio, clears the bio.
+    /// </summary>
     [Fact]
     public async Task Handle_NullBio_ClearsTheBio()
     {
@@ -75,6 +90,9 @@ public sealed class EditTrainerCommandHandlerTests
         trainer.Bio.Should().BeNull();
     }
 
+    /// <summary>
+    /// Handle, unknown trainer, returns not found failure.
+    /// </summary>
     [Fact]
     public async Task Handle_UnknownTrainer_ReturnsNotFoundFailure()
     {
@@ -91,6 +109,9 @@ public sealed class EditTrainerCommandHandlerTests
             Times.Never);
     }
 
+    /// <summary>
+    /// Handle, invalid domain data, returns failure without committing.
+    /// </summary>
     [Fact]
     public async Task Handle_InvalidDomainData_ReturnsFailureWithoutCommitting()
     {
@@ -109,6 +130,9 @@ public sealed class EditTrainerCommandHandlerTests
             Times.Never);
     }
 
+    /// <summary>
+    /// Handle, stale version, returns concurrency conflict without committing.
+    /// </summary>
     [Fact]
     public async Task Handle_StaleVersion_ReturnsConcurrencyConflictWithoutCommitting()
     {
@@ -126,6 +150,9 @@ public sealed class EditTrainerCommandHandlerTests
             Times.Never);
     }
 
+    /// <summary>
+    /// Handle, store reports a conflict, returns concurrency conflict.
+    /// </summary>
     [Fact]
     public async Task Handle_StoreReportsAConflict_ReturnsConcurrencyConflict()
     {

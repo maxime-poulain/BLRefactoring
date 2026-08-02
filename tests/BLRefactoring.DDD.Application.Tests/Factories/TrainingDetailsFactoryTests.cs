@@ -14,6 +14,9 @@ namespace BLRefactoring.DDD.Application.Tests.Factories;
 /// </summary>
 public sealed class TrainingDetailsFactoryTests
 {
+    /// <summary>
+    /// Create, valid input, returns the value objects.
+    /// </summary>
     [Fact]
     public void Create_ValidInput_ReturnsTheValueObjects()
     {
@@ -31,6 +34,9 @@ public sealed class TrainingDetailsFactoryTests
         details.Topics.Should().Contain(Topic.Design);
     }
 
+    /// <summary>
+    /// Create, invalid title, returns failure.
+    /// </summary>
     [Fact]
     public void Create_InvalidTitle_ReturnsFailure()
     {
@@ -40,6 +46,9 @@ public sealed class TrainingDetailsFactoryTests
         result.ShouldBeFailure();
     }
 
+    /// <summary>
+    /// Create, several invalid inputs, reports them all at once.
+    /// </summary>
     [Fact]
     public void Create_SeveralInvalidInputs_ReportsThemAllAtOnce()
     {
@@ -49,6 +58,9 @@ public sealed class TrainingDetailsFactoryTests
         errors.Should().HaveCountGreaterThanOrEqualTo(4);
     }
 
+    /// <summary>
+    /// Create, unknown topic, returns invalid topic failure.
+    /// </summary>
     [Fact]
     public void Create_UnknownTopic_ReturnsInvalidTopicFailure()
     {
@@ -63,6 +75,9 @@ public sealed class TrainingDetailsFactoryTests
         errors.Should().Contain(e => e.ErrorCode == TrainingErrorCodes.InvalidTopic);
     }
 
+    /// <summary>
+    /// Create, unknown topic, is a validation error not an exception.
+    /// </summary>
     [Fact]
     public void Create_UnknownTopic_IsAValidationErrorNotAnException()
     {
@@ -75,6 +90,9 @@ public sealed class TrainingDetailsFactoryTests
         act.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Create, null topic names, throws argument null exception.
+    /// </summary>
     [Fact]
     public void Create_NullTopicNames_ThrowsArgumentNullException()
     {

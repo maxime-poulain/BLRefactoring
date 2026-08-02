@@ -5,8 +5,14 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Common.Results;
 
+/// <summary>
+/// Behaviour covered for <c>Result</c>.
+/// </summary>
 public sealed class ResultTests
 {
+    /// <summary>
+    /// Success, match, calls on success.
+    /// </summary>
     [Fact]
     public void Success_Match_CallsOnSuccess()
     {
@@ -19,6 +25,9 @@ public sealed class ResultTests
         matched.Should().Be("success");
     }
 
+    /// <summary>
+    /// Success, bind, executes function.
+    /// </summary>
     [Fact]
     public void Success_Bind_ExecutesFunction()
     {
@@ -35,6 +44,9 @@ public sealed class ResultTests
         bound.Match(() => true, _ => false).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Success, switch, calls on success action.
+    /// </summary>
     [Fact]
     public void Success_Switch_CallsOnSuccessAction()
     {
@@ -48,6 +60,9 @@ public sealed class ResultTests
         successCalled.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Failure, match, calls on failure with errors.
+    /// </summary>
     [Fact]
     public void Failure_Match_CallsOnFailureWithErrors()
     {
@@ -61,6 +76,9 @@ public sealed class ResultTests
         matched.Should().Be("failure: test error");
     }
 
+    /// <summary>
+    /// Failure, bind, propagates errors.
+    /// </summary>
     [Fact]
     public void Failure_Bind_PropagatesErrors()
     {
@@ -78,6 +96,9 @@ public sealed class ResultTests
         bound.Match(() => false, _ => true).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Failure, switch, calls on failure action.
+    /// </summary>
     [Fact]
     public void Failure_Switch_CallsOnFailureAction()
     {
@@ -92,6 +113,9 @@ public sealed class ResultTests
         failureCalled.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Match async, success, calls on success async.
+    /// </summary>
     [Fact]
     public async Task MatchAsync_Success_CallsOnSuccessAsync()
     {
@@ -104,6 +128,9 @@ public sealed class ResultTests
         matched.Should().Be("success");
     }
 
+    /// <summary>
+    /// Match async, failure, calls on failure async.
+    /// </summary>
     [Fact]
     public async Task MatchAsync_Failure_CallsOnFailureAsync()
     {
@@ -117,6 +144,9 @@ public sealed class ResultTests
         matched.Should().Be("failure");
     }
 
+    /// <summary>
+    /// From errors, with errors, returns failure.
+    /// </summary>
     [Fact]
     public void FromErrors_WithErrors_ReturnsFailure()
     {
@@ -127,6 +157,9 @@ public sealed class ResultTests
         result.Match(() => false, _ => true).Should().BeTrue();
     }
 
+    /// <summary>
+    /// From errors, without errors, returns success.
+    /// </summary>
     [Fact]
     public void FromErrors_WithoutErrors_ReturnsSuccess()
     {
@@ -137,6 +170,9 @@ public sealed class ResultTests
         result.Match(() => true, _ => false).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Implicit conversion, empty error collection, returns success.
+    /// </summary>
     [Fact]
     public void ImplicitConversion_EmptyErrorCollection_ReturnsSuccess()
     {
@@ -147,6 +183,9 @@ public sealed class ResultTests
         result.Match(() => true, _ => false).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Implicit conversion, non empty error collection, returns failure.
+    /// </summary>
     [Fact]
     public void ImplicitConversion_NonEmptyErrorCollection_ReturnsFailure()
     {
@@ -157,6 +196,9 @@ public sealed class ResultTests
         result.Match(() => false, _ => true).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Success async, returns success.
+    /// </summary>
     [Fact]
     public async Task SuccessAsync_ReturnsSuccess()
     {
@@ -165,6 +207,9 @@ public sealed class ResultTests
         result.Match(() => true, _ => false).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Failure async, returns failure.
+    /// </summary>
     [Fact]
     public async Task FailureAsync_ReturnsFailure()
     {
@@ -175,6 +220,9 @@ public sealed class ResultTests
         result.Match(() => false, _ => true).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Success, tap, calls action.
+    /// </summary>
     [Fact]
     public void Success_Tap_CallsAction()
     {
@@ -186,6 +234,9 @@ public sealed class ResultTests
         tapCalled.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Failure, tap, does not call action.
+    /// </summary>
     [Fact]
     public void Failure_Tap_DoesNotCallAction()
     {
@@ -198,6 +249,9 @@ public sealed class ResultTests
         tapCalled.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tap, returns same result.
+    /// </summary>
     [Fact]
     public void Tap_ReturnsSameResult()
     {
@@ -208,6 +262,9 @@ public sealed class ResultTests
         returned.Should().BeSameAs(result);
     }
 
+    /// <summary>
+    /// Success, tap error, does not call action.
+    /// </summary>
     [Fact]
     public void Success_TapError_DoesNotCallAction()
     {
@@ -219,6 +276,9 @@ public sealed class ResultTests
         tapErrorCalled.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Failure, tap error, calls action with errors.
+    /// </summary>
     [Fact]
     public void Failure_TapError_CallsActionWithErrors()
     {
@@ -232,6 +292,9 @@ public sealed class ResultTests
         capturedErrors!.First().ErrorMessage.Should().Be("test error");
     }
 
+    /// <summary>
+    /// Tap error, returns same result.
+    /// </summary>
     [Fact]
     public void TapError_ReturnsSameResult()
     {

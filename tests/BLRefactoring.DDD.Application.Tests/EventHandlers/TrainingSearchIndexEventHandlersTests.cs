@@ -8,10 +8,16 @@ using Xunit;
 
 namespace BLRefactoring.DDD.Application.Tests.EventHandlers;
 
+/// <summary>
+/// Behaviour covered for <c>TrainingSearchIndexEventHandlers</c>.
+/// </summary>
 public sealed class TrainingSearchIndexEventHandlersTests
 {
     private readonly Mock<ITrainingSearchIndexer> _searchIndexer = new();
 
+    /// <summary>
+    /// Handle, training created, indexes the training.
+    /// </summary>
     [Fact]
     public async Task Handle_TrainingCreated_IndexesTheTraining()
     {
@@ -26,6 +32,9 @@ public sealed class TrainingSearchIndexEventHandlersTests
             Times.Once);
     }
 
+    /// <summary>
+    /// Handle, training edited, reindexes the training.
+    /// </summary>
     [Fact]
     public async Task Handle_TrainingEdited_ReindexesTheTraining()
     {

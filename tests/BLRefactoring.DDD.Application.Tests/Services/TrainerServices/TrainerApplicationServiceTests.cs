@@ -10,12 +10,18 @@ using Xunit;
 
 namespace BLRefactoring.DDD.Application.Tests.Services.TrainerServices;
 
+/// <summary>
+/// Behaviour covered for <c>TrainerApplicationService</c>.
+/// </summary>
 public sealed class TrainerApplicationServiceTests
 {
     private readonly TrainerServiceTestFixture _fixture = new();
 
     // -- CreateAsync --
 
+    /// <summary>
+    /// Create async, valid request, returns success with dto.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_ValidRequest_ReturnsSuccessWithDto()
     {
@@ -37,6 +43,9 @@ public sealed class TrainerApplicationServiceTests
         dto.ContactEmail.Should().Be("john.doe@example.com");
     }
 
+    /// <summary>
+    /// Create async, valid request, adds trainer and commits once.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_ValidRequest_AddsTrainerAndCommitsOnce()
     {
@@ -58,6 +67,9 @@ public sealed class TrainerApplicationServiceTests
             Times.Once);
     }
 
+    /// <summary>
+    /// Create async, invalid request, returns failure.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_InvalidRequest_ReturnsFailure()
     {
@@ -76,6 +88,9 @@ public sealed class TrainerApplicationServiceTests
         result.ShouldBeFailure();
     }
 
+    /// <summary>
+    /// Create async, invalid request, does not add nor commit.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_InvalidRequest_DoesNotAddNorCommit()
     {
@@ -99,6 +114,9 @@ public sealed class TrainerApplicationServiceTests
 
     // -- EditAsync --
 
+    /// <summary>
+    /// Edit async, existing trainer, returns success with updated dto.
+    /// </summary>
     [Fact]
     public async Task EditAsync_ExistingTrainer_ReturnsSuccessWithUpdatedDto()
     {
@@ -121,6 +139,9 @@ public sealed class TrainerApplicationServiceTests
         dto.Bio.Should().Be("Rewritten bio.");
     }
 
+    /// <summary>
+    /// Edit async, existing trainer, updates trainer and commits once.
+    /// </summary>
     [Fact]
     public async Task EditAsync_ExistingTrainer_UpdatesTrainerAndCommitsOnce()
     {
@@ -138,6 +159,9 @@ public sealed class TrainerApplicationServiceTests
             Times.Once);
     }
 
+    /// <summary>
+    /// Edit async, null bio, clears the bio.
+    /// </summary>
     [Fact]
     public async Task EditAsync_NullBio_ClearsTheBio()
     {
@@ -152,6 +176,9 @@ public sealed class TrainerApplicationServiceTests
         result.ShouldBeSuccess().Bio.Should().BeNull();
     }
 
+    /// <summary>
+    /// Edit async, non existing trainer, returns not found failure.
+    /// </summary>
     [Fact]
     public async Task EditAsync_NonExistingTrainer_ReturnsNotFoundFailure()
     {
@@ -165,6 +192,9 @@ public sealed class TrainerApplicationServiceTests
         result.ShouldContainError(ErrorCodes.NotFound);
     }
 
+    /// <summary>
+    /// Edit async, invalid request, returns failure without committing.
+    /// </summary>
     [Fact]
     public async Task EditAsync_InvalidRequest_ReturnsFailureWithoutCommitting()
     {
@@ -183,6 +213,9 @@ public sealed class TrainerApplicationServiceTests
             Times.Never);
     }
 
+    /// <summary>
+    /// Edit async, stale version, returns concurrency conflict without committing.
+    /// </summary>
     [Fact]
     public async Task EditAsync_StaleVersion_ReturnsConcurrencyConflictWithoutCommitting()
     {
@@ -200,6 +233,9 @@ public sealed class TrainerApplicationServiceTests
             Times.Never);
     }
 
+    /// <summary>
+    /// Edit async, store reports a conflict, returns concurrency conflict.
+    /// </summary>
     [Fact]
     public async Task EditAsync_StoreReportsAConflict_ReturnsConcurrencyConflict()
     {
@@ -235,6 +271,9 @@ public sealed class TrainerApplicationServiceTests
 
     // -- GetByIdAsync --
 
+    /// <summary>
+    /// Get by id async, existing trainer, returns success with dto.
+    /// </summary>
     [Fact]
     public async Task GetByIdAsync_ExistingTrainer_ReturnsSuccessWithDto()
     {
@@ -250,6 +289,9 @@ public sealed class TrainerApplicationServiceTests
         dto.Id.Should().Be(trainer.Id.Value);
     }
 
+    /// <summary>
+    /// Get by id async, non existing trainer, returns not found failure.
+    /// </summary>
     [Fact]
     public async Task GetByIdAsync_NonExistingTrainer_ReturnsNotFoundFailure()
     {

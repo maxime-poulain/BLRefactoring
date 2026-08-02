@@ -40,6 +40,9 @@ public abstract class OpenApiDocumentTest<TFactory>(TFactory factory) : Integrat
         return JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
     }
 
+    /// <summary>
+    /// Document, is served, and describes the shared routes.
+    /// </summary>
     [Fact]
     public async Task Document_IsServed_AndDescribesTheSharedRoutes()
     {
@@ -59,6 +62,9 @@ public abstract class OpenApiDocumentTest<TFactory>(TFactory factory) : Integrat
         paths.Should().Contain("/Training");
     }
 
+    /// <summary>
+    /// Document, declares how the api is authenticated.
+    /// </summary>
     [Fact]
     public async Task Document_DeclaresHowTheApiIsAuthenticated()
     {

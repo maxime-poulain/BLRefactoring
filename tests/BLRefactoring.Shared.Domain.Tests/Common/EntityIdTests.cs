@@ -5,8 +5,14 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Common;
 
+/// <summary>
+/// Behaviour covered for <c>EntityId</c>.
+/// </summary>
 public sealed class EntityIdTests
 {
+    /// <summary>
+    /// Generate, returns non empty guid.
+    /// </summary>
     [Fact]
     public void Generate_ReturnsNonEmptyGuid()
     {
@@ -15,6 +21,9 @@ public sealed class EntityIdTests
         id.Value.Should().NotBeEmpty();
     }
 
+    /// <summary>
+    /// Generate, returns different ids each time.
+    /// </summary>
     [Fact]
     public void Generate_ReturnsDifferentIdsEachTime()
     {
@@ -24,6 +33,9 @@ public sealed class EntityIdTests
         id1.Value.Should().NotBe(id2.Value);
     }
 
+    /// <summary>
+    /// Create, with guid, sets value.
+    /// </summary>
     [Fact]
     public void Create_WithGuid_SetsValue()
     {
@@ -34,6 +46,9 @@ public sealed class EntityIdTests
         id.Value.Should().Be(guid);
     }
 
+    /// <summary>
+    /// Equals, same value, returns true.
+    /// </summary>
     [Fact]
     public void Equals_SameValue_ReturnsTrue()
     {
@@ -44,6 +59,9 @@ public sealed class EntityIdTests
         id1.Equals(id2).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Equals, different value, returns false.
+    /// </summary>
     [Fact]
     public void Equals_DifferentValue_ReturnsFalse()
     {
@@ -53,6 +71,9 @@ public sealed class EntityIdTests
         id1.Equals(id2).Should().BeFalse();
     }
 
+    /// <summary>
+    /// Equals, null, returns false.
+    /// </summary>
     [Fact]
     public void Equals_Null_ReturnsFalse()
     {
@@ -61,6 +82,9 @@ public sealed class EntityIdTests
         id.Equals(null).Should().BeFalse();
     }
 
+    /// <summary>
+    /// Get hash code, same value, returns same hash.
+    /// </summary>
     [Fact]
     public void GetHashCode_SameValue_ReturnsSameHash()
     {
@@ -71,6 +95,9 @@ public sealed class EntityIdTests
         id1.GetHashCode().Should().Be(id2.GetHashCode());
     }
 
+    /// <summary>
+    /// Compare to, null, returns positive.
+    /// </summary>
     [Fact]
     public void CompareTo_Null_ReturnsPositive()
     {
@@ -79,6 +106,9 @@ public sealed class EntityIdTests
         id.CompareTo((EntityId<TrainerId>?)null).Should().Be(1);
     }
 
+    /// <summary>
+    /// Compare to, same value, returns zero.
+    /// </summary>
     [Fact]
     public void CompareTo_SameValue_ReturnsZero()
     {
@@ -89,6 +119,9 @@ public sealed class EntityIdTests
         id1.CompareTo(id2).Should().Be(0);
     }
 
+    /// <summary>
+    /// Value, exposes the underlying guid.
+    /// </summary>
     [Fact]
     public void Value_ExposesTheUnderlyingGuid()
     {
@@ -98,6 +131,9 @@ public sealed class EntityIdTests
         id.Value.Should().Be(guid);
     }
 
+    /// <summary>
+    /// Create, default value, throws.
+    /// </summary>
     [Fact]
     public void Create_DefaultValue_Throws()
     {
@@ -106,6 +142,9 @@ public sealed class EntityIdTests
         act.Should().Throw<ArgumentException>();
     }
 
+    /// <summary>
+    /// Generate, produces non empty value.
+    /// </summary>
     [Fact]
     public void Generate_ProducesNonEmptyValue()
     {
@@ -114,6 +153,9 @@ public sealed class EntityIdTests
         id.Value.Should().NotBe(Guid.Empty);
     }
 
+    /// <summary>
+    /// Operator equals, same value, returns true.
+    /// </summary>
     [Fact]
     public void OperatorEquals_SameValue_ReturnsTrue()
     {
@@ -124,6 +166,9 @@ public sealed class EntityIdTests
         (id1 == id2).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Operator not equals, different value, returns true.
+    /// </summary>
     [Fact]
     public void OperatorNotEquals_DifferentValue_ReturnsTrue()
     {

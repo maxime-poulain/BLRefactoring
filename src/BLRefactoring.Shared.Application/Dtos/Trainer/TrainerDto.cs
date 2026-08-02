@@ -1,5 +1,8 @@
 namespace BLRefactoring.Shared.Application.Dtos.Trainer;
 
+/// <summary>
+/// A trainer as the application layer hands it back: already valid, no behaviour attached.
+/// </summary>
 public sealed class TrainerDto
 {
     /// <summary>
@@ -12,8 +15,19 @@ public sealed class TrainerDto
     /// </remarks>
     public byte[] RowVersion { get; init; } = [];
 
+    /// <summary>
+    /// The identifier.
+    /// </summary>
     public required Guid Id { get; init; }
+
+    /// <summary>
+    /// The trainer's first name.
+    /// </summary>
     public required string Firstname { get; init; } = null!;
+
+    /// <summary>
+    /// The trainer's last name.
+    /// </summary>
     public required string Lastname { get; init; } = null!;
 
     /// <summary>

@@ -29,6 +29,9 @@ public sealed class BffFactory : WebApplicationFactory<Program>
     /// <summary>The API as the proxy reaches it.</summary>
     public RecordingHandler ProxiedApi { get; } = new();
 
+    /// <summary>
+    /// Configure web host.
+    /// </summary>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");

@@ -1,18 +1,33 @@
+using System.Diagnostics.CodeAnalysis;
 using AwesomeAssertions;
 using BLRefactoring.Shared.Common;
 using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Common;
 
+/// <summary>
+/// Behaviour covered for <c>Entity</c>.
+/// </summary>
 public sealed class EntityTests
 {
+    /// <summary>
+    /// Test entity id.
+    /// </summary>
     public sealed class TestEntityId : EntityId<TestEntityId>
     {
+        [SuppressMessage("Style", "IDE0051:Remove unused private members",
+            Justification = "EntityId<T>.BuildFactory resolves this constructor with GetConstructor(..., NonPublic) and compiles it into the factory every Create and Generate call goes through. It is the only way an identifier is ever built; the analyzer cannot see a call that a compiled expression tree makes.")]
         private TestEntityId(Guid value) : base(value) { }
     }
 
+    /// <summary>
+    /// Test entity.
+    /// </summary>
     public sealed class TestEntity(TestEntityId id) : Entity<TestEntityId>(id);
 
+    /// <summary>
+    /// New entity, exposes the provided id.
+    /// </summary>
     [Fact]
     public void NewEntity_ExposesTheProvidedId()
     {
@@ -23,6 +38,9 @@ public sealed class EntityTests
         entity.Id.Should().Be(id);
     }
 
+    /// <summary>
+    /// New entity, null id, throws.
+    /// </summary>
     [Fact]
     public void NewEntity_NullId_Throws()
     {
@@ -31,6 +49,9 @@ public sealed class EntityTests
         act.Should().Throw<ArgumentNullException>();
     }
 
+    /// <summary>
+    /// Equals, same id, returns true.
+    /// </summary>
     [Fact]
     public void Equals_SameId_ReturnsTrue()
     {
@@ -41,6 +62,9 @@ public sealed class EntityTests
         entity1.Equals(entity2).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Equals, different id, returns false.
+    /// </summary>
     [Fact]
     public void Equals_DifferentId_ReturnsFalse()
     {
@@ -50,6 +74,9 @@ public sealed class EntityTests
         entity1.Equals(entity2).Should().BeFalse();
     }
 
+    /// <summary>
+    /// Equals, null, returns false.
+    /// </summary>
     [Fact]
     public void Equals_Null_ReturnsFalse()
     {
@@ -58,6 +85,9 @@ public sealed class EntityTests
         entity.Equals(null).Should().BeFalse();
     }
 
+    /// <summary>
+    /// Equals, different type, returns false.
+    /// </summary>
     [Fact]
     public void Equals_DifferentType_ReturnsFalse()
     {
@@ -67,6 +97,9 @@ public sealed class EntityTests
         entity.Equals(other).Should().BeFalse();
     }
 
+    /// <summary>
+    /// Get hash code, same id, returns same hash code.
+    /// </summary>
     [Fact]
     public void GetHashCode_SameId_ReturnsSameHashCode()
     {
@@ -79,6 +112,9 @@ public sealed class EntityTests
         entity1.GetHashCode().Should().Be(entity2.GetHashCode());
     }
 
+    /// <summary>
+    /// Get hash code, different id, returns different hash code.
+    /// </summary>
     [Fact]
     public void GetHashCode_DifferentId_ReturnsDifferentHashCode()
     {
@@ -88,6 +124,9 @@ public sealed class EntityTests
         entity1.GetHashCode().Should().NotBe(entity2.GetHashCode());
     }
 
+    /// <summary>
+    /// Operator equals, same id, returns true.
+    /// </summary>
     [Fact]
     public void OperatorEquals_SameId_ReturnsTrue()
     {
@@ -97,6 +136,9 @@ public sealed class EntityTests
         (entity == sameRef).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Operator equals, both null, returns true.
+    /// </summary>
     [Fact]
     public void OperatorEquals_BothNull_ReturnsTrue()
     {
@@ -106,6 +148,9 @@ public sealed class EntityTests
         (a == b).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Operator equals, one null, returns false.
+    /// </summary>
     [Fact]
     public void OperatorEquals_OneNull_ReturnsFalse()
     {
@@ -115,6 +160,9 @@ public sealed class EntityTests
         (entity == nullEntity).Should().BeFalse();
     }
 
+    /// <summary>
+    /// Operator not equals, different id, returns true.
+    /// </summary>
     [Fact]
     public void OperatorNotEquals_DifferentId_ReturnsTrue()
     {

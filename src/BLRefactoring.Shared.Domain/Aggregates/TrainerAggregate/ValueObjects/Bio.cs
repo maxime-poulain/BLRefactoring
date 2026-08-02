@@ -19,12 +19,23 @@ public sealed class Bio : ValueObject
     // anything holding a Bio could have built a different one with `with`-style initialisation.
     // Create still reaches it — private means private to the type, and the object initialiser below
     // is inside the type.
+
+    /// <summary>
+    /// The text this value object wraps.
+    /// </summary>
     public string Value { get; private init; } = null!;
 
     private Bio()
     {
     }
 
+    /// <summary>
+    /// Builds a <see cref="Bio"/> from raw input.
+    /// </summary>
+    /// <returns>
+    /// The value, or every rule it broke. Failure is returned rather than thrown: a
+    /// caller sending three bad fields learns about all three at once.
+    /// </returns>
     public static Result<Bio> Create(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -40,6 +51,9 @@ public sealed class Bio : ValueObject
         return Result<Bio>.Success(new Bio() { Value = value });
     }
 
+    /// <summary>
+    /// Yields the parts this value is compared by.
+    /// </summary>
     protected override IEnumerable<object?> GetEqualityComponents()
     {
         yield return Value;

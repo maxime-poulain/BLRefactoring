@@ -41,8 +41,25 @@ public abstract class ValueObject : IEquatable<ValueObject>
 {
     private int? _cachedHashCode;
 
+    /// <summary>
+    /// Yields the parts that make up this value's identity, in a fixed order.
+    /// </summary>
+    /// <returns>
+    /// The components equality and hashing are computed from. Two values are the same exactly
+    /// when these sequences match, so anything omitted here is deliberately not part of the
+    /// value — and anything added later changes what equality means.
+    /// </returns>
     protected abstract IEnumerable<object?> GetEqualityComponents();
 
+    /// <summary>
+    /// Compares two value objects by their components.
+    /// </summary>
+    /// <param name="other">The value to compare against, possibly <see langword="null"/>.</param>
+    /// <returns>
+    /// <see langword="true"/> when both have the same runtime type and equal components. A value
+    /// object has no identity beyond what it holds, which is what separates it from
+    /// <see cref="Entity{TEntityId}"/>.
+    /// </returns>
     public bool Equals(ValueObject? other)
     {
         if (other is null)
@@ -63,11 +80,24 @@ public abstract class ValueObject : IEquatable<ValueObject>
         return GetEqualityComponents().SequenceEqual(other.GetEqualityComponents());
     }
 
+    /// <summary>
+    /// Compares this value with an arbitrary object.
+    /// </summary>
+    /// <param name="obj">The object to compare against.</param>
+    /// <returns><see langword="true"/> when it is a value object equal to this one.</returns>
     public sealed override bool Equals(object? obj)
     {
         return obj is ValueObject other && Equals(other);
     }
 
+    /// <summary>
+    /// Combines the equality components into a hash, computed once and kept.
+    /// </summary>
+    /// <returns>A hash consistent with <see cref="Equals(ValueObject)"/>.</returns>
+    /// <remarks>
+    /// Caching is safe because a value object is immutable: its components cannot change after
+    /// construction, so the first answer stays the right one.
+    /// </remarks>
     public sealed override int GetHashCode()
     {
         if (_cachedHashCode.HasValue)
@@ -85,11 +115,21 @@ public abstract class ValueObject : IEquatable<ValueObject>
         return _cachedHashCode.Value;
     }
 
+    /// <summary>Compares two value objects by their components.</summary>
+    /// <param name="left">The left operand, possibly <see langword="null"/>.</param>
+    /// <param name="right">The right operand, possibly <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> when both are <see langword="null"/> or equal by value.</returns>
     public static bool operator ==(ValueObject? left, ValueObject? right)
     {
         return Equals(left, right);
     }
 
+    /// <summary>
+    /// Compares two value objects by their components.
+    /// </summary>
+    /// <param name="left">The left operand, possibly <see langword="null"/>.</param>
+    /// <param name="right">The right operand, possibly <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> when they differ by value.</returns>
     public static bool operator !=(ValueObject? left, ValueObject? right)
     {
         return !Equals(left, right);

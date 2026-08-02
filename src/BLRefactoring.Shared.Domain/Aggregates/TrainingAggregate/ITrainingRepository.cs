@@ -13,6 +13,9 @@ namespace BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 /// </remarks>
 public interface ITrainingRepository : IRepository<Training>
 {
+    /// <summary>
+    /// Get by id this i training repository.
+    /// </summary>
     public Task<Training?> GetByIdAsync(TrainingId id, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -35,5 +38,11 @@ public interface ITrainingRepository : IRepository<Training>
     /// </summary>
     void Delete(IEnumerable<Training> trainings);
 
+    /// <summary>
+    /// Reads every training a trainer owns.
+    /// </summary>
+    /// <param name="trainerId">The owning trainer.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    /// <returns>The trainings, empty when there are none.</returns>
     Task<ICollection<Training>> GetByTrainerIdAsync(TrainerId trainerId, CancellationToken cancellationToken = default);
 }

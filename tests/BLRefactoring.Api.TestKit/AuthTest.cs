@@ -22,6 +22,9 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
 {
     // -- Register --
 
+    /// <summary>
+    /// Register, valid data, returns 201 with the address of the trainer.
+    /// </summary>
     [Fact]
     public async Task Register_ValidData_Returns201WithTheAddressOfTheTrainer()
     {
@@ -43,6 +46,9 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         response.Headers.Location!.AbsolutePath.Should().Be("/Trainer/me");
     }
 
+    /// <summary>
+    /// Register, publishes a location that serves the trainer.
+    /// </summary>
     [Fact]
     public async Task Register_PublishesALocationThatServesTheTrainer()
     {
@@ -64,6 +70,9 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         followed.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
+    /// <summary>
+    /// Register, also creates the trainer.
+    /// </summary>
     [Fact]
     public async Task Register_AlsoCreatesTheTrainer()
     {
@@ -82,6 +91,9 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
+    /// <summary>
+    /// Register, duplicate email, returns 409.
+    /// </summary>
     [Fact]
     public async Task Register_DuplicateEmail_Returns409()
     {
@@ -105,6 +117,9 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
+    /// <summary>
+    /// Register, duplicate username, returns 409.
+    /// </summary>
     [Fact]
     public async Task Register_DuplicateUsername_Returns409()
     {
@@ -126,6 +141,9 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
+    /// <summary>
+    /// Register, password mismatch, returns 400.
+    /// </summary>
     [Fact]
     public async Task Register_PasswordMismatch_Returns400()
     {
@@ -149,6 +167,9 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
 
     // -- Login --
 
+    /// <summary>
+    /// Login, valid credentials, returns token.
+    /// </summary>
     [Fact]
     public async Task Login_ValidCredentials_ReturnsToken()
     {
@@ -167,6 +188,9 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         loginResponse!.Token.Should().NotBeNullOrEmpty();
     }
 
+    /// <summary>
+    /// Login, invalid password, returns 401.
+    /// </summary>
     [Fact]
     public async Task Login_InvalidPassword_Returns401()
     {
@@ -183,6 +207,9 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
+    /// <summary>
+    /// Login, unknown username, answers exactly like a wrong password.
+    /// </summary>
     [Fact]
     public async Task Login_UnknownUsername_AnswersExactlyLikeAWrongPassword()
     {

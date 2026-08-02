@@ -6,8 +6,14 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainingAggregate.ValueObjects;
 
+/// <summary>
+/// Behaviour covered for <c>TrainingPrerequisites</c>.
+/// </summary>
 public sealed class TrainingPrerequisitesTests
 {
+    /// <summary>
+    /// Create, valid prerequisites, returns success.
+    /// </summary>
     [Fact]
     public void Create_ValidPrerequisites_ReturnsSuccess()
     {
@@ -18,6 +24,9 @@ public sealed class TrainingPrerequisitesTests
         result.ShouldBeSuccess();
     }
 
+    /// <summary>
+    /// Create, valid prerequisites, trims whitespace.
+    /// </summary>
     [Fact]
     public void Create_ValidPrerequisites_TrimsWhitespace()
     {
@@ -28,6 +37,9 @@ public sealed class TrainingPrerequisitesTests
         prerequisites.Value.Should().Be("Basic knowledge");
     }
 
+    /// <summary>
+    /// Create, null, returns failure.
+    /// </summary>
     [Fact]
     public void Create_Null_ReturnsFailure()
     {
@@ -38,6 +50,9 @@ public sealed class TrainingPrerequisitesTests
         result.ShouldContainError(TrainingErrorCodes.InvalidPrerequisites);
     }
 
+    /// <summary>
+    /// Create, empty, returns failure.
+    /// </summary>
     [Fact]
     public void Create_Empty_ReturnsFailure()
     {
@@ -48,6 +63,9 @@ public sealed class TrainingPrerequisitesTests
         result.ShouldContainError(TrainingErrorCodes.InvalidPrerequisites);
     }
 
+    /// <summary>
+    /// Create, exactly max length, returns success.
+    /// </summary>
     [Fact]
     public void Create_ExactlyMaxLength_ReturnsSuccess()
     {
@@ -61,6 +79,9 @@ public sealed class TrainingPrerequisitesTests
         result.ShouldBeSuccess();
     }
 
+    /// <summary>
+    /// Create, exceeds max length, returns failure.
+    /// </summary>
     [Fact]
     public void Create_ExceedsMaxLength_ReturnsFailure()
     {
@@ -74,6 +95,9 @@ public sealed class TrainingPrerequisitesTests
         result.ShouldContainError(TrainingErrorCodes.InvalidPrerequisites);
     }
 
+    /// <summary>
+    /// Equality, same value, are equal.
+    /// </summary>
     [Fact]
     public void Equality_SameValue_AreEqual()
     {
@@ -85,6 +109,9 @@ public sealed class TrainingPrerequisitesTests
         prereq1.Should().Be(prereq2);
     }
 
+    /// <summary>
+    /// Equality, different value, are not equal.
+    /// </summary>
     [Fact]
     public void Equality_DifferentValue_AreNotEqual()
     {
@@ -96,6 +123,9 @@ public sealed class TrainingPrerequisitesTests
         prereq1.Should().NotBe(prereq2);
     }
 
+    /// <summary>
+    /// To string, returns value.
+    /// </summary>
     [Fact]
     public void ToString_ReturnsValue()
     {

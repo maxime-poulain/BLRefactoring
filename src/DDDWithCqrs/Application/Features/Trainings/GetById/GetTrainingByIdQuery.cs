@@ -3,7 +3,13 @@ using BLRefactoring.Shared.CQS;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetById;
 
+/// <summary>
+/// Asks for a training by id.
+/// </summary>
 public sealed class GetTrainingByIdQuery(Guid id) : IQuery<TrainingDto?>
 {
+    /// <summary>
+    /// The identifier.
+    /// </summary>
     public Guid Id { get; } = id;
 }

@@ -31,10 +31,16 @@ namespace BLRefactoring.Shared.Api.Contracts.Trainers;
 /// </remarks>
 public sealed class EditTrainerRequestHttp
 {
+    /// <summary>
+    /// The trainer's first name, as the caller sent it.
+    /// </summary>
     [Required]
     [StringLength(50, MinimumLength = 2)]
     public string Firstname { get; init; } = null!;
 
+    /// <summary>
+    /// The trainer's last name, as the caller sent it.
+    /// </summary>
     [Required]
     [StringLength(50, MinimumLength = 2)]
     public string Lastname { get; init; } = null!;

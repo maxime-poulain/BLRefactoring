@@ -5,8 +5,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Configurations;
 
+/// <summary>
+/// Maps the trainer aggregate onto its table.
+/// </summary>
 public sealed class TrainerConfiguration : AggregateRootTypeConfiguration<Trainer, TrainerId>
 {
+    /// <summary>
+    /// Maps the profile value objects and the uniqueness of the contact address.
+    /// </summary>
     protected override void ConfigureAggregate(EntityTypeBuilder<Trainer> builder)
     {
         builder.ToTable("Trainer");

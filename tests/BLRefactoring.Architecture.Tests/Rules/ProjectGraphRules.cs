@@ -17,6 +17,9 @@ namespace BLRefactoring.Architecture.Tests.Rules;
 /// </remarks>
 public sealed class ProjectGraphRules
 {
+    /// <summary>
+    /// The diagram, describes exactly the edges the projects declare.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#project-dependency-graph",
         "the diagram is the graph: every edge the projects declare is drawn, and every edge drawn exists")]
@@ -47,6 +50,9 @@ public sealed class ProjectGraphRules
         violations.ShouldHold();
     }
 
+    /// <summary>
+    /// The domain, references the kernel and nothing else.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#the-dependency-rule",
         "the domain references exactly one project — the shared kernel — and nothing else")]
@@ -57,6 +63,9 @@ public sealed class ProjectGraphRules
             .Select(reference => $"BLRefactoring.Shared.Domain references '{reference}'")
             .ShouldHold();
 
+    /// <summary>
+    /// The kernel, references no project.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#the-dependency-rule",
         "the kernel is the root of the graph: it references no project of this solution")]
@@ -65,6 +74,9 @@ public sealed class ProjectGraphRules
             .Select(reference => $"the kernel references '{reference}', so it is no longer the root of anything")
             .ShouldHold();
 
+    /// <summary>
+    /// No application layer, references infrastructure or a host.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#the-dependency-rule",
         "an application layer never reaches outward: not to infrastructure, not to a host")]
@@ -78,6 +90,9 @@ public sealed class ProjectGraphRules
                 .Select(reference => $"{project.Name} references '{reference}'"))
             .ShouldHold();
 
+    /// <summary>
+    /// Neither stack, references the other.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#two-stacks-one-domain",
         "the two stacks are a comparison, so neither may lean on the other")]
@@ -91,6 +106,9 @@ public sealed class ProjectGraphRules
                 .Select(reference => $"{project.Name} references '{reference}', across the two stacks"))
             .ShouldHold();
 
+    /// <summary>
+    /// The graph, has no cycle.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#project-dependency-graph",
         "the graph is a directed acyclic graph, as any build order requires")]
@@ -101,6 +119,9 @@ public sealed class ProjectGraphRules
             .Select(project => $"{project.Name} can reach itself by following references")
             .ShouldHold();
 
+    /// <summary>
+    /// Only the shared api layer, carries the web framework reference.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#the-dependency-rule",
         "persistence carries no ASP.NET Core framework reference; only the shared API layer does")]
@@ -117,6 +138,9 @@ public sealed class ProjectGraphRules
             .Select(project => $"{project.RelativePath} asks for Microsoft.AspNetCore.App by name")
             .ShouldHold();
 
+    /// <summary>
+    /// No project, pins its own package version.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#repository-conventions",
         "package versions live in Directory.Packages.props, and nowhere else")]
@@ -130,6 +154,9 @@ public sealed class ProjectGraphRules
                 "instead of leaving the version to central management")
             .ShouldHold();
 
+    /// <summary>
+    /// The generated client, depends on nothing.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0008",
         "the generated client is generated: it holds one file and depends on nothing")]
@@ -144,6 +171,9 @@ public sealed class ProjectGraphRules
             .ShouldHold();
     }
 
+    /// <summary>
+    /// No project, brings back a second open api generator.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0006",
         "the document comes from the framework's own generator, and from no second one")]
@@ -162,6 +192,9 @@ public sealed class ProjectGraphRules
             .ShouldHold();
     }
 
+    /// <summary>
+    /// Only a test project, spans the two target frameworks.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#repository-conventions",
         "the backend is net10.0 and the browser pair is net9.0; only a test may span the two")]
@@ -179,6 +212,9 @@ public sealed class ProjectGraphRules
                     $"{pair.referenced.Name} ({pair.referenced.TargetFramework})"))
             .ShouldHold();
 
+    /// <summary>
+    /// Every test project, declares whether it is one.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#testing",
         "the shared kit is not a test project, and every real suite says that it is")]

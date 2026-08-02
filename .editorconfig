@@ -282,12 +282,11 @@ dotnet_diagnostic.IDE0043.severity = warning
 dotnet_diagnostic.IDE0044.severity = warning
 
 # IDE0051: Remove unused private members
-# Demoted, and not because the rule is noisy: it is wrong here, structurally. Every EntityId<T>
-# subclass declares a private constructor that `EntityId<T>.BuildFactory` reaches through
-# GetConstructor(..., NonPublic) and a compiled expression tree, so Roslyn sees a member nobody
-# calls and the runtime sees the only way an identifier is ever built. Acting on the warning would
-# make TrainerId.Create throw. Five occurrences today, and one more for every identifier added.
-dotnet_diagnostic.IDE0051.severity = suggestion
+# In force. It is wrong about exactly one construct — the private constructor every EntityId<T>
+# subclass declares, which `EntityId<T>.BuildFactory` reaches through GetConstructor(..., NonPublic)
+# and a compiled expression tree — and that is said at each of those five sites with an attribute
+# carrying the reason, rather than here by turning the rule off for the whole repository.
+dotnet_diagnostic.IDE0051.severity = warning
 
 # IDE0055: All formatting rules
 dotnet_diagnostic.IDE0055.severity = suggestion
@@ -312,14 +311,6 @@ dotnet_diagnostic.IDE0200.severity = warning
 dotnet_style_allow_multiple_blank_lines_experimental = false
 dotnet_diagnostic.IDE2000.severity = warning
 
-# GenerateDocumentationFile is on so that IDE0005 reports at build time — it cannot otherwise.
-# The side effect is CS1591 on every public member without an XML comment: nine hundred and
-# eleven of them. Requiring a doc comment on all of them is a decision about how this codebase is
-# written, not about whether its analyzers are enforced, and nobody has taken it. The rules that
-# find real documentation defects stay on: CS1573 (a parameter missing from a comment that
-# documents the others), CS1574 (a cref that resolves to nothing) and CS1570 (malformed XML) each
-# caught something when this was switched on.
-dotnet_diagnostic.CS1591.severity = none
 
 # EF Core migrations are generated, not written. Holding them to the analyzer rules
 # that govern hand-written code produces warnings nobody should act on — editing the

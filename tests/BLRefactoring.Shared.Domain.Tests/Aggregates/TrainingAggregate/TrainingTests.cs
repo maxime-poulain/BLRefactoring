@@ -20,6 +20,9 @@ public sealed class TrainingTests
 {
     // --- CreateAsync ---
 
+    /// <summary>
+    /// Create async, valid data, returns success.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_ValidData_ReturnsSuccess()
     {
@@ -30,6 +33,9 @@ public sealed class TrainingTests
         result.ShouldBeSuccess();
     }
 
+    /// <summary>
+    /// Create async, valid data, sets all properties.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_ValidData_SetsAllProperties()
     {
@@ -53,6 +59,9 @@ public sealed class TrainingTests
         training.TrainerId.Value.Should().Be(trainerId);
     }
 
+    /// <summary>
+    /// Create async, valid data, sets topics.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_ValidData_SetsTopics()
     {
@@ -67,6 +76,9 @@ public sealed class TrainingTests
         training.Topics.Select(t => t.Name).Should().Contain("Design");
     }
 
+    /// <summary>
+    /// Create async, valid data, raises training created event.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_ValidData_RaisesTrainingCreatedEvent()
     {
@@ -81,6 +93,9 @@ public sealed class TrainingTests
         domainEvent.TrainerId.Should().Be(training.TrainerId);
     }
 
+    /// <summary>
+    /// Create async, null title, throws argument null exception.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_NullTitle_ThrowsArgumentNullException()
     {
@@ -96,6 +111,9 @@ public sealed class TrainingTests
         await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
+    /// <summary>
+    /// Create async, null title checker, throws argument null exception.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_NullTitleChecker_ThrowsArgumentNullException()
     {
@@ -108,6 +126,9 @@ public sealed class TrainingTests
         await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
+    /// <summary>
+    /// Create async, duplicate title, returns failure.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_DuplicateTitle_ReturnsFailure()
     {
@@ -120,6 +141,9 @@ public sealed class TrainingTests
         result.ShouldBeFailure();
     }
 
+    /// <summary>
+    /// Create async, duplicate topics, are deduplicated.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_DuplicateTopics_AreDeduplicated()
     {
@@ -136,6 +160,9 @@ public sealed class TrainingTests
 
     // --- EditAsync ---
 
+    /// <summary>
+    /// Edit async, valid data, returns success and updates properties.
+    /// </summary>
     [Fact]
     public async Task EditAsync_ValidData_ReturnsSuccessAndUpdatesProperties()
     {
@@ -158,6 +185,9 @@ public sealed class TrainingTests
         training.Topics.Should().ContainSingle().Which.Should().Be(Topic.Marketing);
     }
 
+    /// <summary>
+    /// Edit async, valid data, raises training edited event.
+    /// </summary>
     [Fact]
     public async Task EditAsync_ValidData_RaisesTrainingEditedEvent()
     {
@@ -179,6 +209,9 @@ public sealed class TrainingTests
         domainEvent.TrainerId.Should().Be(training.TrainerId);
     }
 
+    /// <summary>
+    /// Edit async, same title, does not check uniqueness.
+    /// </summary>
     [Fact]
     public async Task EditAsync_SameTitle_DoesNotCheckUniqueness()
     {
@@ -202,6 +235,9 @@ public sealed class TrainingTests
             Times.Never);
     }
 
+    /// <summary>
+    /// Edit async, different title, checks uniqueness.
+    /// </summary>
     [Fact]
     public async Task EditAsync_DifferentTitle_ChecksUniqueness()
     {
@@ -225,6 +261,9 @@ public sealed class TrainingTests
             Times.Once);
     }
 
+    /// <summary>
+    /// Edit async, duplicate title, fails without mutating the aggregate.
+    /// </summary>
     [Fact]
     public async Task EditAsync_DuplicateTitle_FailsWithoutMutatingTheAggregate()
     {
@@ -253,6 +292,9 @@ public sealed class TrainingTests
         training.Description.Should().Be(originalDescription);
     }
 
+    /// <summary>
+    /// Edit async, duplicate topics, are deduplicated.
+    /// </summary>
     [Fact]
     public async Task EditAsync_DuplicateTopics_AreDeduplicated()
     {

@@ -10,11 +10,17 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Handlers;
 
+/// <summary>
+/// Behaviour covered for <c>EditTrainingCommandHandler</c>.
+/// </summary>
 public sealed class EditTrainingCommandHandlerTests
 {
     private readonly Mock<ITrainingRepository> _trainingRepository = new();
     private readonly Mock<IUniquenessTitleChecker> _titleChecker = new();
 
+    /// <summary>
+    /// Edit training command handler tests.
+    /// </summary>
     public EditTrainingCommandHandlerTests()
     {
         _titleChecker
@@ -30,6 +36,9 @@ public sealed class EditTrainingCommandHandlerTests
     private EditTrainingCommandHandler CreateSut() =>
         new(_trainingRepository.Object, _titleChecker.Object, _unitOfWork.Object);
 
+    /// <summary>
+    /// Handle, valid command, returns success and calls save.
+    /// </summary>
     [Fact]
     public async Task Handle_ValidCommand_ReturnsSuccessAndCallsSave()
     {
@@ -58,6 +67,9 @@ public sealed class EditTrainingCommandHandlerTests
             Times.Once);
     }
 
+    /// <summary>
+    /// Handle, non existing training, returns not found failure.
+    /// </summary>
     [Fact]
     public async Task Handle_NonExistingTraining_ReturnsNotFoundFailure()
     {
@@ -85,6 +97,9 @@ public sealed class EditTrainingCommandHandlerTests
             Times.Never);
     }
 
+    /// <summary>
+    /// Handle, invalid domain data, returns failure and does not save.
+    /// </summary>
     [Fact]
     public async Task Handle_InvalidDomainData_ReturnsFailureAndDoesNotSave()
     {
@@ -113,6 +128,9 @@ public sealed class EditTrainingCommandHandlerTests
             Times.Never);
     }
 
+    /// <summary>
+    /// Handle, duplicate title, returns failure.
+    /// </summary>
     [Fact]
     public async Task Handle_DuplicateTitle_ReturnsFailure()
     {

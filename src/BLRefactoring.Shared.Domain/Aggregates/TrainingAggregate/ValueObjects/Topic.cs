@@ -9,11 +9,34 @@ namespace BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 /// </summary>
 public sealed class Topic : ValueObject
 {
+    /// <summary>
+    /// The programming.
+    /// </summary>
     public static readonly Topic Programming = new("Programming");
+
+    /// <summary>
+    /// The design.
+    /// </summary>
     public static readonly Topic Design = new("Design");
+
+    /// <summary>
+    /// The marketing.
+    /// </summary>
     public static readonly Topic Marketing = new("Marketing");
+
+    /// <summary>
+    /// The business.
+    /// </summary>
     public static readonly Topic Business = new("Business");
+
+    /// <summary>
+    /// The personal development.
+    /// </summary>
     public static readonly Topic PersonalDevelopment = new("Personal Development");
+
+    /// <summary>
+    /// The leadership.
+    /// </summary>
     public static readonly Topic Leadership = new("Leadership");
 
     /// <summary>
@@ -29,6 +52,9 @@ public sealed class Topic : ValueObject
     private static readonly IReadOnlyList<Topic> All = ImmutableArray.Create(
         Programming, Design, Marketing, Business, PersonalDevelopment, Leadership);
 
+    /// <summary>
+    /// The topic's name, as the domain spells it.
+    /// </summary>
     public string Name { get; private init; } = null!;
 
     private Topic() { } // For ORM
@@ -64,6 +90,9 @@ public sealed class Topic : ValueObject
         return topic is not null;
     }
 
+    /// <summary>
+    /// Yields the parts this value is compared by.
+    /// </summary>
     protected override IEnumerable<object?> GetEqualityComponents()
     {
         yield return Name;

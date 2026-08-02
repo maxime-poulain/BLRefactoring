@@ -4,10 +4,16 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Validators;
 
+/// <summary>
+/// Behaviour covered for <c>EditTrainingCommandValidator</c>.
+/// </summary>
 public sealed class EditTrainingCommandValidatorTests
 {
     private readonly EditTrainingCommandValidator _sut = new();
 
+    /// <summary>
+    /// Validate, valid command, is valid.
+    /// </summary>
     [Fact]
     public async Task Validate_ValidCommand_IsValid()
     {
@@ -26,6 +32,9 @@ public sealed class EditTrainingCommandValidatorTests
         result.IsValid.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Validate, empty training id, has error.
+    /// </summary>
     [Fact]
     public async Task Validate_EmptyTrainingId_HasError()
     {
@@ -45,6 +54,9 @@ public sealed class EditTrainingCommandValidatorTests
         result.Errors.Should().Contain(e => e.PropertyName == "TrainingId");
     }
 
+    /// <summary>
+    /// Validate, empty title, has error.
+    /// </summary>
     [Fact]
     public async Task Validate_EmptyTitle_HasError()
     {
@@ -64,6 +76,9 @@ public sealed class EditTrainingCommandValidatorTests
         result.Errors.Should().Contain(e => e.PropertyName == "Title");
     }
 
+    /// <summary>
+    /// Validate, empty topics, has error.
+    /// </summary>
     [Fact]
     public async Task Validate_EmptyTopics_HasError()
     {

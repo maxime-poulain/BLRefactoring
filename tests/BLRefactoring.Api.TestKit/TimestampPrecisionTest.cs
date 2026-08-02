@@ -27,6 +27,9 @@ public abstract class TimestampPrecisionTest<TFactory>(TFactory factory) : Integ
     // 10 ms, the bucket datetime2(2) rounded to.
     private const long TicksPerOldBucket = TimeSpan.TicksPerMillisecond * 10;
 
+    /// <summary>
+    /// Stored created on, keeps what the clock gave.
+    /// </summary>
     [Fact]
     public async Task StoredCreatedOn_KeepsWhatTheClockGave()
     {

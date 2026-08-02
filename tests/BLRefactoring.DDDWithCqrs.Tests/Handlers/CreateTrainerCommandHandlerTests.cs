@@ -7,6 +7,9 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Handlers;
 
+/// <summary>
+/// Behaviour covered for <c>CreateTrainerCommandHandler</c>.
+/// </summary>
 public sealed class CreateTrainerCommandHandlerTests
 {
     private readonly Mock<ITrainerRepository> _trainerRepository = new();
@@ -15,6 +18,9 @@ public sealed class CreateTrainerCommandHandlerTests
     private CreateTrainerCommandHandler CreateSut() =>
         new(_trainerRepository.Object, _unitOfWork.Object);
 
+    /// <summary>
+    /// Handle, valid command, returns success adds trainer and commits once.
+    /// </summary>
     [Fact]
     public async Task Handle_ValidCommand_ReturnsSuccessAddsTrainerAndCommitsOnce()
     {
@@ -36,6 +42,9 @@ public sealed class CreateTrainerCommandHandlerTests
             Times.Once);
     }
 
+    /// <summary>
+    /// Handle, invalid domain data, returns failure.
+    /// </summary>
     [Fact]
     public async Task Handle_InvalidDomainData_ReturnsFailure()
     {
@@ -53,6 +62,9 @@ public sealed class CreateTrainerCommandHandlerTests
         result.ShouldBeFailure();
     }
 
+    /// <summary>
+    /// Handle, invalid domain data, does not add nor commit.
+    /// </summary>
     [Fact]
     public async Task Handle_InvalidDomainData_DoesNotAddNorCommit()
     {

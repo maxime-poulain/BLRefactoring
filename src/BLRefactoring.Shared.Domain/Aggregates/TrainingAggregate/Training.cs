@@ -6,19 +6,48 @@ using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 
 namespace BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 
+/// <summary>
+/// A training a trainer publishes.
+/// <para>
+/// The aggregate root of its own boundary: its constructor is private, its topics are exposed
+/// read-only, and every transition goes through a behaviour method that either succeeds entirely
+/// or changes nothing. It accepts value objects, never a raw <see langword="string"/> — turning
+/// input into those is the application layer's job.
+/// </para>
+/// </summary>
 public sealed class Training : AggregateRoot<TrainingId>
 {
     private readonly List<Topic> _topics = [];
+
+    /// <summary>
+    /// The topics this training is filed under. Read-only: a caller changes them through a
+    /// behaviour method or not at all.
+    /// </summary>
     public IReadOnlyCollection<Topic> Topics => _topics.AsReadOnly();
 
+    /// <summary>
+    /// The training's title.
+    /// </summary>
     public TrainingTitle Title { get; private set; } = null!;
 
+    /// <summary>
+    /// What a participant leaves with.
+    /// </summary>
     public AcquiredSkills AcquiredSkills { get; private set; } = null!;
 
+    /// <summary>
+    /// The training's description.
+    /// </summary>
     public TrainingDescription Description { get; private set; } = null!;
 
+    /// <summary>
+    /// What a participant needs beforehand.
+    /// </summary>
     public TrainingPrerequisites Prerequisites { get; private set; } = null!;
 
+    /// <summary>
+    /// The trainer that owns this training.
+    /// </summary>
     public TrainerId TrainerId { get; private set; } = null!;
 
     /// <summary>
@@ -42,6 +71,14 @@ public sealed class Training : AggregateRoot<TrainingId>
     // The method takes value objects rather than a parameter object of primitives:
     // the shape of what the application layer receives is none of the domain's
     // business, and every part is already valid by the time it gets here.
+
+    /// <summary>
+    /// Builds a <see cref="Training"/> from raw input.
+    /// </summary>
+    /// <returns>
+    /// The value, or every rule it broke. Failure is returned rather than thrown: a
+    /// caller sending three bad fields learns about all three at once.
+    /// </returns>
     public static async Task<Result<Training>> CreateAsync(
         TrainingId trainingId,
         TrainerId trainerId,
@@ -67,6 +104,9 @@ public sealed class Training : AggregateRoot<TrainingId>
             Result<Training>.Failure);
     }
 
+    /// <summary>
+    /// Edit this training.
+    /// </summary>
     public async Task<Result> EditAsync(
         TrainingTitle title,
         TrainingDescription description,

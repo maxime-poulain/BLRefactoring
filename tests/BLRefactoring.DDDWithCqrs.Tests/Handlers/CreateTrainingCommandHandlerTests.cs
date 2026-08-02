@@ -10,6 +10,9 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Handlers;
 
+/// <summary>
+/// Behaviour covered for <c>CreateTrainingCommandHandler</c>.
+/// </summary>
 public sealed class CreateTrainingCommandHandlerTests
 {
     private readonly Mock<ITrainingRepository> _trainingRepository = new();
@@ -17,6 +20,9 @@ public sealed class CreateTrainingCommandHandlerTests
     private readonly Mock<IUniquenessTitleChecker> _titleChecker = new();
     private readonly Mock<ICurrentUserService> _currentUserService = new();
 
+    /// <summary>
+    /// Create training command handler tests.
+    /// </summary>
     public CreateTrainingCommandHandlerTests()
     {
         _titleChecker
@@ -32,6 +38,9 @@ public sealed class CreateTrainingCommandHandlerTests
     private CreateTrainingCommandHandler CreateSut() =>
         new(_trainingRepository.Object, _trainerRepository.Object, _titleChecker.Object, _currentUserService.Object, _unitOfWork.Object);
 
+    /// <summary>
+    /// Handle, valid command, returns success and calls save.
+    /// </summary>
     [Fact]
     public async Task Handle_ValidCommand_ReturnsSuccessAndCallsSave()
     {
@@ -61,6 +70,9 @@ public sealed class CreateTrainingCommandHandlerTests
             Times.Once);
     }
 
+    /// <summary>
+    /// Handle, non existing trainer, returns not found failure.
+    /// </summary>
     [Fact]
     public async Task Handle_NonExistingTrainer_ReturnsNotFoundFailure()
     {
@@ -87,6 +99,9 @@ public sealed class CreateTrainingCommandHandlerTests
         _trainingRepository.Verify(r => r.Add(It.IsAny<Training>()), Times.Never);
     }
 
+    /// <summary>
+    /// Handle, invalid domain data, returns failure and does not save.
+    /// </summary>
     [Fact]
     public async Task Handle_InvalidDomainData_ReturnsFailureAndDoesNotSave()
     {

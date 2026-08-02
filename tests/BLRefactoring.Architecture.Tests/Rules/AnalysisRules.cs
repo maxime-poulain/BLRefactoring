@@ -29,6 +29,9 @@ public sealed class AnalysisRules
     private static string EditorConfig { get; } =
         Path.Combine(SourceTree.RepositoryRoot, ".editorconfig");
 
+    /// <summary>
+    /// The build, treats warnings as errors, and enforces code style.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0019",
         "the build fails on a warning, so a severity written in .editorconfig is a rule rather than a preference")]
@@ -53,6 +56,9 @@ public sealed class AnalysisRules
             .ShouldHold();
     }
 
+    /// <summary>
+    /// No diagnostic, is configured twice.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0019",
         "a diagnostic is configured once, because the second declaration wins in silence")]

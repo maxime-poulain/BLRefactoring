@@ -29,6 +29,9 @@ public sealed class MessagingRules
             .Where(type => type is { IsInterface: false, IsAbstract: false })
     ];
 
+    /// <summary>
+    /// Every message, lives in the application layer.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#use-cases",
         "a command and a query are application vocabulary, and they live in the application layer")]
@@ -40,6 +43,9 @@ public sealed class MessagingRules
             .Select(type => $"{type.FullName} is a message declared outside the application layer")
             .ShouldHold();
 
+    /// <summary>
+    /// Every query handler, lives in infrastructure.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#use-cases",
         "the read side is infrastructure by nature: a query handler projects straight from the database")]
@@ -53,6 +59,9 @@ public sealed class MessagingRules
                 "DbContext it needs does not belong")
             .ShouldHold();
 
+    /// <summary>
+    /// Every command handler, lives in the application layer.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#use-cases",
         "a command handler orchestrates the domain, so it sits with the command it answers")]
@@ -64,6 +73,9 @@ public sealed class MessagingRules
             .Select(type => $"{type.FullName} answers a command from outside the application layer")
             .ShouldHold();
 
+    /// <summary>
+    /// Every command, answers with a bare result.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#use-cases",
         "a command reports whether it worked and nothing else; what changed is read back through a query")]
@@ -79,6 +91,9 @@ public sealed class MessagingRules
                 "command uses it: a write that hands back what it wrote is a read in disguise")
             .ShouldHold();
 
+    /// <summary>
+    /// No query handler, answers with a domain type.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0001",
         "a query answers with a DTO — never with an aggregate, an entity or a value object")]
@@ -95,6 +110,9 @@ public sealed class MessagingRules
                 "A read model that is an aggregate hands callers the write side's vocabulary")
             .ShouldHold();
 
+    /// <summary>
+    /// Every query handler, answers with a dto.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0001",
         "a query answers with a type named for what it is: a DTO, paged or not")]
@@ -109,6 +127,9 @@ public sealed class MessagingRules
             .Select(pair => $"{pair.type.FullName} answers with {pair.answered.Name}, which is not a DTO")
             .ShouldHold();
 
+    /// <summary>
+    /// Every command, has exactly one validator.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#validation",
         "every command has exactly one validator, which the pipeline demands at dispatch")]
@@ -132,6 +153,9 @@ public sealed class MessagingRules
             .ShouldHold();
     }
 
+    /// <summary>
+    /// Every query taking an identifier, has a validator.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#validation",
         "a query that takes an identifier validates it; one that takes a page is already bounded by the contract")]
@@ -151,6 +175,9 @@ public sealed class MessagingRules
             .ShouldHold();
     }
 
+    /// <summary>
+    /// No command path, raises a validation failure as an exception.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0016",
         "a rejected command is a failed Result, so nothing on the write side raises one as an exception")]
@@ -170,6 +197,9 @@ public sealed class MessagingRules
             .ShouldHold();
     }
 
+    /// <summary>
+    /// The validation code, is raised by the pipeline alone.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0016",
         "one place raises the validation code, so it keeps meaning 'rejected before the aggregate'")]
@@ -191,6 +221,9 @@ public sealed class MessagingRules
             .ShouldHold();
     }
 
+    /// <summary>
+    /// Every validator, lives where the scan looks.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#validation",
         "validators are discovered by scanning one assembly, so a validator outside it never runs")]
@@ -204,6 +237,9 @@ public sealed class MessagingRules
                 "never run")
             .ShouldHold();
 
+    /// <summary>
+    /// Every message, has a handler named after it.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#use-cases",
         "every message is answered, and the handler is named after the message it answers")]
@@ -224,6 +260,9 @@ public sealed class MessagingRules
             .ShouldHold();
     }
 
+    /// <summary>
+    /// No query handler, takes a repository.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#use-cases",
         "the write side loads aggregates through repositories; the read side never does")]
@@ -237,6 +276,9 @@ public sealed class MessagingRules
                 .Select(parameter => $"{handler.FullName} takes {parameter.ParameterType.Name}"))
             .ShouldHold();
 
+    /// <summary>
+    /// No command handler, takes a db context.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#use-cases",
         "the write side speaks to the domain; it never opens the DbContext itself")]
@@ -250,6 +292,9 @@ public sealed class MessagingRules
                 .Select(parameter => $"{handler.FullName} takes {parameter.ParameterType.Name}"))
             .ShouldHold();
 
+    /// <summary>
+    /// Every use case, has its own folder.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#use-cases",
         "one folder per use case, under the aggregate it belongs to")]

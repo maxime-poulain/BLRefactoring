@@ -37,6 +37,9 @@ public sealed class ValidationPipelineTests(ApiFactory factory) : IntegrationTes
     private static async Task<JsonElement> BodyAsync(HttpResponseMessage response)
         => JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
 
+    /// <summary>
+    /// Invalid email, is rejected by the validator, as a domain error document.
+    /// </summary>
     [Fact]
     public async Task InvalidEmail_IsRejectedByTheValidator_AsADomainErrorDocument()
     {
@@ -78,6 +81,9 @@ public sealed class ValidationPipelineTests(ApiFactory factory) : IntegrationTes
             .Should().BeTrue("the caller still has to be told which field was refused");
     }
 
+    /// <summary>
+    /// Validation runs before the handler, leaving the aggregate untouched.
+    /// </summary>
     [Fact]
     public async Task ValidationRunsBeforeTheHandler_LeavingTheAggregateUntouched()
     {
@@ -99,6 +105,9 @@ public sealed class ValidationPipelineTests(ApiFactory factory) : IntegrationTes
         after.Should().Be(before);
     }
 
+    /// <summary>
+    /// Empty identifier, on a query, is still answered 400.
+    /// </summary>
     [Fact]
     public async Task EmptyIdentifier_OnAQuery_IsStillAnswered400()
     {

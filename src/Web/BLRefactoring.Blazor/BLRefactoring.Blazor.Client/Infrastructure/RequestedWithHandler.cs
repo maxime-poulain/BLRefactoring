@@ -10,6 +10,10 @@ namespace BLRefactoring.Blazor.Client.Infrastructure;
 /// </remarks>
 public sealed class RequestedWithHandler : DelegatingHandler
 {
+    /// <summary>
+    /// Adds the <c>X-Requested-With</c> header every BFF call carries, which is what makes a
+    /// cookie-authenticated request unusable as a cross-site forgery.
+    /// </summary>
     protected override Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken)

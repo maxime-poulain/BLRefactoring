@@ -111,6 +111,16 @@ public abstract class EntityId<TEntityId> :
             .Compile();
     }
 
+    /// <summary>
+    /// Compares two identifiers by the value they carry.
+    /// </summary>
+    /// <param name="other">The identifier to compare against, possibly <see langword="null"/>.</param>
+    /// <returns>
+    /// <see langword="true"/> when both wrap the same <see cref="Guid"/>. Identity here is the
+    /// value, not the reference: two <c>TrainerId</c> built from one <see cref="Guid"/> are the
+    /// same identifier, which is what lets a repository be asked for an aggregate by an identifier
+    /// it did not itself hand out.
+    /// </returns>
     public bool Equals(EntityId<TEntityId>? other)
     {
         if (other is null)
@@ -126,6 +136,16 @@ public abstract class EntityId<TEntityId> :
         return Value.Equals(other.Value);
     }
 
+    /// <summary>
+    /// Compares this identifier with an arbitrary object.
+    /// </summary>
+    /// <param name="obj">The object to compare against.</param>
+    /// <returns>
+    /// <see langword="true"/> only when <paramref name="obj"/> has exactly this identifier's type
+    /// and the same value. The exact-type check is the point: <c>TrainerId</c> and
+    /// <c>TrainingId</c> built from the same <see cref="Guid"/> are different identifiers, and
+    /// conflating them is the mistake typed identifiers exist to prevent.
+    /// </returns>
     public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj))
@@ -146,11 +166,24 @@ public abstract class EntityId<TEntityId> :
         return Equals((EntityId<TEntityId>)obj);
     }
 
+    /// <summary>
+    /// Returns the hash of the underlying value, so that equal identifiers hash alike.
+    /// </summary>
+    /// <returns>The <see cref="Guid"/>'s hash code.</returns>
     public override int GetHashCode()
     {
         return Value.GetHashCode();
     }
 
+    /// <summary>
+    /// Orders this identifier against an arbitrary object.
+    /// </summary>
+    /// <param name="obj">The object to compare against.</param>
+    /// <returns>A negative number, zero or a positive number, as <see cref="IComparable"/> defines.</returns>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="obj"/> is not of this identifier's type. Non-generic
+    /// <see cref="IComparable"/> cannot express that constraint, so it is enforced here.
+    /// </exception>
     public int CompareTo(object? obj)
     {
         if (obj is TEntityId entityId)
@@ -161,6 +194,14 @@ public abstract class EntityId<TEntityId> :
         throw new ArgumentException($"Object must be of type {typeof(TEntityId).Name}", nameof(obj));
     }
 
+    /// <summary>
+    /// Orders two identifiers by the value they carry.
+    /// </summary>
+    /// <param name="other">The identifier to compare against, possibly <see langword="null"/>.</param>
+    /// <returns>
+    /// A negative number, zero or a positive number. <see langword="null"/> sorts first, matching
+    /// the framework convention that a null reference precedes any instance.
+    /// </returns>
     public int CompareTo(EntityId<TEntityId>? other)
     {
         if (other is null)
@@ -176,9 +217,17 @@ public abstract class EntityId<TEntityId> :
         return Value.CompareTo(other.Value);
     }
 
+    /// <summary>Compares two identifiers by value.</summary>
+    /// <param name="left">The left operand, possibly <see langword="null"/>.</param>
+    /// <param name="right">The right operand, possibly <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> when both are <see langword="null"/> or carry the same value.</returns>
     public static bool operator ==(EntityId<TEntityId>? left, EntityId<TEntityId>? right)
         => Equals(left, right);
 
+    /// <summary>Compares two identifiers by value.</summary>
+    /// <param name="left">The left operand, possibly <see langword="null"/>.</param>
+    /// <param name="right">The right operand, possibly <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> when they carry different values.</returns>
     public static bool operator !=(EntityId<TEntityId>? left, EntityId<TEntityId>? right)
         => !Equals(left, right);
 }

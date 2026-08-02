@@ -12,6 +12,9 @@ namespace BLRefactoring.Api.TestKit;
 /// </remarks>
 public interface IResettableDatabase
 {
+    /// <summary>
+    /// Returns the database to its empty state between tests.
+    /// </summary>
     Task ResetDatabaseAsync();
 }
 
@@ -26,6 +29,9 @@ public interface IResettableDatabase
 /// </remarks>
 public interface IServiceScopeSource
 {
+    /// <summary>
+    /// Opens a scope on the host's container, for reaching a service directly.
+    /// </summary>
     IServiceScope CreateScope();
 }
 
@@ -40,6 +46,9 @@ public interface IServiceScopeSource
 /// </remarks>
 public interface IHttpClientSource
 {
+    /// <summary>
+    /// Builds a client pointed at the host under test.
+    /// </summary>
     HttpClient CreateClient();
 }
 
@@ -65,7 +74,14 @@ public abstract class IntegrationTest<TFactory>(TFactory factory) : IAsyncLifeti
 
     // xUnit builds a new instance of the test class for each test method, so this
     // runs before every single test rather than once per class.
+
+    /// <summary>
+    /// Initialize async.
+    /// </summary>
     public Task InitializeAsync() => Factory.ResetDatabaseAsync();
 
+    /// <summary>
+    /// Dispose async.
+    /// </summary>
     public Task DisposeAsync() => Task.CompletedTask;
 }

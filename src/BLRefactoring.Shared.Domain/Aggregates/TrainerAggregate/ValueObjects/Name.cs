@@ -4,9 +4,19 @@ using BLRefactoring.Shared.Common.Results;
 
 namespace BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 
+/// <summary>
+/// A trainer's first and last name, held together because they are validated together.
+/// </summary>
 public sealed class Name : ValueObject
 {
+    /// <summary>
+    /// The trainer's first name.
+    /// </summary>
     public string Firstname { get; } = null!;
+
+    /// <summary>
+    /// The trainer's last name.
+    /// </summary>
     public string Lastname { get; } = null!;
 
     private Name() {}
@@ -17,6 +27,13 @@ public sealed class Name : ValueObject
         Lastname = lastname;
     }
 
+    /// <summary>
+    /// Builds a <see cref="Name"/> from raw input.
+    /// </summary>
+    /// <returns>
+    /// The value, or every rule it broke. Failure is returned rather than thrown: a
+    /// caller sending three bad fields learns about all three at once.
+    /// </returns>
     public static Result<Name> Create(string firstname, string lastname)
     {
         var errors = new ErrorCollection();
@@ -38,6 +55,9 @@ public sealed class Name : ValueObject
         return Result<Name>.Success(new Name(firstname, lastname));
     }
 
+    /// <summary>
+    /// Yields the parts this value is compared by.
+    /// </summary>
     protected override IEnumerable<object?> GetEqualityComponents()
     {
         yield return Firstname;

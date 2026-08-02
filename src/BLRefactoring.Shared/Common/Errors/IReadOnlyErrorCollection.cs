@@ -6,6 +6,11 @@ namespace BLRefactoring.Shared.Common.Errors;
 public interface IReadOnlyErrorCollection : IEnumerable<Error>
 {
     // The Item property provides methods to read and edit entries in the List.
+
+    /// <summary>
+    /// The error at a position.
+    /// </summary>
+    /// <param name="index">The zero-based position.</param>
     Error this[int index]
     {
         get;

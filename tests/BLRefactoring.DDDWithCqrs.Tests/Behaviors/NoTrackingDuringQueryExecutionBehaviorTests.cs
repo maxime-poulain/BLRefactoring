@@ -12,10 +12,16 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Behaviors;
 
+/// <summary>
+/// Behaviour covered for <c>NoTrackingDuringQueryExecutionBehavior</c>.
+/// </summary>
 public sealed class NoTrackingDuringQueryExecutionBehaviorTests : IDisposable
 {
     private readonly TrainingContext _context;
 
+    /// <summary>
+    /// No tracking during query execution behavior tests.
+    /// </summary>
     public NoTrackingDuringQueryExecutionBehaviorTests()
     {
         var options = new DbContextOptionsBuilder<TrainingContext>()
@@ -24,6 +30,9 @@ public sealed class NoTrackingDuringQueryExecutionBehaviorTests : IDisposable
         _context = new TrainingContext(options);
     }
 
+    /// <summary>
+    /// Handle, query, sets no tracking during execution.
+    /// </summary>
     [Fact]
     public async Task Handle_Query_SetsNoTrackingDuringExecution()
     {
@@ -43,6 +52,9 @@ public sealed class NoTrackingDuringQueryExecutionBehaviorTests : IDisposable
         trackingDuringExecution.Should().Be(QueryTrackingBehavior.NoTracking);
     }
 
+    /// <summary>
+    /// Handle, query, restores original tracking after execution.
+    /// </summary>
     [Fact]
     public async Task Handle_Query_RestoresOriginalTrackingAfterExecution()
     {
@@ -59,6 +71,9 @@ public sealed class NoTrackingDuringQueryExecutionBehaviorTests : IDisposable
         _context.ChangeTracker.QueryTrackingBehavior.Should().Be(QueryTrackingBehavior.TrackAll);
     }
 
+    /// <summary>
+    /// Handle, command, does not change tracking.
+    /// </summary>
     [Fact]
     public async Task Handle_Command_DoesNotChangeTracking()
     {
@@ -86,6 +101,9 @@ public sealed class NoTrackingDuringQueryExecutionBehaviorTests : IDisposable
         _context.ChangeTracker.QueryTrackingBehavior.Should().Be(originalBehavior);
     }
 
+    /// <summary>
+    /// Dispose.
+    /// </summary>
     public void Dispose()
     {
         _context.Dispose();

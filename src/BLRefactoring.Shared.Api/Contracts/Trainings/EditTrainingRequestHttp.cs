@@ -17,6 +17,10 @@ namespace BLRefactoring.Shared.Api.Contracts.Trainings;
 /// </remarks>
 public sealed class EditTrainingRequestHttp
 {
+    /// <summary>
+    /// The training's title, as the caller sent it. Bounds are enforced by the value object,
+    /// not here.
+    /// </summary>
     [Required]
     [StringLength(100, MinimumLength = 5)]
     public string Title { get; init; } = null!;
@@ -28,14 +32,23 @@ public sealed class EditTrainingRequestHttp
     [MinLength(1)]
     public List<string> Topics { get; init; } = [];
 
+    /// <summary>
+    /// The training's description, as the caller sent it.
+    /// </summary>
     [Required]
     [StringLength(500)]
     public string Description { get; init; } = null!;
 
+    /// <summary>
+    /// What a participant needs beforehand, as the caller sent it.
+    /// </summary>
     [Required]
     [StringLength(500)]
     public string Prerequisites { get; init; } = null!;
 
+    /// <summary>
+    /// What a participant leaves with, as the caller sent it.
+    /// </summary>
     [Required]
     [StringLength(500)]
     public string AcquiredSkills { get; init; } = null!;

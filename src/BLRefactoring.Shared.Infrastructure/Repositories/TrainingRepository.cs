@@ -8,12 +8,16 @@ using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BLRefactoring.Shared.Infrastructure.Repositories;
+
 /// <summary>
 /// Entity Framework Core implementation of <see cref="ITrainingRepository"/> and <see cref="IUniquenessTitleChecker"/>.
 /// Provides data access for the Training aggregate using the Specification pattern.
 /// </summary>
 public sealed class TrainingRepository(TrainingContext trainingContext) : ITrainingRepository, IUniquenessTitleChecker
 {
+    /// <summary>
+    /// Finds a training by identifier, or <see langword="null"/> when there is none.
+    /// </summary>
     public async Task<Training?> GetByIdAsync(TrainingId id, CancellationToken cancellationToken = default) =>
         await trainingContext
             .Trainings
@@ -32,6 +36,9 @@ public sealed class TrainingRepository(TrainingContext trainingContext) : ITrain
         return await AnyAsync(spec, cancellationToken);
     }
 
+    /// <summary>
+    /// Registers a new training to be written when the unit of work commits.
+    /// </summary>
     public void Add(Training training)
     {
         trainingContext.Trainings.Add(training);
@@ -41,16 +48,26 @@ public sealed class TrainingRepository(TrainingContext trainingContext) : ITrain
     // not just a formality on an already-tracked instance: it guarantees an UPDATE on
     // the Training row, and therefore a check of its concurrency token, even when the
     // edition only touched owned rows in another table such as TrainingTopic.
+
+    /// <summary>
+    /// Marks a training as changed.
+    /// </summary>
     public void Update(Training training)
     {
         trainingContext.Trainings.Update(training);
     }
 
+    /// <summary>
+    /// Registers a training for removal.
+    /// </summary>
     public void Delete(Training training)
     {
         trainingContext.Trainings.Remove(training);
     }
 
+    /// <summary>
+    /// Registers several trainings for removal in one go.
+    /// </summary>
     public void Delete(IEnumerable<Training> trainings)
     {
         trainingContext.Trainings.RemoveRange(trainings);

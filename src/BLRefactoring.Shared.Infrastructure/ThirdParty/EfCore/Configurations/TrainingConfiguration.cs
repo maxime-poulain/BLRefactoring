@@ -6,8 +6,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Configurations;
 
+/// <summary>
+/// Maps the training aggregate onto its table.
+/// </summary>
 public sealed class TrainingConfiguration : AggregateRootTypeConfiguration<Training, TrainingId>
 {
+    /// <summary>
+    /// Maps the detail value objects, the topics and the per-trainer unique title.
+    /// </summary>
     protected override void ConfigureAggregate(EntityTypeBuilder<Training> builder)
     {
         builder.ToTable("Training");

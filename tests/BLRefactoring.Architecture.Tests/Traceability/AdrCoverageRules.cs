@@ -20,6 +20,9 @@ public sealed class AdrCoverageRules
     private static IReadOnlySet<string> Excused { get; } =
         UnguardedRecords.All.Select(excuse => excuse.Record).ToHashSet(StringComparer.Ordinal);
 
+    /// <summary>
+    /// Every record in force, is defended by a rule, or says why it cannot be.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0013",
         "a decision nothing keeps true has already been half reversed")]
@@ -34,6 +37,9 @@ public sealed class AdrCoverageRules
                 "there cannot be one")
             .ShouldHold();
 
+    /// <summary>
+    /// No record, is both defended and excused.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0013",
         "an excuse that outlives its reason is worse than no excuse at all")]
@@ -46,6 +52,9 @@ public sealed class AdrCoverageRules
                 "the entry: it now claims something false about the suite")
             .ShouldHold();
 
+    /// <summary>
+    /// No excuse, names a record that does not exist.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0013",
         "the ledger names records, not numbers somebody remembered")]
@@ -56,6 +65,9 @@ public sealed class AdrCoverageRules
             .Select(excuse => $"the ledger excuses ADR {excuse.Record}, and no such record exists")
             .ShouldHold();
 
+    /// <summary>
+    /// Every rule names something that exists.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0013",
         "every rule answers to something: a record that exists, or a section of the README")]
@@ -68,6 +80,9 @@ public sealed class AdrCoverageRules
                 $"{rule.Name} defends ADR {rule.Declaration.Record}, and no record carries that number")
             .ShouldHold();
 
+    /// <summary>
+    /// Every record, is listed in the index.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0013",
         "the index lists every record, since the index is how a reader finds one")]

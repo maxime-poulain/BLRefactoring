@@ -4,8 +4,14 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Common.Errors;
 
+/// <summary>
+/// Behaviour covered for <c>Error</c>.
+/// </summary>
 public sealed class ErrorTests
 {
+    /// <summary>
+    /// Constructor, sets properties.
+    /// </summary>
     [Fact]
     public void Constructor_SetsProperties()
     {
@@ -15,6 +21,9 @@ public sealed class ErrorTests
         error.ErrorMessage.Should().Be("test error");
     }
 
+    /// <summary>
+    /// Equals, same code and message, returns true.
+    /// </summary>
     [Fact]
     public void Equals_SameCodeAndMessage_ReturnsTrue()
     {
@@ -24,6 +33,9 @@ public sealed class ErrorTests
         error1.Equals(error2).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Equals, different code, returns false.
+    /// </summary>
     [Fact]
     public void Equals_DifferentCode_ReturnsFalse()
     {
@@ -33,6 +45,9 @@ public sealed class ErrorTests
         error1.Equals(error2).Should().BeFalse();
     }
 
+    /// <summary>
+    /// Equals, different message, returns false.
+    /// </summary>
     [Fact]
     public void Equals_DifferentMessage_ReturnsFalse()
     {
@@ -42,6 +57,9 @@ public sealed class ErrorTests
         error1.Equals(error2).Should().BeFalse();
     }
 
+    /// <summary>
+    /// To string, returns formatted string.
+    /// </summary>
     [Fact]
     public void ToString_ReturnsFormattedString()
     {
@@ -50,6 +68,9 @@ public sealed class ErrorTests
         error.ToString().Should().Be("Unspecified: test error");
     }
 
+    /// <summary>
+    /// Get hash code, same code and message, returns same hash.
+    /// </summary>
     [Fact]
     public void GetHashCode_SameCodeAndMessage_ReturnsSameHash()
     {

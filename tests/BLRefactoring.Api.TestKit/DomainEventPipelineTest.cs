@@ -40,6 +40,9 @@ namespace BLRefactoring.Api.TestKit;
 public abstract class DomainEventPipelineTest<TFactory>(TFactory factory) : IntegrationTest<TFactory>(factory)
     where TFactory : IResettableDatabase, IServiceScopeSource
 {
+    /// <summary>
+    /// Deleting a trainer, removes their trainings, within the same commit.
+    /// </summary>
     [Fact]
     public async Task DeletingATrainer_RemovesTheirTrainings_WithinTheSameCommit()
     {

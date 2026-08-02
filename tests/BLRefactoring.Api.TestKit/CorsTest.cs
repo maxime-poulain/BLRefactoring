@@ -23,6 +23,9 @@ public abstract class CorsTest<TFactory>(TFactory factory) : IntegrationTest<TFa
     private const string AllowedOrigin = "https://localhost:7067";
     private const string ForeignOrigin = "https://evil.example.com";
 
+    /// <summary>
+    /// Configured origin, is allowed.
+    /// </summary>
     [Fact]
     public async Task ConfiguredOrigin_IsAllowed()
     {
@@ -39,6 +42,9 @@ public abstract class CorsTest<TFactory>(TFactory factory) : IntegrationTest<TFa
             .Should().ContainSingle().Which.Should().Be(AllowedOrigin);
     }
 
+    /// <summary>
+    /// Foreign origin, is not allowed.
+    /// </summary>
     [Fact]
     public async Task ForeignOrigin_IsNotAllowed()
     {
@@ -54,6 +60,9 @@ public abstract class CorsTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         response.Headers.Contains("Access-Control-Allow-Origin").Should().BeFalse();
     }
 
+    /// <summary>
+    /// Preflight, from foreign origin, is not approved.
+    /// </summary>
     [Fact]
     public async Task Preflight_FromForeignOrigin_IsNotApproved()
     {

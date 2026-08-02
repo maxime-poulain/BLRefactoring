@@ -52,10 +52,16 @@ public sealed class AcquiredSkills : ValueObject
         return Result<AcquiredSkills>.Success(new AcquiredSkills(skills.Trim()));
     }
 
+    /// <summary>
+    /// Yields the parts this value is compared by.
+    /// </summary>
     protected override IEnumerable<object?> GetEqualityComponents()
     {
         yield return Value;
     }
 
+    /// <summary>
+    /// Returns the value as text.
+    /// </summary>
     public override string ToString() => Value;
 }

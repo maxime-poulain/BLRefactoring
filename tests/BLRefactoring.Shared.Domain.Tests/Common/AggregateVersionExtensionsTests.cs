@@ -5,8 +5,14 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Common;
 
+/// <summary>
+/// Behaviour covered for <c>AggregateVersionExtensions</c>.
+/// </summary>
 public sealed class AggregateVersionExtensionsTests
 {
+    /// <summary>
+    /// Is at version, matching version, returns true.
+    /// </summary>
     [Fact]
     public void IsAtVersion_MatchingVersion_ReturnsTrue()
     {
@@ -15,6 +21,9 @@ public sealed class AggregateVersionExtensionsTests
         trainer.IsAtVersion(trainer.RowVersion).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Is at version, different version, returns false.
+    /// </summary>
     [Fact]
     public void IsAtVersion_DifferentVersion_ReturnsFalse()
     {
@@ -23,6 +32,9 @@ public sealed class AggregateVersionExtensionsTests
         trainer.IsAtVersion([1, 2, 3, 4, 5, 6, 7, 8]).Should().BeFalse();
     }
 
+    /// <summary>
+    /// Is at version, compares content rather than reference.
+    /// </summary>
     [Fact]
     public async Task IsAtVersion_ComparesContentRatherThanReference()
     {
@@ -32,6 +44,9 @@ public sealed class AggregateVersionExtensionsTests
         training.IsAtVersion([.. training.RowVersion]).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Is at version, null version, throws argument null exception.
+    /// </summary>
     [Fact]
     public void IsAtVersion_NullVersion_ThrowsArgumentNullException()
     {

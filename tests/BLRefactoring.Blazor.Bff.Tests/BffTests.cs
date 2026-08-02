@@ -34,12 +34,18 @@ public sealed class BffTests : IDisposable
     private readonly HttpClient _browser;
     private readonly string _token = BffFactory.IssueToken();
 
+    /// <summary>
+    /// Bff tests.
+    /// </summary>
     public BffTests()
     {
         _browser = _factory.CreateBrowser();
         _factory.LoginApi.Respond = _ => RecordingHandler.Ok($$"""{"token":"{{_token}}"}""");
     }
 
+    /// <summary>
+    /// Dispose.
+    /// </summary>
     public void Dispose()
     {
         _browser.Dispose();
@@ -48,6 +54,9 @@ public sealed class BffTests : IDisposable
 
     // ---------------------------------------------------------------- the page itself
 
+    /// <summary>
+    /// The application is still served.
+    /// </summary>
     [Fact]
     public async Task The_application_is_still_served()
     {
@@ -60,6 +69,9 @@ public sealed class BffTests : IDisposable
 
     // ---------------------------------------------------------------- signing in
 
+    /// <summary>
+    /// Login answers a cookie and never the token.
+    /// </summary>
     [Fact]
     public async Task Login_answers_a_cookie_and_never_the_token()
     {
@@ -79,6 +91,9 @@ public sealed class BffTests : IDisposable
         cookie.Should().NotContain(_token, "the ticket is encrypted, not a wrapper around the token");
     }
 
+    /// <summary>
+    /// Login writes a session cookie that carries the tokens own expiry.
+    /// </summary>
     [Fact]
     public async Task Login_writes_a_session_cookie_that_carries_the_tokens_own_expiry()
     {
@@ -95,6 +110,9 @@ public sealed class BffTests : IDisposable
         cookie.Should().NotContainEquivalentOf("max-age=");
     }
 
+    /// <summary>
+    /// The cookie session is never extended past the token.
+    /// </summary>
     [Fact]
     public void The_cookie_session_is_never_extended_past_the_token()
     {
@@ -115,6 +133,9 @@ public sealed class BffTests : IDisposable
             "a renewed ticket outlives the token it was cut from");
     }
 
+    /// <summary>
+    /// Login without the application header never reaches the api.
+    /// </summary>
     [Fact]
     public async Task Login_without_the_application_header_never_reaches_the_api()
     {
@@ -129,6 +150,9 @@ public sealed class BffTests : IDisposable
         _factory.LoginApi.Requests.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Login passes the apis refusal through.
+    /// </summary>
     [Fact]
     public async Task Login_passes_the_apis_refusal_through()
     {
@@ -141,6 +165,9 @@ public sealed class BffTests : IDisposable
 
     // ---------------------------------------------------------------- identity
 
+    /// <summary>
+    /// User is anonymous before signing in.
+    /// </summary>
     [Fact]
     public async Task User_is_anonymous_before_signing_in()
     {
@@ -154,6 +181,9 @@ public sealed class BffTests : IDisposable
             "null one, which the framework writes as an empty body that does not parse");
     }
 
+    /// <summary>
+    /// User reports the canonical name claim after signing in.
+    /// </summary>
     [Fact]
     public async Task User_reports_the_canonical_name_claim_after_signing_in()
     {
@@ -168,6 +198,9 @@ public sealed class BffTests : IDisposable
             "would otherwise render nothing");
     }
 
+    /// <summary>
+    /// User without the application header is refused.
+    /// </summary>
     [Fact]
     public async Task User_without_the_application_header_is_refused()
     {
@@ -178,6 +211,9 @@ public sealed class BffTests : IDisposable
 
     // ---------------------------------------------------------------- forwarding
 
+    /// <summary>
+    /// A forwarded call carries the token and drops the prefix.
+    /// </summary>
     [Fact]
     public async Task A_forwarded_call_carries_the_token_and_drops_the_prefix()
     {
@@ -194,6 +230,9 @@ public sealed class BffTests : IDisposable
             "the credential is attached server-side, from the cookie");
     }
 
+    /// <summary>
+    /// A forwarded call without a session never reaches the api.
+    /// </summary>
     [Fact]
     public async Task A_forwarded_call_without_a_session_never_reaches_the_api()
     {
@@ -204,6 +243,9 @@ public sealed class BffTests : IDisposable
         _factory.ProxiedApi.Requests.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// A forwarded call without the application header is refused even with a session.
+    /// </summary>
     [Fact]
     public async Task A_forwarded_call_without_the_application_header_is_refused_even_with_a_session()
     {
@@ -220,6 +262,9 @@ public sealed class BffTests : IDisposable
 
     // ---------------------------------------------------------------- signing out
 
+    /// <summary>
+    /// Logout ends the session rather than forgetting it.
+    /// </summary>
     [Fact]
     public async Task Logout_ends_the_session_rather_than_forgetting_it()
     {
@@ -237,6 +282,9 @@ public sealed class BffTests : IDisposable
             "revokes access — clearing localStorage never did");
     }
 
+    /// <summary>
+    /// Logout without the application header is refused.
+    /// </summary>
     [Fact]
     public async Task Logout_without_the_application_header_is_refused()
     {

@@ -26,6 +26,9 @@ public static class BffEndpoints
     /// </remarks>
     public const string ApiClientName = "BffApi";
 
+    /// <summary>
+    /// Maps the endpoints the browser talks to: sign-in, sign-out, and the forwarding proxy.
+    /// </summary>
     public static IEndpointRouteBuilder MapBffEndpoints(this IEndpointRouteBuilder endpoints)
     {
         ArgumentNullException.ThrowIfNull(endpoints);

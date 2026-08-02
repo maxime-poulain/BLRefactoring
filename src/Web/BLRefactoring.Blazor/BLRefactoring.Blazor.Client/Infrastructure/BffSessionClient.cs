@@ -15,6 +15,9 @@ namespace BLRefactoring.Blazor.Client.Infrastructure;
 /// </remarks>
 public sealed class BffSessionClient(IHttpClientFactory httpClientFactory) : IBffSessionClient
 {
+    /// <summary>
+    /// Signs in through the BFF, which keeps the token server-side and answers with a cookie.
+    /// </summary>
     public async Task<bool> LoginAsync(string username, string password, CancellationToken cancellationToken = default)
     {
         var client = httpClientFactory.CreateClient(HttpClientNames.Bff);
@@ -34,6 +37,9 @@ public sealed class BffSessionClient(IHttpClientFactory httpClientFactory) : IBf
         return true;
     }
 
+    /// <summary>
+    /// Ends the session.
+    /// </summary>
     public async Task LogoutAsync(CancellationToken cancellationToken = default)
     {
         var client = httpClientFactory.CreateClient(HttpClientNames.Bff);
@@ -60,5 +66,9 @@ public interface IBffSessionClient
     /// </summary>
     Task<bool> LoginAsync(string username, string password, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Ends the session.
+    /// </summary>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     Task LogoutAsync(CancellationToken cancellationToken = default);
 }

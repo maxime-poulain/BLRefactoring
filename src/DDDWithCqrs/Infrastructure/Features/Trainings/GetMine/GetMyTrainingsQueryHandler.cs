@@ -30,6 +30,9 @@ public sealed class GetMyTrainingsQueryHandler(
     ICurrentUserService currentUserService)
     : IQueryHandler<GetMyTrainingsQuery, PagedResult<TrainingDto>>
 {
+    /// <summary>
+    /// Runs the command.
+    /// </summary>
     public async ValueTask<PagedResult<TrainingDto>> Handle(
         GetMyTrainingsQuery request,
         CancellationToken cancellationToken)

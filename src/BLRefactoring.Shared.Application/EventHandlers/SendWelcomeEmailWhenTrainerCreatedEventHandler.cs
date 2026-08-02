@@ -15,9 +15,21 @@ namespace BLRefactoring.Shared.Application.EventHandlers;
 /// event — it never loads the aggregate, which is not persisted yet when the
 /// event is dispatched.
 /// </remarks>
+/// <summary>
+/// Reacts to the event: welcomes the new trainer.
+/// <para>
+/// Dispatched inside the unit of work, before the transaction commits, so anything this handler
+/// writes joins the same transaction as the change that raised the event.
+/// </para>
+/// </summary>
 public sealed class SendWelcomeEmailWhenTrainerCreatedEventHandler(IEmailSender emailSender)
     : IDomainEventHandler<TrainerCreatedDomainEvent>
 {
+    /// <summary>
+    /// Runs the reaction.
+    /// </summary>
+    /// <param name="notification">The event that was raised.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     public async ValueTask Handle(TrainerCreatedDomainEvent notification, CancellationToken cancellationToken)
     {
         var message = new EmailMessage(

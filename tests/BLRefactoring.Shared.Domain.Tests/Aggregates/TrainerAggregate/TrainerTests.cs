@@ -17,6 +17,9 @@ public sealed class TrainerTests
 {
     // --- Create ---
 
+    /// <summary>
+    /// Create, valid data, sets all properties.
+    /// </summary>
     [Fact]
     public void Create_ValidData_SetsAllProperties()
     {
@@ -40,6 +43,9 @@ public sealed class TrainerTests
         trainer.UserId.Value.Should().Be(userId);
     }
 
+    /// <summary>
+    /// Create, valid data, raises trainer created event.
+    /// </summary>
     [Fact]
     public void Create_ValidData_RaisesTrainerCreatedEvent()
     {
@@ -53,6 +59,9 @@ public sealed class TrainerTests
         domainEvent.ContactEmail.Should().Be(trainer.ContactEmail);
     }
 
+    /// <summary>
+    /// Create, valid data, raises no change event.
+    /// </summary>
     [Fact]
     public void Create_ValidData_RaisesNoChangeEvent()
     {
@@ -66,6 +75,9 @@ public sealed class TrainerTests
         trainer.DomainEvents.Should().ContainSingle();
     }
 
+    /// <summary>
+    /// Create, without bio, leaves the bio null.
+    /// </summary>
     [Fact]
     public void Create_WithoutBio_LeavesTheBioNull()
     {
@@ -78,6 +90,9 @@ public sealed class TrainerTests
         trainer.Bio.Should().BeNull();
     }
 
+    /// <summary>
+    /// Create, with id, sets specified id.
+    /// </summary>
     [Fact]
     public void Create_WithId_SetsSpecifiedId()
     {
@@ -93,6 +108,9 @@ public sealed class TrainerTests
         trainer.Id.Value.Should().Be(specificId);
     }
 
+    /// <summary>
+    /// Create, null name, throws argument null exception.
+    /// </summary>
     [Fact]
     public void Create_NullName_ThrowsArgumentNullException()
     {
@@ -104,6 +122,9 @@ public sealed class TrainerTests
         act.Should().Throw<ArgumentNullException>();
     }
 
+    /// <summary>
+    /// Create, null contact email, throws argument null exception.
+    /// </summary>
     [Fact]
     public void Create_NullContactEmail_ThrowsArgumentNullException()
     {
@@ -117,6 +138,9 @@ public sealed class TrainerTests
 
     // --- Edit ---
 
+    /// <summary>
+    /// Edit, valid data, updates every editable property.
+    /// </summary>
     [Fact]
     public void Edit_ValidData_UpdatesEveryEditableProperty()
     {
@@ -136,6 +160,9 @@ public sealed class TrainerTests
         trainer.Bio!.Value.Should().Be("Freshly written bio.");
     }
 
+    /// <summary>
+    /// Edit, changed name, raises name changed event carrying old and new names.
+    /// </summary>
     [Fact]
     public void Edit_ChangedName_RaisesNameChangedEventCarryingOldAndNewNames()
     {
@@ -156,6 +183,9 @@ public sealed class TrainerTests
         domainEvent.NewName.Should().Be(TrainerName("Jane", "Smith"));
     }
 
+    /// <summary>
+    /// Edit, changed contact email, raises contact email changed event carrying old and new addresses.
+    /// </summary>
     [Fact]
     public void Edit_ChangedContactEmail_RaisesContactEmailChangedEventCarryingOldAndNewAddresses()
     {
@@ -175,6 +205,9 @@ public sealed class TrainerTests
         domainEvent.NewContactEmail.Should().Be(ContactEmail("new.email@example.com"));
     }
 
+    /// <summary>
+    /// Edit, changed name only, raises no contact email changed event.
+    /// </summary>
     [Fact]
     public void Edit_ChangedNameOnly_RaisesNoContactEmailChangedEvent()
     {
@@ -190,6 +223,9 @@ public sealed class TrainerTests
         trainer.DomainEvents.Should().NotContain(e => e is TrainerContactEmailChangedDomainEvent);
     }
 
+    /// <summary>
+    /// Edit, unchanged values, raises no event.
+    /// </summary>
     [Fact]
     public void Edit_UnchangedValues_RaisesNoEvent()
     {
@@ -204,6 +240,9 @@ public sealed class TrainerTests
         trainer.DomainEvents.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Edit, null bio, clears the existing bio.
+    /// </summary>
     [Fact]
     public void Edit_NullBio_ClearsTheExistingBio()
     {
@@ -219,6 +258,9 @@ public sealed class TrainerTests
         trainer.Bio.Should().BeNull();
     }
 
+    /// <summary>
+    /// Edit, provided bio, sets the bio of a trainer without one.
+    /// </summary>
     [Fact]
     public void Edit_ProvidedBio_SetsTheBioOfATrainerWithoutOne()
     {
@@ -234,6 +276,9 @@ public sealed class TrainerTests
         trainer.Bio!.Value.Should().Be("A bio at last.");
     }
 
+    /// <summary>
+    /// Edit, null name, throws argument null exception.
+    /// </summary>
     [Fact]
     public void Edit_NullName_ThrowsArgumentNullException()
     {
@@ -247,6 +292,9 @@ public sealed class TrainerTests
         act.Should().Throw<ArgumentNullException>();
     }
 
+    /// <summary>
+    /// Edit, null contact email, throws argument null exception.
+    /// </summary>
     [Fact]
     public void Edit_NullContactEmail_ThrowsArgumentNullException()
     {
@@ -262,6 +310,9 @@ public sealed class TrainerTests
 
     // --- MarkForDeletion ---
 
+    /// <summary>
+    /// Mark for deletion, raises trainer deleted event.
+    /// </summary>
     [Fact]
     public void MarkForDeletion_RaisesTrainerDeletedEvent()
     {

@@ -23,6 +23,9 @@ public sealed class PipelineRules
     private static string ContinuousIntegration { get; } =
         Path.Combine(SourceTree.RepositoryRoot, ".github", "workflows", "ci.yml");
 
+    /// <summary>
+    /// Every test project, collects coverage.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0017",
         "a project that runs tests collects coverage, or the gate reads its silence as zero")]
@@ -38,6 +41,9 @@ public sealed class PipelineRules
                 "quality gate cannot tell apart from code nobody tested")
             .ShouldHold();
 
+    /// <summary>
+    /// The build, does not run twice for one commit.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#continuous-integration",
         "one run per commit: a branch of this repository is built by its push, a fork by its pull request")]
@@ -69,6 +75,9 @@ public sealed class PipelineRules
             .ShouldHold();
     }
 
+    /// <summary>
+    /// The gate, is waited on for a pull request and not for the default branch.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0018",
         "the gate fails the build where failing stops something, and reports where it would not")]
@@ -94,6 +103,9 @@ public sealed class PipelineRules
             .ShouldHold();
     }
 
+    /// <summary>
+    /// The analysis, covers the pull request and the default branch.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0017",
         "the analysis reads both the pull request and the branch it targets, or there is nothing to compare")]

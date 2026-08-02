@@ -5,10 +5,24 @@ using Moq;
 
 namespace BLRefactoring.DDD.Application.Tests.Helpers;
 
+/// <summary>
+/// Trainer service test fixture.
+/// </summary>
 public sealed class TrainerServiceTestFixture
 {
+    /// <summary>
+    /// Trainer repository.
+    /// </summary>
     public Mock<ITrainerRepository> TrainerRepository { get; } = new();
+
+    /// <summary>
+    /// Current user service.
+    /// </summary>
     public Mock<ICurrentUserService> CurrentUserService { get; } = new();
+
+    /// <summary>
+    /// Unit of work.
+    /// </summary>
     public Mock<IUnitOfWork> UnitOfWork { get; } = new();
 
     /// <summary>
@@ -18,6 +32,9 @@ public sealed class TrainerServiceTestFixture
     /// </summary>
     public Guid CallerId { get; private set; } = Guid.NewGuid();
 
+    /// <summary>
+    /// Trainer service test fixture.
+    /// </summary>
     public TrainerServiceTestFixture() => GivenCaller(CallerId);
 
     /// <summary>Makes the service resolve <paramref name="trainerId"/> as the calling trainer.</summary>
@@ -31,6 +48,9 @@ public sealed class TrainerServiceTestFixture
         CurrentUserService.SetupGet(service => service.TrainerId).Returns(trainerId);
     }
 
+    /// <summary>
+    /// Create sut.
+    /// </summary>
     public TrainerApplicationService CreateSut() => new(
         TrainerRepository.Object,
         CurrentUserService.Object,

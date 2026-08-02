@@ -7,6 +7,9 @@ using Xunit;
 
 namespace BLRefactoring.DDD.Application.Tests.EventHandlers;
 
+/// <summary>
+/// Behaviour covered for <c>DeleteTrainingWhenTrainerDeletedEventHandler</c>.
+/// </summary>
 public sealed class DeleteTrainingWhenTrainerDeletedEventHandlerTests
 {
     private readonly Mock<ITrainingRepository> _trainingRepository = new();
@@ -14,6 +17,9 @@ public sealed class DeleteTrainingWhenTrainerDeletedEventHandlerTests
     private DeleteTrainingWhenTrainerDeletedEventHandler CreateSut() =>
         new(_trainingRepository.Object);
 
+    /// <summary>
+    /// Handle, calls get by trainer id async.
+    /// </summary>
     [Fact]
     public async Task Handle_CallsGetByTrainerIdAsync()
     {
@@ -31,6 +37,9 @@ public sealed class DeleteTrainingWhenTrainerDeletedEventHandlerTests
             Times.Once);
     }
 
+    /// <summary>
+    /// Handle, calls delete async with retrieved trainings.
+    /// </summary>
     [Fact]
     public async Task Handle_CallsDeleteAsyncWithRetrievedTrainings()
     {
@@ -47,6 +56,9 @@ public sealed class DeleteTrainingWhenTrainerDeletedEventHandlerTests
         _trainingRepository.Verify(r => r.Delete(trainings), Times.Once);
     }
 
+    /// <summary>
+    /// Handle, no trainings found, still calls delete async.
+    /// </summary>
     [Fact]
     public async Task Handle_NoTrainingsFound_StillCallsDeleteAsync()
     {
