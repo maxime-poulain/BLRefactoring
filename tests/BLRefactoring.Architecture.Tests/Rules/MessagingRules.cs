@@ -145,8 +145,8 @@ public sealed class MessagingRules
             .Where(query => query.GetProperties().Any(property => property.PropertyType == typeof(Guid)))
             .Where(query => !validated.Contains(query))
             .Select(query =>
-                $"{query.FullName} carries a Guid and has no validator. The three queries that take " +
-                "one all validate it; the ones that do not take one are bounded by [Range] at the " +
+                $"{query.FullName} carries a Guid and has no validator. Every query that takes " +
+                "one validates it; the ones that do not take one are bounded by [Range] at the " +
                 "HTTP contract instead")
             .ShouldHold();
     }

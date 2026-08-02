@@ -29,7 +29,6 @@ public interface ITrainerApplicationService
     Task<Result<TrainerDto>> EditAsync(TrainerEditionRequest request, byte[] expectedVersion, CancellationToken cancellationToken = default);
 
     Task<Result<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<TrainerDto[]> GetAllAsync(CancellationToken cancellationToken = default);
 }
 
 public sealed class TrainerApplicationService(
@@ -115,11 +114,5 @@ public sealed class TrainerApplicationService(
         }
 
         return Result<TrainerDto>.Success(trainer.ToDto());
-    }
-
-    public async Task<TrainerDto[]> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        var trainers = await trainerRepository.GetAllAsync(cancellationToken);
-        return trainers.Select(x => x.ToDto()).ToArray();
     }
 }

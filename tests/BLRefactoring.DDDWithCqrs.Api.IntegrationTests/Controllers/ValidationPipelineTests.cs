@@ -104,13 +104,19 @@ public sealed class ValidationPipelineTests(ApiFactory factory) : IntegrationTes
     {
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
 
-        var response = await client.GetAsync($"/Trainer/{Guid.Empty}");
+        var response = await client.GetAsync($"/Training/{Guid.Empty}");
 
         // A query has no failed Result to return, so its validators still throw and
         // ValidationExceptionHandler still answers them. That path is why the handler stays
         // registered — and why this is a 400: without the validator, Guid.Empty reaches
         // EntityId.Create, whose constructor throws, and the caller gets a 500. The layered host,
         // which has no such validator, answers exactly that 500 today.
+        //
+        // It used to ask `/Trainer/{Guid.Empty}`, which stopped being routed when the read by
+        // trainer identifier was withdrawn. `GetTrainingByIdQuery` is the query that still takes a
+        // Guid off the route, and it validates it the same way — a 400 here proves the same thing
+        // about the same path. Note that the ownership clause never comes into it: validation runs
+        // before the handler, so the caller is refused for the identifier, not for whose it is.
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }

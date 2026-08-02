@@ -28,7 +28,7 @@ public abstract class CorsTest<TFactory>(TFactory factory) : IntegrationTest<TFa
     {
         var client = Factory.CreateClient();
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/Trainer/all");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/Trainer/me");
         request.Headers.Add("Origin", AllowedOrigin);
 
         var response = await client.SendAsync(request);
@@ -44,7 +44,7 @@ public abstract class CorsTest<TFactory>(TFactory factory) : IntegrationTest<TFa
     {
         var client = Factory.CreateClient();
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/Trainer/all");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/Trainer/me");
         request.Headers.Add("Origin", ForeignOrigin);
 
         var response = await client.SendAsync(request);
@@ -59,7 +59,7 @@ public abstract class CorsTest<TFactory>(TFactory factory) : IntegrationTest<TFa
     {
         var client = Factory.CreateClient();
 
-        using var request = new HttpRequestMessage(HttpMethod.Options, "/Trainer/all");
+        using var request = new HttpRequestMessage(HttpMethod.Options, "/Trainer/me");
         request.Headers.Add("Origin", ForeignOrigin);
         request.Headers.Add("Access-Control-Request-Method", "GET");
 

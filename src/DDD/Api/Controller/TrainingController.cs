@@ -91,23 +91,6 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     }
 
     /// <summary>
-    /// Retrieves all available trainings.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
-    /// <returns>200 OK with a list of all trainings.</returns>
-    /// <remarks>
-    /// The only answer this action has. It takes nothing to bind and reaches nothing that fails,
-    /// so the 400 it used to advertise described a response no caller could ever receive.
-    /// </remarks>
-    [HttpGet("all")]
-    [ProducesResponseType(typeof(List<TrainingResponseHttp>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<TrainingResponseHttp>>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        var trainings = await trainingApplicationService.GetAllAsync(cancellationToken);
-        return Ok(trainings.ToHttp());
-    }
-
-    /// <summary>
     /// Updates an existing training.
     /// </summary>
     /// <param name="trainingId">The unique identifier of the training to update.</param>
@@ -187,63 +170,32 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     }
 
     /// <summary>
-    /// Retrieves all trainings associated with a specific trainer.
-    /// </summary>
-    /// <param name="trainerId">The unique identifier of the trainer whose trainings are to be retrieved.</param>
-    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
-    /// <returns>
-    /// 200 OK with a list of trainings associated with the trainer.
-    /// 400 Bad Request when the route identifier is not a well-formed <c>Guid</c>.
-    /// </returns>
-    [HttpGet("by-trainer/{trainerId:guid}")]
-    [ProducesResponseType(typeof(List<TrainingResponseHttp>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<List<TrainingResponseHttp>>> GetByTrainerIdAsync(
-        Guid trainerId,
-        CancellationToken cancellationToken = default)
-    {
-        var trainings = await trainingApplicationService.GetByTrainerIdAsync(trainerId, cancellationToken);
-
-        return Ok(trainings.ToHttp());
-    }
-
-    /// <summary>
     /// Retrieves the caller's own trainings.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
     /// <returns>200 OK with the trainings belonging to the authenticated trainer.</returns>
     /// <remarks>
-    /// The counterpart of <c>GET /Trainer/me</c>, and the endpoint a screen listing "my trainings"
-    /// is meant to call. It takes no identifier — the trainer comes from the token — so unlike
-    /// <c>by-trainer/{trainerId}</c> there is no parameter a caller could point at somebody else,
-    /// and no filtering left for a client to do after the fact.
+    /// The endpoint a screen listing "my trainings" calls. It takes no identifier — the trainer
+    /// comes from the token — so there is no parameter a caller could point at somebody else, and no
+    /// filtering left for a client to do after the fact.
+    /// <para>
+    /// The route says <c>my-trainings</c> rather than <c>me</c>, which it was until the API grew a
+    /// second <c>/me</c>: <c>/Trainer/me</c> is a profile and this is a list of trainings, and two
+    /// endpoints ending in the same word rewarded a careless reading with the wrong one.
+    /// </para>
     /// <para>
     /// The action name matches the CQRS host's, as every action here does: <c>operationId</c> is
     /// <c>Controller_Action</c>, so a name that differed would publish two documents describing one
     /// API under two names. See ADR 0008.
     /// </para>
     /// </remarks>
-    [HttpGet("me")]
+    [HttpGet("my-trainings")]
     [ProducesResponseType(typeof(List<TrainingResponseHttp>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<TrainingResponseHttp>>> GetMineAsync(
         CancellationToken cancellationToken = default)
     {
         var trainings = await trainingApplicationService.GetMineAsync(cancellationToken);
 
-        return Ok(trainings.ToHttp());
-    }
-
-    /// <summary>
-    /// Retrieves all trainings that match the specified topic.
-    /// </summary>
-    /// <param name="topic">The topic name to filter trainings by.</param>
-    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
-    /// <returns>200 OK with a list of trainings matching the topic.</returns>
-    [HttpGet("by-topic/{topic}")]
-    [ProducesResponseType(typeof(List<TrainingResponseHttp>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetByTopicAsync(string topic, CancellationToken cancellationToken = default)
-    {
-        var trainings = await trainingApplicationService.GetByTopicAsync(topic, cancellationToken);
         return Ok(trainings.ToHttp());
     }
 

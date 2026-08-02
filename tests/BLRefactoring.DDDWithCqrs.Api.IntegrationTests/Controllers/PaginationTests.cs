@@ -17,6 +17,12 @@ namespace BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Controllers;
 /// order the server returns rows in, and that is exactly what an in-memory provider will not
 /// reproduce: it happens to preserve insertion order, so a query missing its <c>ORDER BY</c> looks
 /// correct there and loses rows in production.
+/// <para>
+/// They page over <c>/Training/my-trainings</c>, which is the host's only paged endpoint since the
+/// catalogue reads were withdrawn. The move made the counts firmer rather than weaker: a page of
+/// everything counted whatever else the database held, while a page of one trainer's own trainings
+/// counts what this test created and nothing more.
+/// </para>
 /// </remarks>
 [Collection("Api")]
 public sealed class PaginationTests(ApiFactory factory) : IntegrationTest(factory)
@@ -38,7 +44,7 @@ public sealed class PaginationTests(ApiFactory factory) : IntegrationTest(factor
     private static async Task<PagedResponseHttp<TrainingResponseHttp>> GetPageAsync(
         HttpClient client, int page, int pageSize)
     {
-        var response = await client.GetAsync($"/Training/all?page={page}&pageSize={pageSize}");
+        var response = await client.GetAsync($"/Training/my-trainings?page={page}&pageSize={pageSize}");
         response.EnsureSuccessStatusCode();
 
         return (await response.Content.ReadFromJsonAsync<PagedResponseHttp<TrainingResponseHttp>>())!;
@@ -86,7 +92,7 @@ public sealed class PaginationTests(ApiFactory factory) : IntegrationTest(factor
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         await CreateTrainingsAsync(client, count: 2);
 
-        var response = await client.GetAsync("/Training/all");
+        var response = await client.GetAsync("/Training/my-trainings");
         response.EnsureSuccessStatusCode();
 
         var page = (await response.Content.ReadFromJsonAsync<PagedResponseHttp<TrainingResponseHttp>>())!;
@@ -101,7 +107,7 @@ public sealed class PaginationTests(ApiFactory factory) : IntegrationTest(factor
     {
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
 
-        var response = await client.GetAsync($"/Training/all?pageSize={PagedQuery.MaxPageSize + 1}");
+        var response = await client.GetAsync($"/Training/my-trainings?pageSize={PagedQuery.MaxPageSize + 1}");
 
         // Rejected rather than clamped, because at this point a caller asked for something the API
         // does not serve and deserves to be told which parameter is wrong.

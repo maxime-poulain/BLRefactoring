@@ -30,14 +30,14 @@ public interface ITrainingApplicationService
     Task<Result<TrainingDto>> CreateAsync(TrainingCreationRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Retrieves a training by its unique identifier.
+    /// Retrieves one of the calling trainer's trainings by its identifier.
     /// </summary>
+    /// <remarks>
+    /// A training belonging to another trainer is reported as not found. The identifier is the
+    /// caller's to supply, so this read is scoped rather than argument-free — but it answers only
+    /// about what they own.
+    /// </remarks>
     Task<Result<TrainingDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Retrieves all available trainings.
-    /// </summary>
-    Task<List<TrainingDto>> GetAllAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Edits an existing training identified by <paramref name="trainingId"/>.
@@ -45,26 +45,15 @@ public interface ITrainingApplicationService
     Task<Result<TrainingDto>> EditAsync(Guid trainingId, TrainingEditionRequest request, byte[] expectedVersion, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Retrieves all trainings belonging to the specified trainer.
-    /// </summary>
-    Task<List<TrainingDto>> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Retrieves all trainings belonging to the calling trainer.
     /// </summary>
     /// <remarks>
-    /// The same read as <see cref="GetByTrainerIdAsync"/> and deliberately a separate method, and it
-    /// takes no trainer at all: this one resolves the caller itself, exactly as
-    /// <see cref="CreateAsync"/> already does for the owner of a new training. One method takes a
-    /// trainer the caller names; the other serves a trainer the caller cannot choose, and having no
-    /// parameter is what makes that true rather than a convention.
+    /// It takes no trainer: it resolves the caller itself, exactly as <see cref="CreateAsync"/> does
+    /// for the owner of a new training. There used to be a sibling reading whichever trainer the
+    /// caller named; it went with the endpoint in front of it, and having no parameter is what makes
+    /// "only your own" true here rather than a convention.
     /// </remarks>
     Task<List<TrainingDto>> GetMineAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Retrieves all trainings matching the specified topic name.
-    /// </summary>
-    Task<List<TrainingDto>> GetByTopicAsync(string topic, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a training by its unique identifier.
@@ -136,15 +125,15 @@ public sealed class TrainingApplicationService(
     {
         var training = await trainingRepository.GetByIdAsync(TrainingId.Create(id), cancellationToken);
 
-        return training is null
-            ? Result<TrainingDto>.Failure(ErrorCodes.NotFound, $"Training with id `{id}` not found.")
-            : Result<TrainingDto>.Success(training.ToDto());
-    }
+        // A training belonging to somebody else is reported as not found, not as forbidden: a 403
+        // would confirm that the identifier names something real. Both cases produce the same
+        // sentence for the same reason.
+        if (training is null || training.TrainerId != TrainerId.Create(currentUserService.TrainerId))
+        {
+            return Result<TrainingDto>.Failure(ErrorCodes.NotFound, $"Training with id `{id}` not found.");
+        }
 
-    /// <inheritdoc />
-    public async Task<List<TrainingDto>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        return (await trainingRepository.GetAllAsync(cancellationToken)).ToDtos();
+        return Result<TrainingDto>.Success(training.ToDto());
     }
 
     /// <inheritdoc />
@@ -206,17 +195,6 @@ public sealed class TrainingApplicationService(
     }
 
     /// <inheritdoc />
-    public async Task<List<TrainingDto>> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken = default)
-    {
-        // A plain list, not a Result. Nothing here can fail: the identifier is already a Guid by
-        // the time it arrives, and a trainer with no trainings has none rather than being an
-        // error. Wrapping it made the controller write a failure branch that could not be taken
-        // and declare a 400 no caller could receive.
-        var trainings = await trainingRepository.GetByTrainerIdAsync(TrainerId.Create(trainerId), cancellationToken);
-        return trainings.ToDtos();
-    }
-
-    /// <inheritdoc />
     public async Task<List<TrainingDto>> GetMineAsync(CancellationToken cancellationToken = default)
     {
         // Resolved here, not received. The same repository call the named-trainer read makes -- two
@@ -225,22 +203,6 @@ public sealed class TrainingApplicationService(
         var trainerId = TrainerId.Create(currentUserService.TrainerId);
 
         var trainings = await trainingRepository.GetByTrainerIdAsync(trainerId, cancellationToken);
-        return trainings.ToDtos();
-    }
-
-    /// <inheritdoc />
-    public async Task<List<TrainingDto>> GetByTopicAsync(string topic, CancellationToken cancellationToken = default)
-    {
-        // Resolving the caller's string against the closed set of topics happens
-        // here, before the domain is reached. A name that matches nothing simply
-        // matches no training, exactly as an unknown name did before.
-        if (!Topic.TryFromName(topic, out var resolvedTopic))
-        {
-            return [];
-        }
-
-        var spec = new TrainingsByTopicSpecification(resolvedTopic);
-        var trainings = await trainingRepository.GetAsync(spec, cancellationToken);
         return trainings.ToDtos();
     }
 

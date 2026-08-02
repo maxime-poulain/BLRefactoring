@@ -117,13 +117,19 @@ public abstract class AuthControllerBase(
                 transactionScope.Complete();
 
                 // The action lives on the other controller of whichever host is running, which is
-                // why it is named by string. Both hosts publish it at Trainer/{id}, and an
+                // why it is named by string. Both hosts publish it at Trainer/me, and an
                 // integration test on each asserts this header — so a rename that would leave
                 // Location pointing nowhere fails the suite rather than the caller.
+                //
+                // It pointed at Trainer/{id} until that read was withdrawn for serving any
+                // trainer's profile to any caller. `me` is relative to the token, which ADR 0011
+                // rejected as a Location on the grounds that two callers get the same string; the
+                // objection stands and no longer decides anything, because it is the only address
+                // this resource has. The identifier a caller needs is in the body regardless.
                 return CreatedAtAction(
-                    actionName: "GetById",
+                    actionName: "GetCurrent",
                     controllerName: "Trainer",
-                    routeValues: new { trainerId },
+                    routeValues: null,
                     value: trainerId);
             },
             // Trainer creation fails on the domain's own rules, which carry this API's error codes,

@@ -3,7 +3,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Fixtures;
-using BLRefactoring.DDDWithCqrs.Api.Contracts;
 using BLRefactoring.Shared.Api.Contracts.Trainers;
 using Xunit;
 
@@ -29,56 +28,31 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
         Bio = "A freshly written bio."
     };
 
-    // -- GetAll --
+    // -- Read own profile --
 
     [Fact]
-    public async Task GetAll_Authenticated_Returns200()
+    public async Task GetMe_Authenticated_Returns200WithETag()
     {
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
 
-        var response = await client.GetAsync("/Trainer/all");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        // The trainer registered a line above is in there. NotBeNull() asserted nothing: a
-        // successful deserialisation is never null, and an empty page passed just as well.
-        var trainers = (await response.Content.ReadFromJsonAsync<PagedResponseHttp<TrainerResponseHttp>>())!.Items;
-        trainers.Should().ContainSingle();
-    }
-
-    [Fact]
-    public async Task GetAll_NoToken_Returns401()
-    {
-        var client = Factory.CreateClient();
-
-        var response = await client.GetAsync("/Trainer/all");
-
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-    }
-
-    // -- GetById --
-
-    [Fact]
-    public async Task GetById_ExistingTrainer_Returns200WithETag()
-    {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var me = (await client.GetFromJsonAsync<TrainerResponseHttp>("/Trainer/me"))!;
-
-        var response = await client.GetAsync($"/Trainer/{me.Id}");
+        var response = await client.GetAsync("/Trainer/me");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Headers.ETag.Should().NotBeNull("the caller needs it to edit conditionally later");
+        // The trainer registered a line above is the one served — the endpoint takes no identifier,
+        // so this is the only trainer it can answer with.
         var dto = await response.Content.ReadFromJsonAsync<TrainerResponseHttp>();
-        dto!.Id.Should().Be(me.Id);
+        dto!.Id.Should().NotBeEmpty();
     }
 
     [Fact]
-    public async Task GetById_NonExistent_Returns404()
+    public async Task GetMe_NoToken_Returns401()
     {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        var client = Factory.CreateClient();
 
-        var response = await client.GetAsync($"/Trainer/{Guid.NewGuid()}");
+        var response = await client.GetAsync("/Trainer/me");
 
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     // -- Edit own profile --
@@ -192,17 +166,19 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
     public async Task Delete_IsNotExposed_OnAnyRoute()
     {
         // Removing a trainer is an administrative decision, and no role is entitled to it yet, so
-        // the API exposes nothing at all — neither on `me` nor on an identifier. Both used to
-        // answer 204. This test is what keeps self-deletion from creeping back in: 405 rather
-        // than 404, because the matching GET routes still exist.
+        // the API exposes nothing at all. Both `me` and an identifier used to answer 204, and this
+        // test is what keeps self-deletion from creeping back in.
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var me = (await client.GetFromJsonAsync<TrainerResponseHttp>("/Trainer/me"))!;
 
         var onMe = await client.DeleteAsync("/Trainer/me");
         var onIdentifier = await client.DeleteAsync($"/Trainer/{me.Id}");
 
+        // 405 on `me`, where a GET is still routed, and 404 on the identifier, where nothing is
+        // routed any more since the read by identifier was withdrawn. The two codes say the same
+        // thing about deletion; only the surface around them differs.
         onMe.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
-        onIdentifier.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
+        onIdentifier.StatusCode.Should().Be(HttpStatusCode.NotFound);
         (await client.GetAsync("/Trainer/me")).StatusCode.Should().Be(HttpStatusCode.OK);
     }
 }

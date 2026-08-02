@@ -113,41 +113,4 @@ public sealed class TrainerController(
                 : errors.Any(error => error.ErrorCode == ErrorCodes.ConcurrencyConflict) ? this.Problem(StatusCodes.Status412PreconditionFailed, errors)
                 : this.Problem(StatusCodes.Status400BadRequest, errors)));
     }
-
-    [HttpGet("{trainerId:guid}")]
-    [ProducesEntityTag]
-    [ProducesResponseType(typeof(TrainerResponseHttp), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<TrainerResponseHttp>> GetByIdAsync(Guid trainerId, CancellationToken cancellationToken = default)
-    {
-        var trainer = await queryDispatcher.DispatchAsync(
-            HttpToApplicationMappings.ToGetTrainerByIdQuery(trainerId), cancellationToken);
-
-        if (trainer is null)
-        {
-            return NotFound();
-        }
-
-        // The ETag published here is what the caller must send back as If-Match
-        // when they later edit this profile.
-        this.SetETag(trainer.RowVersion);
-        return Ok(trainer.ToHttp());
-    }
-
-    /// <summary>
-    /// Returns one page of trainers, newest first.
-    /// </summary>
-    [HttpGet("all")]
-    [ProducesResponseType(typeof(PagedResponseHttp<TrainerResponseHttp>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<PagedResponseHttp<TrainerResponseHttp>>> GetAllAsync(
-        [FromQuery] PaginationRequestHttp pagination,
-        CancellationToken cancellationToken = default)
-    {
-        var page = await queryDispatcher.DispatchAsync(
-            pagination.ToGetAllTrainersQuery(), cancellationToken);
-
-        return Ok(page.ToHttp(trainers => trainers.ToHttp()));
-    }
 }

@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using BLRefactoring.DDD.Api.IntegrationTests.Fixtures;
-using BLRefactoring.Shared.Api.Contracts.Trainers;
 using BLRefactoring.Shared.Api.Contracts.Trainings;
 using Xunit;
 
@@ -125,18 +124,6 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // -- GetAll --
-
-    [Fact]
-    public async Task GetAll_Returns200()
-    {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-
-        var response = await client.GetAsync("/Training/all");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-    }
-
     // -- Edit --
 
     [Fact]
@@ -239,7 +226,11 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         // With a valid If-Match, deliberately. Without one the request is refused for the missing
         // precondition and the 403 proves only that authorization runs before that check — it would
         // still pass with the ownership rule deleted.
-        var entityTag = await otherClient.GetETagAsync($"/Training/{trainingId}");
+        //
+        // Read by the owner, because the intruder can no longer obtain it: the read by identifier
+        // answers them 404 now. Handing them a version they could not have fetched is what keeps
+        // this test about the write policy rather than about the read that precedes it.
+        var entityTag = await ownerClient.GetETagAsync($"/Training/{trainingId}");
         var response = await otherClient.PutWithIfMatchAsync(
             $"/Training/{trainingId}", editRequest, entityTag);
 
@@ -283,51 +274,4 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
             .Should().Be(HttpStatusCode.OK);
     }
 
-    // -- GetByTopic --
-
-    [Fact]
-    public async Task GetByTopic_Returns200()
-    {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
-
-        var response = await client.GetAsync("/Training/by-topic/Programming");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var trainings = await response.Content.ReadFromJsonAsync<List<TrainingResponseHttp>>();
-        trainings.Should().NotBeEmpty();
-    }
-
-    [Fact]
-    public async Task GetByTopic_WrongCase_MatchesNothing()
-    {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
-
-        var response = await client.GetAsync("/Training/by-topic/programming");
-
-        // The topic vocabulary is a closed set owned by the domain, and it is matched ordinally.
-        // The CQRS host used to send this string straight to SQL, where the collation is
-        // case-insensitive, so the same request answered differently on the two hosts.
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var trainings = await response.Content.ReadFromJsonAsync<List<TrainingResponseHttp>>();
-        trainings.Should().BeEmpty();
-    }
-
-    // -- GetByTrainerId --
-
-    [Fact]
-    public async Task GetByTrainerId_Returns200()
-    {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
-
-        var trainersResponse = await client.GetAsync("/Trainer/all");
-        var trainers = await trainersResponse.Content.ReadFromJsonAsync<List<TrainerResponseHttp>>();
-        var trainerId = trainers!.First().Id;
-
-        var response = await client.GetAsync($"/Training/by-trainer/{trainerId}");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-    }
 }

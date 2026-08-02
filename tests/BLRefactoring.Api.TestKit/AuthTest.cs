@@ -35,8 +35,12 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         var trainerId = await response.Content.ReadFromJsonAsync<Guid>();
         trainerId.Should().NotBeEmpty();
 
+        // `/Trainer/me` rather than `/Trainer/{id}`, which is where this pointed until the read by
+        // identifier was withdrawn for serving any trainer's profile to any caller. It is the only
+        // address the created trainer has now; the identifier a caller needs is in the body, which
+        // is why the address being relative to the token costs nothing here. See ADR 0011.
         response.Headers.Location.Should().NotBeNull();
-        response.Headers.Location!.AbsolutePath.Should().Be($"/Trainer/{trainerId}");
+        response.Headers.Location!.AbsolutePath.Should().Be("/Trainer/me");
     }
 
     [Fact]

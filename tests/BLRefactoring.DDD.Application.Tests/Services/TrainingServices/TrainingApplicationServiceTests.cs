@@ -161,9 +161,10 @@ public sealed class TrainingApplicationServiceTests
     // -- GetByIdAsync --
 
     [Fact]
-    public async Task GetByIdAsync_ExistingTraining_ReturnsSuccessWithDto()
+    public async Task GetByIdAsync_OwnTraining_ReturnsSuccessWithDto()
     {
-        var training = await new TrainingBuilder().BuildValidAsync();
+        SetupCurrentUser();
+        var training = await new TrainingBuilder().WithTrainerId(_trainerId).BuildValidAsync();
         _fixture.TrainingRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainingId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(training);
@@ -177,6 +178,7 @@ public sealed class TrainingApplicationServiceTests
     [Fact]
     public async Task GetByIdAsync_NonExistingTraining_ReturnsNotFoundFailure()
     {
+        SetupCurrentUser();
         _fixture.TrainingRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainingId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Training?)null);
@@ -188,34 +190,23 @@ public sealed class TrainingApplicationServiceTests
         errors.Should().Contain(e => e.ErrorCode == ErrorCodes.NotFound);
     }
 
-    // -- GetAllAsync --
-
     [Fact]
-    public async Task GetAllAsync_ReturnsAllTrainingDtos()
+    public async Task GetByIdAsync_AnotherTrainersTraining_ReturnsTheSameNotFoundFailure()
     {
-        var t1 = await new TrainingBuilder().WithTitle("Training One Title").BuildValidAsync();
-        var t2 = await new TrainingBuilder().WithTitle("Training Two Title").BuildValidAsync();
+        SetupCurrentUser();
+        var training = await new TrainingBuilder().WithTrainerId(Guid.NewGuid()).BuildValidAsync();
         _fixture.TrainingRepository
-            .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync([t1, t2]);
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainingId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(training);
         var sut = _fixture.CreateSut();
 
-        var result = await sut.GetAllAsync();
+        var result = await sut.GetByIdAsync(training.Id.Value);
 
-        result.Should().HaveCount(2);
-    }
-
-    [Fact]
-    public async Task GetAllAsync_EmptyRepository_ReturnsEmptyList()
-    {
-        _fixture.TrainingRepository
-            .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync([]);
-        var sut = _fixture.CreateSut();
-
-        var result = await sut.GetAllAsync();
-
-        result.Should().BeEmpty();
+        // The same failure as an identifier naming nothing, deliberately: a distinct one would
+        // tell the caller that this training exists, which is the fact being withheld. The read
+        // was found and refused, and the answer says only the second part.
+        var errors = result.ShouldBeFailure();
+        errors.Should().Contain(e => e.ErrorCode == ErrorCodes.NotFound);
     }
 
     // -- EditAsync --
@@ -350,31 +341,51 @@ public sealed class TrainingApplicationServiceTests
         result.ShouldBeFailure();
     }
 
-    // -- GetByTrainerIdAsync --
+    // -- GetMineAsync --
 
     [Fact]
-    public async Task GetByTrainerIdAsync_ReturnsTrainingDtos()
+    public async Task GetMineAsync_ReturnsTrainingDtos()
     {
-        var training = await new TrainingBuilder().BuildValidAsync();
+        SetupCurrentUser();
+        var training = await new TrainingBuilder().WithTrainerId(_trainerId).BuildValidAsync();
         _fixture.TrainingRepository
             .Setup(r => r.GetByTrainerIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Training> { training });
         var sut = _fixture.CreateSut();
 
-        var trainings = await sut.GetByTrainerIdAsync(Guid.NewGuid());
+        var trainings = await sut.GetMineAsync();
 
         trainings.Should().HaveCount(1);
     }
 
     [Fact]
-    public async Task GetByTrainerIdAsync_NoTrainings_ReturnsAnEmptyList()
+    public async Task GetMineAsync_AsksTheRepositoryForTheCallersOwnTrainerId()
     {
+        SetupCurrentUser();
         _fixture.TrainingRepository
             .Setup(r => r.GetByTrainerIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Training>());
         var sut = _fixture.CreateSut();
 
-        var trainings = await sut.GetByTrainerIdAsync(Guid.NewGuid());
+        await sut.GetMineAsync();
+
+        // The method takes no trainer, so the only thing that can make it read the wrong one is
+        // resolving the caller wrongly. This is where that would show.
+        _fixture.TrainingRepository.Verify(
+            r => r.GetByTrainerIdAsync(TrainerId.Create(_trainerId), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetMineAsync_NoTrainings_ReturnsAnEmptyList()
+    {
+        SetupCurrentUser();
+        _fixture.TrainingRepository
+            .Setup(r => r.GetByTrainerIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Training>());
+        var sut = _fixture.CreateSut();
+
+        var trainings = await sut.GetMineAsync();
 
         // Empty rather than a failure: a trainer who has created nothing is not an error, which
         // is why this method stopped answering with a Result it could never fail.
