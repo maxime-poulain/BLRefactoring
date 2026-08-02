@@ -1,11 +1,18 @@
 name: Integration Tests
 
 # Kept out of the pull-request path on purpose: these tests start a real SQL Server
-# through Testcontainers, which costs several minutes of image pull and startup on a
-# hosted runner. The CI workflow stays fast and unconditional; this one runs on demand
-# and once a night.
+# through Testcontainers. The CI workflow stays fast and unconditional; this one runs
+# on demand, on every push to an agent branch, and once a night.
 on:
   workflow_dispatch:
+  # Agent branches only. Work pushed by an agent cannot be checked any other way: the
+  # GitHub App it acts through has no `actions: write`, so it cannot dispatch this
+  # workflow itself, and until now every run had to be triggered by hand — which meant
+  # code reached review having never met a real database. Human pull requests are
+  # unaffected and still go through the fast CI alone.
+  push:
+    branches:
+      - 'claude/**'
   schedule:
     # 03:17 UTC daily. Deliberately off the hour: scheduled workflows queue behind the
     # platform-wide spike at :00. A nightly run bounds how long a regression can hide
@@ -18,10 +25,13 @@ on:
 permissions:
   contents: read
 
-# One run at a time. Queue rather than cancel: these runs are long, and killing one
-# that is nearly finished wastes more than it saves.
+# One run at a time per ref. Grouping by ref rather than globally now that pushes
+# trigger this: two branches have no reason to wait for each other, while two pushes to
+# the same branch do — the second supersedes the first.
+# Queue rather than cancel: a run takes under two minutes, and killing one that is
+# nearly finished wastes more than it saves.
 concurrency:
-  group: integration-tests
+  group: integration-tests-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -33,12 +43,34 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
+
+      # Shares its key with ci.yml, which usually runs first on the same commit and fills it.
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '.config/dotnet-tools.json', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # The same regeneration ci.yml runs, and for a reason that only shows up here.
+      #
+      # ci.yml regenerates the client and commits it when the API has changed, but that commit is
+      # made with GITHUB_TOKEN, which by design triggers no workflow. So this suite never runs on
+      # the corrected tree: it runs on the push that changed the API, whose committed client is by
+      # definition one commit stale. It then fails to compile against contracts that no longer
+      # match — a red run that says nothing about the database, which is the only thing it exists
+      # to exercise.
+      #
+      # Regenerating here makes this workflow self-sufficient rather than dependent on ci.yml
+      # having finished first. Nothing is committed: policing drift stays ci.yml's job.
+      - name: Regenerate the HTTP client
+        run: ./scripts/generate-clients.sh
 
       - name: Restore dependencies
         run: dotnet restore
@@ -54,14 +86,17 @@ jobs:
         run: >-
           dotnet test --no-build --configuration Release --verbosity normal
           --filter "FullyQualifiedName~IntegrationTests"
-          --logger "trx;LogFileName=integration-tests.trx"
+          --logger trx
           --results-directory ./TestResults
 
       # Published even on failure: this suite is slow and mostly triggered by hand, so
-      # the report has to be readable without paying for another run.
+      # the report has to be readable without paying for another run. It has to be the
+      # whole report, too — a fixed LogFileName had both projects writing the same file,
+      # so the artifact held the second suite's 52 results and silently dropped the
+      # first's 40. The default names each file after its project.
       - name: Publish test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: integration-test-results
           path: TestResults/

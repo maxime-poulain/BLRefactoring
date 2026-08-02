@@ -20,12 +20,22 @@ public class AuthController(
     : AuthControllerBase(userManager, signInManager, tokenService)
 {
     /// <inheritdoc />
-    protected override async Task<Result> CreateTrainerAsync(
+    /// <remarks>
+    /// The command reports success and nothing more, so the identifier comes from the command
+    /// itself — it generates one when it is built, exactly as <c>CreateTrainingCommand</c> does for
+    /// the identifier that endpoint publishes in <c>Location</c>.
+    /// </remarks>
+    protected override async Task<Result<Guid>> CreateTrainerAsync(
         RegisterRequest request,
         Guid userId,
         CancellationToken cancellationToken = default)
     {
-        return await commandDispatcher.DispatchAsync(
-            request.ToCommand(userId), cancellationToken);
+        var command = request.ToCommand(userId);
+
+        var result = await commandDispatcher.DispatchAsync(command, cancellationToken);
+
+        return result.Match<Result<Guid>>(
+            () => Result<Guid>.Success(command.TrainerId),
+            Result<Guid>.Failure);
     }
 }

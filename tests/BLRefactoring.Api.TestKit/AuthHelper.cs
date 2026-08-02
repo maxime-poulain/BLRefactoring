@@ -1,7 +1,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using BLRefactoring.Shared.Api.Controllers;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace BLRefactoring.Api.TestKit;
 
@@ -46,10 +45,17 @@ public static class AuthHelper
         return loginResponse!.Token;
     }
 
-    public static async Task<HttpClient> RegisterAndGetAuthenticatedClientAsync<TEntryPoint>(
-        WebApplicationFactory<TEntryPoint> factory)
-        where TEntryPoint : class
+    /// <remarks>
+    /// Takes the capability rather than the fixture. <c>WebApplicationFactory&lt;TEntryPoint&gt;</c>
+    /// would drag its entry-point type parameter into every shared test that signs a caller in,
+    /// and the shared tests are generic over the fixture precisely so they do not have to name a
+    /// host. Both concrete fixtures satisfy <see cref="IHttpClientSource"/>, so no call site
+    /// changed.
+    /// </remarks>
+    public static async Task<HttpClient> RegisterAndGetAuthenticatedClientAsync(IHttpClientSource factory)
     {
+        ArgumentNullException.ThrowIfNull(factory);
+
         var client = factory.CreateClient();
         var request = CreateUniqueRegisterRequest();
 

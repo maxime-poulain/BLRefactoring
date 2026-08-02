@@ -16,6 +16,14 @@
     </ItemGroup>
 
     <ItemGroup>
+      <!-- For ValidationExceptionHandler alone: the API has to recognise a validation failure to
+           answer it as a ValidationProblemDetails. No validator is declared here — the rules stay
+           in the application layer, only their translation to HTTP lives at this boundary. -->
+      <PackageReference Include="FluentValidation" />
+      <!-- The OpenAPI document and its reference UI are configured here, in OpenApiExtensions,
+           so both hosts describe the API the same way. -->
+      <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+      <PackageReference Include="Scalar.AspNetCore" />
       <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
       <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
       <!-- Referenced explicitly rather than through the JwtBearer package: TokenService writes

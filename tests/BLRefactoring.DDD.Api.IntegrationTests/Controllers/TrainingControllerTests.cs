@@ -15,14 +15,10 @@ namespace BLRefactoring.DDD.Api.IntegrationTests.Controllers;
 [Collection("Api")]
 public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(factory)
 {
-    private static CreateTrainingRequestHttp CreateValidTrainingRequest(string? title = null) => new()
-    {
-        Title = title ?? $"Training {Guid.NewGuid():N}"[..25],
-        Description = "A valid training description for integration testing",
-        Prerequisites = "Basic programming knowledge required",
-        AcquiredSkills = "Advanced design patterns mastery",
-        Topics = ["Programming"]
-    };
+    // One definition of "a valid training", in the test kit, rather than the five copies of the
+    // same object literal this suite and its twin used to carry between them.
+    private static CreateTrainingRequestHttp CreateValidTrainingRequest(string? title = null) =>
+        TrainingRequests.Valid(title ?? $"Training {Guid.NewGuid():N}"[..25]);
 
     // -- Create --
 
@@ -35,6 +31,12 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         var response = await client.PostAsJsonAsync("/Training", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        // ADR 0011 cites this endpoint as the precedent for answering a creation with the address
+        // of what was created, and nothing asserted the header it names.
+        var trainingId = await response.Content.ReadFromJsonAsync<Guid>();
+        response.Headers.Location.Should().NotBeNull();
+        response.Headers.Location!.AbsolutePath.Should().Be($"/Training/{trainingId}");
     }
 
     [Fact]
@@ -111,6 +113,16 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var dto = await response.Content.ReadFromJsonAsync<TrainingResponseHttp>();
         dto!.Id.Should().Be(trainingId);
+    }
+
+    [Fact]
+    public async Task GetById_Unknown_Returns404()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+
+        var response = await client.GetAsync($"/Training/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     // -- GetAll --
@@ -224,7 +236,12 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
             Topics = ["Programming"]
         };
 
-        var response = await otherClient.PutAsJsonAsync($"/Training/{trainingId}", editRequest);
+        // With a valid If-Match, deliberately. Without one the request is refused for the missing
+        // precondition and the 403 proves only that authorization runs before that check — it would
+        // still pass with the ownership rule deleted.
+        var entityTag = await otherClient.GetETagAsync($"/Training/{trainingId}");
+        var response = await otherClient.PutWithIfMatchAsync(
+            $"/Training/{trainingId}", editRequest, entityTag);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -241,6 +258,29 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         var response = await client.DeleteAsync($"/Training/{trainingId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        // The status says accepted; this says gone. A delete that answers 204 and keeps the row
+        // is the failure this endpoint is most likely to have.
+        (await client.GetAsync($"/Training/{trainingId}")).StatusCode
+            .Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Delete_AsNonOwner_Returns403()
+    {
+        var ownerClient = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        var createResponse = await ownerClient.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
+        var trainingId = await createResponse.Content.ReadFromJsonAsync<Guid>();
+
+        var otherClient = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+
+        var response = await otherClient.DeleteAsync($"/Training/{trainingId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        // Refused and still there: a 403 that had already deleted the row would be worse than a 204.
+        (await ownerClient.GetAsync($"/Training/{trainingId}")).StatusCode
+            .Should().Be(HttpStatusCode.OK);
     }
 
     // -- GetByTopic --
@@ -256,6 +296,22 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var trainings = await response.Content.ReadFromJsonAsync<List<TrainingResponseHttp>>();
         trainings.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task GetByTopic_WrongCase_MatchesNothing()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
+
+        var response = await client.GetAsync("/Training/by-topic/programming");
+
+        // The topic vocabulary is a closed set owned by the domain, and it is matched ordinally.
+        // The CQRS host used to send this string straight to SQL, where the collation is
+        // case-insensitive, so the same request answered differently on the two hosts.
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var trainings = await response.Content.ReadFromJsonAsync<List<TrainingResponseHttp>>();
+        trainings.Should().BeEmpty();
     }
 
     // -- GetByTrainerId --

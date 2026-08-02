@@ -20,7 +20,11 @@ public class AuthController(
     : AuthControllerBase(userManager, signInManager, tokenService)
 {
     /// <inheritdoc />
-    protected override async Task<Result> CreateTrainerAsync(
+    /// <remarks>
+    /// The application service answers with the trainer it created, so its identifier is read off
+    /// that read model rather than generated here.
+    /// </remarks>
+    protected override async Task<Result<Guid>> CreateTrainerAsync(
         RegisterRequest request,
         Guid userId,
         CancellationToken cancellationToken = default)
@@ -28,6 +32,8 @@ public class AuthController(
         var creationResult = await trainerApplicationService.CreateAsync(
             request.ToApplicationRequest(userId), cancellationToken);
 
-        return creationResult.Match(_ => Result.Success(), Result.Failure);
+        return creationResult.Match<Result<Guid>>(
+            trainer => Result<Guid>.Success(trainer.Id),
+            Result<Guid>.Failure);
     }
 }

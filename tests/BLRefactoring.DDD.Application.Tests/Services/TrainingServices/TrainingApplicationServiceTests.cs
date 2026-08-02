@@ -361,22 +361,24 @@ public class TrainingApplicationServiceTests
             .ReturnsAsync(new List<Training> { training });
         var sut = _fixture.CreateSut();
 
-        var result = await sut.GetByTrainerIdAsync(Guid.NewGuid());
+        var trainings = await sut.GetByTrainerIdAsync(Guid.NewGuid());
 
-        result.ShouldBeSuccess().Should().HaveCount(1);
+        trainings.Should().HaveCount(1);
     }
 
     [Fact]
-    public async Task GetByTrainerIdAsync_EmptyResult_ReturnsSuccessWithEmptyList()
+    public async Task GetByTrainerIdAsync_NoTrainings_ReturnsAnEmptyList()
     {
         _fixture.TrainingRepository
             .Setup(r => r.GetByTrainerIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Training>());
         var sut = _fixture.CreateSut();
 
-        var result = await sut.GetByTrainerIdAsync(Guid.NewGuid());
+        var trainings = await sut.GetByTrainerIdAsync(Guid.NewGuid());
 
-        result.ShouldBeSuccess().Should().BeEmpty();
+        // Empty rather than a failure: a trainer who has created nothing is not an error, which
+        // is why this method stopped answering with a Result it could never fail.
+        trainings.Should().BeEmpty();
     }
 
     // -- DeleteAsync --

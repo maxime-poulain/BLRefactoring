@@ -34,7 +34,35 @@
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.18" />
     <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.10" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
+    <!--
+      Writes the API's OpenAPI document to disk during the build, so the client generator reads a
+      file instead of loading the host itself. Only the layered API references it, and only
+      scripts/generate-clients.sh turns the emission on. See ADR 0008.
+    -->
+    <PackageVersion Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.10" />
+    <!--
+      The framework's own OpenAPI document generator, used by both hosts. It replaced NSwag on one
+      and Swashbuckle on the other: two libraries describing one API produced two documents that
+      disagreed on nullability and enum representation. See ADR 0006.
+    -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+    <!--
+      Pinned, not referenced: Microsoft.AspNetCore.OpenApi 10.0.10 pulls Microsoft.OpenApi 2.0.0,
+      which carries GHSA-v5pm-xwqc-g5wc (CVSS 7.5) — a circular schema reference makes the document
+      reader recurse until the process dies. First patched version is 2.7.5, and no 10.0.x of the
+      ASP.NET Core package ships it yet, so transitive pinning (enabled above) is what closes it.
+      Remove this line once the framework package references a patched version itself.
+    -->
+    <PackageVersion Include="Microsoft.OpenApi" Version="2.7.5" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
+    <!--
+      Pinned, not referenced — like Microsoft.OpenApi above, and for the same mechanism rather than
+      the same reason. No project carries a PackageReference to either of these two; they arrive
+      transitively, and transitive pinning (enabled above) is what keeps them on the version the
+      rest of the EF and Extensions families are on. Said out loud because a version with no
+      visible consumer reads as dead weight, and deleting it would let the graph resolve them
+      wherever their dependents happen to point.
+    -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Abstractions" Version="10.0.10" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.10" />
@@ -46,11 +74,13 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="MudBlazor" Version="9.7.0" />
-    <PackageVersion Include="NSwag.AspNetCore" Version="14.7.1" />
-    <PackageVersion Include="NSwag.MSBuild" Version="14.7.1" />
     <PackageVersion Include="Respawn" Version="7.0.0" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.16.16" />
-    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+    <!--
+      The reverse proxy the Blazor host uses as a BFF: the browser calls its own origin, and this
+      forwards to the API with the access token attached server-side. See ADR 0009.
+    -->
+    <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />
     <PackageVersion Include="Testcontainers.MsSql" Version="4.13.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />

@@ -3,47 +3,27 @@ using BLRefactoring.Shared.Common.Specifications;
 namespace BLRefactoring.Shared.Infrastructure.Specifications;
 
 /// <summary>
-/// Translates an <see cref="ISpecification{T}"/> into an Entity Framework Core <see cref="IQueryable{T}"/>
-/// by applying criteria, ordering, and paging.
+/// Translates an <see cref="ISpecification{T}"/> into an Entity Framework Core
+/// <see cref="IQueryable{T}"/>.
 /// </summary>
+/// <remarks>
+/// Criteria and nothing else. It used to apply ordering and paging too, from four specification
+/// properties nothing ever set — so the four branches were unreachable, and the ordering they
+/// would have applied belongs to the query side anyway. See ADR 0001.
+/// </remarks>
 public static class SpecificationEvaluator
 {
     /// <summary>
-    /// Applies the given specification to the input query, returning a new queryable with
-    /// filtering, ordering, and paging applied.
+    /// Applies the given specification's criteria to the input query.
     /// </summary>
     /// <typeparam name="T">The entity type.</typeparam>
     /// <param name="inputQuery">The base queryable to apply the specification to.</param>
-    /// <param name="spec">The specification containing criteria, ordering, and paging.</param>
+    /// <param name="spec">The specification containing the criteria.</param>
     /// <returns>A queryable with the specification applied.</returns>
     public static IQueryable<T> GetQuery<T>(IQueryable<T> inputQuery, ISpecification<T> spec) where T : class
     {
-        var query = inputQuery;
+        ArgumentNullException.ThrowIfNull(spec);
 
-        if (spec.Criteria is not null)
-        {
-            query = query.Where(spec.Criteria);
-        }
-
-        if (spec.OrderBy is not null)
-        {
-            query = query.OrderBy(spec.OrderBy);
-        }
-        else if (spec.OrderByDescending is not null)
-        {
-            query = query.OrderByDescending(spec.OrderByDescending);
-        }
-
-        if (spec.Skip.HasValue)
-        {
-            query = query.Skip(spec.Skip.Value);
-        }
-
-        if (spec.Take.HasValue)
-        {
-            query = query.Take(spec.Take.Value);
-        }
-
-        return query;
+        return spec.Criteria is null ? inputQuery : inputQuery.Where(spec.Criteria);
     }
 }

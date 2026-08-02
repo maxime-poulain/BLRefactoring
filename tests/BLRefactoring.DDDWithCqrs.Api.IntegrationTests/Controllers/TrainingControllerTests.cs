@@ -15,14 +15,10 @@ namespace BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Controllers;
 [Collection("Api")]
 public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(factory)
 {
-    private static CreateTrainingRequestHttp ValidCreation(string? title = null) => new()
-    {
-        Title = title ?? $"Training {Guid.NewGuid():N}"[..25],
-        Description = "A valid training description for integration testing",
-        Prerequisites = "Basic programming knowledge required",
-        AcquiredSkills = "Advanced design patterns mastery",
-        Topics = ["Programming"]
-    };
+    // One definition of "a valid training", in the test kit, rather than the five copies of the
+    // same object literal this suite and its twin used to carry between them.
+    private static CreateTrainingRequestHttp ValidCreation(string? title = null) =>
+        TrainingRequests.Valid(title ?? $"Training {Guid.NewGuid():N}"[..25]);
 
     private static EditTrainingRequestHttp ValidEdition(string? title = null) => new()
     {
@@ -48,6 +44,30 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
 
         var response = await client.PostAsJsonAsync("/Training", ValidCreation());
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        // On this host the identifier is the one the command generated before it was dispatched;
+        // the Location has to name that one and not another.
+        var trainingId = await response.Content.ReadFromJsonAsync<Guid>();
+        response.Headers.Location.Should().NotBeNull();
+        response.Headers.Location!.AbsolutePath.Should().Be($"/Training/{trainingId}");
+    }
+
+    [Fact]
+    public async Task Create_SameTitleForAnotherTrainer_Returns201()
+    {
+        var title = $"Shared title {Guid.NewGuid():N}"[..30];
+
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        (await client.PostAsJsonAsync("/Training", ValidCreation(title))).EnsureSuccessStatusCode();
+
+        var otherClient = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+
+        // The uniqueness rule is (TrainerId, Title), and the index behind it says so. Only the
+        // layered suite proved the scoping, so a rule tightened to the title alone would have
+        // passed here.
+        var response = await otherClient.PostAsJsonAsync("/Training", ValidCreation(title));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
     }
@@ -158,10 +178,28 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
         trainings.Should().ContainSingle();
     }
 
+    [Fact]
+    public async Task GetByTopic_WrongCase_MatchesNothing()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        await CreateTrainingAsync(client);
+
+        var response = await client.GetAsync("/Training/by-topic/programming");
+
+        // This is the assertion that was missing while the two hosts disagreed. The handler sent
+        // the caller's string straight to SQL, where the default collation is case-insensitive, so
+        // this request returned the training here and nothing on the layered host — which resolves
+        // the name against the domain's closed set, ordinally. It resolves it here too now.
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var page = (await response.Content.ReadFromJsonAsync<PagedResponseHttp<TrainingResponseHttp>>())!;
+        page.Items.Should().BeEmpty();
+        page.TotalCount.Should().Be(0);
+    }
+
     // -- Edit --
 
     [Fact]
-    public async Task Edit_AsOwner_Returns200WithoutBody()
+    public async Task Edit_AsOwner_Returns200WithTheUpdatedTrainingAndItsNewETag()
     {
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var trainingId = await CreateTrainingAsync(client);
@@ -171,12 +209,45 @@ public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(facto
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // Unlike the layered host, this one answers a bare 200: the command reports success
-        // and nothing is read back. A caller who wants the new version must GET again.
-        (await response.Content.ReadAsStringAsync()).Should().BeEmpty();
+        // The updated representation, read back through the query side, with the new version in
+        // the ETag. This host used to answer a bare 200 with neither — so a caller who edited
+        // twice in a row was guaranteed a 412 on the second attempt, holding a version the first
+        // edit had just superseded, with no way forward but another GET.
+        var edited = await response.Content.ReadFromJsonAsync<TrainingResponseHttp>();
+        edited!.Title.Should().Be("Renamed Training");
+
+        response.Headers.ETag.Should().NotBeNull("the caller needs the new version to edit again");
+        response.Headers.ETag!.ToString().Should().NotBe(
+            entityTag, "the version it replaces is no longer current");
+    }
+
+    /// <summary>
+    /// What republishing the version is actually for.
+    /// </summary>
+    /// <remarks>
+    /// The previous behaviour — a bare 200 — made this sequence impossible: the caller's only
+    /// version was the one the first edit had just replaced, so the second attempt could only be a
+    /// 412. Correct, and useless. An extra GET was the sole way forward.
+    /// </remarks>
+    [Fact]
+    public async Task Edit_TwiceInARow_SucceedsUsingTheVersionTheFirstEditReturned()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        var trainingId = await CreateTrainingAsync(client);
+
+        var entityTag = await client.GetETagAsync($"/Training/{trainingId}");
+
+        var first = await client.PutWithIfMatchAsync(
+            $"/Training/{trainingId}", ValidEdition("First Edit"), entityTag);
+        first.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var second = await client.PutWithIfMatchAsync(
+            $"/Training/{trainingId}", ValidEdition("Second Edit"), first.Headers.ETag!.ToString());
+
+        second.StatusCode.Should().Be(HttpStatusCode.OK, "the first edit handed back a current version");
 
         var reread = await client.GetFromJsonAsync<TrainingResponseHttp>($"/Training/{trainingId}");
-        reread!.Title.Should().Be("Renamed Training");
+        reread!.Title.Should().Be("Second Edit");
     }
 
     [Fact]

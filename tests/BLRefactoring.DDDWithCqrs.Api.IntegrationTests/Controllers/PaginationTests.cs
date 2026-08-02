@@ -21,14 +21,7 @@ namespace BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Controllers;
 [Collection("Api")]
 public class PaginationTests(ApiFactory factory) : IntegrationTest(factory)
 {
-    private static CreateTrainingRequestHttp Creation(string title) => new()
-    {
-        Title = title,
-        Description = "A valid training description for integration testing",
-        Prerequisites = "Basic programming knowledge required",
-        AcquiredSkills = "Advanced design patterns mastery",
-        Topics = ["Programming"]
-    };
+    private static CreateTrainingRequestHttp Creation(string title) => TrainingRequests.Valid(title);
 
     private static async Task CreateTrainingsAsync(HttpClient client, int count)
     {

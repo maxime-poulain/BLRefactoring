@@ -4,7 +4,6 @@ using BLRefactoring.Shared.Api.Extensions;
 using BLRefactoring.Shared.Application.EventHandlers;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
 using BLRefactoring.Shared.Infrastructure.Extensions;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,21 +15,12 @@ builder.Services.AddControllers();
 // protects that host. See CorsExtensions for why the origins come from configuration.
 builder.Services.AddApiCors(builder.Configuration);
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// One error format for both hosts: RFC 7807 ProblemDetails, whatever failed.
+builder.Services.AddApiProblemDetails();
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOpenApiDocument(options =>
-{
-    options.AddSecurity(JwtBearerDefaults.AuthenticationScheme, new NSwag.OpenApiSecurityScheme
-    {
-        Type = NSwag.OpenApiSecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        Description = "Enter your token JWT"
-    });
-
-    options.OperationProcessors.Add(new NSwag.Generation.Processors.Security.AspNetCoreOperationSecurityScopeProcessor("Bearer"));
-});
+// The framework's OpenAPI generator, shared with the CQRS host — which described the same API with
+// a different library, and without a security scheme at all. See ADR 0006.
+builder.Services.AddApiOpenApi();
 
 builder.Services.AddTransient<ITrainingApplicationService, TrainingApplicationService>();
 builder.Services.AddTransient<ITrainerApplicationService, TrainerApplicationService>();
@@ -52,10 +42,14 @@ builder.Services.AddTrainingOwnerAuthorization();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+
+// First, so everything downstream is covered: authentication, authorization, routing and the
+// actions alike. Declared once in Shared.Api and shared with the CQRS host.
+app.UseApiExceptionHandling();
+
 if (app.Environment.IsDevelopment())
 {
-    app.UseOpenApi();
-    app.UseSwaggerUI();
+    app.UseApiOpenApi();
 }
 
 app.UseHttpsRedirection();
@@ -67,7 +61,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-await app.MigrateDatabasesAsync();
+await app.EnsureDatabasesAreUpToDateAsync();
 
 app.Run();
 

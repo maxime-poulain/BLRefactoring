@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.Domain;
@@ -51,7 +52,7 @@ public abstract class DomainEventPipelineTest<TFactory>(TFactory factory) : Inte
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
             var trainer = await trainers.GetByIdAsync(trainerId);
-            Assert.NotNull(trainer);
+            trainer.Should().NotBeNull();
 
             // The aggregate only announces the fact. Nothing here deletes a training.
             trainer.MarkForDeletion();
@@ -66,7 +67,7 @@ public abstract class DomainEventPipelineTest<TFactory>(TFactory factory) : Inte
 
             var remaining = await trainings.GetByTrainerIdAsync(trainerId);
 
-            Assert.Empty(remaining);
+            remaining.Should().BeEmpty();
         }
     }
 

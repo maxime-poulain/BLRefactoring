@@ -4,14 +4,23 @@ services:
     container_name: sqlserver
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=Password@
+      # MSSQL_SA_PASSWORD, not SA_PASSWORD: the old name still works and prints a deprecation
+      # warning on every start.
+      - MSSQL_SA_PASSWORD=Password@
       - MSSQL_PID=Developer
     ports:
       - "1433:1433"
     volumes:
       - sqlserver_data:/var/opt/mssql
     healthcheck:
-      test: /opt/mssql-tools2/bin/sqlcmd -S localhost -U sa -P "Password@" -Q "SELECT 1" -b -o /dev/null
+      # Whichever client the image ships. It named /opt/mssql-tools2, which is not a path any
+      # release of this image provides — so the check could never pass, and `depends_on:
+      # service_healthy` would hold the API back until compose gave up. mssql-tools18 needs -C to
+      # accept the server's self-signed certificate; the older one has no such flag, hence two
+      # commands rather than one path guessed twice.
+      test: >-
+        /bin/sh -c '/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -Q "SELECT 1" -b -o /dev/null
+        || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -Q "SELECT 1" -b -o /dev/null'
       interval: 10s
       timeout: 5s
       retries: 5

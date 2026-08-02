@@ -1,9 +1,7 @@
 ﻿@page "/login"
 @using BLRefactoring.Blazor.Client.Infrastructure
-@using BLRefactoring.GeneratedClients
-@inject IAuthClient AuthClient
-@inject IJwtTokenService JwtTokenService
-@inject JwtAuthenticationStateProvider AuthStateProvider
+@inject IBffSessionClient SessionClient
+@inject BffAuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -62,6 +60,27 @@
 </MudContainer>
 
 @code {
+    /// <summary>
+    /// Where to go once signed in, as <see cref="RedirectToLogin"/> recorded it.
+    /// </summary>
+    /// <remarks>
+    /// Only a path is honoured. The value arrives from the address bar, so anything that could name
+    /// another origin — an absolute URL, or the protocol-relative <c>//evil.example</c> that
+    /// <c>Uri.IsWellFormedUriString(..., Relative)</c> happily accepts — is discarded in favour of
+    /// the catalogue. Redirecting to wherever a query string says is how a sign-in page becomes a
+    /// phishing hop.
+    /// </remarks>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrlParameter { get; set; }
+
+    private string? ReturnUrl =>
+        ReturnUrlParameter is not null
+        && ReturnUrlParameter.StartsWith('/')
+        && !ReturnUrlParameter.StartsWith("//", StringComparison.Ordinal)
+            ? ReturnUrlParameter
+            : null;
+
     private MudForm _form = null!;
     private bool _isValid;
     private bool _isLoading;
@@ -86,33 +105,28 @@
         _isLoading = true;
         try
         {
-            var request = new LoginRequest
-            {
-                Username = _username,
-                Password = _password
-            };
+            // No token comes back, and that is the point: the BFF holds it and hands this page a
+            // cookie it cannot read. Identity is then whatever /bff/user reports. See ADR 0009.
+            var signedIn = await SessionClient.LoginAsync(_username, _password);
 
-            var response = await AuthClient.LoginAsync(request);
-            await JwtTokenService.SetTokenAsync(response.Token);
-            AuthStateProvider.NotifyUserAuthentication(response.Token);
+            if (!signedIn)
+            {
+                Snackbar.Add("Invalid username or password.", Severity.Error);
+                return;
+            }
+
+            AuthStateProvider.NotifyAuthenticationChanged();
 
             Snackbar.Add("Login successful!", Severity.Success);
-            NavigationManager.NavigateTo("/trainings");
-        }
-        catch (ApiException<List<Error>> ex)
-        {
-            foreach (var error in ex.Result)
-            {
-                Snackbar.Add(error.ErrorMessage, Severity.Error);
-            }
-        }
-        catch (ApiException ex)
-        {
-            Snackbar.Add($"Login failed: {ex.Message}", Severity.Error);
+            NavigationManager.NavigateTo(ReturnUrl ?? "/trainings");
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"An unexpected error occurred: {ex.Message}", Severity.Error);
+            // The detail is ours, not the user's: an exception message is an implementation
+            // detail on a sign-in page, and a NullReferenceException rendered as UI copy tells
+            // an attacker more than it tells anyone else.
+            Console.Error.WriteLine(ex);
+            Snackbar.Add("Sign-in is unavailable right now. Try again in a moment.", Severity.Error);
         }
         finally
         {

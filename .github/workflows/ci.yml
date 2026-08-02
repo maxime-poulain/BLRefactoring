@@ -2,34 +2,115 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    # Agent branches as well as master, for the same reason the integration suite runs on them:
+    # the GitHub App an agent acts through cannot dispatch a workflow, and until a pull request
+    # exists nothing else runs. Work pushed by an agent was reaching review having been built by
+    # nobody — including the client regeneration below.
+    branches: [master, 'claude/**']
   pull_request:
     branches: [master]
 
-# The workflow only reads the repository; GITHUB_TOKEN gets nothing more.
-permissions:
-  contents: read
+# This workflow writes to the repository, so two runs on one branch can race: both regenerate, both
+# push, and the loser fails with a non-fast-forward nobody caused. Push runs therefore queue rather
+# than cancel. Pull-request runs write nothing, so a superseded one is simply wasted minutes.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build-and-test:
     name: Build & Test
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # `contents: write` is for one step: the workflow regenerates the HTTP client and commits it
+    # when the API has changed. Nothing else here writes. Declared on the job rather than on the
+    # workflow so a second job added later starts from nothing rather than from this.
+    permissions:
+      contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      # On a pull request, check out the head branch itself rather than the merge commit GitHub
+      # prepares. The regeneration below has to be able to commit its result, and a merge commit is
+      # not on any branch. Skipped for forks, where the token is read-only anyway.
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
 
-      - name: Restore dependencies
-        run: dotnet restore
+      # Restore is run three times per job — inside the generator script, by the build, and for the
+      # pinned NSwag CLI — and every one of them reaches the network without this.
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '.config/dotnet-tools.json', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # Before the build, deliberately. The client is regenerated first, so the build that follows
+      # compiles the solution against the client the API actually implies — including whatever the
+      # regeneration just broke. Running it afterwards would report a stale success and leave the
+      # breakage for the next push to discover.
+      - name: Regenerate the HTTP client
+        run: ./scripts/generate-clients.sh
+
+      # The API is the source of truth: when a controller changes, the client follows, in the same
+      # run, without anyone being asked. Consumers are expected to keep up — that is the trade this
+      # repository chose, and it is why this step commits rather than fails. See ADR 0008.
+      #
+      # It runs on pull requests too, which it did not until a pull request spent an evening red for
+      # it. The two events start together on the same commit: the push run regenerated and committed,
+      # while the pull-request run — checked out before that commit existed — found the same
+      # difference and failed on it. The comment that used to sit here assumed an ordering the
+      # platform does not provide. Worse, the bot's commit is made with GITHUB_TOKEN, which triggers
+      # no workflow, so nothing re-ran against the corrected tree and the check stayed red until a
+      # human pushed something unrelated.
+      #
+      # Forks are excluded: `contents: write` is downgraded there, so the push would fail rather than
+      # help. A fork's client is checked below instead.
+      - name: Commit the regenerated client
+        if: >-
+          github.event_name == 'push' ||
+          github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          if git diff --quiet -- src/BLRefactoring.GeneratedClients/; then
+            echo "The client already matches the API."
+            exit 0
+          fi
+
+          echo "::notice::The API changed; committing the regenerated client."
+          git diff --stat -- src/BLRefactoring.GeneratedClients/
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/BLRefactoring.GeneratedClients/
+          git commit -m "Regenerate the HTTP client from the API" \
+                     -m "Written by CI: a controller of the layered stack changed, so the client it implies changed with it."
+          git push origin "HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}"
+
+      # From a fork there is nowhere to push, so the same difference has to be a failure. It is the
+      # only path left where a stale client can reach review.
+      - name: Client is up to date
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          if ! git diff --quiet -- src/BLRefactoring.GeneratedClients/; then
+            echo "::error::The committed HTTP client no longer matches the API." \
+                 "Run ./scripts/generate-clients.sh and commit the result."
+            git diff -- src/BLRefactoring.GeneratedClients/
+            exit 1
+          fi
 
       # Everything is built, including the integration tests: a project that no
       # longer compiles must fail the pipeline even when its tests are not run.
       - name: Build
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build --configuration Release
 
       # Unit tests only. The integration tests spin up a SQL Server through
       # Testcontainers, which makes them slow and infrastructure-dependent; they

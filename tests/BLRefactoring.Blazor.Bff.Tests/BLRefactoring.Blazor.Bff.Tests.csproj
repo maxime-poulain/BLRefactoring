@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    net10.0 against a net9.0 host. The Blazor pair stays on net9.0 (see the root
+    Directory.Build.props), and the CI runner installs only the 10.0 runtime, so a net9.0 test
+    project would build and then fail to run. A net10.0 test host loads the net9.0 assembly under
+    the ordinary framework roll-forward.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Web\BLRefactoring.Blazor\BLRefactoring.Blazor\BLRefactoring.Blazor.csproj" />
+  </ItemGroup>
+
+</Project>

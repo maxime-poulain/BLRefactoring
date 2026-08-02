@@ -29,12 +29,12 @@ namespace BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedOn")
-                        .HasPrecision(2)
-                        .HasColumnType("datetime2(2)");
+                        .HasPrecision(7)
+                        .HasColumnType("datetime2(7)");
 
                     b.Property<DateTime?>("ModifiedOn")
-                        .HasPrecision(2)
-                        .HasColumnType("datetime2(2)");
+                        .HasPrecision(7)
+                        .HasColumnType("datetime2(7)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -63,8 +63,8 @@ namespace BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime>("CreatedOn")
-                        .HasPrecision(2)
-                        .HasColumnType("datetime2(2)");
+                        .HasPrecision(7)
+                        .HasColumnType("datetime2(7)");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -72,8 +72,8 @@ namespace BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime?>("ModifiedOn")
-                        .HasPrecision(2)
-                        .HasColumnType("datetime2(2)");
+                        .HasPrecision(7)
+                        .HasColumnType("datetime2(7)");
 
                     b.Property<string>("Prerequisites")
                         .IsRequired()

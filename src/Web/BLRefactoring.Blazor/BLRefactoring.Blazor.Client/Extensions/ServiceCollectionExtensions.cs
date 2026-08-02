@@ -1,22 +1,23 @@
 using BLRefactoring.Blazor.Client.Infrastructure;
 using BLRefactoring.GeneratedClients;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
 namespace BLRefactoring.Blazor.Client.Extensions;
 
+/// <summary>
+/// The browser's services. Registered by the WebAssembly entry point, and by nothing else.
+/// </summary>
+/// <remarks>
+/// The host that serves this application deliberately does not call these. It is the other side of
+/// what they describe — the origin they call, the identity they read — and adopting them there
+/// collided with the BFF's own API client under the shared name <c>Api</c>. Prerendering is off, so
+/// there is nothing server-side to render and nothing to register for.
+/// </remarks>
 public static class ServiceCollectionExtensions
 {
-    private const string HttpClientName = "Default";
-
-    /// <summary>
-    /// Configuration key holding the address of the REST API this front end talks to.
-    /// </summary>
-    private const string ApiBaseAddressKey = "Api:BaseAddress";
-
     public static IServiceCollection AddDependencies(this IServiceCollection services)
     {
-        // IJSRuntime, which JwtTokenService uses to reach localStorage, is registered by the
-        // Blazor host itself — there is nothing to add here for storage.
         return services
             .AddServices()
             .AddBLRefactoringBlazorClient();
@@ -24,32 +25,24 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddBLRefactoringBlazorClient(this IServiceCollection services)
     {
-        // The address is read when a client is first created rather than at registration,
-        // because this method also runs on the server host — which registers these services but
-        // never resolves them, since no component renders server-side while prerendering is off.
-        // The value therefore only has to exist in the configuration the browser downloads;
-        // adding it to the host's appsettings would be adding a setting nothing reads.
-        //
-        // It lives in the environment-specific file rather than the shared one: a localhost
-        // address is a development fact, and the same split already governs the API hosts,
-        // whose connection string and JWT settings sit in appsettings.Development.json.
-        services.AddHttpClient(HttpClientName, (serviceProvider, client) =>
-        {
-            var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+        // Both clients point at the origin that served the application. There is no
+        // `Api:BaseAddress` in the browser's configuration any more, and that is the visible half
+        // of the change: the front end cannot be pointed at an API at all — it calls its own
+        // origin, and the host decides what sits behind /api. See ADR 0009.
+        services.AddHttpClient(HttpClientNames.Api, (serviceProvider, client) =>
+                client.BaseAddress = new Uri(Origin(serviceProvider), "api/"))
+            .AddHttpMessageHandler<RequestedWithHandler>();
 
-            var baseAddress = configuration[ApiBaseAddressKey]
-                ?? throw new InvalidOperationException(
-                    $"Missing configuration value '{ApiBaseAddressKey}'. The WebAssembly client " +
-                    "reads it from wwwroot/appsettings.{Environment}.json, downloaded at startup. " +
-                    "Every environment must name its own API: there is no sensible default, and " +
-                    "falling back to a localhost address in production would fail obscurely.");
+        services.AddHttpClient(HttpClientNames.Bff, (serviceProvider, client) =>
+                client.BaseAddress = Origin(serviceProvider))
+            .AddHttpMessageHandler<RequestedWithHandler>();
 
-            client.BaseAddress = new Uri(baseAddress);
-        }).AddHttpMessageHandler<JwtTokenHandler>();
-
-        services.AddHttpClient<ITrainerClient, TrainerClient>(HttpClientName);
-        services.AddHttpClient<ITrainingClient, TrainingClient>(HttpClientName);
-        services.AddHttpClient<IAuthClient, AuthClient>(HttpClientName);
+        // The generated clients keep talking to "the API" and know nothing of the proxy in front of
+        // it: their paths are relative, so /Trainer becomes /api/Trainer with no generated code to
+        // adjust. The one thing they cannot do is sign in — see BffSessionClient.
+        services.AddHttpClient<ITrainerClient, TrainerClient>(HttpClientNames.Api);
+        services.AddHttpClient<ITrainingClient, TrainingClient>(HttpClientNames.Api);
+        services.AddHttpClient<IAuthClient, AuthClient>(HttpClientNames.Api);
 
         return services;
     }
@@ -57,10 +50,20 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
         services.AddAuthorizationCore();
-        services.AddScoped<JwtAuthenticationStateProvider>();
-        services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<JwtAuthenticationStateProvider>());
-        services.AddTransient<IJwtTokenService, JwtTokenService>();
-        services.AddTransient<JwtTokenHandler>();
+        services.AddScoped<BffAuthenticationStateProvider>();
+        services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<BffAuthenticationStateProvider>());
+        services.AddScoped<IBffSessionClient, BffSessionClient>();
+        services.AddTransient<RequestedWithHandler>();
         return services;
     }
+
+    /// <summary>The address the application was served from.</summary>
+    /// <remarks>
+    /// <see cref="IWebAssemblyHostEnvironment"/> rather than <c>NavigationManager</c>, which is
+    /// scoped on a server and would throw here: <c>IHttpClientFactory</c> hands these delegates the
+    /// root provider. Reaching for a service that exists only in the browser also says plainly
+    /// where this registration belongs.
+    /// </remarks>
+    private static Uri Origin(IServiceProvider serviceProvider) =>
+        new(serviceProvider.GetRequiredService<IWebAssemblyHostEnvironment>().BaseAddress);
 }
