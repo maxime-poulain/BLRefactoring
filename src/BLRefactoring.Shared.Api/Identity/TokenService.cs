@@ -27,7 +27,17 @@ public interface ITokenService
 /// <summary>
 /// Implementation of the ITokenService interface for generating JWT tokens.
 /// </summary>
-public sealed class TokenService(IConfiguration configuration, ITrainerRepository trainerRepository) : ITokenService
+/// <remarks>
+/// The clock arrives as a <see cref="TimeProvider"/>, like everywhere else in this solution that
+/// needs one — the audit interceptor already did. It used to read <c>DateTime.Now</c>: correct by
+/// accident, since <c>EpochTime.GetIntDate</c> converts a local kind before writing <c>exp</c>,
+/// and untestable on purpose by nobody. A token's lifetime is a security property; it should be
+/// possible to assert it without waiting.
+/// </remarks>
+public sealed class TokenService(
+    IConfiguration configuration,
+    ITrainerRepository trainerRepository,
+    TimeProvider timeProvider) : ITokenService
 {
     /// <summary>
     /// Generates a JWT token for the specified user and their roles.
@@ -76,7 +86,9 @@ public sealed class TokenService(IConfiguration configuration, ITrainerRepositor
             issuer: jwtSettings["Issuer"],
             audience: jwtSettings["Audience"],
             claims: claims,
-            expires: DateTime.Now.AddMinutes(double.Parse(jwtSettings["ExpireMinutes"]!, CultureInfo.InvariantCulture)),
+            expires: timeProvider.GetUtcNow()
+                .AddMinutes(double.Parse(jwtSettings["ExpireMinutes"]!, CultureInfo.InvariantCulture))
+                .UtcDateTime,
             signingCredentials: creds);
 
         // Return the serialized JWT token as a string.

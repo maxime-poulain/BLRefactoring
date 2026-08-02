@@ -8,6 +8,9 @@
     <ItemGroup>
         <ProjectReference Include="..\BLRefactoring.Blazor.Client\BLRefactoring.Blazor.Client.csproj"/>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server"/>
+        <!-- This host is the BFF: it terminates authentication and forwards to the API. -->
+        <PackageReference Include="Yarp.ReverseProxy"/>
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt"/>
     </ItemGroup>
 
 </Project>

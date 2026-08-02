@@ -29,12 +29,18 @@ public abstract class AggregateRootTypeConfiguration<TEntity, TEntityId> : IEnti
             builder.Ignore(nameof(IHasDomainEvents.DomainEvents));
         }
 
+        // Full precision, so a stamp read back is the stamp that was written: a DateTime carries
+        // 100-nanosecond ticks and seven fractional digits store all of them. It used to be two —
+        // datetime2(2), buckets of 10 ms — which silently undid the interceptor reading the clock
+        // once per entity, since two saves 3 ms apart landed on the same stored value.
+        // Declared rather than inherited: datetime2(7) is already EF's default here, and an
+        // implicit default is exactly what let the 2 go unnoticed.
         builder.Property(e => e.CreatedOn)
-            .HasPrecision(2)
+            .HasPrecision(7)
             .IsRequired();
 
         builder.Property(e => e.ModifiedOn)
-            .HasPrecision(2);
+            .HasPrecision(7);
 
         // Optimistic concurrency, declared once for every aggregate root: the
         // aggregate is the consistency boundary, so it is the unit of concurrency

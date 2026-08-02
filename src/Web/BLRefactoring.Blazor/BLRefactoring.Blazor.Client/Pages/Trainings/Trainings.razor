@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @using BLRefactoring.GeneratedClients
 @inject ITrainingClient TrainingClient
+@inject ITrainerClient TrainerClient
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
@@ -65,12 +66,21 @@
                             </MudStack>
                         </MudCardContent>
                         <MudCardActions>
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                           Color="Color.Primary"
-                                           Href="@($"/trainings/edit/{training.Id}")" />
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                           Color="Color.Error"
-                                           OnClick="@(() => OpenDeleteDialog(training))" />
+                            @* The catalogue is readable by every signed-in trainer, but only its
+                               owner may edit or delete it — the API enforces that with
+                               TrainingOwnerPolicy. Offering the buttons to everyone meant a
+                               confirmation dialog followed by a 403, and a 403 carries no body, so
+                               what the user actually read was "The HTTP status code of the response
+                               was not expected (403)". *@
+                            @if (training.TrainerId == _currentTrainerId)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                               Color="Color.Primary"
+                                               Href="@($"/trainings/edit/{training.Id}")" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               Color="Color.Error"
+                                               OnClick="@(() => OpenDeleteDialog(training))" />
+                            }
                         </MudCardActions>
                     </MudCard>
                 </MudItem>
@@ -80,13 +90,42 @@
 </MudContainer>
 
 @code {
-    private List<TrainingDto>? _trainings;
+    private const int StatusForbidden = 403;
+    private const int StatusNotFound = 404;
+
+    private List<TrainingResponseHttp>? _trainings;
     private bool _isLoading = true;
+
+    /// <summary>
+    /// The signed-in trainer, or <c>null</c> when it could not be read.
+    /// </summary>
+    /// <remarks>
+    /// Null hides every Edit and Delete button rather than showing them all: if the identity of the
+    /// caller is unknown, the safe reading is that they own nothing. The API refuses either way —
+    /// this only decides what is offered.
+    /// </remarks>
+    private Guid? _currentTrainerId;
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadCurrentTrainer();
         await LoadTrainings();
         StateHasChanged();
+    }
+
+    private async Task LoadCurrentTrainer()
+    {
+        try
+        {
+            var response = await TrainerClient.GetCurrentAsync();
+            _currentTrainerId = response.Result.Id;
+        }
+        catch (ApiException)
+        {
+            // Leave it null. Nothing to tell the user: the page is still fully usable for reading,
+            // and the buttons it hides are ones the API would have refused anyway.
+            _currentTrainerId = null;
+        }
     }
 
     private async Task LoadTrainings()
@@ -96,20 +135,24 @@
         {
             _trainings = await TrainingClient.GetAllAsync();
         }
-        catch (ApiException<List<Error>> ex)
+        catch (ApiException<ProblemDetails> ex)
         {
-            foreach (var error in ex.Result)
-            {
-                Snackbar.Add(error.ErrorMessage, Severity.Error);
-            }
+            // One RFC 7807 document rather than a bare array of errors: the detail carries the
+            // message, and the domain codes travel in the `domainErrors` extension. See ADR 0004.
+            Snackbar.Add(ex.Result.Detail ?? ex.Result.Title ?? "The request was rejected.", Severity.Error);
         }
         catch (ApiException ex)
         {
-            Snackbar.Add($"Failed to load trainings: {ex.Message}", Severity.Error);
+            // ex.Message here is the generator's own sentence — "The HTTP status code of the
+            // response was not expected (503)." It belongs in the console, not on screen.
+            Console.Error.WriteLine(ex);
+            Snackbar.Add("The trainings could not be loaded. Try again in a moment.", Severity.Error);
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"An unexpected error occurred: {ex.Message}", Severity.Error);
+            // Whatever this is, it is ours. A NullReferenceException must not become UI copy.
+            Console.Error.WriteLine(ex);
+            Snackbar.Add("Something went wrong loading the trainings.", Severity.Error);
         }
         finally
         {
@@ -117,7 +160,7 @@
         }
     }
 
-    private async Task OpenDeleteDialog(TrainingDto training)
+    private async Task OpenDeleteDialog(TrainingResponseHttp training)
     {
         var parameters = new DialogParameters<DeleteTrainingDialog>
         {
@@ -148,20 +191,36 @@
             Snackbar.Add("Training deleted successfully!", Severity.Success);
             await LoadTrainings();
         }
-        catch (ApiException<List<Error>> ex)
+        catch (ApiException<ProblemDetails> ex) when (ex.StatusCode == StatusNotFound)
         {
-            foreach (var error in ex.Result)
-            {
-                Snackbar.Add(error.ErrorMessage, Severity.Error);
-            }
+            // Someone deleted it between this page being read and the button being pressed.
+            // Not an error the user caused, and the list is simply stale.
+            Snackbar.Add("That training no longer exists.", Severity.Info);
+            await LoadTrainings();
+        }
+        catch (ApiException<ProblemDetails> ex)
+        {
+            // One RFC 7807 document rather than a bare array of errors: the detail carries the
+            // message, and the domain codes travel in the `domainErrors` extension. See ADR 0004.
+            Snackbar.Add(ex.Result.Detail ?? ex.Result.Title ?? "The request was rejected.", Severity.Error);
+        }
+        catch (ApiException ex) when (ex.StatusCode == StatusForbidden)
+        {
+            // Still reachable with the button hidden: the catalogue was read at some point in the
+            // past, and hiding the button is a courtesy rather than the guard. A 403 carries no
+            // body, so there is nothing to read out of it — hence a sentence of our own.
+            Snackbar.Add("That training belongs to another trainer.", Severity.Error);
+            await LoadTrainings();
         }
         catch (ApiException ex)
         {
-            Snackbar.Add($"Failed to delete training: {ex.Message}", Severity.Error);
+            Console.Error.WriteLine(ex);
+            Snackbar.Add("The training could not be deleted. Try again in a moment.", Severity.Error);
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"An unexpected error occurred: {ex.Message}", Severity.Error);
+            Console.Error.WriteLine(ex);
+            Snackbar.Add("Something went wrong deleting the training.", Severity.Error);
         }
     }
 }

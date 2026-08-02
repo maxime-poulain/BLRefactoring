@@ -1,8 +1,29 @@
 @inject NavigationManager NavigationManager
 
 @code {
+    /// <summary>
+    /// Sends an unauthenticated visitor to the sign-in page, remembering where they were going.
+    /// </summary>
+    /// <remarks>
+    /// The address is carried as a <c>returnUrl</c> query parameter rather than dropped. Without
+    /// it every deep link — a training opened from a bookmark, a page reloaded after the session
+    /// expired — landed on the catalogue after sign-in, and the user had to find their way back to
+    /// something they had already asked for.
+    /// <para>
+    /// Relative, and made relative deliberately: <c>ToBaseRelativePath</c> strips the origin, so
+    /// what reaches <c>returnUrl</c> cannot name another host. A redirect target taken from the
+    /// address bar and replayed after authentication is an open-redirect if it is allowed to be
+    /// absolute.
+    /// </para>
+    /// </remarks>
     protected override void OnInitialized()
     {
-        NavigationManager.NavigateTo("/login");
+        var requested = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+
+        var login = string.IsNullOrEmpty(requested)
+            ? "/login"
+            : $"/login?returnUrl={Uri.EscapeDataString("/" + requested)}";
+
+        NavigationManager.NavigateTo(login);
     }
 }

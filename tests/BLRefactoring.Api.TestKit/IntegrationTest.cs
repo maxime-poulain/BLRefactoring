@@ -30,6 +30,20 @@ public interface IServiceScopeSource
 }
 
 /// <summary>
+/// A fixture that hands out an <see cref="HttpClient"/> bound to the host under test.
+/// </summary>
+/// <remarks>
+/// Same reason as the two above: a shared test can ask for the capability without naming a
+/// concrete factory, which would drag its entry-point type parameter into every signature.
+/// <see cref="System.Net.Http.HttpClient"/> is what <c>WebApplicationFactory</c> already exposes,
+/// so a fixture satisfies this by declaring it.
+/// </remarks>
+public interface IHttpClientSource
+{
+    HttpClient CreateClient();
+}
+
+/// <summary>
 /// Base class for the integration tests: empties the database before each test.
 /// </summary>
 /// <remarks>

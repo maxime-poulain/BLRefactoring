@@ -119,9 +119,17 @@ rejects on its own terms anything that reaches it another way. What they deliber
 check is the shape of an email address: .NET's `[EmailAddress]` and the domain's validator
 disagree, and an API refusing what the domain accepts would be worse than one asking later.
 
+**Every failure leaves in the same shape**, an RFC 7807 `ProblemDetails`, whether it came from a
+data annotation, a FluentValidation rule, a business rule or an unhandled exception — with the
+domain error codes carried in the `domainErrors` extension, so a client can still branch on
+`DuplicateTitle`. The API used to answer four different bodies depending on how far a request got,
+one of them a bare JSON string. The handlers live in `Shared.Api`, so the two hosts cannot differ on
+them — the layered one had none at all. See
+[ADR 0004](docs/adr/0004-publish-every-error-as-rfc-7807-problem-details.md).
+
 ### Solution layout
 
-Twenty-three projects: sixteen under `src/`, seven under `tests/`. The backend and all tests target
+Twenty-five projects: sixteen under `src/`, nine under `tests/`. The backend and all tests target
 **net10.0**; the Blazor pair and the generated clients target **net9.0**.
 
 | Project | Responsibility |
@@ -132,14 +140,14 @@ Twenty-three projects: sixteen under `src/`, seven under `tests/`. The backend a
 | `BLRefactoring.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the identity store |
 | `BLRefactoring.Shared.Api` | The HTTP boundary: the `*RequestHttp` and `*ResponseHttp` contracts both hosts publish, their mappings to the application layer, the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, concurrency helpers |
 | `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService` |
-| `DDD.Api` | REST host for the layered stack — NSwag/OpenAPI, CORS, JWT bearer |
+| `DDD.Api` | REST host for the layered stack — controllers, composition root |
 | `DDDWithCqrs.Application` | Commands, command handlers, FluentValidation validators |
 | `DDDWithCqrs.Infrastructure` | **Query handlers**, Mediator dispatchers, pipeline behaviours |
-| `DDDWithCqrs.Api` | REST host for the CQRS stack — Swashbuckle, JWT bearer, exception and validation middleware |
+| `DDDWithCqrs.Api` | REST host for the CQRS stack — controllers, composition root |
 | `DDD.Domain`, `DDD.Infrastructure`, `DDDWithCqrs.Domain` | Routing projects with no source files; the domain and infrastructure they stand for live in the `BLRefactoring.Shared.*` projects |
 | `BLRefactoring.GeneratedClients` | NSwag-generated typed HTTP clients, checked in as source |
-| `BLRefactoring.Blazor` / `.Client` | Blazor WebAssembly front end built with MudBlazor, and its host |
-| `tests/*` | Seven test projects — see [Testing](#testing) |
+| `BLRefactoring.Blazor` / `.Client` | Blazor WebAssembly front end built with MudBlazor, and the **backend for frontend** that serves it: cookie authentication, and a YARP proxy that attaches the API's access token server-side |
+| `tests/*` | Nine test projects — see [Testing](#testing) |
 
 ### Project dependency graph
 
@@ -168,6 +176,7 @@ flowchart LR
     Domain --> Kernel
     SharedApp --> Domain
     SharedInfra --> Domain
+    SharedApi --> SharedApp
     SharedApi --> SharedInfra
 
     DddDomain --> Kernel
@@ -302,14 +311,14 @@ stacks:
 | `NotifyPreviousAddressWhenTrainerContactEmailChangedEventHandler` | `TrainerContactEmailChangedDomainEvent` | Warns the **previous** address — possible only because the event carries both values |
 | `AuditWhenTrainerNameChangedEventHandler` | `TrainerNameChangedDomainEvent` | Structured audit trail |
 | `DeleteTrainingWhenTrainerDeletedEventHandler` | `TrainerDeletedDomainEvent` | Deletes the trainer's trainings — cross-aggregate consistency without a database cascade |
-
-`Trainer.MarkForDeletion` and the pair above have no caller in production, deliberately: the API
-exposes no way to delete a trainer (see [Security](#security)). What the aggregate states is the
-rule — a trainer does not disappear without their trainings — and the rule holds whoever ends up
-triggering it. The behaviour is covered by `DomainEventPipelineTests`, which drives it through the
-host's own services.
 | `IndexTrainingWhenTrainingCreatedEventHandler` | `TrainingCreatedDomainEvent` | Search-index upsert through `ITrainingSearchIndexer` |
 | `ReindexTrainingWhenTrainingEditedEventHandler` | `TrainingEditedDomainEvent` | Same upsert, kept separate so the two reactions can evolve independently |
+
+`Trainer.MarkForDeletion` and the trainer-deletion handler above have no caller in production,
+deliberately: the API exposes no way to delete a trainer (see [Security](#security)). What the
+aggregate states is the rule — a trainer does not disappear without their trainings — and the rule
+holds whoever ends up triggering it. The behaviour is covered by `DomainEventPipelineTests`, which
+drives it through the host's own services.
 
 `IEmailSender` and `ITrainingSearchIndexer` are ports declared in the shared kernel; their
 implementations only write to the log, so the project depends on no SMTP server or search engine.
@@ -419,6 +428,15 @@ sequenceDiagram
 The loop matters: a handler may itself change an aggregate that raises new events, and draining
 continues until none is left.
 
+That transaction is exactly right for a handler that only stages further changes, and wrong for one
+that leaves the process. A welcome email is sent before the commit that would justify it, so a save
+failing afterwards leaves the email sent and the trainer non-existent; and since domain events are
+never persisted, a process dying mid-dispatch loses whatever had not run. The decision — domain
+reactions stay in the transaction, integration events move to a transactional outbox — is recorded
+in [ADR 0002](docs/adr/0002-keep-domain-reactions-in-the-transaction-and-deliver-integration-events-through-an-outbox.md),
+which is accepted but **not yet implemented**: the four handlers that send mail or index still run
+inside the transaction today.
+
 ### A write, end to end
 
 ```mermaid
@@ -497,6 +515,13 @@ write would let a caller overwrite changes they never saw — and a stale one an
 Precondition Failed**. Weak validators and `*` are rejected: both would let a caller through
 without stating which version they read.
 
+Both ends of that exchange are **declared in the OpenAPI document** — `If-Match` as a bound
+`[FromHeader]` parameter, `ETag` as a response header written in by a transformer — and asserted by
+`OpenApiDocumentTest` on both hosts. That is not documentation hygiene: while the header was merely
+read off `Request.Headers`, it never reached the document, the generated client had no parameter for
+it, and every edit from the front end came back 428 with nothing failing anywhere else. See
+[ADR 0010](docs/adr/0010-declare-the-conditional-request-contract-in-the-document.md).
+
 ### Repositories, unit of work and specifications
 
 Repositories return aggregates and only stage changes; nothing is written until
@@ -533,6 +558,7 @@ EF Core maps the model without letting persistence concerns leak into it:
 | `MakeTrainerBioOptional` | `Bio` becomes nullable, with a data fix for existing rows |
 | `RenameTrainerEmailToContactEmail` | Renames the column, preserving data |
 | `AddAggregateRowVersion` | Adds the `rowversion` column to both aggregates |
+| `UseFullTimestampPrecision` | `CreatedOn` / `ModifiedOn` go from `datetime2(2)` to `datetime2(7)` |
 
 ASP.NET Identity lives in its own `DbContext` with its own migration.
 
@@ -551,6 +577,12 @@ Sign-in goes through `SignInManager.CheckPasswordSignInAsync` with lockout enabl
 the same generic message whether the password is wrong or the account is locked, so the response
 reveals nothing about account state.
 
+Registration is deliberately not held to that standard: it answers `409` when a username or email
+is already taken, and names which in the body. It always did — the `400` this replaced carried the
+same `DuplicateEmail` code — so an account-enumeration oracle exists here by design and not by
+accident. Closing it means changing what registration *says*, which is a decision of its own and
+has not been taken.
+
 The issued JWT carries the user's name, identifier and email, the trainer's first and last name,
 and a **`trainer_id`** claim that lets the API resolve the caller's trainer without a lookup.
 `ICurrentUserService` reads it.
@@ -561,6 +593,16 @@ ownership only: a training that does not exist lets the policy succeed so the ac
 readable by any authenticated caller. The policy, its handler and its name are declared once in
 `BLRefactoring.Shared.Api` and registered by both hosts through `AddTrainingOwnerAuthorization`,
 so neither can end up guarding an endpoint with a policy the other has since changed.
+
+**The browser never holds that token.** The Blazor host is a backend for frontend: it signs the
+user in by calling the API itself, keeps the JWT inside an encrypted `HttpOnly` cookie, and forwards
+everything under `/api` to the API with the token attached server-side. The WebAssembly application
+talks only to its own origin, asks `/bff/user` who the caller is, and has no credential to leak —
+where it previously kept the JWT in `localStorage`, readable by any script on the page. The cookie
+brings request forgery back, which `SameSite=Strict` and a required `X-Requested-With` header
+answer. The reasoning, the alternatives — in-memory tokens, refresh tokens, Duende.BFF — and what
+this does *not* protect against are in
+[ADR 0009](docs/adr/0009-hold-the-access-token-in-the-bff-instead-of-the-browser.md).
 
 The trainer endpoints need no policy at all, because none of them takes an identifier and none of
 them destroys anything: reading and editing one's own profile are addressed as `/Trainer/me` and
@@ -575,22 +617,30 @@ legitimately perform it rather than being exposed under a weaker guard in the me
 Both hosts expose the same routes. Authentication is required everywhere except registration and
 login.
 
+Every authenticated route answers `401` without a body when no valid token is presented, and the
+owner-only writes answer `403` the same way. Both are declared in the document; neither carries a
+problem document, because neither carries anything. See ADR 0011.
+
+Every error that *does* carry a body carries the same one — an RFC 7807 problem document, served as
+`application/problem+json`. A failure that broke a field names it under `errors`; a failure that
+broke a business rule carries this API's own codes under `domainErrors`. See ADR 0012.
+
 | Verb | Route | Notes |
 |---|---|---|
-| `POST` | `/Auth/register` | `200`, or `400` with Identity errors |
-| `POST` | `/Auth/login` | `200` with a JWT, or `401` |
-| `GET` | `/Trainer/me` | The caller's own profile, with an `ETag` |
+| `POST` | `/Auth/register` | `201` with the new trainer's identifier and `Location: /Trainer/{id}`; `409` when the username or email is taken, `400` otherwise, both keyed by field |
+| `POST` | `/Auth/login` | `200` with a JWT, or `401` — the same answer for an unknown username, a wrong password and a locked-out account |
+| `GET` | `/Trainer/me` | The caller's own profile, with an `ETag`. `200`, `400`, `404` |
 | `PUT` | `/Trainer/me` | Requires `If-Match`. `200`, `400`, `404`, `412`, `428` |
-| `GET` | `/Trainer/{id}` | `200` with an `ETag`, or `404` |
+| `GET` | `/Trainer/{id}` | `200` with an `ETag`, `400` on a malformed identifier, or `404` |
 | `GET` | `/Trainer/all`, `/Training/all`, `/Training/by-trainer/{id}`, `/Training/by-topic/{topic}` | On the CQRS host: one page, `?page=` and `?pageSize=` (default 20, maximum 100), answered as `{ items, page, pageSize, totalCount, totalPages, hasNextPage, hasPreviousPage }`. On the layered host: the plain array |
 | `GET` | `/Trainer/all` | `200` |
 | `POST` | `/Training` | `201` with the new identifier, `409` on a duplicate title, `400` otherwise |
-| `GET` | `/Training/{id}` | `200` with an `ETag`, or `404` |
+| `GET` | `/Training/{id}` | `200` with an `ETag`, `400` on a malformed identifier, or `404` |
 | `GET` | `/Training/all` | `200` |
 | `GET` | `/Training/by-trainer/{trainerId}` | `200` |
 | `GET` | `/Training/by-topic/{topic}` | `200` |
-| `PUT` | `/Training/{trainingId}` | Owner only. Requires `If-Match`. `200`, `400`, `403`, `404`, `409`, `412`, `428` |
-| `DELETE` | `/Training/{trainingId}` | Owner only. `204`, `403`, `404` |
+| `PUT` | `/Training/{trainingId}` | Owner only. Requires `If-Match`. `200` with the updated training and its new `ETag`, `400`, `403`, `404`, `409`, `412`, `428` |
+| `DELETE` | `/Training/{trainingId}` | Owner only. `204`, `400`, `403`, `404` |
 
 Trainers are created only through registration — there is no `POST /Trainer` — and no endpoint
 deletes one. Removing a trainer is an administrative decision, and no role is entitled to it yet,
@@ -610,8 +660,9 @@ on a trainer's own profile are addressed as `me` rather than by identifier.
 | `EmailValidation` | Email format checking inside the `Email` value object |
 | `Microsoft.AspNetCore.Identity.EntityFrameworkCore` | User accounts, password hashing, lockout |
 | `Microsoft.AspNetCore.Authentication.JwtBearer` | Bearer token authentication |
-| `NSwag.AspNetCore`, `Swashbuckle.AspNetCore`, `Scalar.AspNetCore` | OpenAPI documents and UI |
+| `Microsoft.AspNetCore.OpenApi`, `Scalar.AspNetCore` | The OpenAPI document and its reference UI |
 | `MudBlazor` | Component library of the Blazor WebAssembly front end |
+| `Yarp.ReverseProxy` | The BFF's proxy — forwards `/api` to the REST API and attaches the access token from the session cookie |
 | `xunit`, `AwesomeAssertions`, `Moq` | Testing — `AwesomeAssertions` is the Apache 2.0 community fork of FluentAssertions, whose 8.x line moved to a commercial licence |
 | `Testcontainers.MsSql` | A real SQL Server per integration test run |
 | `Respawn` | Database reset between integration tests |
@@ -635,7 +686,9 @@ docker compose up -d sqlserver
 ```
 
 This starts SQL Server 2022 on port `1433` with a named volume. `docker compose up` also builds
-and runs the layered API on <http://localhost:5085>.
+and runs the layered API on <http://localhost:5085> — but nothing in CI builds that image, so
+treat a `docker build` as the check rather than the guarantee. It went unbuildable once already:
+the restore stage stopped copying two files it needs, and the README said this sentence throughout.
 
 ### Run an API
 
@@ -644,15 +697,26 @@ dotnet run --project src/DDD/Api            # https://localhost:7249
 dotnet run --project src/DDDWithCqrs/Api    # https://localhost:7048
 ```
 
-Both hosts apply their EF Core migrations at startup, for the business and the Identity
-databases alike, so no manual `dotnet ef database update` is needed. In `Development`, each host
-serves its OpenAPI UI at `/swagger`.
+**In `Development`**, both hosts apply their EF Core migrations at startup, for the business and the
+Identity databases alike, so no manual `dotnet ef database update` is needed — and each host serves
+its OpenAPI document at `/openapi/v1.json` and a Scalar reference UI alongside it.
+
+Everywhere else they apply nothing: the schema is brought up to date out of band, as a step of the
+release, and startup only reports whether any migration is pending. Migrating from the process that
+serves requests means concurrent instances racing on DDL, standing DDL rights for the application,
+and a schema change that stopping the process cannot undo. See
+[ADR 0003](docs/adr/0003-apply-migrations-on-startup-in-development-only.md).
 
 The Blazor front end runs with:
 
 ```bash
 dotnet run --project src/Web/BLRefactoring.Blazor/BLRefactoring.Blazor   # https://localhost:7067
 ```
+
+It needs the layered API above to be running, since it forwards to it. **HTTPS is not optional
+here**: the session cookie is `Secure` and uses the `__Host-` prefix, so it is simply not set over
+plain HTTP and sign-in would appear to do nothing. There is only an `https` launch profile for that
+reason.
 
 ### Configuration
 
@@ -670,17 +734,20 @@ Supply them through `appsettings.Development.json`, user secrets, or environment
 `docker compose` service passes them as `ConnectionStrings__TrainingContext`, `Jwt__Key` and so
 on.
 
-The Blazor front end expects one key of its own:
+The Blazor **host** expects one key of its own:
 
 | Key | Purpose |
 |---|---|
-| `Api:BaseAddress` | Address of the REST API the WebAssembly client calls |
+| `Api:BaseAddress` | Address of the REST API the BFF forwards to |
 
-It lives in `BLRefactoring.Blazor.Client/wwwroot/appsettings.Development.json`, served as a
-static asset and downloaded by the WebAssembly runtime at startup — the browser cannot read the
-server's `appsettings.json`. Like the API settings above, it sits in the environment-specific
-file: a `localhost` address is a development fact, and every environment names its own API
-rather than inheriting a default that would fail obscurely in production.
+It lives in the host's `appsettings.Development.json` and **never reaches the browser**. The
+WebAssembly application has no API address at all: it calls the origin that served it, and the host
+decides what sits behind `/api`. That is the visible half of
+[ADR 0009](docs/adr/0009-hold-the-access-token-in-the-bff-instead-of-the-browser.md) — the front end
+cannot be pointed at the wrong backend, because it is not pointed at one. Like the API settings
+above, the value sits in the environment-specific file: a `localhost` address is a development fact,
+and the host fails fast with an explicit message when the key is missing rather than falling back to
+a default that would be wrong in production.
 
 ---
 
@@ -701,7 +768,9 @@ The two filters are exact inverses, so between them every test runs exactly once
 | `BLRefactoring.Shared.Domain.Tests` | Aggregates, value objects, typed identifiers, `Result`, specifications |
 | `BLRefactoring.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers |
 | `BLRefactoring.DDDWithCqrs.Tests` | Command handlers, validators, pipeline behaviours |
-| `BLRefactoring.Shared.Api.Tests` | Entity-tag encoding and parsing |
+| `BLRefactoring.Shared.Api.Tests` | Entity-tag encoding and parsing, the guard that keeps client generation away from a database, and what the unhandled-exception handler is allowed to tell a caller |
+| `BLRefactoring.Shared.Infrastructure.Tests` | The auditable-entities interceptor: that it stamps, and that it reads the clock once per entity |
+| `BLRefactoring.Blazor.Bff.Tests` | The backend for frontend over HTTP: the cookie's flags, the forgery guard, the token attached to a forwarded call, and what signing out revokes |
 | `BLRefactoring.DDD.Api.IntegrationTests` | The layered host, HTTP end to end against a real SQL Server |
 | `BLRefactoring.DDDWithCqrs.Api.IntegrationTests` | The CQRS host, same treatment |
 | `BLRefactoring.Api.TestKit` | Not a test project: the fixtures both integration suites share |
@@ -716,13 +785,13 @@ from a known state. The test host wires the same EF Core interceptors as product
 events really are dispatched: the trainer-deletion cascade is asserted on both hosts by
 `DomainEventPipelineTests`.
 
-**Both stacks are covered, and almost entirely over HTTP** — every assertion but one crosses
-routing, model binding, JWT authentication, the
-`TrainingOwner` policy and — on the CQRS host — `GlobalExceptionHandlerMiddleware` and
-`FluentValidationMiddleware`. The exception is `DomainEventPipelineTests`, which resolves the
-repositories and the unit of work from the host's container: the cascade it proves lost its endpoint
-when trainer deletion left the API, and a pipeline nothing exercises is a pipeline nobody notices
-breaking. That middleware pair is why the two suites are not copies of each other:
+**Both stacks are covered, and almost entirely over HTTP** — nearly every assertion crosses
+routing, model binding, JWT authentication, the `TrainingOwner` policy and the shared exception
+handlers. Two go further down: `DomainEventPipelineTests` resolves the repositories and the unit of
+work from the host's container, because the cascade it proves lost its endpoint when trainer
+deletion left the API and a pipeline nothing exercises is a pipeline nobody notices breaking; and
+`TimestampPrecisionTests` reads the stored rows directly, because what it is about is what the
+column kept, which no response can show. Validation is why the two suites are not copies of each other:
 an invalid field on the layered host is caught by the value objects and answered with the
 domain's error collection, while on the CQRS host it is caught earlier by a FluentValidation
 validator inside `ValidationPipelineBehavior` and answered with a different payload entirely.
@@ -731,18 +800,39 @@ validator inside `ValidationPipelineBehavior` and answered with a different payl
 checkpoint, the registration and conditional-request helpers — generic over the entry point.
 Only the `Program` type differs between the two suites.
 
+**The BFF suite needs no infrastructure at all**, which is why it sits with the unit tests. It hosts
+the real `Program.cs` — pipeline order included — and replaces only the far side of the proxy, with
+a handler that records what the API was sent. Cookie authentication, the forgery guard, the
+authorization on the proxied route and the token transform are the production ones. That is what
+lets it assert the things [ADR 0009](docs/adr/0009-hold-the-access-token-in-the-bff-instead-of-the-browser.md)
+claims and the code cannot show: the response to a sign-in carries a cookie and never the token, a
+call arriving without the application's marker header is refused even when it carries a valid
+session, and signing out revokes access rather than merely forgetting it.
+
 ---
 
 ## Continuous integration
 
 | Workflow | Trigger | What it runs |
 |---|---|---|
-| `ci.yml` | Push and pull request on `master` | Restore, build in Release, unit tests |
-| `integration-tests.yml` | Manual dispatch and nightly at 03:17 UTC | The integration tests, publishing a TRX report as an artifact |
+| `ci.yml` | Push on `master` and on `claude/**`, pull request on `master` | Regenerate and commit the HTTP client, build in Release, unit tests |
+| `integration-tests.yml` | Push on `claude/**`, manual dispatch, nightly at 03:17 UTC | The integration tests, publishing a TRX report as an artifact |
 
 The whole solution is built by both — including the integration test project, so a project that
-no longer compiles fails the pipeline even when its tests are not run. Both workflows declare
-`permissions: contents: read`.
+no longer compiles fails the pipeline even when its tests are not run. `integration-tests.yml`
+declares `permissions: contents: read`; `ci.yml` needs `contents: write` for one step, and one
+only — the client commit described below.
+
+**CI writes the HTTP client.** On a push it regenerates the client from the API's own OpenAPI
+document and commits the result, so a controller change carries its client with it. The API is the
+source of truth and consumers are expected to follow — a regenerated client can rename a type and
+break whatever calls it, which is accepted rather than prevented. See
+[ADR 0008](docs/adr/0008-generate-the-http-client-from-a-script-and-verify-it-in-ci.md).
+
+The integration suite stays off the pull-request path — it starts a real SQL Server through
+Testcontainers — with one exception: pushes to an agent branch run it. The GitHub App an agent acts
+through has no `actions: write` and cannot dispatch a workflow, so without that trigger its work
+reached review having never met a database.
 
 ---
 
@@ -757,10 +847,14 @@ no longer compiles fails the pipeline even when its tests are not run. Both work
 - **Line endings** are normalised to LF by `.gitattributes`, in the repository and the working
   tree, whatever the contributor's platform.
 - **Commits** are imperative one-liners, squash-merged from a pull request.
+- **Assertions are AwesomeAssertions**, in every test project including the shared test kit.
+  `subject.Should().Be(…)` rather than `Assert.Equal(…)`: a failure names the subject and the
+  expectation, where xUnit's message names neither. The licence question behind the choice — and
+  why not Shouldly — is in [ADR 0007](docs/adr/0007-assert-with-awesomeassertions.md).
 - **Architecture decision records** live in [`docs/adr/`](docs/adr/), one numbered file per
   decision, each recording the alternatives and why they lost. A decision that changes gets a new
   record superseding the old one; merged records are not rewritten.
-- **The build carries no warnings.** Analyzer severities are set high on purpose, so a warning
+- **The build is kept free of warnings.** Analyzer severities are set high on purpose, so a warning
   means something to look at rather than noise to scroll past. EF Core migrations are exempt —
   `.editorconfig` marks them as generated, since they are.
 

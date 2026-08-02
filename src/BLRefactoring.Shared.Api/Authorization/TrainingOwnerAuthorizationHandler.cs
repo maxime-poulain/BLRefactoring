@@ -45,7 +45,12 @@ public class TrainingOwnerAuthorizationHandler(
         // action can answer 404 — failing here would turn "not found" into an
         // incorrect 403. Ownership of a training is not a secret anyway: every
         // authenticated caller can list all trainings.
-        var training = await trainingRepository.GetByIdAsync(TrainingId.Create(trainingId));
+        //
+        // RequestAborted rather than nothing: this was the one database call in the solution that
+        // did not propagate a token, so a caller who hung up left it running to completion — on
+        // the authorization path, which every guarded write goes through.
+        var training = await trainingRepository.GetByIdAsync(
+            TrainingId.Create(trainingId), httpContext.RequestAborted);
         if (training is null || training.TrainerId.Value == trainerIdFromToken)
         {
             context.Succeed(requirement);

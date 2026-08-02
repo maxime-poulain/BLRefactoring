@@ -4,16 +4,15 @@ using Mediator;
 namespace BLRefactoring.Shared.CQS;
 
 /// <summary>
-/// Represents a marker interface for commands returning a <see cref="Result"/> or not.
+/// Marks a command, whatever it answers.
 /// </summary>
+/// <remarks>
+/// There used to be a non-generic <c>ICommand</c> beside <see cref="ICommand{TResult}"/>, for
+/// commands returning nothing. No command in either stack ever implemented it: a command that
+/// answers nothing still has to say whether it succeeded, so every one of them returns
+/// <see cref="Result"/> and reaches for the generic form.
+/// </remarks>
 public interface ICommandBase : IMessage
-{
-}
-
-/// <summary>
-/// Represents a command that returns no data.
-/// </summary>
-public interface ICommand : ICommandBase, IMessage
 {
 }
 

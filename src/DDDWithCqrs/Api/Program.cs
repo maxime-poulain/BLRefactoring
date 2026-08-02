@@ -1,4 +1,3 @@
-using BLRefactoring.DDDWithCqrs.Api.Middlewares;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
 using BLRefactoring.Shared.Application.EventHandlers;
 using BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator;
@@ -19,9 +18,13 @@ builder.Services.AddControllers();
 // protects that host. See CorsExtensions for why the origins come from configuration.
 builder.Services.AddApiCors(builder.Configuration);
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// One error format for both hosts: RFC 7807 ProblemDetails, whatever failed.
+builder.Services.AddApiProblemDetails();
+
+// The framework's OpenAPI generator, shared with the layered host. This one used to call a bare
+// AddSwaggerGen(), so its document declared no security scheme and no authenticated endpoint could
+// be tried from its UI. See ADR 0006.
+builder.Services.AddApiOpenApi();
 
 builder.Services.AddMediator(configuration =>
 {
@@ -53,18 +56,14 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
-// The exception handlers come first, so that everything downstream is covered: authentication,
-// authorization, routing and the actions alike. Registered after the authentication middlewares —
-// where they used to sit — they let anything thrown while authenticating escape to the host.
-// The global handler stays outside the validation one, which turns a ValidationException into a
-// 400 before the global handler would turn it into a 500.
-app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
-app.UseMiddleware<FluentValidationMiddleware>();
+// First, so everything downstream is covered: authentication, authorization, routing and the
+// actions alike. The handlers themselves, and the order they are tried in, are declared once in
+// Shared.Api and shared with the layered host — which had no exception handling at all.
+app.UseApiExceptionHandling();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseApiOpenApi();
 }
 
 app.UseHttpsRedirection();
@@ -78,7 +77,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-await app.MigrateDatabasesAsync();
+await app.EnsureDatabasesAreUpToDateAsync();
 
 app.Run();
 

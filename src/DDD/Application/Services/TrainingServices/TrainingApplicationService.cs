@@ -47,7 +47,7 @@ public interface ITrainingApplicationService
     /// <summary>
     /// Retrieves all trainings belonging to the specified trainer.
     /// </summary>
-    Task<Result<List<TrainingDto>>> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken = default);
+    Task<List<TrainingDto>> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retrieves all trainings matching the specified topic name.
@@ -194,10 +194,14 @@ public class TrainingApplicationService(
     }
 
     /// <inheritdoc />
-    public async Task<Result<List<TrainingDto>>> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken = default)
+    public async Task<List<TrainingDto>> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken = default)
     {
+        // A plain list, not a Result. Nothing here can fail: the identifier is already a Guid by
+        // the time it arrives, and a trainer with no trainings has none rather than being an
+        // error. Wrapping it made the controller write a failure branch that could not be taken
+        // and declare a 400 no caller could receive.
         var trainings = await trainingRepository.GetByTrainerIdAsync(TrainerId.Create(trainerId), cancellationToken);
-        return Result<List<TrainingDto>>.Success(trainings.ToDtos());
+        return trainings.ToDtos();
     }
 
     /// <inheritdoc />

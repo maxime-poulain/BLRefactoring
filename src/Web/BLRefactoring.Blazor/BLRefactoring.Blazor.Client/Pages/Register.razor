@@ -1,5 +1,7 @@
 ﻿@page "/register"
 @using System.ComponentModel.DataAnnotations
+@using System.Linq
+@using System.Text.Json
 @using BLRefactoring.GeneratedClients
 @inject IAuthClient AuthClient
 @inject NavigationManager NavigationManager
@@ -154,25 +156,62 @@
             Snackbar.Add("Account created successfully! Please sign in.", Severity.Success);
             NavigationManager.NavigateTo("/login");
         }
-        catch (ApiException<List<IdentityError>> ex)
+        catch (ApiException<ProblemDetails> ex)
         {
-            var errors = ex.Result;
-            foreach (var error in errors)
+            // Registration answers a problem document keyed by field, like every other validation
+            // failure this API publishes — it used to answer a bare IdentityError array, and this
+            // page was the only one in the application carrying a catch clause for that shape.
+            // The per-field messages are what the user needs ("Email 'x' is already taken."), so
+            // they are read out of the map rather than replaced by the generic title above it.
+            foreach (var message in ValidationMessages(ex.Result))
             {
-                Snackbar.Add(error.Description, Severity.Error);
+                Snackbar.Add(message, Severity.Error);
             }
         }
         catch (ApiException ex)
         {
-            Snackbar.Add($"Registration failed: {ex.Message}", Severity.Error);
+            Console.Error.WriteLine(ex);
+            Snackbar.Add("Registration is unavailable right now. Try again in a moment.", Severity.Error);
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"An unexpected error occurred: {ex.Message}", Severity.Error);
+            Console.Error.WriteLine(ex);
+            Snackbar.Add("Something went wrong creating the account.", Severity.Error);
         }
         finally
         {
             _isLoading = false;
         }
+    }
+
+    /// <summary>
+    /// The per-field messages of a validation problem document, or its summary when it carries none.
+    /// </summary>
+    /// <remarks>
+    /// <c>errors</c> is the member RFC 7807's <c>ValidationProblemDetails</c> uses for a map of
+    /// field name to messages; this API's own error codes travel separately, under
+    /// <c>domainErrors</c>. NSwag models neither, so both arrive in the extension data as
+    /// <see cref="JsonElement"/>.
+    /// </remarks>
+    private static IEnumerable<string> ValidationMessages(ProblemDetails problem)
+    {
+        if (problem.AdditionalProperties.TryGetValue("errors", out var raw)
+            && raw is JsonElement { ValueKind: JsonValueKind.Object } fields)
+        {
+            var messages = fields
+                .EnumerateObject()
+                .SelectMany(field => field.Value.EnumerateArray())
+                .Select(message => message.GetString())
+                .Where(message => !string.IsNullOrWhiteSpace(message))
+                .Select(message => message!)
+                .ToList();
+
+            if (messages.Count > 0)
+            {
+                return messages;
+            }
+        }
+
+        return [problem.Detail ?? problem.Title ?? "The registration was rejected."];
     }
 }

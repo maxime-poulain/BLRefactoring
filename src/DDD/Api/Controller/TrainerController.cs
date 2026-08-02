@@ -1,7 +1,6 @@
 using BLRefactoring.DDD.Api.Mappings;
 using BLRefactoring.DDD.Application.Services.TrainerServices;
 using BLRefactoring.Shared;
-using BLRefactoring.Shared.Api.Contracts.Errors;
 using BLRefactoring.Shared.Api.Contracts.Mappings;
 using BLRefactoring.Shared.Api.Contracts.Trainers;
 using BLRefactoring.Shared.Api.Controllers;
@@ -35,6 +34,7 @@ public class TrainerController(
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
     /// <returns>
     /// 200 OK with the profile and the <c>ETag</c> to send back when editing it.
+    /// 400 Bad Request on validation errors.
     /// 404 Not Found if the token refers to a trainer that no longer exists.
     /// </returns>
     /// <remarks>
@@ -43,8 +43,10 @@ public class TrainerController(
     /// their identifier.
     /// </remarks>
     [HttpGet("me")]
+    [ProducesEntityTag]
     [ProducesResponseType(typeof(TrainerResponseHttp), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TrainerResponseHttp>> GetCurrentAsync(CancellationToken cancellationToken = default)
     {
         var result = await trainerApplicationService.GetByIdAsync(
@@ -59,13 +61,14 @@ public class TrainerController(
             errors =>
                 errors.Any(error => error.ErrorCode == ErrorCode.NotFound)
                     ? NotFound()
-                    : BadRequest(errors.ToHttp()));
+                    : this.Problem(StatusCodes.Status400BadRequest, errors));
     }
 
     /// <summary>
     /// Replaces the profile of the authenticated trainer.
     /// </summary>
     /// <param name="request">The new state of the profile.</param>
+    /// <param name="ifMatch">The version the caller read, as served in the <c>ETag</c>.</param>
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
     /// <returns>
     /// 200 OK with the updated trainer.
@@ -80,19 +83,24 @@ public class TrainerController(
     /// the credential used to sign in.
     /// The request must carry an <c>If-Match</c> holding the <c>ETag</c> returned
     /// when the profile was read, so an edit based on a stale copy is rejected
-    /// instead of silently overwriting someone else's changes.
+    /// instead of silently overwriting someone else's changes. It is bound rather than read off
+    /// <c>Request.Headers</c>, so that it reaches the OpenAPI document and generated clients can
+    /// send it; and nullable, so that its absence is this endpoint's 428 rather than model
+    /// validation's 400. See ADR 0010.
     /// </remarks>
     [HttpPut("me")]
+    [ProducesEntityTag]
     [ProducesResponseType(typeof(TrainerResponseHttp), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status412PreconditionFailed)]
-    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status428PreconditionRequired)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status412PreconditionFailed)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status428PreconditionRequired)]
     public async Task<ActionResult<TrainerResponseHttp>> EditCurrentAsync(
         [FromBody] EditTrainerRequestHttp request,
+        [FromHeader(Name = "If-Match")] string? ifMatch,
         CancellationToken cancellationToken = default)
     {
-        if (!this.TryGetExpectedVersion(out var expectedVersion))
+        if (!EntityTag.TryParse(ifMatch, out var expectedVersion))
         {
             return this.PreconditionRequired();
         }
@@ -117,8 +125,8 @@ public class TrainerController(
                 }
 
                 return errors.Any(error => error.ErrorCode == ErrorCode.ConcurrencyConflict)
-                    ? this.PreconditionFailed(errors.ToHttp())
-                    : BadRequest(errors.ToHttp());
+                    ? this.Problem(StatusCodes.Status412PreconditionFailed, errors)
+                    : this.Problem(StatusCodes.Status400BadRequest, errors);
             });
     }
 
@@ -133,8 +141,10 @@ public class TrainerController(
     /// 400 Bad Request on validation errors.
     /// </returns>
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status404NotFound)]
+    [ProducesEntityTag]
     [ProducesResponseType(typeof(TrainerResponseHttp), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TrainerResponseHttp>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await trainerApplicationService.GetByIdAsync(id, cancellationToken);
@@ -150,7 +160,7 @@ public class TrainerController(
             errors =>
                 errors.Any(error => error.ErrorCode == ErrorCode.NotFound)
                     ? NotFound()
-                    : BadRequest(errors.ToHttp()));
+                    : this.Problem(StatusCodes.Status400BadRequest, errors));
     }
 
     /// <summary>
@@ -158,8 +168,11 @@ public class TrainerController(
     /// </summary>
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
     /// <returns>200 OK with a list of all trainers.</returns>
+    /// <remarks>
+    /// The only answer this action has. It takes nothing to bind and reaches nothing that fails,
+    /// so the 400 it used to advertise described a response no caller could ever receive.
+    /// </remarks>
     [HttpGet("all")]
-    [ProducesResponseType(typeof(IEnumerable<ErrorResponseHttp>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(List<TrainerResponseHttp>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<TrainerResponseHttp>>> GetAllAsync(CancellationToken cancellationToken = default)
     {

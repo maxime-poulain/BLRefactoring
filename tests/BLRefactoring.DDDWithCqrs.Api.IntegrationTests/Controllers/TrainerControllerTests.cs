@@ -39,8 +39,10 @@ public class TrainerControllerTests(ApiFactory factory) : IntegrationTest(factor
         var response = await client.GetAsync("/Trainer/all");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+        // The trainer registered a line above is in there. NotBeNull() asserted nothing: a
+        // successful deserialisation is never null, and an empty page passed just as well.
         var trainers = (await response.Content.ReadFromJsonAsync<PagedResponseHttp<TrainerResponseHttp>>())!.Items;
-        trainers.Should().NotBeNull();
+        trainers.Should().ContainSingle();
     }
 
     [Fact]

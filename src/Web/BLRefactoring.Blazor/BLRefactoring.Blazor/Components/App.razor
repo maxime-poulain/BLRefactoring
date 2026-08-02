@@ -11,24 +11,20 @@
 @*
     Prerendering is deliberately off, here and on Routes below.
 
-    The JWT lives in the browser's localStorage, which the server cannot read. Every render
-    resolves the authentication state — MainLayout wraps the whole application in an
-    <AuthorizeView>, so even /login goes through it — and that resolution ends in a JS interop
-    call. During a prerender pass there is no browser, so the call throws. No page of this
-    application is prerenderable; this is the root of the component tree, not a page-level
-    detail to work around.
+    It used to be impossible: the JWT lived in the browser's localStorage, which the server
+    cannot read, and every render resolved the authentication state through a JS interop call
+    that throws when there is no browser. ADR 0009 removed that obstacle — the identity is now
+    a cookie this host reads, so it does know the caller at render time.
 
-    Even if it were made to work, the gain would be negative. The public pages are built on
+    What remains is the reason that was always the stronger one. The pages are built on
     interactive MudBlazor controls, which a prerendered pass renders inert: a login form the
-    user can see and type into but that silently drops the click until WebAssembly boots.
-    The pages that load data do so in OnInitializedAsync, which prerendering runs twice — the
-    server pass having no token, it would spend a 401 round-trip per page.
+    user can see and type into but that silently drops the click until WebAssembly boots. The
+    pages that load data do so in OnInitializedAsync, which prerendering runs twice — once
+    server-side, for a first paint that is replaced moments later. The application is entirely
+    behind authentication, so there is no SEO to gain either.
 
-    Serving this application over SSR would mean moving the token into a cookie behind a
-    backend-for-frontend, so the server knows the caller at render time. That is a sound
-    pattern, but it buys nothing here: the application is entirely behind authentication, so
-    there is no SEO to gain, and it would put a second authentication model next to the bearer
-    JWT the API and its integration tests are built on.
+    Turning it on is now a real option rather than a blocked one, and it is a decision about
+    perceived performance, to be made against a measurement. It is not made here.
 *@
     <HeadOutlet @rendermode="new InteractiveWebAssemblyRenderMode(prerender: false)"/>
 </head>

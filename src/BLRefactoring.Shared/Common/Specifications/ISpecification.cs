@@ -3,9 +3,16 @@ using System.Linq.Expressions;
 namespace BLRefactoring.Shared.Common.Specifications;
 
 /// <summary>
-/// Defines a specification pattern for building composable query criteria against entities of type <typeparamref name="T"/>.
-/// Specifications encapsulate query logic (filtering, ordering, paging) into reusable, testable objects.
+/// A reusable, testable piece of query criteria against entities of type <typeparamref name="T"/>.
 /// </summary>
+/// <remarks>
+/// Filtering only. It used to declare ordering and paging as well — <c>OrderBy</c>,
+/// <c>OrderByDescending</c>, <c>Take</c>, <c>Skip</c> — and no specification in the solution ever
+/// set one, because ADR 0001 puts paging on the query side and out of the repositories entirely:
+/// "no use case in this domain loads aggregates by the page". Four properties that could only ever
+/// be null, and four branches in the evaluator that could only ever be skipped, read as a
+/// capability rather than as the leftover they were.
+/// </remarks>
 /// <typeparam name="T">The entity type the specification applies to.</typeparam>
 public interface ISpecification<T> where T : class
 {
@@ -13,24 +20,4 @@ public interface ISpecification<T> where T : class
     /// Gets the filtering expression used to match entities.
     /// </summary>
     Expression<Func<T, bool>>? Criteria { get; }
-
-    /// <summary>
-    /// Gets the expression used to order results in ascending order.
-    /// </summary>
-    Expression<Func<T, object>>? OrderBy { get; }
-
-    /// <summary>
-    /// Gets the expression used to order results in descending order.
-    /// </summary>
-    Expression<Func<T, object>>? OrderByDescending { get; }
-
-    /// <summary>
-    /// Gets the maximum number of entities to return.
-    /// </summary>
-    int? Take { get; }
-
-    /// <summary>
-    /// Gets the number of entities to skip before returning results.
-    /// </summary>
-    int? Skip { get; }
 }

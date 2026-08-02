@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BLRefactoring.Shared.Api.Controllers;
@@ -12,10 +13,29 @@ namespace BLRefactoring.Shared.Api.Controllers;
 /// <c>ControllerAttribute</c>, so MVC's discovery would otherwise pick this class up as a
 /// controller in its own right — actionless and harmless, but a controller nonetheless. Being
 /// abstract keeps it out of the application model, as <see cref="AuthControllerBase"/> already is.
+/// <para>
+/// The 401 is declared here rather than on each of the eighteen actions below, for the same reason
+/// <c>[Authorize]</c> is: it is a property of every one of them. An unauthenticated call to any
+/// action of either host is answered 401 by the authentication middleware, and until now the
+/// document said so nowhere — so every generated client treated the one response it is guaranteed
+/// to meet as an unexpected one.
+/// </para>
+/// <para>
+/// <c>[ProducesErrorResponseType(typeof(void))]</c> is what keeps that declaration honest.
+/// <c>[ApiController]</c> makes <c>ProblemDetails</c> the type of every error response whose type
+/// is not stated, which is right for the failures this API writes itself and wrong for the two it
+/// does not: 401 and 403 are written by the authentication middleware, with no body at all. Left to
+/// the default, the document promised a problem document there and the generated client obeyed it —
+/// deserialising an empty body and throwing <c>"Response was null which was not expected."</c> in
+/// place of the 401. Every error body this API actually sends is declared explicitly as
+/// <c>ProblemDetails</c> at its own action, so nothing else relies on the default.
+/// </para>
 /// </remarks>
 [Authorize]
 [ApiController]
 [Route("[controller]")]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+[ProducesErrorResponseType(typeof(void))]
 public abstract class ApiControllerBase : ControllerBase
 {
 }

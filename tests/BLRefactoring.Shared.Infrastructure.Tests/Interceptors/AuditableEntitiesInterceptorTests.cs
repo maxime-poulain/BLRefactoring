@@ -51,6 +51,13 @@ public class AuditableEntitiesInterceptorTests
             .AddInterceptors(new AuditableEntitiesInterceptor(clock))
             .Options);
 
+    /// <remarks>
+    /// This asserts what the interceptor writes, which is not on its own what a row ends up
+    /// holding: the column's precision decides how much of it survives. It used to be
+    /// <c>datetime2(2)</c> — buckets of 10 ms — so stamps a millisecond apart, exactly what this
+    /// test produces, were stored as one value and this test proved a property SQL Server undid.
+    /// The column is now <c>datetime2(7)</c>, and the distinction reaches the row.
+    /// </remarks>
     [Fact]
     public async Task EntitiesSavedTogether_EachCarryTheirOwnInstant()
     {

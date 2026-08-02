@@ -1,7 +1,7 @@
 @inherits LayoutComponentBase
 @using BLRefactoring.Blazor.Client.Infrastructure
-@inject IJwtTokenService JwtTokenService
-@inject JwtAuthenticationStateProvider AuthStateProvider
+@inject IBffSessionClient SessionClient
+@inject BffAuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavigationManager
 
 <MudThemeProvider @bind-IsDarkMode="@_isDarkMode" />
@@ -39,8 +39,10 @@
 
     private async Task HandleLogout()
     {
-        await JwtTokenService.RemoveTokenAsync();
-        AuthStateProvider.NotifyUserLogout();
+        // Signing out is the BFF's business: it drops the cookie, and with it the only copy of the
+        // token. There is nothing left in the browser to clear. See ADR 0009.
+        await SessionClient.LogoutAsync();
+        AuthStateProvider.NotifyAuthenticationChanged();
         NavigationManager.NavigateTo("/login");
     }
 }

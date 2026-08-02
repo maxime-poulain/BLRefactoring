@@ -121,6 +121,9 @@
 </MudContainer>
 
 @code {
+    /// <summary>412, as the API answers an edit based on a version that is no longer current.</summary>
+    private const int StatusPreconditionFailed = 412;
+
     private const int TitleMinLength = 5;
     private const int TitleMaxLength = 30;
     private const int DescriptionMaxLength = 500;
@@ -143,6 +146,17 @@
     private IReadOnlyCollection<string> _selectedTopics = [];
     private string? _topicsError;
 
+    /// <summary>
+    /// The version this page read, to be sent back when saving.
+    /// </summary>
+    /// <remarks>
+    /// Without it the API answers 428 and refuses the edit — an unconditional write would let this
+    /// page overwrite changes it never saw. It is held from the moment the training is loaded and
+    /// never refreshed behind the user's back: fetching a newer version to retry with is exactly
+    /// the overwrite this mechanism exists to prevent. See ADR 0010.
+    /// </remarks>
+    private string? _version;
+
     private bool HasSelectedTopics => _selectedTopics.Count > 0;
 
     protected override async Task OnInitializedAsync()
@@ -152,7 +166,11 @@
         _isLoadingData = true;
         try
         {
-            var training = await TrainingClient.GetTrainingByIdAsync(Id);
+            var read = await TrainingClient.GetTrainingByIdAsync(Id);
+
+            _version = read.Headers.TryGetValue("ETag", out var etag) ? etag.FirstOrDefault() : null;
+
+            var training = read.Result;
             _title = training.Title;
             _description = training.Description;
             _prerequisites = training.Prerequisites;
@@ -235,9 +253,10 @@
         {
             if (IsEditMode)
             {
-                var request = new TrainingEditionRequest
+                // The identifier travels in the route now, not in the body: the request contract
+                // carries only what a caller actually sends.
+                var request = new EditTrainingRequestHttp
                 {
-                    TrainingId = Id,
                     Title = _title.Trim(),
                     Topics = _selectedTopics.ToList(),
                     Description = _description,
@@ -245,12 +264,14 @@
                     AcquiredSkills = _acquiredSkills
                 };
 
-                await TrainingClient.UpdateTrainingAsync(request);
+                // The version read when the page loaded. The API refuses an edit that does not
+                // state which version it replaces — see ADR 0010.
+                await TrainingClient.UpdateTrainingAsync(Id, _version, request);
                 Snackbar.Add("Training updated successfully!", Severity.Success);
             }
             else
             {
-                var request = new TrainingCreationRequest
+                var request = new CreateTrainingRequestHttp
                 {
                     Title = _title.Trim(),
                     Topics = _selectedTopics.ToList(),
@@ -265,12 +286,26 @@
 
             NavigationManager.NavigateTo("/trainings");
         }
-        catch (ApiException<List<Error>> ex)
+        catch (ApiException<ProblemDetails> ex) when (ex.StatusCode == StatusPreconditionFailed)
         {
-            foreach (var error in ex.Result)
-            {
-                Snackbar.Add(error.ErrorMessage, Severity.Error);
-            }
+            // Someone saved this training between the moment this page read it and now. Saying so
+            // plainly matters more than the API's own wording, which describes a version mismatch
+            // rather than what happened.
+            //
+            // Nothing is cleared and nothing is retried. Re-reading to obtain a fresh version and
+            // sending the same body would overwrite the other edit without anyone seeing it, which
+            // is the precise thing this refusal is protecting. The text stays on screen so it can
+            // be copied out; reloading the page is the way back to a current version.
+            Snackbar.Add(
+                "Someone else changed this training since you opened it. Your changes were not "
+                + "saved — copy them, then reload the page to see the current version.",
+                Severity.Warning);
+        }
+        catch (ApiException<ProblemDetails> ex)
+        {
+            // One RFC 7807 document rather than a bare array of errors: the detail carries the
+            // message, and the domain codes travel in the `domainErrors` extension. See ADR 0004.
+            Snackbar.Add(ex.Result.Detail ?? ex.Result.Title ?? "The request was rejected.", Severity.Error);
         }
         catch (ApiException ex)
         {

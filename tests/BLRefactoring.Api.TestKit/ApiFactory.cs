@@ -21,7 +21,8 @@ namespace BLRefactoring.Api.TestKit;
 /// both hosts, leaving <typeparamref name="TEntryPoint"/> as the only difference.
 /// </summary>
 public abstract class ApiFactory<TEntryPoint>
-    : WebApplicationFactory<TEntryPoint>, IAsyncLifetime, IResettableDatabase, IServiceScopeSource
+    : WebApplicationFactory<TEntryPoint>, IAsyncLifetime, IResettableDatabase, IServiceScopeSource,
+      IHttpClientSource
     where TEntryPoint : class
 {
     private readonly MsSqlContainer _msSqlContainer = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest")
@@ -77,28 +78,40 @@ public abstract class ApiFactory<TEntryPoint>
     {
         await _msSqlContainer.StartAsync();
 
-        // Materialise the host now rather than on the first CreateClient(): its
-        // startup is what applies the migrations, and Respawn reads the schema when
-        // the checkpoint is created. Creating it against an empty database would
-        // yield a checkpoint that resets nothing — silently, which is worse than
-        // no reset at all.
-        using (var _ = CreateClient())
+        // Everything after the container has started is wrapped, because xUnit does not call
+        // DisposeAsync on a fixture whose initialisation threw. A failed migration would then
+        // leave a SQL Server container running with nothing left holding a reference to it —
+        // reaped by Ryuk eventually, and not at all on a machine where Ryuk is disabled.
+        try
         {
-        }
-
-        _connection = new SqlConnection(_msSqlContainer.GetConnectionString());
-        await _connection.OpenAsync();
-
-        _respawner = await Respawner.CreateAsync(
-            _connection,
-            new RespawnerOptions
+            // Materialise the host now rather than on the first CreateClient(): its
+            // startup is what applies the migrations, and Respawn reads the schema when
+            // the checkpoint is created. Creating it against an empty database would
+            // yield a checkpoint that resets nothing — silently, which is worse than
+            // no reset at all.
+            using (var _ = CreateClient())
             {
-                DbAdapter = DbAdapter.SqlServer,
-                SchemasToInclude = ["dbo"],
-                // Both DbContexts write their applied migrations here. Wiping it
-                // would leave the database's data inconsistent with its schema.
-                TablesToIgnore = [new Table("__EFMigrationsHistory")]
-            });
+            }
+
+            _connection = new SqlConnection(_msSqlContainer.GetConnectionString());
+            await _connection.OpenAsync();
+
+            _respawner = await Respawner.CreateAsync(
+                _connection,
+                new RespawnerOptions
+                {
+                    DbAdapter = DbAdapter.SqlServer,
+                    SchemasToInclude = ["dbo"],
+                    // Both DbContexts write their applied migrations here. Wiping it
+                    // would leave the database's data inconsistent with its schema.
+                    TablesToIgnore = [new Table("__EFMigrationsHistory")]
+                });
+        }
+        catch
+        {
+            await _msSqlContainer.DisposeAsync();
+            throw;
+        }
     }
 
     /// <summary>
@@ -110,10 +123,20 @@ public abstract class ApiFactory<TEntryPoint>
     /// <inheritdoc />
     public IServiceScope CreateScope() => Services.CreateScope();
 
+    /// <remarks>
+    /// <c>DisposeAsync</c> on the container, not <c>StopAsync</c>: stopping leaves the container in
+    /// place, so a run that is interrupted — or a machine with <c>TESTCONTAINERS_RYUK_DISABLED</c>
+    /// set — accumulates stopped SQL Servers. The connection is null-guarded because initialisation
+    /// can fail before it exists.
+    /// </remarks>
     public new async Task DisposeAsync()
     {
-        await _connection.DisposeAsync();
-        await _msSqlContainer.StopAsync();
+        if (_connection is not null)
+        {
+            await _connection.DisposeAsync();
+        }
+
+        await _msSqlContainer.DisposeAsync();
         await base.DisposeAsync();
     }
 }

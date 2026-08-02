@@ -24,15 +24,14 @@ public static class ConcurrencyControllerExtensions
         controller.Response.Headers.ETag = EntityTag.From(rowVersion);
     }
 
-    /// <summary>
-    /// Reads the version the caller states they read, from the <c>If-Match</c> header.
-    /// </summary>
-    public static bool TryGetExpectedVersion(this ControllerBase controller, out byte[] expectedVersion)
-    {
-        ArgumentNullException.ThrowIfNull(controller);
-
-        return EntityTag.TryParse(controller.Request.Headers.IfMatch.FirstOrDefault(), out expectedVersion);
-    }
+    // There used to be a TryGetExpectedVersion here, reading If-Match straight off
+    // Request.Headers. That is exactly why no generated client could send one: a header nobody
+    // declares never reaches the OpenAPI document. The actions now bind it as a parameter and call
+    // EntityTag.TryParse themselves. See ADR 0010.
+    //
+    // One behavioural nuance came with the move. The old code took the first value of a
+    // multi-valued If-Match; a bound string receives them joined by commas. Both fail TryParse and
+    // come out as 428 — same answer, reached by a different route.
 
     /// <summary>
     /// 428, for a write that did not say which version it is replacing.
@@ -40,12 +39,18 @@ public static class ConcurrencyControllerExtensions
     /// <remarks>
     /// Refusing an unconditional write is the point: accepting it would let the
     /// caller overwrite changes they never saw.
+    /// <para>
+    /// The body goes through <see cref="ProblemResultExtensions.Problem(ControllerBase, int, IReadOnlyList{ErrorResponseHttp})"/>
+    /// like every other failure. This one has no <c>Result</c> behind it — the application layer
+    /// never hears about a missing header — so it states its own error, and still comes out in the
+    /// same shape.
+    /// </para>
     /// </remarks>
     public static ActionResult PreconditionRequired(this ControllerBase controller)
     {
         ArgumentNullException.ThrowIfNull(controller);
 
-        return controller.StatusCode(
+        return controller.Problem(
             StatusCodes.Status428PreconditionRequired,
             new[]
             {
@@ -60,22 +65,5 @@ public static class ConcurrencyControllerExtensions
                     }
                 }
             });
-    }
-
-    /// <summary>
-    /// 412, for a write whose <c>If-Match</c> no longer matches the stored version.
-    /// </summary>
-    /// <remarks>
-    /// Takes the published error contract rather than the kernel's collection: this helper writes
-    /// a response body, and response bodies are the API's vocabulary. Callers map with
-    /// <c>ToHttp()</c> before handing the errors over.
-    /// </remarks>
-    public static ActionResult PreconditionFailed(
-        this ControllerBase controller,
-        IEnumerable<ErrorResponseHttp> errors)
-    {
-        ArgumentNullException.ThrowIfNull(controller);
-
-        return controller.StatusCode(StatusCodes.Status412PreconditionFailed, errors);
     }
 }
