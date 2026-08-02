@@ -128,7 +128,7 @@ jobs:
             /d:sonar.token="$SONAR_TOKEN" \
             /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
             /d:sonar.exclusions="src/BLRefactoring.GeneratedClients/**" \
-            /d:sonar.qualitygate.wait=true
+            /d:sonar.qualitygate.wait=${{ github.event_name == 'pull_request' }}
 
           # --no-incremental, because the scanner works by hooking the compilation: a project MSBuild
           # skips as up to date is a project the analysis never sees, and it would be reported as
@@ -144,8 +144,11 @@ jobs:
           dotnet test --no-build --configuration Release \
             --collect:"XPlat Code Coverage;Format=opencover"
 
-          # Fails the job when the quality gate fails, rather than reporting green and leaving the
-          # verdict on a website. This is the check to make required in branch protection — but only
-          # once the first analysis of master has come back green, or the rule blocks every pull
-          # request on a baseline nobody has seen yet.
+          # Fails the job when the gate fails — on a pull request, where failing is the point:
+          # something is about to enter master and the gate is what stops it. On a push to master
+          # the same failure stops nothing, the code being already in, and only paints the default
+          # branch red until somebody pushes again. A red check that blocks nothing is how people
+          # learn to ignore checks, which is the same argument the guard job above is built on. The
+          # verdict is not lost: SonarQube Cloud carries it on the branch, its badge and its
+          # dashboard. See ADR 0018.
           dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"

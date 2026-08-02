@@ -34,6 +34,31 @@ public sealed class PipelineRules
             .ShouldHold();
 
     [Fact]
+    [ArchitectureRule("0018",
+        "the gate fails the build where failing stops something, and reports where it would not")]
+    public void TheGate_IsWaitedOnForAPullRequestAndNotForTheDefaultBranch()
+    {
+        var text = SourceTree.ReadText(Workflow);
+
+        new[]
+        {
+            (Setting: "sonar.qualitygate.wait=${{ github.event_name == 'pull_request' }}",
+             Present: true,
+             Wrong: "does not make the gate wait depend on the event. On a pull request the wait is " +
+                    "what stops a failing change entering master; on a push to master the same " +
+                    "failure stops nothing and only paints the default branch red"),
+            (Setting: "sonar.qualitygate.wait=true",
+             Present: false,
+             Wrong: "waits on the gate unconditionally, so a verdict on already-merged code is " +
+                    "published as a broken build")
+        }
+            .Selected("condition on the gate wait")
+            .Where(rule => text.Contains(rule.Setting, StringComparison.Ordinal) != rule.Present)
+            .Select(rule => $"'.github/workflows/sonar.yml' {rule.Wrong}")
+            .ShouldHold();
+    }
+
+    [Fact]
     [ArchitectureRule("0017",
         "the analysis reads both the pull request and the branch it targets, or there is nothing to compare")]
     public void TheAnalysis_CoversThePullRequestAndTheDefaultBranch()
@@ -42,17 +67,18 @@ public sealed class PipelineRules
 
         new[]
         {
-            ("pull_request:",
-             "analyses no pull request, so a regression is found after it is merged"),
-            ("branches: [master]",
-             "analyses no push to master, so there is no baseline for a pull request to be compared against"),
-            ("sonar.exclusions",
-             "excludes nothing, so the generated client is measured like code somebody wrote — " +
-             "two thousand machine-written lines deciding the duplication figure")
+            (Setting: "pull_request:",
+             Wrong: "analyses no pull request, so a regression is found after it is merged"),
+            (Setting: "branches: [master]",
+             Wrong: "analyses no push to master, so there is no baseline for a pull request to be " +
+                    "compared against"),
+            (Setting: "sonar.exclusions",
+             Wrong: "excludes nothing, so the generated client is measured like code somebody wrote " +
+                    "— two thousand machine-written lines deciding the duplication figure")
         }
             .Selected("setting the analysis depends on")
-            .Where(setting => !text.Contains(setting.Item1, StringComparison.Ordinal))
-            .Select(setting => $"'.github/workflows/sonar.yml' {setting.Item2}")
+            .Where(rule => !text.Contains(rule.Setting, StringComparison.Ordinal))
+            .Select(rule => $"'.github/workflows/sonar.yml' {rule.Wrong}")
             .ShouldHold();
     }
 }
