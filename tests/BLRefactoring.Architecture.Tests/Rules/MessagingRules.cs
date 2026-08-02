@@ -17,6 +17,11 @@ namespace BLRefactoring.Architecture.Tests.Rules;
 /// </remarks>
 public sealed class MessagingRules
 {
+    // Spelled in two halves, like the error-vocabulary rule for the same reason: a rule that forbids
+    // a token cannot write it, or it finds itself. The scan below is path-scoped and would not reach
+    // this file, but the convention is cheaper to keep than to re-derive.
+    private const string ExceptionConstruction = "new Validation" + "Exception(";
+
     private static IReadOnlyList<Type> CqrsTypes { get; } =
     [
         .. Solution.CqrsApplication.DeclaredTypes()
@@ -143,6 +148,46 @@ public sealed class MessagingRules
                 $"{query.FullName} carries a Guid and has no validator. The three queries that take " +
                 "one all validate it; the ones that do not take one are bounded by [Range] at the " +
                 "HTTP contract instead")
+            .ShouldHold();
+    }
+
+    [Fact]
+    [ArchitectureRule("0016",
+        "a rejected command is a failed Result, so nothing on the write side raises one as an exception")]
+    public void NoCommandPath_RaisesAValidationFailureAsAnException()
+    {
+        var writeSide = Path.Combine(SourceTree.RepositoryRoot, "src", "DDDWithCqrs", "Application");
+
+        SourceTree.SourceFiles
+            .Where(file => file.StartsWith(writeSide, StringComparison.Ordinal))
+            .Selected("file on the CQRS write side")
+            .Where(file => SourceTree.ReadText(file).Contains(ExceptionConstruction, StringComparison.Ordinal))
+            .Select(file =>
+                $"'{SourceTree.Relative(file)}' raises a validation failure as an exception. A command " +
+                "reports one as a failed Result, which leaves through the single place a business " +
+                "failure becomes a body — throwing it publishes a second error shape from the same " +
+                "endpoint")
+            .ShouldHold();
+    }
+
+    [Fact]
+    [ArchitectureRule("0016",
+        "one place raises the validation code, so it keeps meaning 'rejected before the aggregate'")]
+    public void TheValidationCode_IsRaisedByThePipelineAlone()
+    {
+        var sources = Path.Combine(SourceTree.RepositoryRoot, "src");
+
+        SourceTree.SourceFiles
+            .Where(file => file.StartsWith(sources, StringComparison.Ordinal))
+            .Selected("source file")
+            .Where(file => SourceTree.ReadText(file).Contains("ErrorCodes.Validation", StringComparison.Ordinal))
+            .Select(SourceTree.Relative)
+            .Where(file => !file.EndsWith("ErrorCodes.cs", StringComparison.Ordinal))
+            .Where(file => !file.EndsWith("ValidationPipelineBehavior.cs", StringComparison.Ordinal))
+            .Select(file =>
+                $"'{file}' raises ErrorCodes.Validation. The code says a request was refused before " +
+                "any aggregate was reached, which only the validation behaviour is in a position to " +
+                "say — anywhere else it is a failure with an owner, and the owner should name it")
             .ShouldHold();
     }
 

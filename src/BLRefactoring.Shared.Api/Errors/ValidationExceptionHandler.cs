@@ -16,6 +16,13 @@ namespace BLRefactoring.Shared.Api.Errors;
 /// parse both. It used to answer <c>{ "errors": [{ "propertyName": …, "errorMessage": … }] }</c>,
 /// a shape invented here and published nowhere.
 /// <para>
+/// What still reaches it is narrower than it was. A rejected command no longer throws — the CQRS
+/// validation behaviour returns a failed <c>Result</c>, which leaves as a <c>domainErrors</c>
+/// document like every other business failure. What is left is the query validators, which have no
+/// <c>Result</c> to fail into and whose rejections would otherwise become a 500 when an empty
+/// identifier reached <c>EntityId.Create</c>.
+/// </para>
+/// <para>
 /// Registered as an <see cref="IExceptionHandler"/> rather than a middleware. The two hand-written
 /// middlewares it replaces had to be ordered relative to each other — the validation one inside the
 /// global one, or a validation failure became a 500 — and that ordering was explained in five lines
