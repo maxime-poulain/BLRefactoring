@@ -6,8 +6,14 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainerAggregate.ValueObjects;
 
+/// <summary>
+/// Behaviour covered for <c>Bio</c>.
+/// </summary>
 public sealed class BioTests
 {
+    /// <summary>
+    /// Create, valid bio, returns success.
+    /// </summary>
     [Fact]
     public void Create_ValidBio_ReturnsSuccess()
     {
@@ -18,6 +24,9 @@ public sealed class BioTests
         result.ShouldBeSuccess();
     }
 
+    /// <summary>
+    /// Create, valid bio, sets value.
+    /// </summary>
     [Fact]
     public void Create_ValidBio_SetsValue()
     {
@@ -28,6 +37,9 @@ public sealed class BioTests
         bio.Value.Should().Be("Experienced software trainer.");
     }
 
+    /// <summary>
+    /// Create, null bio, returns failure.
+    /// </summary>
     [Fact]
     public void Create_NullBio_ReturnsFailure()
     {
@@ -38,6 +50,9 @@ public sealed class BioTests
         result.ShouldContainError(TrainerErrorCodes.BioEmpty);
     }
 
+    /// <summary>
+    /// Create, empty bio, returns failure.
+    /// </summary>
     [Fact]
     public void Create_EmptyBio_ReturnsFailure()
     {
@@ -48,6 +63,9 @@ public sealed class BioTests
         result.ShouldContainError(TrainerErrorCodes.BioEmpty);
     }
 
+    /// <summary>
+    /// Create, whitespace only bio, returns failure.
+    /// </summary>
     [Fact]
     public void Create_WhitespaceOnlyBio_ReturnsFailure()
     {
@@ -58,6 +76,9 @@ public sealed class BioTests
         result.ShouldContainError(TrainerErrorCodes.BioEmpty);
     }
 
+    /// <summary>
+    /// Create, exactly max length, returns success.
+    /// </summary>
     [Fact]
     public void Create_ExactlyMaxLength_ReturnsSuccess()
     {
@@ -71,6 +92,9 @@ public sealed class BioTests
         result.ShouldBeSuccess();
     }
 
+    /// <summary>
+    /// Create, exceeds max length, returns failure.
+    /// </summary>
     [Fact]
     public void Create_ExceedsMaxLength_ReturnsFailure()
     {
@@ -84,6 +108,9 @@ public sealed class BioTests
         result.ShouldContainError(TrainerErrorCodes.BioExceeds500Characters);
     }
 
+    /// <summary>
+    /// Equality, same value, are equal.
+    /// </summary>
     [Fact]
     public void Equality_SameValue_AreEqual()
     {
@@ -95,6 +122,9 @@ public sealed class BioTests
         bio1.Should().Be(bio2);
     }
 
+    /// <summary>
+    /// Equality, different value, are not equal.
+    /// </summary>
     [Fact]
     public void Equality_DifferentValue_AreNotEqual()
     {

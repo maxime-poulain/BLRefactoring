@@ -13,9 +13,21 @@ namespace BLRefactoring.Shared.Application.EventHandlers;
 /// address — the aggregate has already forgotten the old one by the time the
 /// event is handled.
 /// </remarks>
+/// <summary>
+/// Reacts to the event: warns the address being left behind.
+/// <para>
+/// Dispatched inside the unit of work, before the transaction commits, so anything this handler
+/// writes joins the same transaction as the change that raised the event.
+/// </para>
+/// </summary>
 public sealed class NotifyPreviousAddressWhenTrainerContactEmailChangedEventHandler(IEmailSender emailSender)
     : IDomainEventHandler<TrainerContactEmailChangedDomainEvent>
 {
+    /// <summary>
+    /// Runs the reaction.
+    /// </summary>
+    /// <param name="notification">The event that was raised.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     public async ValueTask Handle(TrainerContactEmailChangedDomainEvent notification, CancellationToken cancellationToken)
     {
         var message = new EmailMessage(

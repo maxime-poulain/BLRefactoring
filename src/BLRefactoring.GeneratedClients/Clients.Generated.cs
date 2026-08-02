@@ -1743,6 +1743,10 @@ namespace BLRefactoring.GeneratedClients
     public partial class CreateTrainingRequestHttp
     {
 
+        /// <summary>
+        /// The training's title, as the caller sent it. Bounds are enforced by the value object,
+        /// <br/>not here.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("title")]
         [System.ComponentModel.DataAnnotations.Required]
         [System.ComponentModel.DataAnnotations.StringLength(100, MinimumLength = 5)]
@@ -1758,16 +1762,25 @@ namespace BLRefactoring.GeneratedClients
         [System.ComponentModel.DataAnnotations.MinLength(1)]
         public System.Collections.Generic.List<string> Topics { get; set; } = new System.Collections.Generic.List<string>();
 
+        /// <summary>
+        /// The training's description, as the caller sent it.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("description")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.StringLength(500)]
         public string Description { get; set; } = default!;
 
+        /// <summary>
+        /// What a participant needs beforehand, as the caller sent it.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("prerequisites")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.StringLength(500)]
         public string Prerequisites { get; set; } = default!;
 
+        /// <summary>
+        /// What a participant leaves with, as the caller sent it.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("acquiredSkills")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.StringLength(500)]
@@ -1791,11 +1804,17 @@ namespace BLRefactoring.GeneratedClients
     public partial class EditTrainerRequestHttp
     {
 
+        /// <summary>
+        /// The trainer's first name, as the caller sent it.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("firstname")]
         [System.ComponentModel.DataAnnotations.Required]
         [System.ComponentModel.DataAnnotations.StringLength(50, MinimumLength = 2)]
         public string Firstname { get; set; } = default!;
 
+        /// <summary>
+        /// The trainer's last name, as the caller sent it.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("lastname")]
         [System.ComponentModel.DataAnnotations.Required]
         [System.ComponentModel.DataAnnotations.StringLength(50, MinimumLength = 2)]
@@ -1834,6 +1853,10 @@ namespace BLRefactoring.GeneratedClients
     public partial class EditTrainingRequestHttp
     {
 
+        /// <summary>
+        /// The training's title, as the caller sent it. Bounds are enforced by the value object,
+        /// <br/>not here.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("title")]
         [System.ComponentModel.DataAnnotations.Required]
         [System.ComponentModel.DataAnnotations.StringLength(100, MinimumLength = 5)]
@@ -1847,16 +1870,25 @@ namespace BLRefactoring.GeneratedClients
         [System.ComponentModel.DataAnnotations.MinLength(1)]
         public System.Collections.Generic.List<string> Topics { get; set; } = new System.Collections.Generic.List<string>();
 
+        /// <summary>
+        /// The training's description, as the caller sent it.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("description")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.StringLength(500)]
         public string Description { get; set; } = default!;
 
+        /// <summary>
+        /// What a participant needs beforehand, as the caller sent it.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("prerequisites")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.StringLength(500)]
         public string Prerequisites { get; set; } = default!;
 
+        /// <summary>
+        /// What a participant leaves with, as the caller sent it.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("acquiredSkills")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.StringLength(500)]
@@ -2028,14 +2060,23 @@ namespace BLRefactoring.GeneratedClients
     public partial class TrainerResponseHttp
     {
 
+        /// <summary>
+        /// The identifier.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("id")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid Id { get; set; } = default!;
 
+        /// <summary>
+        /// The trainer's first name.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("firstname")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Firstname { get; set; } = default!;
 
+        /// <summary>
+        /// The trainer's last name.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("lastname")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Lastname { get; set; } = default!;
@@ -2072,10 +2113,16 @@ namespace BLRefactoring.GeneratedClients
     public partial class TrainingResponseHttp
     {
 
+        /// <summary>
+        /// The identifier.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("id")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid Id { get; set; } = default!;
 
+        /// <summary>
+        /// The training's title.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("title")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Title { get; set; } = default!;
@@ -2087,18 +2134,30 @@ namespace BLRefactoring.GeneratedClients
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid TrainerId { get; set; } = default!;
 
+        /// <summary>
+        /// The topics the training is filed under.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("topics")]
         [System.ComponentModel.DataAnnotations.Required]
         public System.Collections.Generic.List<string> Topics { get; set; } = new System.Collections.Generic.List<string>();
 
+        /// <summary>
+        /// The training's description.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("description")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Description { get; set; } = default!;
 
+        /// <summary>
+        /// What a participant needs beforehand.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("prerequisites")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Prerequisites { get; set; } = default!;
 
+        /// <summary>
+        /// What a participant leaves with.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("acquiredSkills")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string AcquiredSkills { get; set; } = default!;

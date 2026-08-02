@@ -4,10 +4,16 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Validators;
 
+/// <summary>
+/// Behaviour covered for <c>EditTrainerCommandValidator</c>.
+/// </summary>
 public sealed class EditTrainerCommandValidatorTests
 {
     private readonly EditTrainerCommandValidator _sut = new();
 
+    /// <summary>
+    /// Validate, valid command, is valid.
+    /// </summary>
     [Fact]
     public async Task Validate_ValidCommand_IsValid()
     {
@@ -16,6 +22,9 @@ public sealed class EditTrainerCommandValidatorTests
         result.IsValid.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Validate, empty contact email, has error.
+    /// </summary>
     [Fact]
     public async Task Validate_EmptyContactEmail_HasError()
     {
@@ -25,6 +34,9 @@ public sealed class EditTrainerCommandValidatorTests
         result.Errors.Should().Contain(e => e.PropertyName == "ContactEmail");
     }
 
+    /// <summary>
+    /// Validate, empty firstname, has error.
+    /// </summary>
     [Fact]
     public async Task Validate_EmptyFirstname_HasError()
     {
@@ -34,6 +46,9 @@ public sealed class EditTrainerCommandValidatorTests
         result.Errors.Should().Contain(e => e.PropertyName == "Firstname");
     }
 
+    /// <summary>
+    /// Validate, empty lastname, has error.
+    /// </summary>
     [Fact]
     public async Task Validate_EmptyLastname_HasError()
     {
@@ -43,6 +58,9 @@ public sealed class EditTrainerCommandValidatorTests
         result.Errors.Should().Contain(e => e.PropertyName == "Lastname");
     }
 
+    /// <summary>
+    /// Validate, null bio, is valid.
+    /// </summary>
     [Fact]
     public async Task Validate_NullBio_IsValid()
     {

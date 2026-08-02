@@ -5,8 +5,14 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainingAggregate.ValueObjects;
 
+/// <summary>
+/// Behaviour covered for <c>Topic</c>.
+/// </summary>
 public sealed class TopicTests
 {
+    /// <summary>
+    /// Get topics, contains every topic declared on the type.
+    /// </summary>
     [Fact]
     public void GetTopics_ContainsEveryTopicDeclaredOnTheType()
     {
@@ -27,6 +33,9 @@ public sealed class TopicTests
         Topic.GetTopics().Should().BeEquivalentTo(declared);
     }
 
+    /// <summary>
+    /// Get topics, hands out a set the caller cannot change.
+    /// </summary>
     [Fact]
     public void GetTopics_HandsOutASetTheCallerCannotChange()
     {
@@ -43,6 +52,9 @@ public sealed class TopicTests
         Topic.GetTopics().Should().HaveCount(countBefore);
     }
 
+    /// <summary>
+    /// Equality, same name, are equal.
+    /// </summary>
     [Fact]
     public void Equality_SameName_AreEqual()
     {
@@ -54,6 +66,9 @@ public sealed class TopicTests
         topic1.Should().Be(topic2);
     }
 
+    /// <summary>
+    /// Equality, different name, are not equal.
+    /// </summary>
     [Fact]
     public void Equality_DifferentName_AreNotEqual()
     {
@@ -65,6 +80,9 @@ public sealed class TopicTests
         topic1.Should().NotBe(topic2);
     }
 
+    /// <summary>
+    /// Try from name, known name, returns true and topic.
+    /// </summary>
     [Fact]
     public void TryFromName_KnownName_ReturnsTrueAndTopic()
     {
@@ -76,6 +94,9 @@ public sealed class TopicTests
         topic.Should().Be(Topic.Programming);
     }
 
+    /// <summary>
+    /// Try from name, is case sensitive.
+    /// </summary>
     [Fact]
     public void TryFromName_IsCaseSensitive()
     {
@@ -88,6 +109,9 @@ public sealed class TopicTests
         topic.Should().BeNull();
     }
 
+    /// <summary>
+    /// Try from name, unknown name, returns false and null.
+    /// </summary>
     [Fact]
     public void TryFromName_UnknownName_ReturnsFalseAndNull()
     {
@@ -99,6 +123,9 @@ public sealed class TopicTests
         topic.Should().BeNull();
     }
 
+    /// <summary>
+    /// Static instances, have expected names.
+    /// </summary>
     [Fact]
     public void StaticInstances_HaveExpectedNames()
     {

@@ -5,8 +5,19 @@ using EmailValidation;
 
 namespace BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 
+/// <summary>
+/// An address a trainer is reachable at.
+/// <para>
+/// Validated on construction, so an <see cref="Email"/> that exists is well formed. The rule is
+/// the domain's own and deliberately not .NET's <c>EmailAddress</c> attribute: the two disagree,
+/// and an API refusing what the domain accepts would be worse than one asking later.
+/// </para>
+/// </summary>
 public sealed class Email : ValueObject
 {
+    /// <summary>
+    /// The address in full, local part and domain together.
+    /// </summary>
     public string FullAddress { get; } = null!;
 
     /// <summary>
@@ -40,6 +51,13 @@ public sealed class Email : ValueObject
         FullAddress = fullAddress;
     }
 
+    /// <summary>
+    /// Builds an <see cref="Email"/> from raw input.
+    /// </summary>
+    /// <returns>
+    /// The value, or every rule it broke. Failure is returned rather than thrown: a
+    /// caller sending three bad fields learns about all three at once.
+    /// </returns>
     public static Result<Email> Create(string email)
     {
         if (string.IsNullOrWhiteSpace(email))
@@ -57,6 +75,9 @@ public sealed class Email : ValueObject
 
     private static bool IsValidFormat(string email) => EmailValidator.Validate(email);
 
+    /// <summary>
+    /// Yields the parts this value is compared by.
+    /// </summary>
     protected override IEnumerable<object?> GetEqualityComponents()
     {
         yield return FullAddress;

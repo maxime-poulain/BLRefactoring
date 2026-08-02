@@ -1,4 +1,4 @@
-﻿using BLRefactoring.Shared.Application.Queries;
+using BLRefactoring.Shared.Application.Queries;
 using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
@@ -14,8 +14,14 @@ using Microsoft.Extensions.Hosting;
 
 namespace BLRefactoring.Shared.Infrastructure.Extensions;
 
+/// <summary>
+/// Registers the infrastructure layer.
+/// </summary>
 public static class ServiceCollectionExtensions
 {
+    /// <summary>
+    /// Registers the database session, the repositories and the unit of work.
+    /// </summary>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         return services

@@ -18,6 +18,9 @@ public sealed class RepositoryConventionRules
     private static readonly Regex Declaration =
         new(@"^\s*namespace\s+(?<name>[\w.]+)\s*[;{]?\s*$", RegexOptions.Compiled);
 
+    /// <summary>
+    /// Every namespace, agrees with its folder.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#repository-conventions",
         "a type's namespace is its project's name followed by its folders, so a reader can navigate by either")]
@@ -29,6 +32,9 @@ public sealed class RepositoryConventionRules
                 $"'{file.Path}' declares namespace {file.Declared}, and its folder says {file.Expected}")
             .ShouldHold();
 
+    /// <summary>
+    /// Only entry points, declare no namespace.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#repository-conventions",
         "the only files without a namespace are the entry points, which have top-level statements")]
@@ -47,6 +53,9 @@ public sealed class RepositoryConventionRules
                 "the global namespace where nothing can be said about them")
             .ShouldHold();
 
+    /// <summary>
+    /// No project, overrides its root namespace or assembly name.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#repository-conventions",
         "no project renames its own root, which is what lets a folder path predict a namespace at all")]

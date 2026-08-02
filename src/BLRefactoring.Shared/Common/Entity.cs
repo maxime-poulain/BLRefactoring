@@ -35,11 +35,28 @@ public abstract class Entity<TEntityId> : Entity, IAuditable
         Id = id;
     }
 
+    /// <summary>
+    /// Compares two entities of this type by identifier.
+    /// </summary>
+    /// <param name="other">The entity to compare against.</param>
+    /// <returns><see langword="true"/> when both carry the same identifier.</returns>
+    /// <remarks>
+    /// An entity is its identity, not its contents: a trainer whose name changed is the same
+    /// trainer. That is the difference from <see cref="ValueObject"/>, which compares by value.
+    /// </remarks>
     protected bool Equals(Entity<TEntityId> other)
     {
         return Id.Equals(other.Id);
     }
 
+    /// <summary>
+    /// Compares this entity with an arbitrary object.
+    /// </summary>
+    /// <param name="obj">The object to compare against.</param>
+    /// <returns>
+    /// <see langword="true"/> when <paramref name="obj"/> is an entity of exactly this type
+    /// carrying the same identifier.
+    /// </returns>
     public override bool Equals(object? obj)
     {
         if (obj is null)
@@ -60,11 +77,19 @@ public abstract class Entity<TEntityId> : Entity, IAuditable
         return Equals((Entity<TEntityId>)obj);
     }
 
+    /// <summary>
+    /// Returns the identifier's hash, so that equal entities hash alike.
+    /// </summary>
+    /// <returns>The hash code of <see cref="Id"/>.</returns>
     public override int GetHashCode()
     {
         return Id.GetHashCode();
     }
 
+    /// <summary>Compares two entities by identifier.</summary>
+    /// <param name="a">The left operand, possibly <see langword="null"/>.</param>
+    /// <param name="b">The right operand, possibly <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> when both are <see langword="null"/> or share an identifier.</returns>
     public static bool operator ==(Entity<TEntityId>? a, Entity<TEntityId>? b)
     {
         if (a is null && b is null)
@@ -80,6 +105,12 @@ public abstract class Entity<TEntityId> : Entity, IAuditable
         return a.Equals(b);
     }
 
+    /// <summary>
+    /// Compares two entities by identifier.
+    /// </summary>
+    /// <param name="a">The left operand.</param>
+    /// <param name="b">The right operand.</param>
+    /// <returns><see langword="true"/> when they carry different identifiers.</returns>
     public static bool operator !=(Entity<TEntityId> a, Entity<TEntityId> b)
     {
         return !(a == b);
@@ -98,7 +129,18 @@ public abstract class Entity
 /// </summary>
 public interface IAuditable
 {
+    /// <summary>
+    /// When the row behind this entity was first written.
+    /// </summary>
+    /// <remarks>
+    /// Set by the persistence layer's interceptor rather than by any behaviour method, so the
+    /// domain never has to be handed a clock.
+    /// </remarks>
     public DateTime CreatedOn { get; }
+
+    /// <summary>
+    /// When the row behind this entity was last changed, or <see langword="null"/> if it never was.
+    /// </summary>
     public DateTime? ModifiedOn { get; }
 }
 

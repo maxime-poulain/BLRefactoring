@@ -94,16 +94,33 @@ public sealed class ErrorCollection : IReadOnlyErrorCollection
         return GetEnumerator();
     }
 
+    /// <summary>
+    /// Turns this collection into a <see cref="Result"/>.
+    /// </summary>
+    /// <returns>A failure carrying these errors, or a success when there are none.</returns>
     public Result ToResult()
     {
         return this.HasErrors() ? Result.Failure(this) : Result.Success();
     }
 
+    /// <summary>
+    /// Turns this collection into a <see cref="Result{TValue}"/> around a value.
+    /// </summary>
+    /// <typeparam name="TValue">The type the successful result carries.</typeparam>
+    /// <param name="value">The value to carry when there are no errors.</param>
+    /// <returns>A failure carrying these errors, or a success carrying <paramref name="value"/>.</returns>
     public Result<TValue> ToResult<TValue>(TValue value)
     {
         return this.HasErrors() ? Result<TValue>.Failure(this) : Result<TValue>.Success(value);
     }
 
+    /// <summary>
+    /// Runs one of two functions according to whether anything went wrong.
+    /// </summary>
+    /// <typeparam name="TResult">What both branches return.</typeparam>
+    /// <param name="onSuccess">Run when the collection is empty.</param>
+    /// <param name="onFailure">Run with the errors when it is not.</param>
+    /// <returns>Whatever the branch that ran returned.</returns>
     public TResult Match<TResult>(Func<TResult> onSuccess, Func<IReadOnlyErrorCollection, TResult> onFailure)
     {
         return this.HasErrors() ?

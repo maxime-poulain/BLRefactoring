@@ -32,6 +32,12 @@ public sealed class UnhandledExceptionHandler(
     IProblemDetailsService problemDetailsService,
     ILogger<UnhandledExceptionHandler> logger) : IExceptionHandler
 {
+    /// <summary>
+    /// Turns an unhandled exception into an RFC 7807 document.
+    /// <para>
+    /// The last handler in the chain, so nothing leaves this API as a stack trace or a bare string.
+    /// </para>
+    /// </summary>
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
         Exception exception,

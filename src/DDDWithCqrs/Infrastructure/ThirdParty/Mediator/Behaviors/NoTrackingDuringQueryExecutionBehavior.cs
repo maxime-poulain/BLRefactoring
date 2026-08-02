@@ -12,6 +12,9 @@ public sealed class NoTrackingDuringQueryExecutionBehavior<TRequest, TResponse>(
     TrainingContext trainingContext) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull, IMessage
 {
+    /// <summary>
+    /// Runs the command.
+    /// </summary>
     public async ValueTask<TResponse> Handle(
         TRequest request,
         MessageHandlerDelegate<TRequest, TResponse> next,

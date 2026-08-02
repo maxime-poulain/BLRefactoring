@@ -34,6 +34,9 @@ public abstract class ApiFactory<TEntryPoint>
     // the fixture rather than reopened per reset.
     private DbConnection _connection = null!;
 
+    /// <summary>
+    /// Configure web host.
+    /// </summary>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>
@@ -74,6 +77,9 @@ public abstract class ApiFactory<TEntryPoint>
         });
     }
 
+    /// <summary>
+    /// Initialize async.
+    /// </summary>
     public async Task InitializeAsync()
     {
         await _msSqlContainer.StartAsync();

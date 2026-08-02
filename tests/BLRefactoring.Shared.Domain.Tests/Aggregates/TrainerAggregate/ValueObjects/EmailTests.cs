@@ -6,8 +6,14 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainerAggregate.ValueObjects;
 
+/// <summary>
+/// Behaviour covered for <c>Email</c>.
+/// </summary>
 public sealed class EmailTests
 {
+    /// <summary>
+    /// Create, valid email, returns success.
+    /// </summary>
     [Fact]
     public void Create_ValidEmail_ReturnsSuccess()
     {
@@ -18,6 +24,9 @@ public sealed class EmailTests
         result.ShouldBeSuccess();
     }
 
+    /// <summary>
+    /// Create, valid email, sets full address.
+    /// </summary>
     [Fact]
     public void Create_ValidEmail_SetsFullAddress()
     {
@@ -28,6 +37,9 @@ public sealed class EmailTests
         email.FullAddress.Should().Be("john.doe@example.com");
     }
 
+    /// <summary>
+    /// Create, valid email, sets local part and domain.
+    /// </summary>
     [Fact]
     public void Create_ValidEmail_SetsLocalPartAndDomain()
     {
@@ -39,6 +51,9 @@ public sealed class EmailTests
         email.Domain.Should().Be("example.com");
     }
 
+    /// <summary>
+    /// Local part and domain, split on the last separator.
+    /// </summary>
     [Fact]
     public void LocalPartAndDomain_SplitOnTheLastSeparator()
     {
@@ -51,6 +66,9 @@ public sealed class EmailTests
         email.Domain.Should().Be("example.com");
     }
 
+    /// <summary>
+    /// Create, null email, returns failure.
+    /// </summary>
     [Fact]
     public void Create_NullEmail_ReturnsFailure()
     {
@@ -61,6 +79,9 @@ public sealed class EmailTests
         result.ShouldContainError(TrainerErrorCodes.InvalidEmail);
     }
 
+    /// <summary>
+    /// Create, empty string, returns failure.
+    /// </summary>
     [Fact]
     public void Create_EmptyString_ReturnsFailure()
     {
@@ -71,6 +92,9 @@ public sealed class EmailTests
         result.ShouldContainError(TrainerErrorCodes.InvalidEmail);
     }
 
+    /// <summary>
+    /// Create, whitespace only, returns failure.
+    /// </summary>
     [Fact]
     public void Create_WhitespaceOnly_ReturnsFailure()
     {
@@ -81,6 +105,9 @@ public sealed class EmailTests
         result.ShouldContainError(TrainerErrorCodes.InvalidEmail);
     }
 
+    /// <summary>
+    /// Create, invalid format, returns failure.
+    /// </summary>
     [Fact]
     public void Create_InvalidFormat_ReturnsFailure()
     {
@@ -91,6 +118,9 @@ public sealed class EmailTests
         result.ShouldContainError(TrainerErrorCodes.InvalidEmail);
     }
 
+    /// <summary>
+    /// Equality, same address, are equal.
+    /// </summary>
     [Fact]
     public void Equality_SameAddress_AreEqual()
     {
@@ -102,6 +132,9 @@ public sealed class EmailTests
         email1.Should().Be(email2);
     }
 
+    /// <summary>
+    /// Equality, different address, are not equal.
+    /// </summary>
     [Fact]
     public void Equality_DifferentAddress_AreNotEqual()
     {

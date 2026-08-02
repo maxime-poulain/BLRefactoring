@@ -7,11 +7,29 @@ using BLRefactoring.Shared.Application.Factories;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
 
+/// <summary>
+/// Asks that a trainer be created.
+/// </summary>
 public sealed class CreateTrainerCommand : ICommand<Result>
 {
+    /// <summary>
+    /// The trainer's identifier.
+    /// </summary>
     public Guid TrainerId { get; init; } = Guid.NewGuid();
+
+    /// <summary>
+    /// The identity account the trainer is created for.
+    /// </summary>
     public Guid UserId { get; init; }
+
+    /// <summary>
+    /// The trainer's first name, as the caller sent it.
+    /// </summary>
     public string Firstname { get; init; } = null!;
+
+    /// <summary>
+    /// The trainer's last name, as the caller sent it.
+    /// </summary>
     public string Lastname { get; init; } = null!;
 
     /// <summary>
@@ -22,11 +40,17 @@ public sealed class CreateTrainerCommand : ICommand<Result>
     public string ContactEmail { get; init; } = null!;
 }
 
+/// <summary>
+/// Runs <see cref="CreateTrainerCommand"/>.
+/// </summary>
 public sealed class CreateTrainerCommandHandler(
     ITrainerRepository trainerRepository,
     IUnitOfWork unitOfWork)
     : ICommandHandler<CreateTrainerCommand, Result>
 {
+    /// <summary>
+    /// Runs the command.
+    /// </summary>
     public async ValueTask<Result> Handle(CreateTrainerCommand request, CancellationToken cancellationToken)
     {
         var profileResult = TrainerProfileFactory.Create(

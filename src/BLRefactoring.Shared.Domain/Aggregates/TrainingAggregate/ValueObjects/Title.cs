@@ -54,10 +54,16 @@ public sealed class TrainingTitle : ValueObject
         return Result<TrainingTitle>.Success(new TrainingTitle(trimmedTitle));
     }
 
+    /// <summary>
+    /// Yields the parts this value is compared by.
+    /// </summary>
     protected override IEnumerable<object?> GetEqualityComponents()
     {
         yield return Value.ToLowerInvariant();
     }
 
+    /// <summary>
+    /// Returns the value as text.
+    /// </summary>
     public override string ToString() => Value;
 }

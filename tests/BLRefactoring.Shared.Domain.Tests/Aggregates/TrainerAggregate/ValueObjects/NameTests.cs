@@ -6,8 +6,14 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainerAggregate.ValueObjects;
 
+/// <summary>
+/// Behaviour covered for <c>Name</c>.
+/// </summary>
 public sealed class NameTests
 {
+    /// <summary>
+    /// Create, valid names, returns success.
+    /// </summary>
     [Fact]
     public void Create_ValidNames_ReturnsSuccess()
     {
@@ -18,6 +24,9 @@ public sealed class NameTests
         result.ShouldBeSuccess();
     }
 
+    /// <summary>
+    /// Create, valid names, sets firstname and lastname.
+    /// </summary>
     [Fact]
     public void Create_ValidNames_SetsFirstnameAndLastname()
     {
@@ -29,6 +38,9 @@ public sealed class NameTests
         name.Lastname.Should().Be("Doe");
     }
 
+    /// <summary>
+    /// Create, firstname too short, returns failure.
+    /// </summary>
     [Fact]
     public void Create_FirstnameTooShort_ReturnsFailure()
     {
@@ -39,6 +51,9 @@ public sealed class NameTests
         result.ShouldContainError(ErrorCodes.Unspecified);
     }
 
+    /// <summary>
+    /// Create, lastname too short, returns failure.
+    /// </summary>
     [Fact]
     public void Create_LastnameTooShort_ReturnsFailure()
     {
@@ -49,6 +64,9 @@ public sealed class NameTests
         result.ShouldContainError(ErrorCodes.Unspecified);
     }
 
+    /// <summary>
+    /// Create, both names too short, returns failure with two errors.
+    /// </summary>
     [Fact]
     public void Create_BothNamesTooShort_ReturnsFailureWithTwoErrors()
     {
@@ -60,6 +78,9 @@ public sealed class NameTests
         errors.Should().HaveCount(2);
     }
 
+    /// <summary>
+    /// Create, firstname exactly min length, returns success.
+    /// </summary>
     [Fact]
     public void Create_FirstnameExactlyMinLength_ReturnsSuccess()
     {
@@ -70,6 +91,9 @@ public sealed class NameTests
         result.ShouldBeSuccess();
     }
 
+    /// <summary>
+    /// Create, firstname exactly max length, returns success.
+    /// </summary>
     [Fact]
     public void Create_FirstnameExactlyMaxLength_ReturnsSuccess()
     {
@@ -83,6 +107,9 @@ public sealed class NameTests
         result.ShouldBeSuccess();
     }
 
+    /// <summary>
+    /// Create, firstname too long, returns failure.
+    /// </summary>
     [Fact]
     public void Create_FirstnameTooLong_ReturnsFailure()
     {
@@ -96,6 +123,9 @@ public sealed class NameTests
         result.ShouldContainError(ErrorCodes.Unspecified);
     }
 
+    /// <summary>
+    /// Create, null firstname, returns failure.
+    /// </summary>
     [Fact]
     public void Create_NullFirstname_ReturnsFailure()
     {
@@ -106,6 +136,9 @@ public sealed class NameTests
         result.ShouldBeFailure();
     }
 
+    /// <summary>
+    /// Equality, same names, are equal.
+    /// </summary>
     [Fact]
     public void Equality_SameNames_AreEqual()
     {
@@ -117,6 +150,9 @@ public sealed class NameTests
         name1.Should().Be(name2);
     }
 
+    /// <summary>
+    /// Equality, different names, are not equal.
+    /// </summary>
     [Fact]
     public void Equality_DifferentNames_AreNotEqual()
     {

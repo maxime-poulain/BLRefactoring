@@ -32,6 +32,9 @@ public sealed class DomainModellingRules
 
     // ------------------------------------------------------------------ aggregates
 
+    /// <summary>
+    /// No aggregate, has a public constructor.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#the-domain",
         "an aggregate is created through its own factory, never by a caller with a constructor")]
@@ -44,6 +47,9 @@ public sealed class DomainModellingRules
                 "going past the rules its factory enforces")
             .ShouldHold();
 
+    /// <summary>
+    /// Every aggregate, is sealed.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#the-domain",
         "an aggregate is sealed: its invariants are its own, and inheritance would let someone else hold them")]
@@ -54,6 +60,9 @@ public sealed class DomainModellingRules
             .Select(aggregate => $"{aggregate.Name} is not sealed")
             .ShouldHold();
 
+    /// <summary>
+    /// No aggregate, returns data.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#the-domain",
         "an aggregate answers whether a change was allowed; it never hands data back")]
@@ -71,6 +80,9 @@ public sealed class DomainModellingRules
                 "through the read side")
             .ShouldHold();
 
+    /// <summary>
+    /// No aggregate, holds another aggregate.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#the-domain",
         "an aggregate holds another aggregate by identifier, never by reference")]
@@ -84,6 +96,9 @@ public sealed class DomainModellingRules
                 "Two aggregates in one object graph are two transactions pretending to be one")
             .ShouldHold();
 
+    /// <summary>
+    /// No domain type, hands out a mutable collection.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#the-domain",
         "a collection leaves the domain read-only, or it is not the domain that owns it")]
@@ -97,6 +112,9 @@ public sealed class DomainModellingRules
                 "a caller can add to without the aggregate ever knowing")
             .ShouldHold();
 
+    /// <summary>
+    /// No domain type, has a public setter.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#the-domain",
         "state changes go through behaviour, so no property is settable from outside")]
@@ -116,6 +134,9 @@ public sealed class DomainModellingRules
 
     // ------------------------------------------------------------------ value objects
 
+    /// <summary>
+    /// Every value object, is sealed.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#value-objects",
         "a value object is sealed and immutable, or it is not a value")]
@@ -126,6 +147,9 @@ public sealed class DomainModellingRules
             .Select(valueObject => $"{valueObject.Name} is not sealed")
             .ShouldHold();
 
+    /// <summary>
+    /// Every value object, has a private constructor for the orm.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#value-objects",
         "a value object keeps a parameterless constructor for the ORM, and keeps it private")]
@@ -140,6 +164,9 @@ public sealed class DomainModellingRules
                 "to materialise it, and it fails at query time rather than at build time")
             .ShouldHold();
 
+    /// <summary>
+    /// Every value object, is built through a factory that can refuse.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#value-objects",
         "a value object is built through a factory that can refuse: Create returning a Result, or a TryFrom")]
@@ -155,6 +182,9 @@ public sealed class DomainModellingRules
 
     // ------------------------------------------------------------------ identifiers
 
+    /// <summary>
+    /// Every identifier, declares the constructor its factory needs.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#typed-identifiers",
         "every identifier declares the private constructor its factory reflects for")]
@@ -172,6 +202,9 @@ public sealed class DomainModellingRules
                 "compile error, it is a TypeInitializationException on first use, in production")
             .ShouldHold();
 
+    /// <summary>
+    /// Every identifier, can actually be created.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#typed-identifiers",
         "and the factory runs: the constructor being there is not the same as the factory working")]
@@ -183,6 +216,9 @@ public sealed class DomainModellingRules
             .Select(attempt => $"{attempt.identifier.Name}.Create(Guid) threw: {attempt.failure}")
             .ShouldHold();
 
+    /// <summary>
+    /// No identifier, converts implicitly.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#typed-identifiers",
         "a Guid becomes an identifier only when someone says so, and an identifier never silently becomes a Guid")]
@@ -198,6 +234,9 @@ public sealed class DomainModellingRules
 
     // ------------------------------------------------------------------ domain events
 
+    /// <summary>
+    /// Every domain event, is a sealed record.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0002",
         "a domain event is an immutable record of something that already happened")]
@@ -208,6 +247,9 @@ public sealed class DomainModellingRules
             .Select(domainEvent => $"{domainEvent.Name} is not a sealed record")
             .ShouldHold();
 
+    /// <summary>
+    /// Every domain event, carries only domain types.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0002",
         "a domain event carries the domain's own vocabulary, not the primitives underneath it")]
@@ -224,6 +266,9 @@ public sealed class DomainModellingRules
                 "An event carrying a string carries no meaning a handler can rely on")
             .ShouldHold();
 
+    /// <summary>
+    /// Every domain event, has a handler.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0002",
         "every domain event is reacted to; one nobody handles is a decision that was never finished")]
@@ -244,6 +289,9 @@ public sealed class DomainModellingRules
             .ShouldHold();
     }
 
+    /// <summary>
+    /// No domain event handler, commits.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0002",
         "handlers run inside the transaction the aggregate is being saved in, so none of them commits")]
@@ -260,6 +308,9 @@ public sealed class DomainModellingRules
                              "the unit of work; committing here commits half of it"))
             .ShouldHold();
 
+    /// <summary>
+    /// Raising a domain event, stays inside the aggregate.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0002",
         "only an aggregate raises a domain event, which is why the method that raises one is not public")]
@@ -274,6 +325,9 @@ public sealed class DomainModellingRules
 
     // ------------------------------------------------------------------ results and ports
 
+    /// <summary>
+    /// Result, offers no unchecked way in.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#the-result-type",
         "Result offers no way to read a value without handling the failure: that is the whole point of it")]
@@ -295,6 +349,9 @@ public sealed class DomainModellingRules
 
     }
 
+    /// <summary>
+    /// Every asynchronous port, is named and cancellable.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#repository-conventions",
         "every asynchronous port takes a cancellation token, and says so in its name")]

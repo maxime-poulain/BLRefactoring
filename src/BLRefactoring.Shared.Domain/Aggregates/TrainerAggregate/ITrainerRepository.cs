@@ -28,6 +28,12 @@ public interface ITrainerRepository : IRepository<Trainer>
     /// </returns>
     Task<Trainer?> GetByIdAsync(TrainerId id, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Finds the trainer behind an identity account.
+    /// </summary>
+    /// <param name="userId">The identity account.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    /// <returns>The trainer, or <see langword="null"/> when there is none.</returns>
     Task<Trainer?> GetByUserIdAsync(UserId userId, CancellationToken cancellationToken = default);
 
     /// <summary>

@@ -4,8 +4,14 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Api.Tests.Http;
 
+/// <summary>
+/// Behaviour covered for <c>EntityTag</c>.
+/// </summary>
 public sealed class EntityTagTests
 {
+    /// <summary>
+    /// From, quotes the encoded version.
+    /// </summary>
     [Fact]
     public void From_QuotesTheEncodedVersion()
     {
@@ -14,6 +20,9 @@ public sealed class EntityTagTests
         tag.Should().StartWith("\"").And.EndWith("\"");
     }
 
+    /// <summary>
+    /// From, then try parse, round trips the version.
+    /// </summary>
     [Fact]
     public void From_ThenTryParse_RoundTripsTheVersion()
     {
@@ -24,6 +33,9 @@ public sealed class EntityTagTests
         parsed.Should().Equal(version);
     }
 
+    /// <summary>
+    /// Try parse, tolerates surrounding whitespace.
+    /// </summary>
     [Fact]
     public void TryParse_ToleratesSurroundingWhitespace()
     {
@@ -34,6 +46,9 @@ public sealed class EntityTagTests
         parsed.Should().Equal(version);
     }
 
+    /// <summary>
+    /// Try parse, rejects anything but a strong tag.
+    /// </summary>
     [Theory]
     [InlineData(null)]
     [InlineData("")]

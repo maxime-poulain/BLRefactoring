@@ -20,7 +20,13 @@ namespace BLRefactoring.Architecture.Tests.Framework;
 [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
 public sealed class UnguardedRecordAttribute(string record, string reason) : Attribute
 {
+    /// <summary>
+    /// Record.
+    /// </summary>
     public string Record { get; } = record;
 
+    /// <summary>
+    /// Reason.
+    /// </summary>
     public string Reason { get; } = reason;
 }

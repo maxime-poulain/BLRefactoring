@@ -13,6 +13,9 @@ public sealed class PaginationTests
     private static PagedResult<string> Page(int page, int pageSize, int totalCount)
         => new([], page, pageSize, totalCount);
 
+    /// <summary>
+    /// Total pages, counts the partial page.
+    /// </summary>
     [Theory]
     [InlineData(0, 20, 1)]      // nothing matched: the caller is on page 1 of 1, not 1 of 0
     [InlineData(1, 20, 1)]
@@ -22,6 +25,9 @@ public sealed class PaginationTests
     public void TotalPages_CountsThePartialPage(int totalCount, int pageSize, int expected)
         => Page(page: 1, pageSize, totalCount).TotalPages.Should().Be(expected);
 
+    /// <summary>
+    /// First page of several, has a next and no previous.
+    /// </summary>
     [Fact]
     public void FirstPageOfSeveral_HasANextAndNoPrevious()
     {
@@ -31,6 +37,9 @@ public sealed class PaginationTests
         page.HasPreviousPage.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Last page, has a previous and no next.
+    /// </summary>
     [Fact]
     public void LastPage_HasAPreviousAndNoNext()
     {
@@ -40,6 +49,9 @@ public sealed class PaginationTests
         page.HasPreviousPage.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Page size, is clamped to the cap.
+    /// </summary>
     [Theory]
     [InlineData(0, PagedQuery.DefaultPageSize)]
     [InlineData(-5, PagedQuery.DefaultPageSize)]
@@ -55,6 +67,9 @@ public sealed class PaginationTests
         query.PageSize.Should().Be(expected);
     }
 
+    /// <summary>
+    /// Page, never goes below one.
+    /// </summary>
     [Theory]
     [InlineData(0, 1)]
     [InlineData(-3, 1)]
@@ -62,6 +77,9 @@ public sealed class PaginationTests
     public void Page_NeverGoesBelowOne(int requested, int expected)
         => new GetMyTrainingsQuery { Page = requested }.Page.Should().Be(expected);
 
+    /// <summary>
+    /// By default, a query is paged.
+    /// </summary>
     [Fact]
     public void ByDefault_AQueryIsPaged()
     {

@@ -16,14 +16,23 @@ public sealed class RecordingHandler : HttpMessageHandler
 {
     private readonly List<RecordedRequest> _requests = [];
 
+    /// <summary>
+    /// Requests.
+    /// </summary>
     public IReadOnlyList<RecordedRequest> Requests => _requests;
 
     /// <summary>What the API answers. Defaults to an empty <c>200</c>.</summary>
     public Func<HttpRequestMessage, HttpResponseMessage> Respond { get; set; } = _ => Ok("{}");
 
+    /// <summary>
+    /// Ok.
+    /// </summary>
     public static HttpResponseMessage Ok(string json) =>
         new(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
+    /// <summary>
+    /// Send async.
+    /// </summary>
     protected override Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken)
@@ -59,5 +68,8 @@ public sealed record RecordedRequest(HttpMethod Method, Uri? Uri, string? Author
 /// </remarks>
 public sealed class StubForwarderHttpClientFactory(HttpMessageHandler handler) : IForwarderHttpClientFactory
 {
+    /// <summary>
+    /// Create client.
+    /// </summary>
     public HttpMessageInvoker CreateClient(ForwarderHttpClientContext context) => new(handler);
 }

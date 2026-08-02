@@ -15,6 +15,12 @@ namespace BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Interceptors;
 /// </param>
 public sealed class AuditableEntitiesInterceptor(TimeProvider timeProvider) : SaveChangesInterceptor
 {
+    /// <summary>
+    /// Stamps CreatedOn and ModifiedOn before an asynchronous save.
+    /// <para>
+    /// Here rather than in the domain, so an aggregate never needs to be handed a clock.
+    /// </para>
+    /// </summary>
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,
@@ -28,6 +34,9 @@ public sealed class AuditableEntitiesInterceptor(TimeProvider timeProvider) : Sa
         return base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
+    /// <summary>
+    /// Stamps CreatedOn and ModifiedOn before a synchronous save.
+    /// </summary>
     public override InterceptionResult<int> SavingChanges(
         DbContextEventData eventData,
         InterceptionResult<int> result)

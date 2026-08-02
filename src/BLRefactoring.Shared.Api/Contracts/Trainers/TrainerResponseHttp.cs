@@ -16,10 +16,19 @@ namespace BLRefactoring.Shared.Api.Contracts.Trainers;
 /// </remarks>
 public sealed class TrainerResponseHttp
 {
+    /// <summary>
+    /// The identifier.
+    /// </summary>
     public required Guid Id { get; init; }
 
+    /// <summary>
+    /// The trainer's first name.
+    /// </summary>
     public required string Firstname { get; init; }
 
+    /// <summary>
+    /// The trainer's last name.
+    /// </summary>
     public required string Lastname { get; init; }
 
     /// <summary>

@@ -4,8 +4,14 @@ using BLRefactoring.Shared.Common.Results;
 
 namespace BLRefactoring.Shared.Domain.Tests.Helpers;
 
+/// <summary>
+/// Result assertion extensions.
+/// </summary>
 public static class ResultAssertionExtensions
 {
+    /// <summary>
+    /// Should be success.
+    /// </summary>
     public static void ShouldBeSuccess(this Result result)
     {
         result.Match(
@@ -18,6 +24,9 @@ public static class ResultAssertionExtensions
             });
     }
 
+    /// <summary>
+    /// Should be failure.
+    /// </summary>
     public static IReadOnlyErrorCollection ShouldBeFailure(this Result result)
     {
         IReadOnlyErrorCollection? captured = null;
@@ -27,6 +36,9 @@ public static class ResultAssertionExtensions
         return captured!;
     }
 
+    /// <summary>
+    /// Should contain error.
+    /// </summary>
     public static void ShouldContainError(this Result result, ErrorCode code)
     {
         var errors = result.ShouldBeFailure();
@@ -34,6 +46,9 @@ public static class ResultAssertionExtensions
             $"Expected errors to contain ErrorCode '{code}'");
     }
 
+    /// <summary>
+    /// Should be success.
+    /// </summary>
     public static T ShouldBeSuccess<T>(this Result<T> result)
     {
         T? captured = default;
@@ -48,6 +63,9 @@ public static class ResultAssertionExtensions
         return captured!;
     }
 
+    /// <summary>
+    /// Should be failure.
+    /// </summary>
     public static IReadOnlyErrorCollection ShouldBeFailure<T>(this Result<T> result)
     {
         IReadOnlyErrorCollection? captured = null;
@@ -58,6 +76,9 @@ public static class ResultAssertionExtensions
         return captured!;
     }
 
+    /// <summary>
+    /// Should contain error.
+    /// </summary>
     public static void ShouldContainError<T>(this Result<T> result, ErrorCode code)
     {
         var errors = result.ShouldBeFailure();

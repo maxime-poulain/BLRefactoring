@@ -32,6 +32,9 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
     private static async Task<JsonElement> BodyAsync(HttpResponseMessage response)
         => JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
 
+    /// <summary>
+    /// Business failure, is a problem document carrying the domain code.
+    /// </summary>
     [Fact]
     public async Task BusinessFailure_IsAProblemDocumentCarryingTheDomainCode()
     {
@@ -65,6 +68,9 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
             .Should().Contain("Training.DuplicateTitle");
     }
 
+    /// <summary>
+    /// Validation failure, keeps errors for the field map.
+    /// </summary>
     [Fact]
     public async Task ValidationFailure_KeepsErrorsForTheFieldMap()
     {
@@ -90,6 +96,9 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
             .Should().BeTrue();
     }
 
+    /// <summary>
+    /// Missing if match, is the same shape.
+    /// </summary>
     [Fact]
     public async Task MissingIfMatch_IsTheSameShape()
     {
@@ -116,6 +125,9 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
             .Should().NotBeEmpty("the failure carries a code and the caller is entitled to read it");
     }
 
+    /// <summary>
+    /// Malformed body, is rejected at model binding, as a problem document.
+    /// </summary>
     [Fact]
     public async Task MalformedBody_IsRejectedAtModelBinding_AsAProblemDocument()
     {
@@ -139,6 +151,9 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
         body.GetRawText().Should().NotContain("StackTrace").And.NotContain("BLRefactoring.");
     }
 
+    /// <summary>
+    /// Sign in failure, is a problem document.
+    /// </summary>
     [Fact]
     public async Task SignInFailure_IsAProblemDocument()
     {
@@ -162,6 +177,9 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
         body.GetProperty("detail").GetString().Should().Be("Invalid username or password.");
     }
 
+    /// <summary>
+    /// Registration failure, is a problem document keyed by field.
+    /// </summary>
     [Fact]
     public async Task RegistrationFailure_IsAProblemDocumentKeyedByField()
     {

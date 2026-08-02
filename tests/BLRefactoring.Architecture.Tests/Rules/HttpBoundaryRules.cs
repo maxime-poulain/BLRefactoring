@@ -34,6 +34,9 @@ public sealed class HttpBoundaryRules
             .Where(action => action.GetCustomAttributes<HttpMethodAttribute>(inherit: true).Any())
             .Select(action => (controller, action)));
 
+    /// <summary>
+    /// Every controller, derives from one of the two shared bases.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0011",
         "every controller inherits the same base, so what is true of one endpoint is true of all of them")]
@@ -46,6 +49,9 @@ public sealed class HttpBoundaryRules
                 "the authorization, routing or error-shape decisions the bases carry")
             .ShouldHold();
 
+    /// <summary>
+    /// Both controller bases, are abstract.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0011",
         "the controller bases are abstract, or MVC discovers them as controllers of their own")]
@@ -59,6 +65,9 @@ public sealed class HttpBoundaryRules
                 "so a concrete base is discovered as a controller and publishes its own routes")
             .ShouldHold();
 
+    /// <summary>
+    /// No controller, takes a repository or a db context.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#http-is-a-boundary",
         "a controller talks to the application layer; it never opens the database itself")]
@@ -76,6 +85,9 @@ public sealed class HttpBoundaryRules
                 "persistence concern one method call from an HTTP request")
             .ShouldHold();
 
+    /// <summary>
+    /// No controller, depends on infrastructure.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#http-is-a-boundary",
         "the hosts reach infrastructure from their composition root, and from nowhere else")]
@@ -96,6 +108,9 @@ public sealed class HttpBoundaryRules
         }
     }
 
+    /// <summary>
+    /// The shared api layer, names no domain type.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#the-dependency-rule",
         "the API layer speaks to the application layer; the domain is two layers further in")]
@@ -109,6 +124,9 @@ public sealed class HttpBoundaryRules
             .GetResult()
             .ShouldHold();
 
+    /// <summary>
+    /// Every http contract, lives in a contracts namespace.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#http-is-a-boundary",
         "the HTTP contracts are the boundary's own vocabulary, and they stay on it")]
@@ -124,6 +142,9 @@ public sealed class HttpBoundaryRules
                 "*.Api.Contracts namespace, so nothing keeps it on the boundary")
             .ShouldHold();
 
+    /// <summary>
+    /// No inner layer, names an http contract.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#http-is-a-boundary",
         "commands, queries and application DTOs stop at the boundary: the layers below never see a contract")]
@@ -151,6 +172,9 @@ public sealed class HttpBoundaryRules
             .ShouldHold();
     }
 
+    /// <summary>
+    /// No http response, publishes the concurrency token.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0010",
         "the concurrency token is a header, never a field of the body a client reads")]
@@ -166,6 +190,9 @@ public sealed class HttpBoundaryRules
                 "ETag; a second copy in the payload is a second thing to keep in step")
             .ShouldHold();
 
+    /// <summary>
+    /// Both hosts, publish the same operations.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0008",
         "a client generated from either host fits both, which is only true if both publish the same operations")]
@@ -181,6 +208,9 @@ public sealed class HttpBoundaryRules
             .ShouldHold();
     }
 
+    /// <summary>
+    /// Every action, declares what it can answer.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0004",
         "every action states the statuses it can answer, so the document describes the API and not a subset")]
@@ -193,6 +223,9 @@ public sealed class HttpBoundaryRules
                 "generated client has no idea what it answers")
             .ShouldHold();
 
+    /// <summary>
+    /// Every identifier in a route, is constrained.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0011",
         "an identifier in a route is a Guid, and the route says so rather than finding out in the action")]

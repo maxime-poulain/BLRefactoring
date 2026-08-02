@@ -13,6 +13,9 @@ public static class AuthHelper
 {
     private static int _counter;
 
+    /// <summary>
+    /// Create unique register request.
+    /// </summary>
     public static RegisterRequest CreateUniqueRegisterRequest()
     {
         var id = Interlocked.Increment(ref _counter);
@@ -27,11 +30,17 @@ public static class AuthHelper
         };
     }
 
+    /// <summary>
+    /// Register async.
+    /// </summary>
     public static async Task<HttpResponseMessage> RegisterAsync(HttpClient client, RegisterRequest request)
     {
         return await client.PostAsJsonAsync("/Auth/register", request);
     }
 
+    /// <summary>
+    /// Login async.
+    /// </summary>
     public static async Task<string> LoginAsync(HttpClient client, string username, string password)
     {
         var response = await client.PostAsJsonAsync("/Auth/login", new LoginRequest

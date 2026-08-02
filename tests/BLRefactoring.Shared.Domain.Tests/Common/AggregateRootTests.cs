@@ -1,26 +1,52 @@
+using System.Diagnostics.CodeAnalysis;
 using AwesomeAssertions;
 using BLRefactoring.Shared.Common;
 using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Common;
 
+/// <summary>
+/// Behaviour covered for <c>AggregateRoot</c>.
+/// </summary>
 public sealed class AggregateRootTests
 {
+    /// <summary>
+    /// Test aggregate id.
+    /// </summary>
     public sealed class TestAggregateId : EntityId<TestAggregateId>
     {
+        [SuppressMessage("Style", "IDE0051:Remove unused private members",
+            Justification = "EntityId<T>.BuildFactory resolves this constructor with GetConstructor(..., NonPublic) and compiles it into the factory every Create and Generate call goes through. It is the only way an identifier is ever built; the analyzer cannot see a call that a compiled expression tree makes.")]
         private TestAggregateId(Guid value) : base(value) { }
     }
 
+    /// <summary>
+    /// Test aggregate.
+    /// </summary>
     public sealed class TestAggregate() : AggregateRoot<TestAggregateId>(TestAggregateId.Generate())
     {
         // AddDomainEvent/AddDomainEvents are protected: only the aggregate's own
         // behavior methods may raise events. These test hooks play that role here.
+
+        /// <summary>
+        /// Raise event.
+        /// </summary>
         public void RaiseEvent(IDomainEvent domainEvent) => AddDomainEvent(domainEvent);
+
+        /// <summary>
+        /// Raise events.
+        /// </summary>
         public void RaiseEvents(IEnumerable<IDomainEvent> domainEvents) => AddDomainEvents(domainEvents);
     }
 
+    /// <summary>
+    /// Test domain event.
+    /// </summary>
     public sealed class TestDomainEvent : IDomainEvent { }
 
+    /// <summary>
+    /// New aggregate root, has empty domain events.
+    /// </summary>
     [Fact]
     public void NewAggregateRoot_HasEmptyDomainEvents()
     {
@@ -29,6 +55,9 @@ public sealed class AggregateRootTests
         aggregate.DomainEvents.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Add domain event, event is added to collection.
+    /// </summary>
     [Fact]
     public void AddDomainEvent_EventIsAddedToCollection()
     {
@@ -41,6 +70,9 @@ public sealed class AggregateRootTests
             .Which.Should().Be(domainEvent);
     }
 
+    /// <summary>
+    /// Add domain events, multiple events are added.
+    /// </summary>
     [Fact]
     public void AddDomainEvents_MultipleEventsAreAdded()
     {
@@ -55,6 +87,9 @@ public sealed class AggregateRootTests
         aggregate.DomainEvents.Should().Contain(event2);
     }
 
+    /// <summary>
+    /// Clear domain events, removes all events.
+    /// </summary>
     [Fact]
     public void ClearDomainEvents_RemovesAllEvents()
     {
@@ -67,6 +102,9 @@ public sealed class AggregateRootTests
         aggregate.DomainEvents.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Domain events, returns read only collection.
+    /// </summary>
     [Fact]
     public void DomainEvents_ReturnsReadOnlyCollection()
     {

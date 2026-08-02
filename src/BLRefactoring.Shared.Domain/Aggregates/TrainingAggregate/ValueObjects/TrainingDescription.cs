@@ -52,10 +52,16 @@ public sealed class TrainingDescription : ValueObject
         return Result<TrainingDescription>.Success(new TrainingDescription(description.Trim()));
     }
 
+    /// <summary>
+    /// Yields the parts this value is compared by.
+    /// </summary>
     protected override IEnumerable<object?> GetEqualityComponents()
     {
         yield return Value;
     }
 
+    /// <summary>
+    /// Returns the value as text.
+    /// </summary>
     public override string ToString() => Value;
 }

@@ -9,6 +9,9 @@ using Xunit;
 
 namespace BLRefactoring.DDD.Application.Tests.EventHandlers;
 
+/// <summary>
+/// Behaviour covered for <c>SendWelcomeEmailWhenTrainerCreatedEventHandler</c>.
+/// </summary>
 public sealed class SendWelcomeEmailWhenTrainerCreatedEventHandlerTests
 {
     private readonly Mock<IEmailSender> _emailSender = new();
@@ -16,6 +19,9 @@ public sealed class SendWelcomeEmailWhenTrainerCreatedEventHandlerTests
     private SendWelcomeEmailWhenTrainerCreatedEventHandler CreateSut() =>
         new(_emailSender.Object);
 
+    /// <summary>
+    /// Handle, sends welcome email to new trainer.
+    /// </summary>
     [Fact]
     public async Task Handle_SendsWelcomeEmailToNewTrainer()
     {

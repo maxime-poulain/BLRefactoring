@@ -30,6 +30,9 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
 
     // -- Read own profile --
 
+    /// <summary>
+    /// Get me, authenticated, returns 200 with ETag.
+    /// </summary>
     [Fact]
     public async Task GetMe_Authenticated_Returns200WithETag()
     {
@@ -45,6 +48,9 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
         dto!.Id.Should().NotBeEmpty();
     }
 
+    /// <summary>
+    /// Get me, no token, returns 401.
+    /// </summary>
     [Fact]
     public async Task GetMe_NoToken_Returns401()
     {
@@ -57,6 +63,9 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
 
     // -- Edit own profile --
 
+    /// <summary>
+    /// Edit me, authenticated, returns 200 with updated profile.
+    /// </summary>
     [Fact]
     public async Task EditMe_Authenticated_Returns200WithUpdatedProfile()
     {
@@ -76,6 +85,9 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
         dto.Bio.Should().Be("A freshly written bio.");
     }
 
+    /// <summary>
+    /// Edit me, changed contact email, leaves the account login untouched.
+    /// </summary>
     [Fact]
     public async Task EditMe_ChangedContactEmail_LeavesTheAccountLoginUntouched()
     {
@@ -104,6 +116,9 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
         await act.Should().NotThrowAsync();
     }
 
+    /// <summary>
+    /// Edit me, invalid contact email, returns 400.
+    /// </summary>
     [Fact]
     public async Task EditMe_InvalidContactEmail_Returns400()
     {
@@ -120,6 +135,9 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+    /// <summary>
+    /// Edit me, no token, returns 401.
+    /// </summary>
     [Fact]
     public async Task EditMe_NoToken_Returns401()
     {
@@ -130,6 +148,9 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
+    /// <summary>
+    /// Edit me, without if match, returns 428.
+    /// </summary>
     [Fact]
     public async Task EditMe_WithoutIfMatch_Returns428()
     {
@@ -141,6 +162,9 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.PreconditionRequired);
     }
 
+    /// <summary>
+    /// Edit me, with stale if match, returns 412 and keeps the first edit.
+    /// </summary>
     [Fact]
     public async Task EditMe_WithStaleIfMatch_Returns412AndKeepsTheFirstEdit()
     {
@@ -162,6 +186,9 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
 
     // -- Delete --
 
+    /// <summary>
+    /// Delete, is not exposed, on any route.
+    /// </summary>
     [Fact]
     public async Task Delete_IsNotExposed_OnAnyRoute()
     {

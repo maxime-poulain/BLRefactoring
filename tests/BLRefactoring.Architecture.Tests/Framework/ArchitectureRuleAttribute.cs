@@ -26,7 +26,13 @@ namespace BLRefactoring.Architecture.Tests.Framework;
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
 public sealed class ArchitectureRuleAttribute(string record, string rule) : Attribute
 {
+    /// <summary>
+    /// Record.
+    /// </summary>
     public string Record { get; } = record;
 
+    /// <summary>
+    /// Rule.
+    /// </summary>
     public string Rule { get; } = rule;
 }

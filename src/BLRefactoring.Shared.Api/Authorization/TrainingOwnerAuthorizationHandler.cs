@@ -18,6 +18,9 @@ public sealed class TrainingOwnerAuthorizationHandler(
     ITrainingOwnerQuery trainingOwnerQuery)
     : AuthorizationHandler<TrainingOwnerRequirement>
 {
+    /// <summary>
+    /// Grants the requirement only when the caller owns the training being addressed.
+    /// </summary>
     protected override async Task HandleRequirementAsync(
         AuthorizationHandlerContext context,
         TrainingOwnerRequirement requirement)

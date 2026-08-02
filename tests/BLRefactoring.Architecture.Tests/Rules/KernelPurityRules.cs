@@ -23,6 +23,9 @@ public sealed class KernelPurityRules
         "Microsoft.Extensions.DependencyInjection"
     ];
 
+    /// <summary>
+    /// The domain, knows neither persistence nor http.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#the-dependency-rule",
         "the domain knows nothing of persistence, HTTP, or the shape of the messages the API receives")]
@@ -33,6 +36,9 @@ public sealed class KernelPurityRules
             .GetResult()
             .ShouldHold();
 
+    /// <summary>
+    /// The domain, does not know the messaging library.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#the-dependency-rule",
         "the domain knows nothing of the messaging library either — that trade stops at the kernel")]
@@ -70,6 +76,9 @@ public sealed class KernelPurityRules
         return all.Except(inherited);
     }
 
+    /// <summary>
+    /// Only the eight recorded kernel types, touch the messaging library.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0012",
         "the kernel knows Mediator, and that is a recorded trade covering exactly eight types")]
@@ -106,6 +115,9 @@ public sealed class KernelPurityRules
             .ShouldHold();
     }
 
+    /// <summary>
+    /// The application layer, knows neither persistence nor http.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#the-dependency-rule",
         "the application layer orchestrates the domain; it does not reach for a database or a request")]
@@ -124,6 +136,9 @@ public sealed class KernelPurityRules
         }
     }
 
+    /// <summary>
+    /// No inner layer, registers a service.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#the-dependency-rule",
         "wiring is the composition root's job, and the inner layers have no composition root")]
@@ -145,6 +160,9 @@ public sealed class KernelPurityRules
         }
     }
 
+    /// <summary>
+    /// Only the composition root, registers services.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#the-dependency-rule",
         "outside the inner layers, only the extension methods a host calls may register services")]
@@ -162,6 +180,9 @@ public sealed class KernelPurityRules
         }
     }
 
+    /// <summary>
+    /// No domain type, exposes a queryable.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#the-dependency-rule",
         "a repository hands out aggregates; it never hands out the query that would fetch them")]

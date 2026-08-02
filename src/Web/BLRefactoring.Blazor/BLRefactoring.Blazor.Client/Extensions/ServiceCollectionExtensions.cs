@@ -16,6 +16,9 @@ namespace BLRefactoring.Blazor.Client.Extensions;
 /// </remarks>
 public static class ServiceCollectionExtensions
 {
+    /// <summary>
+    /// Registers everything the client needs.
+    /// </summary>
     public static IServiceCollection AddDependencies(this IServiceCollection services)
     {
         return services
@@ -23,6 +26,9 @@ public static class ServiceCollectionExtensions
             .AddBLRefactoringBlazorClient();
     }
 
+    /// <summary>
+    /// Registers the generated HTTP clients behind the BFF.
+    /// </summary>
     public static IServiceCollection AddBLRefactoringBlazorClient(this IServiceCollection services)
     {
         // Both clients point at the origin that served the application. There is no
@@ -47,6 +53,9 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// Registers the client-side services.
+    /// </summary>
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
         services.AddAuthorizationCore();

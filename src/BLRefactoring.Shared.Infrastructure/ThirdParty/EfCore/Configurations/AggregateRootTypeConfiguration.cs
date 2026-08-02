@@ -4,12 +4,22 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Configurations;
 
+/// <summary>
+/// Shared mapping for every aggregate root: the typed identifier conversion and the row version
+/// that carries optimistic concurrency.
+/// </summary>
 public abstract class AggregateRootTypeConfiguration<TEntity, TEntityId> : IEntityTypeConfiguration<TEntity>
     where TEntity : AggregateRoot<TEntityId>
     where TEntityId : EntityId<TEntityId>
 {
+    /// <summary>
+    /// Maps what is specific to one aggregate, after the shared mapping has been applied.
+    /// </summary>
     protected abstract void ConfigureAggregate(EntityTypeBuilder<TEntity> builder);
 
+    /// <summary>
+    /// Applies the shared mapping, then hands over to <see cref="ConfigureAggregate"/>.
+    /// </summary>
     public void Configure(EntityTypeBuilder<TEntity> builder)
     {
         builder.HasKey(entity => entity.Id);

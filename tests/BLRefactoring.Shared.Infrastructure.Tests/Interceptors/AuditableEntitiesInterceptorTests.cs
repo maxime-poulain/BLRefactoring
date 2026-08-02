@@ -72,6 +72,9 @@ public sealed class AuditableEntitiesInterceptorTests
         stamps.Should().OnlyHaveUniqueItems();
     }
 
+    /// <summary>
+    /// Creation, stamps created on, and leaves modified on unset.
+    /// </summary>
     [Fact]
     public async Task Creation_StampsCreatedOn_AndLeavesModifiedOnUnset()
     {
@@ -86,6 +89,9 @@ public sealed class AuditableEntitiesInterceptorTests
         thing.ModifiedOn.Should().BeNull();
     }
 
+    /// <summary>
+    /// Modification, stamps modified on, and leaves created on alone.
+    /// </summary>
     [Fact]
     public async Task Modification_StampsModifiedOn_AndLeavesCreatedOnAlone()
     {

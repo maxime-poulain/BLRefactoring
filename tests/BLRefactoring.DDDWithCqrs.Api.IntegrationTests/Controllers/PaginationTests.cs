@@ -50,6 +50,9 @@ public sealed class PaginationTests(ApiFactory factory) : IntegrationTest(factor
         return (await response.Content.ReadFromJsonAsync<PagedResponseHttp<TrainingResponseHttp>>())!;
     }
 
+    /// <summary>
+    /// Walking every page, returns each item exactly once.
+    /// </summary>
     [Fact]
     public async Task WalkingEveryPage_ReturnsEachItemExactlyOnce()
     {
@@ -72,6 +75,9 @@ public sealed class PaginationTests(ApiFactory factory) : IntegrationTest(factor
         walked.Should().HaveCount(5);
     }
 
+    /// <summary>
+    /// Metadata, describes where the caller is.
+    /// </summary>
     [Fact]
     public async Task Metadata_DescribesWhereTheCallerIs()
     {
@@ -86,6 +92,9 @@ public sealed class PaginationTests(ApiFactory factory) : IntegrationTest(factor
         middle.HasNextPage.Should().BeTrue();
     }
 
+    /// <summary>
+    /// No paging asked, still returns a page.
+    /// </summary>
     [Fact]
     public async Task NoPagingAsked_StillReturnsAPage()
     {
@@ -102,6 +111,9 @@ public sealed class PaginationTests(ApiFactory factory) : IntegrationTest(factor
         page.PageSize.Should().Be(PagedQuery.DefaultPageSize);
     }
 
+    /// <summary>
+    /// Page size beyond the cap, is rejected, naming the parameter.
+    /// </summary>
     [Fact]
     public async Task PageSizeBeyondTheCap_IsRejected_NamingTheParameter()
     {

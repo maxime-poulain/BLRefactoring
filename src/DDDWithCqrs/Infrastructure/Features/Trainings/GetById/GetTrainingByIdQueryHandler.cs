@@ -29,6 +29,9 @@ public sealed class GetTrainingByIdQueryHandler(
     ICurrentUserService currentUserService)
     : IQueryHandler<GetTrainingByIdQuery, TrainingDto?>
 {
+    /// <summary>
+    /// Runs the command.
+    /// </summary>
     public async ValueTask<TrainingDto?> Handle(GetTrainingByIdQuery request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);

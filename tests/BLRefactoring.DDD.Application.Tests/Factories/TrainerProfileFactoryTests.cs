@@ -12,6 +12,9 @@ namespace BLRefactoring.DDD.Application.Tests.Factories;
 /// </summary>
 public sealed class TrainerProfileFactoryTests
 {
+    /// <summary>
+    /// Create, valid input, returns the value objects.
+    /// </summary>
     [Fact]
     public void Create_ValidInput_ReturnsTheValueObjects()
     {
@@ -25,6 +28,9 @@ public sealed class TrainerProfileFactoryTests
         profile.Bio!.Value.Should().Be("An experienced trainer.");
     }
 
+    /// <summary>
+    /// Create, null bio, is valid and yields no bio.
+    /// </summary>
     [Fact]
     public void Create_NullBio_IsValidAndYieldsNoBio()
     {
@@ -33,6 +39,9 @@ public sealed class TrainerProfileFactoryTests
         result.ShouldBeSuccess().Bio.Should().BeNull();
     }
 
+    /// <summary>
+    /// Create, empty bio, returns failure.
+    /// </summary>
     [Fact]
     public void Create_EmptyBio_ReturnsFailure()
     {
@@ -43,6 +52,9 @@ public sealed class TrainerProfileFactoryTests
         result.ShouldBeFailure();
     }
 
+    /// <summary>
+    /// Create, invalid contact email, returns failure.
+    /// </summary>
     [Fact]
     public void Create_InvalidContactEmail_ReturnsFailure()
     {
@@ -51,6 +63,9 @@ public sealed class TrainerProfileFactoryTests
         result.ShouldBeFailure();
     }
 
+    /// <summary>
+    /// Create, invalid name, returns failure.
+    /// </summary>
     [Fact]
     public void Create_InvalidName_ReturnsFailure()
     {
@@ -59,6 +74,9 @@ public sealed class TrainerProfileFactoryTests
         result.ShouldBeFailure();
     }
 
+    /// <summary>
+    /// Create, several invalid inputs, reports them all at once.
+    /// </summary>
     [Fact]
     public void Create_SeveralInvalidInputs_ReportsThemAllAtOnce()
     {

@@ -36,6 +36,9 @@ public sealed class TrainingController(
     IQueryDispatcher queryDispatcher)
     : ApiControllerBase
 {
+    /// <summary>
+    /// Creates a training owned by the calling trainer.
+    /// </summary>
     [HttpPost]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -56,6 +59,9 @@ public sealed class TrainingController(
                 : this.Problem(StatusCodes.Status400BadRequest, errors));
     }
 
+    /// <summary>
+    /// Reads one training, publishing its row version as an <c>ETag</c>.
+    /// </summary>
     [HttpGet("{trainingId:guid}")]
     [ProducesEntityTag]
     [ProducesResponseType(typeof(TrainingResponseHttp), StatusCodes.Status200OK)]
@@ -172,6 +178,9 @@ public sealed class TrainingController(
                 : this.Problem(StatusCodes.Status400BadRequest, errors)));
     }
 
+    /// <summary>
+    /// Deletes a training the caller owns.
+    /// </summary>
     [Authorize(Policy = TrainingOwnerPolicy.Name)]
     [HttpDelete("{trainingId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

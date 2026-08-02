@@ -26,6 +26,9 @@ namespace BLRefactoring.Api.TestKit;
 public abstract class RequestValidationTest<TFactory>(TFactory factory) : IntegrationTest<TFactory>(factory)
     where TFactory : IResettableDatabase, IHttpClientSource
 {
+    /// <summary>
+    /// Every invalid field, is reported, not just the first.
+    /// </summary>
     [Fact]
     public async Task EveryInvalidField_IsReported_NotJustTheFirst()
     {
@@ -50,6 +53,9 @@ public abstract class RequestValidationTest<TFactory>(TFactory factory) : Integr
             nameof(EditTrainerRequestHttp.Lastname));
     }
 
+    /// <summary>
+    /// Valid body, reaches the application layer.
+    /// </summary>
     [Fact]
     public async Task ValidBody_ReachesTheApplicationLayer()
     {

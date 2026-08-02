@@ -24,6 +24,9 @@ public sealed class BffAuthenticationStateProvider(IHttpClientFactory httpClient
 
     private Task<AuthenticationState>? _state;
 
+    /// <summary>
+    /// Answers who is signed in, asking the BFF rather than reading a token the browser holds.
+    /// </summary>
     public override Task<AuthenticationState> GetAuthenticationStateAsync() =>
         _state ??= FetchAsync();
 

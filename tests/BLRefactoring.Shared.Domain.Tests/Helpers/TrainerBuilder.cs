@@ -17,14 +17,44 @@ public sealed class TrainerBuilder
     private Guid _userId = Guid.NewGuid();
     private Guid? _id;
 
+    /// <summary>
+    /// With firstname.
+    /// </summary>
     public TrainerBuilder WithFirstname(string v) { _firstname = v; return this; }
+
+    /// <summary>
+    /// With lastname.
+    /// </summary>
     public TrainerBuilder WithLastname(string v) { _lastname = v; return this; }
+
+    /// <summary>
+    /// With contact email.
+    /// </summary>
     public TrainerBuilder WithContactEmail(string v) { _contactEmail = v; return this; }
+
+    /// <summary>
+    /// With bio.
+    /// </summary>
     public TrainerBuilder WithBio(string v) { _bio = v; return this; }
+
+    /// <summary>
+    /// Without bio.
+    /// </summary>
     public TrainerBuilder WithoutBio() { _bio = null; return this; }
+
+    /// <summary>
+    /// With user id.
+    /// </summary>
     public TrainerBuilder WithUserId(Guid v) { _userId = v; return this; }
+
+    /// <summary>
+    /// With id.
+    /// </summary>
     public TrainerBuilder WithId(Guid v) { _id = v; return this; }
 
+    /// <summary>
+    /// Build.
+    /// </summary>
     public Trainer Build()
     {
         return Trainer.Create(

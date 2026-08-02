@@ -24,6 +24,9 @@ public sealed class TestConventionRules
     // it forbids fails on its own source — which would be funny once and then permanently in the way.
     private const string RejectedLibrary = "Fluent" + "Assertions";
 
+    /// <summary>
+    /// The rejected assertion library, is named only where it is ruled out.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0007",
         "the assertion library is AwesomeAssertions, and the one it replaced appears nowhere")]
@@ -44,6 +47,9 @@ public sealed class TestConventionRules
                 $"'{file}' names the library ADR 0007 replaced with a fork on a permissive licence")
             .ShouldHold();
 
+    /// <summary>
+    /// No test, calls xunit assert.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0007",
         "subject.Should() everywhere, and no Assert.* anywhere")]
@@ -71,6 +77,9 @@ public sealed class TestConventionRules
     private static bool StatesTheseRules(string relativePath) =>
         relativePath.EndsWith("TestConventionRules.cs", StringComparison.Ordinal);
 
+    /// <summary>
+    /// Every test project, carries the assertion library.
+    /// </summary>
     [Fact]
     [ArchitectureRule("0007",
         "every test project carries the assertion library, the kit included")]
@@ -84,6 +93,9 @@ public sealed class TestConventionRules
                 "explicitly, because the kit is where the drift started")
             .ShouldHold();
 
+    /// <summary>
+    /// The shared kit, is not selected by the slow workflow.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#continuous-integration",
         "the two workflow filters are exact inverses, and they key on a test's fully-qualified name")]
@@ -97,6 +109,9 @@ public sealed class TestConventionRules
                 "workflows without anyone editing a workflow")
             .ShouldHold();
 
+    /// <summary>
+    /// Every shared test base, is abstract and generic.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#testing",
         "a shared test base is abstract, generic in its factory, and named for what it is")]
@@ -112,6 +127,9 @@ public sealed class TestConventionRules
                 "A concrete one would run once, unparameterised, against no host at all")
             .ShouldHold();
 
+    /// <summary>
+    /// Every shared test base, is run by both suites.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#testing",
         "every shared test base is run by both hosts, or it is a test of one host wearing shared clothes")]
@@ -128,6 +146,9 @@ public sealed class TestConventionRules
             .ShouldHold();
     }
 
+    /// <summary>
+    /// Every derivation, declares its own collection.
+    /// </summary>
     [Fact]
     [ArchitectureRule("README#testing",
         "each derivation carries its own [Collection], because inherited collection attributes are not worth depending on")]

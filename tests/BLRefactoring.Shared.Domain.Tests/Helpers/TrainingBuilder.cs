@@ -21,14 +21,44 @@ public sealed class TrainingBuilder
     private List<string> _topics = ["Programming"];
     private bool _titleExistsResult;
 
+    /// <summary>
+    /// With title.
+    /// </summary>
     public TrainingBuilder WithTitle(string v) { _title = v; return this; }
+
+    /// <summary>
+    /// With description.
+    /// </summary>
     public TrainingBuilder WithDescription(string v) { _description = v; return this; }
+
+    /// <summary>
+    /// With prerequisites.
+    /// </summary>
     public TrainingBuilder WithPrerequisites(string v) { _prerequisites = v; return this; }
+
+    /// <summary>
+    /// With acquired skills.
+    /// </summary>
     public TrainingBuilder WithAcquiredSkills(string v) { _acquiredSkills = v; return this; }
+
+    /// <summary>
+    /// With trainer id.
+    /// </summary>
     public TrainingBuilder WithTrainerId(Guid v) { _trainerId = v; return this; }
+
+    /// <summary>
+    /// With topics.
+    /// </summary>
     public TrainingBuilder WithTopics(params string[] v) { _topics = v.ToList(); return this; }
+
+    /// <summary>
+    /// With title already exists.
+    /// </summary>
     public TrainingBuilder WithTitleAlreadyExists() { _titleExistsResult = true; return this; }
 
+    /// <summary>
+    /// Create title checker mock.
+    /// </summary>
     public Mock<IUniquenessTitleChecker> CreateTitleCheckerMock()
     {
         var mock = new Mock<IUniquenessTitleChecker>();
@@ -40,12 +70,18 @@ public sealed class TrainingBuilder
         return mock;
     }
 
+    /// <summary>
+    /// Build topics.
+    /// </summary>
     public IReadOnlyCollection<Topic> BuildTopics()
         => _topics.Select(name => Topic.TryFromName(name, out var topic)
                 ? topic
                 : throw new ArgumentException($"Topic with name '{name}' does not exist."))
             .ToList();
 
+    /// <summary>
+    /// Build async.
+    /// </summary>
     public async Task<Result<Training>> BuildAsync()
     {
         var mockChecker = CreateTitleCheckerMock();
@@ -61,6 +97,9 @@ public sealed class TrainingBuilder
             mockChecker.Object);
     }
 
+    /// <summary>
+    /// Build valid async.
+    /// </summary>
     public async Task<Training> BuildValidAsync()
     {
         return (await BuildAsync()).ShouldBeSuccess();

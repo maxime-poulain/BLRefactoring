@@ -16,9 +16,19 @@ namespace BLRefactoring.DDD.Application.Services.TrainerServices;
 // Example: `ITrainerCreator` or `ITrainerCreationService` is more meaningful
 // than `ITrainerApplicationService`.
 
+/// <summary>
+/// The trainer use cases of the layered stack.
+/// </summary>
 public interface ITrainerApplicationService
 {
     // Another possibility would have been to return just the Id of the newly created Trainer.
+
+    /// <summary>
+    /// Creates a trainer from raw input.
+    /// </summary>
+    /// <param name="request">The unvalidated input.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    /// <returns>The trainer, or every rule the input broke.</returns>
     Task<Result<TrainerDto>> CreateAsync(TrainerCreationRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -28,15 +38,28 @@ public interface ITrainerApplicationService
     /// </summary>
     Task<Result<TrainerDto>> EditAsync(TrainerEditionRequest request, byte[] expectedVersion, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Reads one trainer.
+    /// </summary>
+    /// <param name="id">The trainer's identifier.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    /// <returns>The trainer, or a not-found failure.</returns>
     Task<Result<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 }
 
+/// <summary>
+/// Runs the trainer use cases: turns raw input into value objects, drives the aggregate, and
+/// commits through the unit of work.
+/// </summary>
 public sealed class TrainerApplicationService(
     ITrainerRepository trainerRepository,
     ICurrentUserService currentUserService,
     IUnitOfWork unitOfWork)
     : ITrainerApplicationService
 {
+    /// <summary>
+    /// Creates a trainer from raw input, or returns every rule it broke.
+    /// </summary>
     public async Task<Result<TrainerDto>> CreateAsync(TrainerCreationRequest request, CancellationToken cancellationToken = default)
     {
         var profileResult = TrainerProfileFactory.Create(
@@ -57,6 +80,9 @@ public sealed class TrainerApplicationService(
         }, Result<TrainerDto>.FailureAsync);
     }
 
+    /// <summary>
+    /// Replaces a trainer's profile, refusing the write when the expected version is stale.
+    /// </summary>
     public async Task<Result<TrainerDto>> EditAsync(TrainerEditionRequest request, byte[] expectedVersion, CancellationToken cancellationToken = default)
     {
         // Resolved here rather than received. PUT /Trainer/me has never had a trainer for a caller
@@ -104,6 +130,9 @@ public sealed class TrainerApplicationService(
     private const string ConcurrencyMessage =
         "The trainer was modified by someone else since it was read. Reload it and try again.";
 
+    /// <summary>
+    /// Reads one trainer, or a not-found failure.
+    /// </summary>
     public async Task<Result<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var trainer = await trainerRepository.GetByIdAsync(TrainerId.Create(id), cancellationToken);

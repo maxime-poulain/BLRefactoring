@@ -4,8 +4,14 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainerAggregate;
 
+/// <summary>
+/// Behaviour covered for <c>TrainerId</c>.
+/// </summary>
 public sealed class TrainerIdTests
 {
+    /// <summary>
+    /// Generate, returns non empty.
+    /// </summary>
     [Fact]
     public void Generate_ReturnsNonEmpty()
     {
@@ -16,6 +22,9 @@ public sealed class TrainerIdTests
         trainerId.Value.Should().NotBe(Guid.Empty);
     }
 
+    /// <summary>
+    /// Create, with guid, sets value.
+    /// </summary>
     [Fact]
     public void Create_WithGuid_SetsValue()
     {
@@ -29,6 +38,9 @@ public sealed class TrainerIdTests
         trainerId.Value.Should().Be(guid);
     }
 
+    /// <summary>
+    /// Value, exposes the underlying guid.
+    /// </summary>
     [Fact]
     public void Value_ExposesTheUnderlyingGuid()
     {
@@ -40,6 +52,9 @@ public sealed class TrainerIdTests
         trainerId.Value.Should().Be(guid);
     }
 
+    /// <summary>
+    /// Explicit conversion, from guid, creates validated id.
+    /// </summary>
     [Fact]
     public void ExplicitConversion_FromGuid_CreatesValidatedId()
     {
@@ -53,6 +68,9 @@ public sealed class TrainerIdTests
         trainerId.Value.Should().Be(guid);
     }
 
+    /// <summary>
+    /// Explicit conversion, from empty guid, throws.
+    /// </summary>
     [Fact]
     public void ExplicitConversion_FromEmptyGuid_Throws()
     {
@@ -63,6 +81,9 @@ public sealed class TrainerIdTests
         act.Should().Throw<ArgumentException>();
     }
 
+    /// <summary>
+    /// Create, empty guid, throws.
+    /// </summary>
     [Fact]
     public void Create_EmptyGuid_Throws()
     {
@@ -73,6 +94,9 @@ public sealed class TrainerIdTests
         act.Should().Throw<ArgumentException>();
     }
 
+    /// <summary>
+    /// Equality, same guid, are equal.
+    /// </summary>
     [Fact]
     public void Equality_SameGuid_AreEqual()
     {

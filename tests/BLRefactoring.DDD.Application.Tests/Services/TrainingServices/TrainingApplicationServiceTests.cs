@@ -12,6 +12,9 @@ using Xunit;
 
 namespace BLRefactoring.DDD.Application.Tests.Services.TrainingServices;
 
+/// <summary>
+/// Behaviour covered for <c>TrainingApplicationService</c>.
+/// </summary>
 public sealed class TrainingApplicationServiceTests
 {
     private readonly TrainingServiceTestFixture _fixture = new();
@@ -52,6 +55,9 @@ public sealed class TrainingApplicationServiceTests
 
     // -- CreateAsync --
 
+    /// <summary>
+    /// Create async, valid request, returns success with dto.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_ValidRequest_ReturnsSuccessWithDto()
     {
@@ -66,6 +72,9 @@ public sealed class TrainingApplicationServiceTests
         dto.Title.Should().Be("Valid Training Title");
     }
 
+    /// <summary>
+    /// Create async, valid request, adds training and commits once.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_ValidRequest_AddsTrainingAndCommitsOnce()
     {
@@ -82,6 +91,9 @@ public sealed class TrainingApplicationServiceTests
             Times.Once);
     }
 
+    /// <summary>
+    /// Create async, trainer not found, returns not found failure.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_TrainerNotFound_ReturnsNotFoundFailure()
     {
@@ -96,6 +108,9 @@ public sealed class TrainingApplicationServiceTests
         result.ShouldContainError(ErrorCodes.NotFound);
     }
 
+    /// <summary>
+    /// Create async, invalid training data, returns failure.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_InvalidTrainingData_ReturnsFailure()
     {
@@ -118,6 +133,9 @@ public sealed class TrainingApplicationServiceTests
         result.ShouldBeFailure();
     }
 
+    /// <summary>
+    /// Create async, invalid training data, does not add nor commit.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_InvalidTrainingData_DoesNotAddNorCommit()
     {
@@ -143,6 +161,9 @@ public sealed class TrainingApplicationServiceTests
             Times.Never);
     }
 
+    /// <summary>
+    /// Create async, uses current user service trainer id.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_UsesCurrentUserServiceTrainerId()
     {
@@ -160,6 +181,9 @@ public sealed class TrainingApplicationServiceTests
 
     // -- GetByIdAsync --
 
+    /// <summary>
+    /// Get by id async, own training, returns success with dto.
+    /// </summary>
     [Fact]
     public async Task GetByIdAsync_OwnTraining_ReturnsSuccessWithDto()
     {
@@ -175,6 +199,9 @@ public sealed class TrainingApplicationServiceTests
         result.ShouldBeSuccess().Id.Should().Be(training.Id.Value);
     }
 
+    /// <summary>
+    /// Get by id async, non existing training, returns not found failure.
+    /// </summary>
     [Fact]
     public async Task GetByIdAsync_NonExistingTraining_ReturnsNotFoundFailure()
     {
@@ -190,6 +217,9 @@ public sealed class TrainingApplicationServiceTests
         errors.Should().Contain(e => e.ErrorCode == ErrorCodes.NotFound);
     }
 
+    /// <summary>
+    /// Get by id async, another trainers training, returns the same not found failure.
+    /// </summary>
     [Fact]
     public async Task GetByIdAsync_AnotherTrainersTraining_ReturnsTheSameNotFoundFailure()
     {
@@ -211,6 +241,9 @@ public sealed class TrainingApplicationServiceTests
 
     // -- EditAsync --
 
+    /// <summary>
+    /// Edit async, valid request, returns success with dto.
+    /// </summary>
     [Fact]
     public async Task EditAsync_ValidRequest_ReturnsSuccessWithDto()
     {
@@ -240,6 +273,9 @@ public sealed class TrainingApplicationServiceTests
         result.ShouldBeSuccess().Title.Should().Be("Updated Title Here");
     }
 
+    /// <summary>
+    /// Edit async, non existing training, returns not found failure.
+    /// </summary>
     [Fact]
     public async Task EditAsync_NonExistingTraining_ReturnsNotFoundFailure()
     {
@@ -263,6 +299,9 @@ public sealed class TrainingApplicationServiceTests
         errors.Should().Contain(e => e.ErrorCode == ErrorCodes.NotFound);
     }
 
+    /// <summary>
+    /// Edit async, stale version, returns concurrency conflict without committing.
+    /// </summary>
     [Fact]
     public async Task EditAsync_StaleVersion_ReturnsConcurrencyConflictWithoutCommitting()
     {
@@ -289,6 +328,9 @@ public sealed class TrainingApplicationServiceTests
             Times.Never);
     }
 
+    /// <summary>
+    /// Edit async, store reports a conflict, returns concurrency conflict.
+    /// </summary>
     [Fact]
     public async Task EditAsync_StoreReportsAConflict_ReturnsConcurrencyConflict()
     {
@@ -318,6 +360,9 @@ public sealed class TrainingApplicationServiceTests
         result.ShouldContainError(ErrorCodes.ConcurrencyConflict);
     }
 
+    /// <summary>
+    /// Edit async, invalid data, returns failure.
+    /// </summary>
     [Fact]
     public async Task EditAsync_InvalidData_ReturnsFailure()
     {
@@ -343,6 +388,9 @@ public sealed class TrainingApplicationServiceTests
 
     // -- GetMineAsync --
 
+    /// <summary>
+    /// Get mine async, returns training dtos.
+    /// </summary>
     [Fact]
     public async Task GetMineAsync_ReturnsTrainingDtos()
     {
@@ -358,6 +406,9 @@ public sealed class TrainingApplicationServiceTests
         trainings.Should().HaveCount(1);
     }
 
+    /// <summary>
+    /// Get mine async, asks the repository for the callers own trainer id.
+    /// </summary>
     [Fact]
     public async Task GetMineAsync_AsksTheRepositoryForTheCallersOwnTrainerId()
     {
@@ -376,6 +427,9 @@ public sealed class TrainingApplicationServiceTests
             Times.Once);
     }
 
+    /// <summary>
+    /// Get mine async, no trainings, returns an empty list.
+    /// </summary>
     [Fact]
     public async Task GetMineAsync_NoTrainings_ReturnsAnEmptyList()
     {
@@ -394,6 +448,9 @@ public sealed class TrainingApplicationServiceTests
 
     // -- DeleteAsync --
 
+    /// <summary>
+    /// Delete async, existing training, returns success.
+    /// </summary>
     [Fact]
     public async Task DeleteAsync_ExistingTraining_ReturnsSuccess()
     {
@@ -408,6 +465,9 @@ public sealed class TrainingApplicationServiceTests
         result.ShouldBeSuccess();
     }
 
+    /// <summary>
+    /// Delete async, existing training, deletes training and commits once.
+    /// </summary>
     [Fact]
     public async Task DeleteAsync_ExistingTraining_DeletesTrainingAndCommitsOnce()
     {
@@ -425,6 +485,9 @@ public sealed class TrainingApplicationServiceTests
             Times.Once);
     }
 
+    /// <summary>
+    /// Delete async, non existing training, returns not found failure.
+    /// </summary>
     [Fact]
     public async Task DeleteAsync_NonExistingTraining_ReturnsNotFoundFailure()
     {

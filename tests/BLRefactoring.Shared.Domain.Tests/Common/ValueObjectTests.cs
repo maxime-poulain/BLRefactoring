@@ -4,6 +4,9 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Common;
 
+/// <summary>
+/// Behaviour covered for <c>ValueObject</c>.
+/// </summary>
 public sealed class ValueObjectTests
 {
     private sealed class TestValueObject : ValueObject
@@ -24,6 +27,9 @@ public sealed class ValueObjectTests
         }
     }
 
+    /// <summary>
+    /// Equals, same components, returns true.
+    /// </summary>
     [Fact]
     public void Equals_SameComponents_ReturnsTrue()
     {
@@ -33,6 +39,9 @@ public sealed class ValueObjectTests
         vo1.Equals(vo2).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Equals, different components, returns false.
+    /// </summary>
     [Fact]
     public void Equals_DifferentComponents_ReturnsFalse()
     {
@@ -42,6 +51,9 @@ public sealed class ValueObjectTests
         vo1.Equals(vo2).Should().BeFalse();
     }
 
+    /// <summary>
+    /// Equals, null, returns false.
+    /// </summary>
     [Fact]
     public void Equals_Null_ReturnsFalse()
     {
@@ -50,6 +62,9 @@ public sealed class ValueObjectTests
         vo.Equals(null).Should().BeFalse();
     }
 
+    /// <summary>
+    /// Equals, different type, returns false.
+    /// </summary>
     [Fact]
     public void Equals_DifferentType_ReturnsFalse()
     {
@@ -59,6 +74,9 @@ public sealed class ValueObjectTests
         vo.Equals(other).Should().BeFalse();
     }
 
+    /// <summary>
+    /// Get hash code, same components, returns same hash.
+    /// </summary>
     [Fact]
     public void GetHashCode_SameComponents_ReturnsSameHash()
     {
@@ -68,6 +86,9 @@ public sealed class ValueObjectTests
         vo1.GetHashCode().Should().Be(vo2.GetHashCode());
     }
 
+    /// <summary>
+    /// Get hash code, different components, returns different hash.
+    /// </summary>
     [Fact]
     public void GetHashCode_DifferentComponents_ReturnsDifferentHash()
     {
@@ -77,6 +98,9 @@ public sealed class ValueObjectTests
         vo1.GetHashCode().Should().NotBe(vo2.GetHashCode());
     }
 
+    /// <summary>
+    /// Operator equals, same components, returns true.
+    /// </summary>
     [Fact]
     public void OperatorEquals_SameComponents_ReturnsTrue()
     {
@@ -86,6 +110,9 @@ public sealed class ValueObjectTests
         (vo1 == vo2).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Operator not equals, different components, returns true.
+    /// </summary>
     [Fact]
     public void OperatorNotEquals_DifferentComponents_ReturnsTrue()
     {

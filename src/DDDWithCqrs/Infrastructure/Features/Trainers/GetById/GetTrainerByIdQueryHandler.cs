@@ -8,9 +8,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BLRefactoring.DDDWithCqrs.Infrastructure.Features.Trainers.GetById;
 
+/// <summary>
+/// Answers <see cref="GetTrainerByIdQuery"/>.
+/// </summary>
 public sealed class GetTrainerByIdQueryHandler(TrainingContext trainingContext)
     : IQueryHandler<GetTrainerByIdQuery, TrainerDto?>
 {
+    /// <summary>
+    /// Answers the query.
+    /// </summary>
     public async ValueTask<TrainerDto?> Handle(GetTrainerByIdQuery request, CancellationToken cancellationToken)
     {
         var trainerId = TrainerId.Create(request.Id);

@@ -9,6 +9,9 @@ using Xunit;
 
 namespace BLRefactoring.DDD.Application.Tests.EventHandlers;
 
+/// <summary>
+/// Behaviour covered for <c>NotifyPreviousAddressWhenTrainerContactEmailChangedEventHandler</c>.
+/// </summary>
 public sealed class NotifyPreviousAddressWhenTrainerContactEmailChangedEventHandlerTests
 {
     private readonly Mock<IEmailSender> _emailSender = new();
@@ -16,6 +19,9 @@ public sealed class NotifyPreviousAddressWhenTrainerContactEmailChangedEventHand
     private NotifyPreviousAddressWhenTrainerContactEmailChangedEventHandler CreateSut() =>
         new(_emailSender.Object);
 
+    /// <summary>
+    /// Handle, notifies the previous address.
+    /// </summary>
     [Fact]
     public async Task Handle_NotifiesThePreviousAddress()
     {

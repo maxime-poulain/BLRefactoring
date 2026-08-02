@@ -49,6 +49,9 @@ public sealed class UnhandledExceptionHandlerTests
         new(context.RequestServices.GetRequiredService<Microsoft.AspNetCore.Http.IProblemDetailsService>(),
             NullLogger<UnhandledExceptionHandler>.Instance);
 
+    /// <summary>
+    /// Handle, any exception, answers 500 with a problem document.
+    /// </summary>
     [Fact]
     public async Task Handle_AnyException_Answers500WithAProblemDocument()
     {
@@ -68,6 +71,9 @@ public sealed class UnhandledExceptionHandlerTests
         problem.GetProperty("title").GetString().Should().Be("An unexpected error occurred.");
     }
 
+    /// <summary>
+    /// Handle, any exception, tells the caller nothing about the server.
+    /// </summary>
     [Fact]
     public async Task Handle_AnyException_TellsTheCallerNothingAboutTheServer()
     {

@@ -16,6 +16,9 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Behaviors;
 
+/// <summary>
+/// Behaviour covered for <c>ValidationPipelineBehavior</c>.
+/// </summary>
 public sealed class ValidationPipelineBehaviorTests
 {
     private static Mock<IValidator<TRequest>> RejectingValidator<TRequest>(params ValidationFailure[] failures)
@@ -35,6 +38,9 @@ public sealed class ValidationPipelineBehaviorTests
 
     // -- Command without validator --
 
+    /// <summary>
+    /// Handle, command without validator, throws invalid operation exception.
+    /// </summary>
     [Fact]
     public async Task Handle_CommandWithoutValidator_ThrowsInvalidOperationException()
     {
@@ -62,6 +68,9 @@ public sealed class ValidationPipelineBehaviorTests
 
     // -- Command with validation errors --
 
+    /// <summary>
+    /// Handle, command with validation errors, returns a failed result.
+    /// </summary>
     [Fact]
     public async Task Handle_CommandWithValidationErrors_ReturnsAFailedResult()
     {
@@ -87,6 +96,9 @@ public sealed class ValidationPipelineBehaviorTests
         errors[0].ErrorMessage.Should().Be("Email is required");
     }
 
+    /// <summary>
+    /// Handle, command with validation errors, does not reach the handler.
+    /// </summary>
     [Fact]
     public async Task Handle_CommandWithValidationErrors_DoesNotReachTheHandler()
     {
@@ -110,6 +122,9 @@ public sealed class ValidationPipelineBehaviorTests
         nextCalled.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Handle, command with several validation errors, reports them all.
+    /// </summary>
     [Fact]
     public async Task Handle_CommandWithSeveralValidationErrors_ReportsThemAll()
     {
@@ -133,6 +148,9 @@ public sealed class ValidationPipelineBehaviorTests
 
     // -- Command with valid data --
 
+    /// <summary>
+    /// Handle, command with valid data, calls next handler.
+    /// </summary>
     [Fact]
     public async Task Handle_CommandWithValidData_CallsNextHandler()
     {
@@ -165,6 +183,9 @@ public sealed class ValidationPipelineBehaviorTests
 
     // -- Query rejections have no Result to travel in --
 
+    /// <summary>
+    /// Handle, query with validation errors, still throws.
+    /// </summary>
     [Fact]
     public async Task Handle_QueryWithValidationErrors_StillThrows()
     {
@@ -189,6 +210,9 @@ public sealed class ValidationPipelineBehaviorTests
 
     // -- Query without validator does not throw --
 
+    /// <summary>
+    /// Handle, query without validator, does not throw.
+    /// </summary>
     [Fact]
     public async Task Handle_QueryWithoutValidator_DoesNotThrow()
     {

@@ -4,10 +4,16 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Validators;
 
+/// <summary>
+/// Behaviour covered for <c>CreateTrainingCommandValidator</c>.
+/// </summary>
 public sealed class CreateTrainingCommandValidatorTests
 {
     private readonly CreateTrainingCommandValidator _sut = new();
 
+    /// <summary>
+    /// Validate, valid command, is valid.
+    /// </summary>
     [Fact]
     public async Task Validate_ValidCommand_IsValid()
     {
@@ -26,6 +32,9 @@ public sealed class CreateTrainingCommandValidatorTests
         result.IsValid.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Validate, empty topics, has error.
+    /// </summary>
     [Fact]
     public async Task Validate_EmptyTopics_HasError()
     {

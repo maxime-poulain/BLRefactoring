@@ -65,4 +65,11 @@ await app.EnsureDatabasesAreUpToDateAsync();
 
 app.Run();
 
+/// <summary>
+/// The entry point of the layered host.
+/// </summary>
+/// <remarks>
+/// Declared explicitly, rather than left to the compiler, so the integration tests can
+/// name it as the type argument to <c>WebApplicationFactory</c>.
+/// </remarks>
 public sealed partial class Program { }

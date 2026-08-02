@@ -8,6 +8,9 @@ namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Edit;
 /// </summary>
 public sealed class EditTrainerCommandValidator : AbstractValidator<EditTrainerCommand>
 {
+    /// <summary>
+    /// Builds the rules.
+    /// </summary>
     public EditTrainerCommandValidator()
     {
         RuleFor(command => command.ContactEmail).EmailAddress();

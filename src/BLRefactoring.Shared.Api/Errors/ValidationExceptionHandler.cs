@@ -32,6 +32,9 @@ namespace BLRefactoring.Shared.Api.Errors;
 public sealed class ValidationExceptionHandler(IProblemDetailsService problemDetailsService)
     : IExceptionHandler
 {
+    /// <summary>
+    /// Turns a validation failure into an RFC 7807 document keyed by field name.
+    /// </summary>
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
         Exception exception,

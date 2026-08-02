@@ -13,9 +13,21 @@ namespace BLRefactoring.Shared.Application.EventHandlers;
 /// "edited" can evolve independently (an edit might one day also invalidate a
 /// cache or notify subscribed students).
 /// </remarks>
+/// <summary>
+/// Reacts to the event: refreshes the search index for the edited training.
+/// <para>
+/// Dispatched inside the unit of work, before the transaction commits, so anything this handler
+/// writes joins the same transaction as the change that raised the event.
+/// </para>
+/// </summary>
 public sealed class ReindexTrainingWhenTrainingEditedEventHandler(ITrainingSearchIndexer searchIndexer)
     : IDomainEventHandler<TrainingEditedDomainEvent>
 {
+    /// <summary>
+    /// Runs the reaction.
+    /// </summary>
+    /// <param name="notification">The event that was raised.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     public async ValueTask Handle(TrainingEditedDomainEvent notification, CancellationToken cancellationToken)
     {
         await searchIndexer.IndexAsync(

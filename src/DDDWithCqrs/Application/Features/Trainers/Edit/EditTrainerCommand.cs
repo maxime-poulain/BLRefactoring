@@ -20,7 +20,14 @@ public sealed class EditTrainerCommand : ICommand<Result>
     /// </summary>
     public byte[] ExpectedVersion { get; init; } = [];
 
+    /// <summary>
+    /// The trainer's first name, as the caller sent it.
+    /// </summary>
     public string Firstname { get; init; } = null!;
+
+    /// <summary>
+    /// The trainer's last name, as the caller sent it.
+    /// </summary>
     public string Lastname { get; init; } = null!;
 
     /// <summary>
@@ -29,6 +36,10 @@ public sealed class EditTrainerCommand : ICommand<Result>
     /// </summary>
     public string ContactEmail { get; init; } = null!;
 
+    /// <summary>
+    /// The trainer's biography, or <see langword="null"/> for none — absent at creation, cleared
+    /// on edition.
+    /// </summary>
     public string? Bio { get; init; }
 }
 
@@ -48,6 +59,9 @@ public sealed class EditTrainerCommandHandler(
     IUnitOfWork unitOfWork)
     : ICommandHandler<EditTrainerCommand, Result>
 {
+    /// <summary>
+    /// Runs the command.
+    /// </summary>
     public async ValueTask<Result> Handle(EditTrainerCommand request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);

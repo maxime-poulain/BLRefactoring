@@ -36,6 +36,9 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
 
     // -- Create --
 
+    /// <summary>
+    /// Create, valid data, returns 201.
+    /// </summary>
     [Fact]
     public async Task Create_ValidData_Returns201()
     {
@@ -52,6 +55,9 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         response.Headers.Location!.AbsolutePath.Should().Be($"/Training/{trainingId}");
     }
 
+    /// <summary>
+    /// Create, same title for another trainer, returns 201.
+    /// </summary>
     [Fact]
     public async Task Create_SameTitleForAnotherTrainer_Returns201()
     {
@@ -70,6 +76,9 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         response.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
+    /// <summary>
+    /// Create, invalid data, returns 400.
+    /// </summary>
     [Fact]
     public async Task Create_InvalidData_Returns400()
     {
@@ -87,6 +96,9 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+    /// <summary>
+    /// Create, duplicate title for same trainer, returns 409.
+    /// </summary>
     [Fact]
     public async Task Create_DuplicateTitleForSameTrainer_Returns409()
     {
@@ -100,6 +112,9 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
+    /// <summary>
+    /// Create, no token, returns 401.
+    /// </summary>
     [Fact]
     public async Task Create_NoToken_Returns401()
     {
@@ -112,6 +127,9 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
 
     // -- Reads --
 
+    /// <summary>
+    /// Get by id, existing, returns 200 with ETag.
+    /// </summary>
     [Fact]
     public async Task GetById_Existing_Returns200WithETag()
     {
@@ -126,6 +144,9 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         dto!.Id.Should().Be(trainingId);
     }
 
+    /// <summary>
+    /// Get by id, non existent, returns 404.
+    /// </summary>
     [Fact]
     public async Task GetById_NonExistent_Returns404()
     {
@@ -138,6 +159,9 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
 
     // -- Edit --
 
+    /// <summary>
+    /// Edit, as owner, returns 200 with the updated training and its new ETag.
+    /// </summary>
     [Fact]
     public async Task Edit_AsOwner_Returns200WithTheUpdatedTrainingAndItsNewETag()
     {
@@ -190,6 +214,9 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         reread!.Title.Should().Be("Second Edit");
     }
 
+    /// <summary>
+    /// Edit, without if match, returns 428.
+    /// </summary>
     [Fact]
     public async Task Edit_WithoutIfMatch_Returns428()
     {
@@ -201,6 +228,9 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         response.StatusCode.Should().Be(HttpStatusCode.PreconditionRequired);
     }
 
+    /// <summary>
+    /// Edit, with stale if match, returns 412 and keeps the first edit.
+    /// </summary>
     [Fact]
     public async Task Edit_WithStaleIfMatch_Returns412AndKeepsTheFirstEdit()
     {
@@ -220,6 +250,9 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         reread!.Title.Should().Be("First Edit Wins", "the second edit must not have overwritten the first");
     }
 
+    /// <summary>
+    /// Edit, as non owner, returns 403.
+    /// </summary>
     [Fact]
     public async Task Edit_AsNonOwner_Returns403()
     {
@@ -237,6 +270,9 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
 
     // -- Delete --
 
+    /// <summary>
+    /// Delete, as owner, returns 204.
+    /// </summary>
     [Fact]
     public async Task Delete_AsOwner_Returns204()
     {
@@ -249,6 +285,9 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         (await client.GetAsync($"/Training/{trainingId}")).StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    /// <summary>
+    /// Delete, as non owner, returns 403.
+    /// </summary>
     [Fact]
     public async Task Delete_AsNonOwner_Returns403()
     {

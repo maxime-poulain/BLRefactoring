@@ -43,6 +43,9 @@ public abstract class OwnTrainingsTest<TFactory>(TFactory factory) : Integration
     private const string Mine = "My own training";
     private const string Theirs = "Another trainer's";
 
+    /// <summary>
+    /// Own trainings, contains mine, and not somebody elses.
+    /// </summary>
     [Fact]
     public async Task OwnTrainings_ContainsMine_AndNotSomebodyElses()
     {
@@ -65,6 +68,9 @@ public abstract class OwnTrainingsTest<TFactory>(TFactory factory) : Integration
             "would leave it in the response, where anyone can read it");
     }
 
+    /// <summary>
+    /// Own trainings, takes no identifier, so the caller cannot ask for another.
+    /// </summary>
     [Fact]
     public async Task OwnTrainings_TakesNoIdentifier_SoTheCallerCannotAskForAnother()
     {
@@ -84,6 +90,9 @@ public abstract class OwnTrainingsTest<TFactory>(TFactory factory) : Integration
         (await response.Content.ReadAsStringAsync()).Should().NotContain(Theirs);
     }
 
+    /// <summary>
+    /// Own trainings, requires authentication.
+    /// </summary>
     [Fact]
     public async Task OwnTrainings_RequiresAuthentication()
     {
@@ -97,6 +106,9 @@ public abstract class OwnTrainingsTest<TFactory>(TFactory factory) : Integration
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
+    /// <summary>
+    /// Training by id, belonging to another trainer, is not found.
+    /// </summary>
     [Fact]
     public async Task TrainingById_BelongingToAnotherTrainer_IsNotFound()
     {
@@ -116,6 +128,9 @@ public abstract class OwnTrainingsTest<TFactory>(TFactory factory) : Integration
         (await response.Content.ReadAsStringAsync()).Should().NotContain(Theirs);
     }
 
+    /// <summary>
+    /// Training by id, belonging to the caller, is served.
+    /// </summary>
     [Fact]
     public async Task TrainingById_BelongingToTheCaller_IsServed()
     {
