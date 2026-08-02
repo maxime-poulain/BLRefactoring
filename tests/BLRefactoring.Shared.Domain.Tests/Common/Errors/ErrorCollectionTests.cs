@@ -6,7 +6,7 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Common.Errors;
 
-public class ErrorCollectionTests
+public sealed class ErrorCollectionTests
 {
     [Fact]
     public void NewErrorCollection_IsEmpty()
@@ -20,7 +20,7 @@ public class ErrorCollectionTests
     public void Add_Error_IncreasesCount()
     {
         var collection = new ErrorCollection();
-        var error = new Error(ErrorCode.Unspecified, "test error");
+        var error = new Error(ErrorCodes.Unspecified, "test error");
 
         collection.Add(error);
 
@@ -32,10 +32,10 @@ public class ErrorCollectionTests
     {
         var collection = new ErrorCollection();
 
-        collection.Add(ErrorCode.Unspecified, "test error");
+        collection.Add(ErrorCodes.Unspecified, "test error");
 
         collection.Count().Should().Be(1);
-        collection.First().ErrorCode.Should().Be(ErrorCode.Unspecified);
+        collection.First().ErrorCode.Should().Be(ErrorCodes.Unspecified);
         collection.First().ErrorMessage.Should().Be("test error");
     }
 
@@ -45,8 +45,8 @@ public class ErrorCollectionTests
         var collection = new ErrorCollection();
         var errors = new List<Error>
         {
-            new(ErrorCode.Unspecified, "error 1"),
-            new(ErrorCode.NotFound, "error 2")
+            new(ErrorCodes.Unspecified, "error 1"),
+            new(ErrorCodes.NotFound, "error 2")
         };
 
         collection.AddErrors(errors);
@@ -68,7 +68,7 @@ public class ErrorCollectionTests
     public void AddErrors_FromFailureResult_AddsErrors()
     {
         var collection = new ErrorCollection();
-        var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "failure error")]);
+        var errors = new ErrorCollection([new Error(ErrorCodes.Unspecified, "failure error")]);
         var failureResult = Result.Failure(errors);
 
         collection.AddErrors(failureResult);
@@ -91,7 +91,7 @@ public class ErrorCollectionTests
     [Fact]
     public void ToResult_WithErrors_ReturnsFailure()
     {
-        var collection = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
+        var collection = new ErrorCollection([new Error(ErrorCodes.Unspecified, "test error")]);
 
         var result = collection.ToResult();
 
@@ -111,7 +111,7 @@ public class ErrorCollectionTests
     [Fact]
     public void Match_WithErrors_CallsOnFailure()
     {
-        var collection = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
+        var collection = new ErrorCollection([new Error(ErrorCodes.Unspecified, "test error")]);
 
         var matched = collection.Match(
             () => "success",
@@ -135,8 +135,8 @@ public class ErrorCollectionTests
     [Fact]
     public void Indexer_Get_ReturnsCorrectError()
     {
-        var error1 = new Error(ErrorCode.Unspecified, "error 1");
-        var error2 = new Error(ErrorCode.NotFound, "error 2");
+        var error1 = new Error(ErrorCodes.Unspecified, "error 1");
+        var error2 = new Error(ErrorCodes.NotFound, "error 2");
         var collection = new ErrorCollection([error1, error2]);
 
         collection[0].Should().Be(error1);
@@ -146,8 +146,8 @@ public class ErrorCollectionTests
     [Fact]
     public void Enumerator_IteratesAllErrors()
     {
-        var error1 = new Error(ErrorCode.Unspecified, "error 1");
-        var error2 = new Error(ErrorCode.NotFound, "error 2");
+        var error1 = new Error(ErrorCodes.Unspecified, "error 1");
+        var error2 = new Error(ErrorCodes.NotFound, "error 2");
         var collection = new ErrorCollection([error1, error2]);
 
         var enumerated = new List<Error>();

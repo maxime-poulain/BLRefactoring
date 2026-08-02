@@ -6,12 +6,12 @@ using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Delete;
 
-public class DeleteTrainingCommand(Guid id) : ICommand<Result>
+public sealed class DeleteTrainingCommand(Guid id) : ICommand<Result>
 {
     public Guid Id { get; init; } = id;
 }
 
-public class DeleteTrainingCommandHandler(
+public sealed class DeleteTrainingCommandHandler(
     ITrainingRepository trainingRepository,
     IUnitOfWork unitOfWork)
     : ICommandHandler<DeleteTrainingCommand, Result>
@@ -22,7 +22,7 @@ public class DeleteTrainingCommandHandler(
 
         if (training == null)
         {
-            return Result.Failure(ErrorCode.NotFound, $"Training with id `{request.Id}` does not exist");
+            return Result.Failure(ErrorCodes.NotFound, $"Training with id `{request.Id}` does not exist");
         }
 
         trainingRepository.Delete(training);

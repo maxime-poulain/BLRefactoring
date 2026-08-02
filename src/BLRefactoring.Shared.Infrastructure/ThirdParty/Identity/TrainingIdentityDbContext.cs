@@ -8,7 +8,7 @@ namespace BLRefactoring.Shared.Infrastructure.ThirdParty.Identity;
 /// Represents the database context for identity management, including users and roles.
 /// Inherits from <see cref="IdentityDbContext{TUser, TRole, TKey}"/> to provide identity-related functionality.
 /// </summary>
-public class TrainingIdentityDbContext : IdentityDbContext<IdentityUser<Guid>, IdentityRole<Guid>, Guid>
+public sealed class TrainingIdentityDbContext : IdentityDbContext<IdentityUser<Guid>, IdentityRole<Guid>, Guid>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="TrainingIdentityDbContext"/> class.

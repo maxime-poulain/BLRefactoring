@@ -13,7 +13,7 @@ namespace BLRefactoring.Shared.Api.Tests.Extensions;
 /// whether that call is skipped, and getting it wrong in the permissive direction means a
 /// generation writes to a real database.
 /// </remarks>
-public class OpenApiDocumentGenerationTests
+public sealed class OpenApiDocumentGenerationTests
 {
     /// <summary>
     /// Sets the variable for the duration of a test and puts back whatever was there.

@@ -8,7 +8,7 @@ namespace BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors
 /// <summary>
 /// Performs validation of Mediator's requests before it is handled by the handler.
 /// </summary>
-public class ValidationPipelineBehavior<TRequest, TResponse>(
+public sealed class ValidationPipelineBehavior<TRequest, TResponse>(
     IEnumerable<IValidator<TRequest>> validators) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull, IMessage
 {

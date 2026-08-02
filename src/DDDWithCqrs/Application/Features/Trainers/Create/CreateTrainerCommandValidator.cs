@@ -2,7 +2,7 @@
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
 
-public class CreateTrainerCommandValidator : AbstractValidator<CreateTrainerCommand>
+public sealed class CreateTrainerCommandValidator : AbstractValidator<CreateTrainerCommand>
 {
     public CreateTrainerCommandValidator()
     {

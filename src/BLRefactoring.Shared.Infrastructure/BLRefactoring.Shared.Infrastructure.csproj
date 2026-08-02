@@ -23,7 +23,16 @@
       <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     </ItemGroup>
 
+    <!--
+      Domain, for the aggregates this project maps and the repository interfaces it implements.
+      Application, for the read ports it answers: ITrainingOwnerQuery and ITrainerIdentityQuery are
+      declared where the projections live and implemented here, where the DbContext is. Infrastructure
+      depending on Application is the direction Clean Architecture expects — the same edge
+      BLRefactoring.DDDWithCqrs.Infrastructure already carries for its query handlers — and it is the
+      reason the API layer no longer holds a domain repository to answer a question about one column.
+    -->
     <ItemGroup>
+      <ProjectReference Include="..\BLRefactoring.Shared.Application\BLRefactoring.Shared.Application.csproj" />
       <ProjectReference Include="..\BLRefactoring.Shared.Domain\BLRefactoring.Shared.Domain.csproj" />
     </ItemGroup>
 

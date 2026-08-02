@@ -1,12 +1,13 @@
 using AwesomeAssertions;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Tests.Helpers;
 using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainerAggregate.ValueObjects;
 
-public class BioTests
+public sealed class BioTests
 {
     [Fact]
     public void Create_ValidBio_ReturnsSuccess()
@@ -35,7 +36,7 @@ public class BioTests
         var result = Bio.Create(null!);
 
         // Assert
-        result.ShouldContainError(ErrorCode.BioEmpty);
+        result.ShouldContainError(TrainerErrorCodes.BioEmpty);
     }
 
     [Fact]
@@ -45,7 +46,7 @@ public class BioTests
         var result = Bio.Create(string.Empty);
 
         // Assert
-        result.ShouldContainError(ErrorCode.BioEmpty);
+        result.ShouldContainError(TrainerErrorCodes.BioEmpty);
     }
 
     [Fact]
@@ -55,7 +56,7 @@ public class BioTests
         var result = Bio.Create("   ");
 
         // Assert
-        result.ShouldContainError(ErrorCode.BioEmpty);
+        result.ShouldContainError(TrainerErrorCodes.BioEmpty);
     }
 
     [Fact]
@@ -81,7 +82,7 @@ public class BioTests
         var result = Bio.Create(bio);
 
         // Assert
-        result.ShouldContainError(ErrorCode.BioExceeds500Characters);
+        result.ShouldContainError(TrainerErrorCodes.BioExceeds500Characters);
     }
 
     [Fact]

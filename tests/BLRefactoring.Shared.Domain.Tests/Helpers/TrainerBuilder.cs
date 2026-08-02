@@ -8,7 +8,7 @@ namespace BLRefactoring.Shared.Domain.Tests.Helpers;
 /// assembles them the same way the application layer does — an invalid input is a
 /// value object concern and is covered by their own tests, not here.
 /// </summary>
-public class TrainerBuilder
+public sealed class TrainerBuilder
 {
     private string _firstname = "John";
     private string _lastname = "Doe";

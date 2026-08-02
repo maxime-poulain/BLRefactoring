@@ -9,7 +9,7 @@ using Xunit;
 
 namespace BLRefactoring.DDD.Application.Tests.EventHandlers;
 
-public class SendWelcomeEmailWhenTrainerCreatedEventHandlerTests
+public sealed class SendWelcomeEmailWhenTrainerCreatedEventHandlerTests
 {
     private readonly Mock<IEmailSender> _emailSender = new();
 

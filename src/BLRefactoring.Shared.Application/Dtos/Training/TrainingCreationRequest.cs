@@ -1,7 +1,7 @@
 
 namespace BLRefactoring.Shared.Application.Dtos.Training;
 
-public class TrainingCreationRequest
+public sealed class TrainingCreationRequest
 {
     public required string Title { get; init; }
     public required List<string> Topics { get; init; } = [];
@@ -10,7 +10,7 @@ public class TrainingCreationRequest
     public required string AcquiredSkills { get; init; }
 }
 
-public class TrainingEditionRequest
+public sealed class TrainingEditionRequest
 {
     public required string Title { get; init; }
     public required List<string> Topics { get; init; } = [];

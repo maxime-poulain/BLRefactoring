@@ -9,4 +9,4 @@ namespace BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Controllers;
 /// scheme at all, which is exactly what running them here is for.
 /// </summary>
 [Collection("Api")]
-public class OpenApiDocumentTests(ApiFactory factory) : OpenApiDocumentTest<ApiFactory>(factory);
+public sealed class OpenApiDocumentTests(ApiFactory factory) : OpenApiDocumentTest<ApiFactory>(factory);

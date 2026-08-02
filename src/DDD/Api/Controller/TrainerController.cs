@@ -23,7 +23,7 @@ namespace BLRefactoring.DDD.Api.Controller;
 /// </remarks>
 /// <param name="trainerApplicationService">Application service for trainer operations.</param>
 /// <param name="currentUserService">Provides the identity of the caller.</param>
-public class TrainerController(
+public sealed class TrainerController(
     ITrainerApplicationService trainerApplicationService,
     ICurrentUserService currentUserService)
     : ApiControllerBase
@@ -59,7 +59,7 @@ public class TrainerController(
                 return Ok(trainer.ToHttp());
             },
             errors =>
-                errors.Any(error => error.ErrorCode == ErrorCode.NotFound)
+                errors.Any(error => error.ErrorCode == ErrorCodes.NotFound)
                     ? NotFound()
                     : this.Problem(StatusCodes.Status400BadRequest, errors));
     }
@@ -119,12 +119,12 @@ public class TrainerController(
             },
             errors =>
             {
-                if (errors.Any(error => error.ErrorCode == ErrorCode.NotFound))
+                if (errors.Any(error => error.ErrorCode == ErrorCodes.NotFound))
                 {
                     return NotFound();
                 }
 
-                return errors.Any(error => error.ErrorCode == ErrorCode.ConcurrencyConflict)
+                return errors.Any(error => error.ErrorCode == ErrorCodes.ConcurrencyConflict)
                     ? this.Problem(StatusCodes.Status412PreconditionFailed, errors)
                     : this.Problem(StatusCodes.Status400BadRequest, errors);
             });
@@ -133,21 +133,21 @@ public class TrainerController(
     /// <summary>
     /// Retrieves a trainer by its unique identifier.
     /// </summary>
-    /// <param name="id">The unique identifier of the trainer.</param>
+    /// <param name="trainerId">The unique identifier of the trainer.</param>
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
     /// <returns>
     /// 200 OK with the trainer details if found.
     /// 404 Not Found if the trainer does not exist.
     /// 400 Bad Request on validation errors.
     /// </returns>
-    [HttpGet("{id}")]
+    [HttpGet("{trainerId:guid}")]
     [ProducesEntityTag]
     [ProducesResponseType(typeof(TrainerResponseHttp), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<TrainerResponseHttp>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<TrainerResponseHttp>> GetByIdAsync(Guid trainerId, CancellationToken cancellationToken = default)
     {
-        var result = await trainerApplicationService.GetByIdAsync(id, cancellationToken);
+        var result = await trainerApplicationService.GetByIdAsync(trainerId, cancellationToken);
 
         // The ETag published here is what the caller must send back as If-Match
         // when they later edit this profile.
@@ -158,7 +158,7 @@ public class TrainerController(
                 return Ok(trainer.ToHttp());
             },
             errors =>
-                errors.Any(error => error.ErrorCode == ErrorCode.NotFound)
+                errors.Any(error => error.ErrorCode == ErrorCodes.NotFound)
                     ? NotFound()
                     : this.Problem(StatusCodes.Status400BadRequest, errors));
     }

@@ -122,14 +122,14 @@ disagree, and an API refusing what the domain accepts would be worse than one as
 **Every failure leaves in the same shape**, an RFC 7807 `ProblemDetails`, whether it came from a
 data annotation, a FluentValidation rule, a business rule or an unhandled exception — with the
 domain error codes carried in the `domainErrors` extension, so a client can still branch on
-`DuplicateTitle`. The API used to answer four different bodies depending on how far a request got,
+`Training.DuplicateTitle`. The API used to answer four different bodies depending on how far a request got,
 one of them a bare JSON string. The handlers live in `Shared.Api`, so the two hosts cannot differ on
 them — the layered one had none at all. See
 [ADR 0004](docs/adr/0004-publish-every-error-as-rfc-7807-problem-details.md).
 
 ### Solution layout
 
-Twenty-five projects: sixteen under `src/`, nine under `tests/`. The backend and all tests target
+Twenty-six projects: sixteen under `src/`, ten under `tests/`. The backend and all tests target
 **net10.0**; the Blazor pair and the generated clients target **net9.0**.
 
 | Project | Responsibility |
@@ -147,7 +147,7 @@ Twenty-five projects: sixteen under `src/`, nine under `tests/`. The backend and
 | `DDD.Domain`, `DDD.Infrastructure`, `DDDWithCqrs.Domain` | Routing projects with no source files; the domain and infrastructure they stand for live in the `BLRefactoring.Shared.*` projects |
 | `BLRefactoring.GeneratedClients` | NSwag-generated typed HTTP clients, checked in as source |
 | `BLRefactoring.Blazor` / `.Client` | Blazor WebAssembly front end built with MudBlazor, and the **backend for frontend** that serves it: cookie authentication, and a YARP proxy that attaches the API's access token server-side |
-| `tests/*` | Nine test projects — see [Testing](#testing) |
+| `tests/*` | Ten test projects — see [Testing](#testing) |
 
 ### Project dependency graph
 
@@ -176,6 +176,7 @@ flowchart LR
     Domain --> Kernel
     SharedApp --> Domain
     SharedInfra --> Domain
+    SharedInfra --> SharedApp
     SharedApi --> SharedApp
     SharedApi --> SharedInfra
 
@@ -358,18 +359,19 @@ queries and restores it afterwards.
 `ErrorCollection`, which is how a single request can report every invalid field at once rather
 than the first one.
 
-| Error code | Value | | Error code | Value |
-|---|---|---|---|---|
-| `Unspecified` | -1 | | `InvalidAcquiredSkills` | 5 |
-| `NotFound` | -2 | | `InvalidTopic` | 6 |
-| `ConcurrencyConflict` | -3 | | `InvalidEmail` | 101 |
-| `InvalidTitle` | 1 | | `BioEmpty` | 102 |
-| `DuplicateTitle` | 2 | | `BioExceeds500Characters` | 103 |
-| `InvalidDescription` | 3 | | | |
-| `InvalidPrerequisites` | 4 | | | |
+Each error carries a code, and a code belongs to whoever raises it. The kernel declares only the
+three that belong to nobody; everything else is declared beside the aggregate whose invariant was
+broken, and carries that aggregate's name.
 
-`ErrorCode` is an `Ardalis.SmartEnum`, so it is a type rather than a loose integer and can be
-extended without touching a switch statement.
+| Holder | Codes |
+|---|---|
+| `ErrorCodes` (kernel) | `Unspecified`, `NotFound`, `ConcurrencyConflict` |
+| `TrainingErrorCodes` | `Training.InvalidTitle`, `Training.DuplicateTitle`, `Training.InvalidDescription`, `Training.InvalidPrerequisites`, `Training.InvalidAcquiredSkills`, `Training.InvalidTopic` |
+| `TrainerErrorCodes` | `Trainer.InvalidEmail`, `Trainer.BioEmpty`, `Trainer.BioExceeds500Characters` |
+
+`ErrorCode` is a value object over a string. The set is open — any holder can declare one — so
+`ErrorVocabularyRules` keeps it honest: nothing constructs a code at a call site, every code is
+declared on a `*ErrorCodes` holder, and no two share a value. See ADR 0015.
 
 ### Turning input into domain concepts
 
@@ -656,7 +658,6 @@ on a trainer's own profile are addressed as `me` rather than by identifier.
 | `Microsoft.EntityFrameworkCore.SqlServer` | Persistence, owned types, value conversions, `rowversion` concurrency token |
 | `Mediator` (`Mediator.Abstractions` + source generator) | Source-generated dispatch for domain events, commands and queries — no reflection at runtime |
 | `FluentValidation` | Request validation in the CQRS stack, wired as a pipeline behaviour |
-| `Ardalis.SmartEnum` | `ErrorCode` as a type rather than a loose integer |
 | `EmailValidation` | Email format checking inside the `Email` value object |
 | `Microsoft.AspNetCore.Identity.EntityFrameworkCore` | User accounts, password hashing, lockout |
 | `Microsoft.AspNetCore.Authentication.JwtBearer` | Bearer token authentication |
@@ -773,6 +774,7 @@ The two filters are exact inverses, so between them every test runs exactly once
 | `BLRefactoring.Blazor.Bff.Tests` | The backend for frontend over HTTP: the cookie's flags, the forgery guard, the token attached to a forwarded call, and what signing out revokes |
 | `BLRefactoring.DDD.Api.IntegrationTests` | The layered host, HTTP end to end against a real SQL Server |
 | `BLRefactoring.DDDWithCqrs.Api.IntegrationTests` | The CQRS host, same treatment |
+| `BLRefactoring.Architecture.Tests` | The decisions themselves: the dependency rule, the CQRS shape, the modelling conventions, and a rule that fails when a record is defended by nothing — see [ADR 0013](docs/adr/0013-make-every-record-answer-to-a-test.md) |
 | `BLRefactoring.Api.TestKit` | Not a test project: the fixtures both integration suites share |
 
 No test count is quoted here on purpose: a `[Theory]` expands to as many cases as it has rows, so

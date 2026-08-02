@@ -5,7 +5,7 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainingAggregate.ValueObjects;
 
-public class TopicTests
+public sealed class TopicTests
 {
     [Fact]
     public void GetTopics_ContainsEveryTopicDeclaredOnTheType()

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Configurations;
 
-public class TrainingConfiguration : AggregateRootTypeConfiguration<Training, TrainingId>
+public sealed class TrainingConfiguration : AggregateRootTypeConfiguration<Training, TrainingId>
 {
     protected override void ConfigureAggregate(EntityTypeBuilder<Training> builder)
     {

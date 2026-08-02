@@ -32,7 +32,7 @@ namespace BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Controllers;
 /// </para>
 /// </remarks>
 [Collection("Api")]
-public class ValidationPipelineTests(ApiFactory factory) : IntegrationTest(factory)
+public sealed class ValidationPipelineTests(ApiFactory factory) : IntegrationTest(factory)
 {
     private static async Task<string[]> InvalidPropertiesAsync(HttpResponseMessage response)
     {

@@ -39,14 +39,14 @@ public sealed class TrainingPrerequisites : ValueObject
         if (string.IsNullOrWhiteSpace(prerequisites))
         {
             return Result<TrainingPrerequisites>.Failure(
-                ErrorCode.InvalidPrerequisites, 
+                TrainingErrorCodes.InvalidPrerequisites, 
                 "Training prerequisites cannot be empty.");
         }
 
         if (prerequisites.Length > MaxLength)
         {
             return Result<TrainingPrerequisites>.Failure(
-                ErrorCode.InvalidPrerequisites, 
+                TrainingErrorCodes.InvalidPrerequisites, 
                 $"Training prerequisites cannot exceed {MaxLength} characters.");
         }
 

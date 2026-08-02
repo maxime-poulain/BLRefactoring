@@ -1,12 +1,13 @@
 using AwesomeAssertions;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
+using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.Domain.Tests.Helpers;
 using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainingAggregate.ValueObjects;
 
-public class TrainingDescriptionTests
+public sealed class TrainingDescriptionTests
 {
     [Fact]
     public void Create_ValidDescription_ReturnsSuccess()
@@ -35,7 +36,7 @@ public class TrainingDescriptionTests
         var result = TrainingDescription.Create(null!);
 
         // Assert
-        result.ShouldContainError(ErrorCode.InvalidDescription);
+        result.ShouldContainError(TrainingErrorCodes.InvalidDescription);
     }
 
     [Fact]
@@ -45,7 +46,7 @@ public class TrainingDescriptionTests
         var result = TrainingDescription.Create(string.Empty);
 
         // Assert
-        result.ShouldContainError(ErrorCode.InvalidDescription);
+        result.ShouldContainError(TrainingErrorCodes.InvalidDescription);
     }
 
     [Fact]
@@ -71,7 +72,7 @@ public class TrainingDescriptionTests
         var result = TrainingDescription.Create(description);
 
         // Assert
-        result.ShouldContainError(ErrorCode.InvalidDescription);
+        result.ShouldContainError(TrainingErrorCodes.InvalidDescription);
     }
 
     [Fact]

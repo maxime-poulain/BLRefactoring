@@ -19,7 +19,7 @@ namespace BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Controllers;
 /// correct there and loses rows in production.
 /// </remarks>
 [Collection("Api")]
-public class PaginationTests(ApiFactory factory) : IntegrationTest(factory)
+public sealed class PaginationTests(ApiFactory factory) : IntegrationTest(factory)
 {
     private static CreateTrainingRequestHttp Creation(string title) => TrainingRequests.Valid(title);
 

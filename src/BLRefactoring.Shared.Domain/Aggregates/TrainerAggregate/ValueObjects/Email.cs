@@ -44,12 +44,12 @@ public sealed class Email : ValueObject
     {
         if (string.IsNullOrWhiteSpace(email))
         {
-            return Result<Email>.Failure(new Error(ErrorCode.InvalidEmail, "Email should not be empty."));
+            return Result<Email>.Failure(new Error(TrainerErrorCodes.InvalidEmail, "Email should not be empty."));
         }
 
         if (!IsValidFormat(email))
         {
-            return Result<Email>.Failure(new Error(ErrorCode.InvalidEmail, "Email format is invalid."));
+            return Result<Email>.Failure(new Error(TrainerErrorCodes.InvalidEmail, "Email format is invalid."));
         }
 
         return Result<Email>.Success(new Email(email));

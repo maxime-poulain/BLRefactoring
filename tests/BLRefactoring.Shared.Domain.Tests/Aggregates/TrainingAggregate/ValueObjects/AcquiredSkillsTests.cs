@@ -1,12 +1,13 @@
 using AwesomeAssertions;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
+using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.Domain.Tests.Helpers;
 using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainingAggregate.ValueObjects;
 
-public class AcquiredSkillsTests
+public sealed class AcquiredSkillsTests
 {
     [Fact]
     public void Create_ValidAcquiredSkills_ReturnsSuccess()
@@ -35,7 +36,7 @@ public class AcquiredSkillsTests
         var result = AcquiredSkills.Create(null!);
 
         // Assert
-        result.ShouldContainError(ErrorCode.InvalidAcquiredSkills);
+        result.ShouldContainError(TrainingErrorCodes.InvalidAcquiredSkills);
     }
 
     [Fact]
@@ -45,7 +46,7 @@ public class AcquiredSkillsTests
         var result = AcquiredSkills.Create(string.Empty);
 
         // Assert
-        result.ShouldContainError(ErrorCode.InvalidAcquiredSkills);
+        result.ShouldContainError(TrainingErrorCodes.InvalidAcquiredSkills);
     }
 
     [Fact]
@@ -71,7 +72,7 @@ public class AcquiredSkillsTests
         var result = AcquiredSkills.Create(skills);
 
         // Assert
-        result.ShouldContainError(ErrorCode.InvalidAcquiredSkills);
+        result.ShouldContainError(TrainingErrorCodes.InvalidAcquiredSkills);
     }
 
     [Fact]

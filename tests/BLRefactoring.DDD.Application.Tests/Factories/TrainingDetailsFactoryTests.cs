@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using BLRefactoring.Shared.Application.Factories;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
+using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.Domain.Tests.Helpers;
 using Xunit;
 
@@ -12,7 +13,7 @@ namespace BLRefactoring.DDD.Application.Tests.Factories;
 /// the closed set the domain owns — is the application layer's job, so this is where
 /// the accumulation of validation errors is covered.
 /// </summary>
-public class TrainingDetailsFactoryTests
+public sealed class TrainingDetailsFactoryTests
 {
     [Fact]
     public void Create_ValidInput_ReturnsTheValueObjects()
@@ -60,7 +61,7 @@ public class TrainingDetailsFactoryTests
             ["Underwater Basket Weaving"]);
 
         var errors = result.ShouldBeFailure();
-        errors.Should().Contain(e => e.ErrorCode == ErrorCode.InvalidTopic);
+        errors.Should().Contain(e => e.ErrorCode == TrainingErrorCodes.InvalidTopic);
     }
 
     [Fact]

@@ -21,7 +21,7 @@ namespace BLRefactoring.DDDWithCqrs.Api.Controller;
 /// published API and the CQRS messages change independently — and what removed the
 /// <c>[JsonIgnore]</c> attributes the commands used to need to be bound from a request body.
 /// </remarks>
-public class TrainerController(
+public sealed class TrainerController(
     ICommandDispatcher commandDispatcher,
     IQueryDispatcher queryDispatcher,
     ICurrentUserService currentUserService)
@@ -106,20 +106,20 @@ public class TrainerController(
                 return Ok(trainer.ToHttp());
             },
             onFailure: errors => ValueTask.FromResult<ActionResult>(
-                errors.Any(error => error.ErrorCode == ErrorCode.NotFound) ? NotFound()
-                : errors.Any(error => error.ErrorCode == ErrorCode.ConcurrencyConflict) ? this.Problem(StatusCodes.Status412PreconditionFailed, errors)
+                errors.Any(error => error.ErrorCode == ErrorCodes.NotFound) ? NotFound()
+                : errors.Any(error => error.ErrorCode == ErrorCodes.ConcurrencyConflict) ? this.Problem(StatusCodes.Status412PreconditionFailed, errors)
                 : this.Problem(StatusCodes.Status400BadRequest, errors)));
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{trainerId:guid}")]
     [ProducesEntityTag]
     [ProducesResponseType(typeof(TrainerResponseHttp), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<TrainerResponseHttp>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<TrainerResponseHttp>> GetByIdAsync(Guid trainerId, CancellationToken cancellationToken = default)
     {
         var trainer = await queryDispatcher.DispatchAsync(
-            HttpToApplicationMappings.ToGetTrainerByIdQuery(id), cancellationToken);
+            HttpToApplicationMappings.ToGetTrainerByIdQuery(trainerId), cancellationToken);
 
         if (trainer is null)
         {

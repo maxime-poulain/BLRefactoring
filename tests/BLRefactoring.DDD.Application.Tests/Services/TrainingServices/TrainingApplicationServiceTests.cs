@@ -12,7 +12,7 @@ using Xunit;
 
 namespace BLRefactoring.DDD.Application.Tests.Services.TrainingServices;
 
-public class TrainingApplicationServiceTests
+public sealed class TrainingApplicationServiceTests
 {
     private readonly TrainingServiceTestFixture _fixture = new();
     private readonly Guid _trainerId = Guid.NewGuid();
@@ -34,7 +34,7 @@ public class TrainingApplicationServiceTests
     private void SetupTitleUnique()
     {
         _fixture.TitleChecker
-            .Setup(c => c.TitleForTrainerExists(
+            .Setup(c => c.TitleForTrainerExistsAsync(
                 It.IsAny<TrainingTitle>(),
                 It.IsAny<TrainerId>(),
                 It.IsAny<CancellationToken>()))
@@ -93,7 +93,7 @@ public class TrainingApplicationServiceTests
 
         var result = await sut.CreateAsync(ValidCreationRequest());
 
-        result.ShouldContainError(ErrorCode.NotFound);
+        result.ShouldContainError(ErrorCodes.NotFound);
     }
 
     [Fact]
@@ -185,7 +185,7 @@ public class TrainingApplicationServiceTests
         var result = await sut.GetByIdAsync(Guid.NewGuid());
 
         var errors = result.ShouldBeFailure();
-        errors.Should().Contain(e => e.ErrorCode == ErrorCode.NotFound);
+        errors.Should().Contain(e => e.ErrorCode == ErrorCodes.NotFound);
     }
 
     // -- GetAllAsync --
@@ -228,7 +228,7 @@ public class TrainingApplicationServiceTests
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainingId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(training);
         _fixture.TitleChecker
-            .Setup(c => c.TitleForTrainerExists(
+            .Setup(c => c.TitleForTrainerExistsAsync(
                 It.IsAny<TrainingTitle>(),
                 It.IsAny<TrainerId>(),
                 It.IsAny<CancellationToken>()))
@@ -269,7 +269,7 @@ public class TrainingApplicationServiceTests
         var result = await sut.EditAsync(Guid.NewGuid(), request, []);
 
         var errors = result.ShouldBeFailure();
-        errors.Should().Contain(e => e.ErrorCode == ErrorCode.NotFound);
+        errors.Should().Contain(e => e.ErrorCode == ErrorCodes.NotFound);
     }
 
     [Fact]
@@ -292,7 +292,7 @@ public class TrainingApplicationServiceTests
 
         var result = await sut.EditAsync(training.Id.Value, request, [1, 2, 3, 4, 5, 6, 7, 8]);
 
-        result.ShouldContainError(ErrorCode.ConcurrencyConflict);
+        result.ShouldContainError(ErrorCodes.ConcurrencyConflict);
         _fixture.UnitOfWork.Verify(
             uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
@@ -324,7 +324,7 @@ public class TrainingApplicationServiceTests
 
         var result = await sut.EditAsync(training.Id.Value, request, training.RowVersion);
 
-        result.ShouldContainError(ErrorCode.ConcurrencyConflict);
+        result.ShouldContainError(ErrorCodes.ConcurrencyConflict);
     }
 
     [Fact]
@@ -424,6 +424,6 @@ public class TrainingApplicationServiceTests
 
         var result = await sut.DeleteAsync(Guid.NewGuid());
 
-        result.ShouldContainError(ErrorCode.NotFound);
+        result.ShouldContainError(ErrorCodes.NotFound);
     }
 }

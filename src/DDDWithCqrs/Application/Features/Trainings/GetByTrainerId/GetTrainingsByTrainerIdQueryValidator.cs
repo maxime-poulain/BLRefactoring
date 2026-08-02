@@ -2,7 +2,7 @@ using FluentValidation;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetByTrainerId;
 
-public class GetTrainingsByTrainerIdQueryValidator : AbstractValidator<GetTrainingsByTrainerIdQuery>
+public sealed class GetTrainingsByTrainerIdQueryValidator : AbstractValidator<GetTrainingsByTrainerIdQuery>
 {
     public GetTrainingsByTrainerIdQueryValidator()
     {

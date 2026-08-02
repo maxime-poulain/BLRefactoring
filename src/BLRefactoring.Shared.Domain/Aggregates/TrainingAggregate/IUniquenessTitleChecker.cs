@@ -20,7 +20,7 @@ public interface IUniquenessTitleChecker
     /// A task that represents the asynchronous operation. The task result contains <see langword="true"/>
     /// if the title is unique for the specified trainer; otherwise, <see langword="false"/>.
     /// </returns>
-    Task<bool> TitleForTrainerExists(
+    Task<bool> TitleForTrainerExistsAsync(
         TrainingTitle title,
         TrainerId trainerId,
         CancellationToken cancellationToken = default);

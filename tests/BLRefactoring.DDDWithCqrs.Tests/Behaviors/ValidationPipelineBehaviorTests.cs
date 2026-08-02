@@ -13,7 +13,7 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Behaviors;
 
-public class ValidationPipelineBehaviorTests
+public sealed class ValidationPipelineBehaviorTests
 {
     // -- Command without validator --
 

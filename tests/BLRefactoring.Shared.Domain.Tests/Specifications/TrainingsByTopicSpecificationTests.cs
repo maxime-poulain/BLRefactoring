@@ -10,7 +10,7 @@ namespace BLRefactoring.Shared.Domain.Tests.Specifications;
 /// Unit tests for <see cref="TrainingsByTopicSpecification"/>.
 /// Validates that the specification correctly filters trainings by topic name.
 /// </summary>
-public class TrainingsByTopicSpecificationTests
+public sealed class TrainingsByTopicSpecificationTests
 {
     /// <summary>
     /// Verifies that trainings containing the specified topic are returned.

@@ -9,4 +9,4 @@ namespace BLRefactoring.DDD.Api.IntegrationTests.Controllers;
 /// that they describe the same API something other than an assertion in a README.
 /// </summary>
 [Collection("Api")]
-public class OpenApiDocumentTests(ApiFactory factory) : OpenApiDocumentTest<ApiFactory>(factory);
+public sealed class OpenApiDocumentTests(ApiFactory factory) : OpenApiDocumentTest<ApiFactory>(factory);

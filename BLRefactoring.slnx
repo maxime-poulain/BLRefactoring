@@ -31,5 +31,6 @@
     <Project Path="tests/BLRefactoring.Api.TestKit/BLRefactoring.Api.TestKit.csproj" />
     <Project Path="tests/BLRefactoring.DDDWithCqrs.Api.IntegrationTests/BLRefactoring.DDDWithCqrs.Api.IntegrationTests.csproj" />
     <Project Path="tests/BLRefactoring.Blazor.Bff.Tests/BLRefactoring.Blazor.Bff.Tests.csproj" />
+    <Project Path="tests/BLRefactoring.Architecture.Tests/BLRefactoring.Architecture.Tests.csproj" />
   </Folder>
 </Solution>

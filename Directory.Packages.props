@@ -12,7 +12,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageVersion Include="Ardalis.SmartEnum" Version="8.2.0" />
     <!--
       Community fork of FluentAssertions 7, under Apache 2.0. FluentAssertions 8 moved to a
       commercial Xceed licence; this keeps the same fluent API on a permissive one.
@@ -74,6 +73,16 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="MudBlazor" Version="9.7.0" />
+    <!--
+      Reads compiled assemblies with Mono.Cecil and states an architectural rule as a fluent
+      predicate, for BLRefactoring.Architecture.Tests. The eNhanced fork rather than
+      NetArchTest.Rules: the original has shipped nothing since May 2021 and still carries
+      Mono.Cecil 0.11.3, which predates every metadata change since. This one is maintained, and
+      its failures name why a type failed and where it is declared — the difference between a
+      failure a reader can act on and a boolean. Mono.Cecil itself arrives transitively and needs
+      no entry: transitive pinning applies to packages declared here, not to every package resolved.
+    -->
+    <PackageVersion Include="NetArchTest.eNhancedEdition" Version="1.4.5" />
     <PackageVersion Include="Respawn" Version="7.0.0" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.16.16" />
     <!--

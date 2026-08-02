@@ -10,7 +10,7 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Handlers;
 
-public class EditTrainerCommandHandlerTests
+public sealed class EditTrainerCommandHandlerTests
 {
     private readonly Mock<ITrainerRepository> _trainerRepository = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
@@ -74,7 +74,7 @@ public class EditTrainerCommandHandlerTests
 
         var result = await sut.Handle(Command(Guid.NewGuid()), CancellationToken.None);
 
-        result.ShouldContainError(ErrorCode.NotFound);
+        result.ShouldContainError(ErrorCodes.NotFound);
         _unitOfWork.Verify(
             uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
@@ -109,7 +109,7 @@ public class EditTrainerCommandHandlerTests
 
         var result = await sut.Handle(command, CancellationToken.None);
 
-        result.ShouldContainError(ErrorCode.ConcurrencyConflict);
+        result.ShouldContainError(ErrorCodes.ConcurrencyConflict);
         _unitOfWork.Verify(
             uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
@@ -131,7 +131,7 @@ public class EditTrainerCommandHandlerTests
         var result = await sut.Handle(
             Command(trainer.Id.Value, firstname: "Jane"), CancellationToken.None);
 
-        result.ShouldContainError(ErrorCode.ConcurrencyConflict);
+        result.ShouldContainError(ErrorCodes.ConcurrencyConflict);
     }
 
     private void GivenTrainer(Trainer trainer) =>

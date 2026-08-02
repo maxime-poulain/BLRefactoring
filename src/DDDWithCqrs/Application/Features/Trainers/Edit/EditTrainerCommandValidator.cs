@@ -2,7 +2,7 @@ using FluentValidation;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Edit;
 
-public class EditTrainerCommandValidator : AbstractValidator<EditTrainerCommand>
+public sealed class EditTrainerCommandValidator : AbstractValidator<EditTrainerCommand>
 {
     public EditTrainerCommandValidator()
     {

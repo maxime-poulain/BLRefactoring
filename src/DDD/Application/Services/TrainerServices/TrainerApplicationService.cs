@@ -63,12 +63,12 @@ public sealed class TrainerApplicationService(
 
         if (trainer is null)
         {
-            return Result<TrainerDto>.Failure(ErrorCode.NotFound, $"Trainer with id `{id}` could not be found.");
+            return Result<TrainerDto>.Failure(ErrorCodes.NotFound, $"Trainer with id `{id}` could not be found.");
         }
 
         if (!trainer.IsAtVersion(expectedVersion))
         {
-            return Result<TrainerDto>.Failure(ErrorCode.ConcurrencyConflict, ConcurrencyMessage);
+            return Result<TrainerDto>.Failure(ErrorCodes.ConcurrencyConflict, ConcurrencyMessage);
         }
 
         var profileResult = TrainerProfileFactory.Create(
@@ -90,7 +90,7 @@ public sealed class TrainerApplicationService(
                 // A concurrent request slipped past the version pre-check; the
                 // concurrency token is the authoritative guard, so a lost race is
                 // the same business failure as a detected stale version.
-                return Result<TrainerDto>.Failure(ErrorCode.ConcurrencyConflict, ConcurrencyMessage);
+                return Result<TrainerDto>.Failure(ErrorCodes.ConcurrencyConflict, ConcurrencyMessage);
             }
 
             return Result<TrainerDto>.Success(trainer.ToDto());
@@ -106,7 +106,7 @@ public sealed class TrainerApplicationService(
 
         if (trainer is null)
         {
-            return Result<TrainerDto>.Failure(ErrorCode.NotFound, $"Trainer with id `{id}` could not be found.");
+            return Result<TrainerDto>.Failure(ErrorCodes.NotFound, $"Trainer with id `{id}` could not be found.");
         }
 
         return Result<TrainerDto>.Success(trainer.ToDto());

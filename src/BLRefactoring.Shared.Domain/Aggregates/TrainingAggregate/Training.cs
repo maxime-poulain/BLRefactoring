@@ -111,10 +111,10 @@ public sealed class Training : AggregateRoot<TrainingId>
 
         if (title != Title)
         {
-            var titleExists = await titleChecker.TitleForTrainerExists(title, TrainerId, cancellationToken);
+            var titleExists = await titleChecker.TitleForTrainerExistsAsync(title, TrainerId, cancellationToken);
             if (titleExists)
             {
-                return Result.Failure(ErrorCode.DuplicateTitle,
+                return Result.Failure(TrainingErrorCodes.DuplicateTitle,
                     "A training with the same title already exists for this trainer.");
             }
         }

@@ -10,7 +10,7 @@ namespace BLRefactoring.DDD.Application.Tests.Factories;
 /// where the accumulation of validation errors is covered — the aggregate can no
 /// longer receive a malformed input at all.
 /// </summary>
-public class TrainerProfileFactoryTests
+public sealed class TrainerProfileFactoryTests
 {
     [Fact]
     public void Create_ValidInput_ReturnsTheValueObjects()

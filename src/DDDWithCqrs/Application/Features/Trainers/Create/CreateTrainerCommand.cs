@@ -7,7 +7,7 @@ using BLRefactoring.Shared.Application.Factories;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
 
-public class CreateTrainerCommand : ICommand<Result>
+public sealed class CreateTrainerCommand : ICommand<Result>
 {
     public Guid TrainerId { get; init; } = Guid.NewGuid();
     public Guid UserId { get; init; }
@@ -22,7 +22,7 @@ public class CreateTrainerCommand : ICommand<Result>
     public string ContactEmail { get; init; } = null!;
 }
 
-public class CreateTrainerCommandHandler(
+public sealed class CreateTrainerCommandHandler(
     ITrainerRepository trainerRepository,
     IUnitOfWork unitOfWork)
     : ICommandHandler<CreateTrainerCommand, Result>

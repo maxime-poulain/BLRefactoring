@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace BLRefactoring.Shared.Api.Identity;
 
-public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
+public sealed class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
 {
     public Guid UserId => httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value is
         { } userId

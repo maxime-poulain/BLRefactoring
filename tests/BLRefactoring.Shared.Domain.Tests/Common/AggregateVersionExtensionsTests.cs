@@ -5,7 +5,7 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Common;
 
-public class AggregateVersionExtensionsTests
+public sealed class AggregateVersionExtensionsTests
 {
     [Fact]
     public void IsAtVersion_MatchingVersion_ReturnsTrue()

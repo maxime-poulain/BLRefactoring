@@ -20,7 +20,7 @@ namespace BLRefactoring.Shared.Infrastructure.Tests.Interceptors;
 /// being read once per batch.
 /// </para>
 /// </remarks>
-public class AuditableEntitiesInterceptorTests
+public sealed class AuditableEntitiesInterceptorTests
 {
     /// <summary>A clock that moves on every reading, so equal stamps mean a single reading.</summary>
     private sealed class SteppingClock(DateTimeOffset start) : TimeProvider

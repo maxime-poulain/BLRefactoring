@@ -3,7 +3,7 @@ namespace BLRefactoring.Shared.Common.Errors;
 /// <summary>
 /// Represents an error with a specific error code and error message, and the time when the error occurred.
 /// </summary>
-public class Error : ValueObject
+public sealed class Error : ValueObject
 {
     /// <summary>
     /// Gets the error message associated with this error.
@@ -40,6 +40,6 @@ public class Error : ValueObject
     /// </summary>
     public override string ToString()
     {
-        return $"{ErrorCode.Name}: {ErrorMessage}";
+        return $"{ErrorCode}: {ErrorMessage}";
     }
 }

@@ -1,4 +1,4 @@
-using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
+using BLRefactoring.Shared.Application.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 
@@ -13,9 +13,9 @@ namespace BLRefactoring.Shared.Api.Authorization;
 /// is the worst possible arrangement for a rule of this kind: a fix to the ownership check on
 /// one host leaves the other exposed, and nothing about the code says so.
 /// </remarks>
-public class TrainingOwnerAuthorizationHandler(
+public sealed class TrainingOwnerAuthorizationHandler(
     IHttpContextAccessor httpContextAccessor,
-    ITrainingRepository trainingRepository)
+    ITrainingOwnerQuery trainingOwnerQuery)
     : AuthorizationHandler<TrainingOwnerRequirement>
 {
     protected override async Task HandleRequirementAsync(
@@ -49,9 +49,8 @@ public class TrainingOwnerAuthorizationHandler(
         // RequestAborted rather than nothing: this was the one database call in the solution that
         // did not propagate a token, so a caller who hung up left it running to completion — on
         // the authorization path, which every guarded write goes through.
-        var training = await trainingRepository.GetByIdAsync(
-            TrainingId.Create(trainingId), httpContext.RequestAborted);
-        if (training is null || training.TrainerId.Value == trainerIdFromToken)
+        var ownerId = await trainingOwnerQuery.GetOwnerIdAsync(trainingId, httpContext.RequestAborted);
+        if (ownerId is null || ownerId == trainerIdFromToken)
         {
             context.Succeed(requirement);
         }

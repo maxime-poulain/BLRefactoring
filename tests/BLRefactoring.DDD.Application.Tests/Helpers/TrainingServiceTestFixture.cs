@@ -6,7 +6,7 @@ using Moq;
 
 namespace BLRefactoring.DDD.Application.Tests.Helpers;
 
-public class TrainingServiceTestFixture
+public sealed class TrainingServiceTestFixture
 {
     public Mock<ITrainerRepository> TrainerRepository { get; } = new();
     public Mock<IUniquenessTitleChecker> TitleChecker { get; } = new();

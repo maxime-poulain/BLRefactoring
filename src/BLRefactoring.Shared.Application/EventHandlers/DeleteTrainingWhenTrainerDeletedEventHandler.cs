@@ -8,7 +8,7 @@ namespace BLRefactoring.Shared.Application.EventHandlers;
 /// Represents an event handler for the <see cref="TrainerDeletedDomainEvent"/>
 /// that deletes all trainings of a given deleted trainer.
 /// </summary>
-public class DeleteTrainingWhenTrainerDeletedEventHandler(ITrainingRepository trainingRepository)
+public sealed class DeleteTrainingWhenTrainerDeletedEventHandler(ITrainingRepository trainingRepository)
     : IDomainEventHandler<TrainerDeletedDomainEvent>
 {
     public async ValueTask Handle(TrainerDeletedDomainEvent notification, CancellationToken cancellationToken)

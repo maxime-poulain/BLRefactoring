@@ -5,7 +5,7 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Common;
 
-public class EntityIdTests
+public sealed class EntityIdTests
 {
     [Fact]
     public void Generate_ReturnsNonEmptyGuid()

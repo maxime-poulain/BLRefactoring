@@ -29,7 +29,7 @@ public sealed class Topic : ValueObject
     private static readonly IReadOnlyList<Topic> All = ImmutableArray.Create(
         Programming, Design, Marketing, Business, PersonalDevelopment, Leadership);
 
-    public string Name { get; init; } = null!;
+    public string Name { get; private init; } = null!;
 
     private Topic() { } // For ORM
 

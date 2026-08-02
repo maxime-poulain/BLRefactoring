@@ -15,7 +15,12 @@ namespace BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 /// </remarks>
 public sealed class Bio : ValueObject
 {
-    public string Value { get; init; } = null!;
+    // private init, like every other value object here. A public init is a public setter as far as
+    // reflection is concerned: it is an ordinary set accessor wearing a required modifier, and
+    // anything holding a Bio could have built a different one with `with`-style initialisation.
+    // Create still reaches it — private means private to the type, and the object initialiser below
+    // is inside the type.
+    public string Value { get; private init; } = null!;
 
     private Bio()
     {
@@ -25,12 +30,12 @@ public sealed class Bio : ValueObject
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            return Result<Bio>.Failure(ErrorCode.BioEmpty, "Bio cannot be empty.");
+            return Result<Bio>.Failure(TrainerErrorCodes.BioEmpty, "Bio cannot be empty.");
         }
 
         if (value.Length > 500)
         {
-            return Result<Bio>.Failure(ErrorCode.BioExceeds500Characters, "Bio cannot exceed 500 characters.");
+            return Result<Bio>.Failure(TrainerErrorCodes.BioExceeds500Characters, "Bio cannot exceed 500 characters.");
         }
 
         return Result<Bio>.Success(new Bio() { Value = value });

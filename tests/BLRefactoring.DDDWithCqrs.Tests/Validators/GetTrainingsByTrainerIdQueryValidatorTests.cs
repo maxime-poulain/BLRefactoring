@@ -4,7 +4,7 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Validators;
 
-public class GetTrainingsByTrainerIdQueryValidatorTests
+public sealed class GetTrainingsByTrainerIdQueryValidatorTests
 {
     private readonly GetTrainingsByTrainerIdQueryValidator _sut = new();
 

@@ -4,7 +4,7 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Common;
 
-public class ValueObjectTests
+public sealed class ValueObjectTests
 {
     private sealed class TestValueObject : ValueObject
     {

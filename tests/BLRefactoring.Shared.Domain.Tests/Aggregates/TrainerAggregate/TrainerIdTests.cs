@@ -4,7 +4,7 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainerAggregate;
 
-public class TrainerIdTests
+public sealed class TrainerIdTests
 {
     [Fact]
     public void Generate_ReturnsNonEmpty()

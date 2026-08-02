@@ -1,12 +1,13 @@
 using AwesomeAssertions;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Tests.Helpers;
 using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainerAggregate.ValueObjects;
 
-public class EmailTests
+public sealed class EmailTests
 {
     [Fact]
     public void Create_ValidEmail_ReturnsSuccess()
@@ -58,7 +59,7 @@ public class EmailTests
         var result = Email.Create(null!);
 
         // Assert
-        result.ShouldContainError(ErrorCode.InvalidEmail);
+        result.ShouldContainError(TrainerErrorCodes.InvalidEmail);
     }
 
     [Fact]
@@ -68,7 +69,7 @@ public class EmailTests
         var result = Email.Create(string.Empty);
 
         // Assert
-        result.ShouldContainError(ErrorCode.InvalidEmail);
+        result.ShouldContainError(TrainerErrorCodes.InvalidEmail);
     }
 
     [Fact]
@@ -78,7 +79,7 @@ public class EmailTests
         var result = Email.Create("   ");
 
         // Assert
-        result.ShouldContainError(ErrorCode.InvalidEmail);
+        result.ShouldContainError(TrainerErrorCodes.InvalidEmail);
     }
 
     [Fact]
@@ -88,7 +89,7 @@ public class EmailTests
         var result = Email.Create("notanemail");
 
         // Assert
-        result.ShouldContainError(ErrorCode.InvalidEmail);
+        result.ShouldContainError(TrainerErrorCodes.InvalidEmail);
     }
 
     [Fact]

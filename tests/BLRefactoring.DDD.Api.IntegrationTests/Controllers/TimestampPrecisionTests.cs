@@ -9,4 +9,4 @@ namespace BLRefactoring.DDD.Api.IntegrationTests.Controllers;
 /// the same API" something other than a sentence in a README.
 /// </summary>
 [Collection("Api")]
-public class TimestampPrecisionTests(ApiFactory factory) : TimestampPrecisionTest<ApiFactory>(factory);
+public sealed class TimestampPrecisionTests(ApiFactory factory) : TimestampPrecisionTest<ApiFactory>(factory);

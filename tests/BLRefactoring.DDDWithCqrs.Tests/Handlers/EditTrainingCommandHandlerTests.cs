@@ -10,7 +10,7 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Handlers;
 
-public class EditTrainingCommandHandlerTests
+public sealed class EditTrainingCommandHandlerTests
 {
     private readonly Mock<ITrainingRepository> _trainingRepository = new();
     private readonly Mock<IUniquenessTitleChecker> _titleChecker = new();
@@ -18,7 +18,7 @@ public class EditTrainingCommandHandlerTests
     public EditTrainingCommandHandlerTests()
     {
         _titleChecker
-            .Setup(c => c.TitleForTrainerExists(
+            .Setup(c => c.TitleForTrainerExistsAsync(
                 It.IsAny<TrainingTitle>(),
                 It.IsAny<TrainerId>(),
                 It.IsAny<CancellationToken>()))
@@ -78,7 +78,7 @@ public class EditTrainingCommandHandlerTests
 
         var result = await sut.Handle(command, CancellationToken.None);
 
-        result.ShouldContainError(ErrorCode.NotFound);
+        result.ShouldContainError(ErrorCodes.NotFound);
         _trainingRepository.Verify(r => r.Update(It.IsAny<Training>()), Times.Never);
         _unitOfWork.Verify(
             uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
@@ -121,7 +121,7 @@ public class EditTrainingCommandHandlerTests
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainingId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(training);
         _titleChecker
-            .Setup(c => c.TitleForTrainerExists(
+            .Setup(c => c.TitleForTrainerExistsAsync(
                 It.IsAny<TrainingTitle>(),
                 It.IsAny<TrainerId>(),
                 It.IsAny<CancellationToken>()))

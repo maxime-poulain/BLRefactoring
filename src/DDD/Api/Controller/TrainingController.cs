@@ -6,6 +6,7 @@ using BLRefactoring.Shared.Api.Contracts.Trainings;
 using BLRefactoring.Shared.Api.Controllers;
 using BLRefactoring.Shared.Api.Http;
 using BLRefactoring.Shared.Common.Errors;
+using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -27,7 +28,7 @@ namespace BLRefactoring.DDD.Api.Controller;
 /// </para>
 /// </remarks>
 /// <param name="trainingApplicationService">Application service for training operations.</param>
-public class TrainingController(ITrainingApplicationService trainingApplicationService) : ApiControllerBase
+public sealed class TrainingController(ITrainingApplicationService trainingApplicationService) : ApiControllerBase
 {
     /// <summary>
     /// Creates a new training.
@@ -51,8 +52,8 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
             request.ToApplicationRequest(), cancellationToken);
 
         return result.Match<ActionResult>(
-            training => CreatedAtAction("GetTrainingById", new { id = training.Id }, training.Id),
-            errors => errors.Any(error => error.ErrorCode == ErrorCode.DuplicateTitle)
+            training => CreatedAtAction("GetTrainingById", new { trainingId = training.Id }, training.Id),
+            errors => errors.Any(error => error.ErrorCode == TrainingErrorCodes.DuplicateTitle)
                 ? this.Problem(StatusCodes.Status409Conflict, errors)
                 : this.Problem(StatusCodes.Status400BadRequest, errors));
     }
@@ -60,21 +61,21 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
     /// <summary>
     /// Retrieves a training by its unique identifier.
     /// </summary>
-    /// <param name="id">The unique identifier of the training.</param>
+    /// <param name="trainingId">The unique identifier of the training.</param>
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
     /// <returns>
     /// 200 OK with the training details if found.
     /// 404 Not Found if the training does not exist.
     /// 400 Bad Request on validation errors.
     /// </returns>
-    [HttpGet("{id}")]
+    [HttpGet("{trainingId:guid}")]
     [ProducesEntityTag]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(TrainingResponseHttp), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> GetTrainingByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> GetTrainingByIdAsync(Guid trainingId, CancellationToken cancellationToken = default)
     {
-        var result = await trainingApplicationService.GetByIdAsync(id, cancellationToken);
+        var result = await trainingApplicationService.GetByIdAsync(trainingId, cancellationToken);
 
         // The ETag published here is what the caller must send back as If-Match
         // when they later edit this training.
@@ -84,7 +85,7 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
                 this.SetETag(training.RowVersion);
                 return Ok(training.ToHttp());
             },
-            errors => errors.Any(error => error.ErrorCode == ErrorCode.NotFound)
+            errors => errors.Any(error => error.ErrorCode == ErrorCodes.NotFound)
                 ? NotFound()
                 : this.Problem(StatusCodes.Status400BadRequest, errors));
     }
@@ -169,17 +170,17 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
             },
             errors =>
             {
-                if (errors.Any(error => error.ErrorCode == ErrorCode.NotFound))
+                if (errors.Any(error => error.ErrorCode == ErrorCodes.NotFound))
                 {
                     return NotFound();
                 }
 
-                if (errors.Any(error => error.ErrorCode == ErrorCode.ConcurrencyConflict))
+                if (errors.Any(error => error.ErrorCode == ErrorCodes.ConcurrencyConflict))
                 {
                     return this.Problem(StatusCodes.Status412PreconditionFailed, errors);
                 }
 
-                return errors.Any(error => error.ErrorCode == ErrorCode.DuplicateTitle)
+                return errors.Any(error => error.ErrorCode == TrainingErrorCodes.DuplicateTitle)
                     ? this.Problem(StatusCodes.Status409Conflict, errors)
                     : this.Problem(StatusCodes.Status400BadRequest, errors);
             });
@@ -242,7 +243,7 @@ public class TrainingController(ITrainingApplicationService trainingApplicationS
 
         return result.Match<IActionResult>(
             NoContent,
-            errors => errors.Any(error => error.ErrorCode == ErrorCode.NotFound)
+            errors => errors.Any(error => error.ErrorCode == ErrorCodes.NotFound)
                 ? NotFound()
                 : this.Problem(StatusCodes.Status400BadRequest, errors));
     }

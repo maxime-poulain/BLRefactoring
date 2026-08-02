@@ -11,7 +11,7 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Handlers;
 
-public class CreateTrainingCommandHandlerTests
+public sealed class CreateTrainingCommandHandlerTests
 {
     private readonly Mock<ITrainingRepository> _trainingRepository = new();
     private readonly Mock<ITrainerRepository> _trainerRepository = new();
@@ -21,7 +21,7 @@ public class CreateTrainingCommandHandlerTests
     public CreateTrainingCommandHandlerTests()
     {
         _titleChecker
-            .Setup(c => c.TitleForTrainerExists(
+            .Setup(c => c.TitleForTrainerExistsAsync(
                 It.IsAny<TrainingTitle>(),
                 It.IsAny<TrainerId>(),
                 It.IsAny<CancellationToken>()))
@@ -84,7 +84,7 @@ public class CreateTrainingCommandHandlerTests
 
         var result = await sut.Handle(command, CancellationToken.None);
 
-        result.ShouldContainError(ErrorCode.NotFound);
+        result.ShouldContainError(ErrorCodes.NotFound);
         _trainingRepository.Verify(r => r.Add(It.IsAny<Training>()), Times.Never);
     }
 

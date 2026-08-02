@@ -4,14 +4,17 @@ namespace BLRefactoring.Shared.Api.Contracts.Errors;
 /// One problem reported to a caller, as the API describes it.
 /// </summary>
 /// <remarks>
-/// The API's own type rather than the shared kernel's <c>Error</c>. The kernel's version is a
-/// value object carrying an <c>ErrorCode</c> smart enum: internal vocabulary, free to gain a
-/// member or rename one, and until now every such change was a change to the public contract
-/// without anyone deciding it was.
+/// The API's own type rather than the shared kernel's <c>Error</c>. The kernel's version is a value
+/// object carrying an <c>ErrorCode</c>: internal vocabulary, free to gain a member or rename one,
+/// and until this type existed every such change was a change to the public contract without anyone
+/// deciding it was.
 /// <para>
-/// Its shape mirrors what the kernel used to serialise, down to the nested code, so this
-/// refactoring changes no payload. Swapping it for <c>ProblemDetails</c> later is then a change
-/// to this file and its mapper, and to nothing else.
+/// The code used to be published as a nested object — a name and a number — because that is what the
+/// kernel's smart enum happened to hold. Nothing ever read the number: not the generated client,
+/// which does not model this type at all now that errors travel as a <c>domainErrors</c> extension
+/// on a problem document, not the front end, and not the one test that reads a code. It was a field
+/// maintained for nobody, and every new code had to be given a number to keep it fed. The code is
+/// now the string it always was.
 /// </para>
 /// </remarks>
 public sealed class ErrorResponseHttp
@@ -22,23 +25,7 @@ public sealed class ErrorResponseHttp
     public required string ErrorMessage { get; init; }
 
     /// <summary>
-    /// The machine-readable code a client branches on.
+    /// The machine-readable code a client branches on, for example <c>Training.DuplicateTitle</c>.
     /// </summary>
-    public required ErrorCodeResponseHttp ErrorCode { get; init; }
-}
-
-/// <summary>
-/// The published form of an error code: a stable name and its numeric value.
-/// </summary>
-public sealed class ErrorCodeResponseHttp
-{
-    /// <summary>
-    /// The code's name, for example <c>DuplicateTitle</c>.
-    /// </summary>
-    public required string Name { get; init; }
-
-    /// <summary>
-    /// The code's numeric value.
-    /// </summary>
-    public required int Value { get; init; }
+    public required string ErrorCode { get; init; }
 }

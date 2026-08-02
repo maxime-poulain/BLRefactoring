@@ -5,7 +5,7 @@ using Moq;
 
 namespace BLRefactoring.DDD.Application.Tests.Helpers;
 
-public class TrainerServiceTestFixture
+public sealed class TrainerServiceTestFixture
 {
     public Mock<ITrainerRepository> TrainerRepository { get; } = new();
     public Mock<IUnitOfWork> UnitOfWork { get; } = new();

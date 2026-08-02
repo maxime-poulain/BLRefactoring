@@ -12,7 +12,7 @@ namespace BLRefactoring.Shared.Infrastructure.Repositories;
 /// Entity Framework Core implementation of <see cref="ITrainingRepository"/> and <see cref="IUniquenessTitleChecker"/>.
 /// Provides data access for the Training aggregate using the Specification pattern.
 /// </summary>
-public class TrainingRepository(TrainingContext trainingContext) : ITrainingRepository, IUniquenessTitleChecker
+public sealed class TrainingRepository(TrainingContext trainingContext) : ITrainingRepository, IUniquenessTitleChecker
 {
     public async Task<Training?> GetByIdAsync(TrainingId id, CancellationToken cancellationToken = default) =>
         await trainingContext
@@ -23,7 +23,7 @@ public class TrainingRepository(TrainingContext trainingContext) : ITrainingRepo
     /// Checks whether a training with the given title already exists for the specified trainer,
     /// using the <see cref="TrainingTitleExistsForTrainerSpecification"/>.
     /// </summary>
-    public async Task<bool> TitleForTrainerExists(
+    public async Task<bool> TitleForTrainerExistsAsync(
         TrainingTitle title,
         TrainerId trainerId,
         CancellationToken cancellationToken = default)

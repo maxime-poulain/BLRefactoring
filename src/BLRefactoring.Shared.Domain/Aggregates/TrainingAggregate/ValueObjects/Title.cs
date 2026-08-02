@@ -22,7 +22,7 @@ public sealed class TrainingTitle : ValueObject
     /// <summary>
     /// Gets the title text.
     /// </summary>
-    public string Value { get; init; } = null!;
+    public string Value { get; private init; } = null!;
 
     private TrainingTitle() { } // For ORM
 
@@ -40,7 +40,7 @@ public sealed class TrainingTitle : ValueObject
     {
         if (string.IsNullOrWhiteSpace(title))
         {
-            return Result<TrainingTitle>.Failure(ErrorCode.InvalidTitle, "Training title cannot be empty.");
+            return Result<TrainingTitle>.Failure(TrainingErrorCodes.InvalidTitle, "Training title cannot be empty.");
         }
 
         var trimmedTitle = title.Trim();
@@ -48,7 +48,7 @@ public sealed class TrainingTitle : ValueObject
         if (trimmedTitle.Length is < MinLength or > MaxLength)
         {
             return Result<TrainingTitle>.Failure(
-                ErrorCode.InvalidTitle,
+                TrainingErrorCodes.InvalidTitle,
                 $"Training title must be between {MinLength} and {MaxLength} characters.");
         }
 

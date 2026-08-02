@@ -5,7 +5,7 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Common.Results;
 
-public class ResultTests
+public sealed class ResultTests
 {
     [Fact]
     public void Success_Match_CallsOnSuccess()
@@ -51,7 +51,7 @@ public class ResultTests
     [Fact]
     public void Failure_Match_CallsOnFailureWithErrors()
     {
-        var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
+        var errors = new ErrorCollection([new Error(ErrorCodes.Unspecified, "test error")]);
         var result = Result.Failure(errors);
 
         var matched = result.Match(
@@ -64,7 +64,7 @@ public class ResultTests
     [Fact]
     public void Failure_Bind_PropagatesErrors()
     {
-        var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
+        var errors = new ErrorCollection([new Error(ErrorCodes.Unspecified, "test error")]);
         var result = Result.Failure(errors);
         var bindCalled = false;
 
@@ -81,7 +81,7 @@ public class ResultTests
     [Fact]
     public void Failure_Switch_CallsOnFailureAction()
     {
-        var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
+        var errors = new ErrorCollection([new Error(ErrorCodes.Unspecified, "test error")]);
         var result = Result.Failure(errors);
         var failureCalled = false;
 
@@ -107,7 +107,7 @@ public class ResultTests
     [Fact]
     public async Task MatchAsync_Failure_CallsOnFailureAsync()
     {
-        var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
+        var errors = new ErrorCollection([new Error(ErrorCodes.Unspecified, "test error")]);
         var result = Result.Failure(errors);
 
         var matched = await result.MatchAsync(
@@ -120,7 +120,7 @@ public class ResultTests
     [Fact]
     public void FromErrors_WithErrors_ReturnsFailure()
     {
-        var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
+        var errors = new ErrorCollection([new Error(ErrorCodes.Unspecified, "test error")]);
 
         var result = Result.FromErrors(errors);
 
@@ -150,7 +150,7 @@ public class ResultTests
     [Fact]
     public void ImplicitConversion_NonEmptyErrorCollection_ReturnsFailure()
     {
-        var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
+        var errors = new ErrorCollection([new Error(ErrorCodes.Unspecified, "test error")]);
 
         Result result = errors;
 
@@ -168,7 +168,7 @@ public class ResultTests
     [Fact]
     public async Task FailureAsync_ReturnsFailure()
     {
-        var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
+        var errors = new ErrorCollection([new Error(ErrorCodes.Unspecified, "test error")]);
 
         var result = await Result.FailureAsync(errors);
 
@@ -189,7 +189,7 @@ public class ResultTests
     [Fact]
     public void Failure_Tap_DoesNotCallAction()
     {
-        var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
+        var errors = new ErrorCollection([new Error(ErrorCodes.Unspecified, "test error")]);
         var result = Result.Failure(errors);
         var tapCalled = false;
 
@@ -222,7 +222,7 @@ public class ResultTests
     [Fact]
     public void Failure_TapError_CallsActionWithErrors()
     {
-        var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
+        var errors = new ErrorCollection([new Error(ErrorCodes.Unspecified, "test error")]);
         var result = Result.Failure(errors);
         IReadOnlyErrorCollection? capturedErrors = null;
 
@@ -235,7 +235,7 @@ public class ResultTests
     [Fact]
     public void TapError_ReturnsSameResult()
     {
-        var errors = new ErrorCollection([new Error(ErrorCode.Unspecified, "test error")]);
+        var errors = new ErrorCollection([new Error(ErrorCodes.Unspecified, "test error")]);
         var result = Result.Failure(errors);
 
         var returned = result.TapError(_ => { });

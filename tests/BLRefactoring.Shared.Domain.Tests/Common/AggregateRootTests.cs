@@ -4,14 +4,14 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Common;
 
-public class AggregateRootTests
+public sealed class AggregateRootTests
 {
-    public class TestAggregateId : EntityId<TestAggregateId>
+    public sealed class TestAggregateId : EntityId<TestAggregateId>
     {
         private TestAggregateId(Guid value) : base(value) { }
     }
 
-    public class TestAggregate() : AggregateRoot<TestAggregateId>(TestAggregateId.Generate())
+    public sealed class TestAggregate() : AggregateRoot<TestAggregateId>(TestAggregateId.Generate())
     {
         // AddDomainEvent/AddDomainEvents are protected: only the aggregate's own
         // behavior methods may raise events. These test hooks play that role here.
@@ -19,7 +19,7 @@ public class AggregateRootTests
         public void RaiseEvents(IEnumerable<IDomainEvent> domainEvents) => AddDomainEvents(domainEvents);
     }
 
-    public class TestDomainEvent : IDomainEvent { }
+    public sealed class TestDomainEvent : IDomainEvent { }
 
     [Fact]
     public void NewAggregateRoot_HasEmptyDomainEvents()
