@@ -8,6 +8,7 @@ using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Delete;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Edit;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetAll;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetById;
+using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetMine;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetByTopic;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetByTrainerId;
 using BLRefactoring.Shared.Api.Contracts.Trainers;
@@ -59,18 +60,15 @@ public static class HttpToApplicationMappings
     /// Builds the command replacing a trainer's profile.
     /// </summary>
     /// <param name="request">What the caller sent in the body.</param>
-    /// <param name="trainerId">The trainer resolved from the caller's token.</param>
     /// <param name="expectedVersion">The version read from the <c>If-Match</c> header.</param>
     public static EditTrainerCommand ToCommand(
         this EditTrainerRequestHttp request,
-        Guid trainerId,
         byte[] expectedVersion)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         return new EditTrainerCommand
         {
-            TrainerId = trainerId,
             ExpectedVersion = expectedVersion,
             Firstname = request.Firstname,
             Lastname = request.Lastname,
@@ -137,6 +135,15 @@ public static class HttpToApplicationMappings
 
     /// <summary>Builds the query reading one page of trainings.</summary>
     public static GetAllTrainingsQuery ToGetAllTrainingsQuery(this PaginationRequestHttp pagination)
+        => new() { Page = Page(pagination), PageSize = PageSize(pagination) };
+
+    /// <summary>Builds the query reading one page of the calling trainer's own trainings.</summary>
+    /// <remarks>
+    /// Paging and nothing else. Whose trainings these are is not the boundary's business: the
+    /// handler resolves it from the authenticated caller, so this mapping has no identity to carry
+    /// and no way to carry the wrong one.
+    /// </remarks>
+    public static GetMyTrainingsQuery ToGetMyTrainingsQuery(this PaginationRequestHttp pagination)
         => new() { Page = Page(pagination), PageSize = PageSize(pagination) };
 
     /// <summary>Builds the query reading one page of a trainer's trainings.</summary>

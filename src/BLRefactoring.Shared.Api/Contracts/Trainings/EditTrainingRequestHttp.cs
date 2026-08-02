@@ -18,7 +18,7 @@ namespace BLRefactoring.Shared.Api.Contracts.Trainings;
 public sealed class EditTrainingRequestHttp
 {
     [Required]
-    [StringLength(30, MinimumLength = 5)]
+    [StringLength(100, MinimumLength = 5)]
     public string Title { get; init; } = null!;
 
     /// <summary>

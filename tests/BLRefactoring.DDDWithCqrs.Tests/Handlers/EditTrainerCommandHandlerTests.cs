@@ -13,10 +13,21 @@ namespace BLRefactoring.DDDWithCqrs.Tests.Handlers;
 public sealed class EditTrainerCommandHandlerTests
 {
     private readonly Mock<ITrainerRepository> _trainerRepository = new();
+    private readonly Mock<ICurrentUserService> _currentUserService = new();
+    private readonly Guid _callerId = Guid.NewGuid();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
     private EditTrainerCommandHandler CreateSut() =>
-        new(_trainerRepository.Object, _unitOfWork.Object);
+        new(_trainerRepository.Object, _currentUserService.Object, _unitOfWork.Object);
+
+    public EditTrainerCommandHandlerTests()
+    {
+        // The trainer being edited is no longer a field on the command: the handler resolves it.
+        // Every test therefore needs a caller, and a non-empty one -- TrainerId.Create refuses
+        // Guid.Empty, so a default mock would throw before any assertion was reached. GivenTrainer
+        // narrows it to the trainer under test where there is one.
+        _currentUserService.SetupGet(service => service.TrainerId).Returns(_callerId);
+    }
 
     [Fact]
     public async Task Handle_ValidCommand_ReturnsSuccessUpdatesTrainerAndCommitsOnce()
@@ -26,7 +37,7 @@ public sealed class EditTrainerCommandHandlerTests
         var sut = CreateSut();
 
         var result = await sut.Handle(
-            Command(trainer.Id.Value, firstname: "Jane", lastname: "Smith"),
+            Command(firstname: "Jane", lastname: "Smith"),
             CancellationToken.None);
 
         result.ShouldBeSuccess();
@@ -45,7 +56,7 @@ public sealed class EditTrainerCommandHandlerTests
         var sut = CreateSut();
 
         await sut.Handle(
-            Command(trainer.Id.Value, contactEmail: "jane.smith@example.com"),
+            Command(contactEmail: "jane.smith@example.com"),
             CancellationToken.None);
 
         trainer.ContactEmail.FullAddress.Should().Be("jane.smith@example.com");
@@ -58,7 +69,7 @@ public sealed class EditTrainerCommandHandlerTests
         GivenTrainer(trainer);
         var sut = CreateSut();
 
-        var result = await sut.Handle(Command(trainer.Id.Value, bio: null), CancellationToken.None);
+        var result = await sut.Handle(Command(bio: null), CancellationToken.None);
 
         result.ShouldBeSuccess();
         trainer.Bio.Should().BeNull();
@@ -72,7 +83,7 @@ public sealed class EditTrainerCommandHandlerTests
             .ReturnsAsync((Trainer?)null);
         var sut = CreateSut();
 
-        var result = await sut.Handle(Command(Guid.NewGuid()), CancellationToken.None);
+        var result = await sut.Handle(Command(), CancellationToken.None);
 
         result.ShouldContainError(ErrorCodes.NotFound);
         _unitOfWork.Verify(
@@ -88,7 +99,7 @@ public sealed class EditTrainerCommandHandlerTests
         var sut = CreateSut();
 
         var result = await sut.Handle(
-            Command(trainer.Id.Value, contactEmail: "invalid"),
+            Command(contactEmail: "invalid"),
             CancellationToken.None);
 
         result.ShouldBeFailure();
@@ -105,7 +116,7 @@ public sealed class EditTrainerCommandHandlerTests
         GivenTrainer(trainer);
         var sut = CreateSut();
 
-        var command = Command(trainer.Id.Value, expectedVersion: [1, 2, 3, 4, 5, 6, 7, 8], firstname: "Jane");
+        var command = Command(expectedVersion: [1, 2, 3, 4, 5, 6, 7, 8], firstname: "Jane");
 
         var result = await sut.Handle(command, CancellationToken.None);
 
@@ -129,18 +140,21 @@ public sealed class EditTrainerCommandHandlerTests
         var sut = CreateSut();
 
         var result = await sut.Handle(
-            Command(trainer.Id.Value, firstname: "Jane"), CancellationToken.None);
+            Command(firstname: "Jane"), CancellationToken.None);
 
         result.ShouldContainError(ErrorCodes.ConcurrencyConflict);
     }
 
-    private void GivenTrainer(Trainer trainer) =>
+    private void GivenTrainer(Trainer trainer)
+    {
+        _currentUserService.SetupGet(service => service.TrainerId).Returns(trainer.Id.Value);
+
         _trainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(trainer);
+    }
 
     private static EditTrainerCommand Command(
-        Guid trainerId,
         byte[]? expectedVersion = null,
         string firstname = "John",
         string lastname = "Doe",
@@ -148,7 +162,6 @@ public sealed class EditTrainerCommandHandlerTests
         string? bio = "Experienced software trainer with 10 years of experience.")
         => new()
         {
-            TrainerId = trainerId,
             ExpectedVersion = expectedVersion ?? [],
             Firstname = firstname,
             Lastname = lastname,

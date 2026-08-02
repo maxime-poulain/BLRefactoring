@@ -208,6 +208,32 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     }
 
     /// <summary>
+    /// Retrieves the caller's own trainings.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
+    /// <returns>200 OK with the trainings belonging to the authenticated trainer.</returns>
+    /// <remarks>
+    /// The counterpart of <c>GET /Trainer/me</c>, and the endpoint a screen listing "my trainings"
+    /// is meant to call. It takes no identifier — the trainer comes from the token — so unlike
+    /// <c>by-trainer/{trainerId}</c> there is no parameter a caller could point at somebody else,
+    /// and no filtering left for a client to do after the fact.
+    /// <para>
+    /// The action name matches the CQRS host's, as every action here does: <c>operationId</c> is
+    /// <c>Controller_Action</c>, so a name that differed would publish two documents describing one
+    /// API under two names. See ADR 0008.
+    /// </para>
+    /// </remarks>
+    [HttpGet("me")]
+    [ProducesResponseType(typeof(List<TrainingResponseHttp>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<TrainingResponseHttp>>> GetMineAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var trainings = await trainingApplicationService.GetMineAsync(cancellationToken);
+
+        return Ok(trainings.ToHttp());
+    }
+
+    /// <summary>
     /// Retrieves all trainings that match the specified topic.
     /// </summary>
     /// <param name="topic">The topic name to filter trainings by.</param>

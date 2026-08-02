@@ -106,7 +106,6 @@ public sealed class TrainerController(
         }
 
         var result = await trainerApplicationService.EditAsync(
-            currentUserService.TrainerId,
             request.ToApplicationRequest(),
             expectedVersion,
             cancellationToken);

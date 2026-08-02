@@ -17,17 +17,6 @@ public sealed class EditTrainerCommandValidatorTests
     }
 
     [Fact]
-    public async Task Validate_EmptyTrainerId_HasError()
-    {
-        var command = Command(trainerId: Guid.Empty);
-
-        var result = await _sut.ValidateAsync(command);
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "TrainerId");
-    }
-
-    [Fact]
     public async Task Validate_EmptyContactEmail_HasError()
     {
         var result = await _sut.ValidateAsync(Command(contactEmail: ""));
@@ -64,14 +53,12 @@ public sealed class EditTrainerCommandValidatorTests
     }
 
     private static EditTrainerCommand Command(
-        Guid? trainerId = null,
         string firstname = "John",
         string lastname = "Doe",
         string contactEmail = "john.doe@example.com",
         string? bio = "Experienced software trainer.")
         => new()
         {
-            TrainerId = trainerId ?? Guid.NewGuid(),
             Firstname = firstname,
             Lastname = lastname,
             ContactEmail = contactEmail,

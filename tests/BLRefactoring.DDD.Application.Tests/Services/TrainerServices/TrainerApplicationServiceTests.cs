@@ -108,7 +108,7 @@ public sealed class TrainerApplicationServiceTests
             .ReturnsAsync(trainer);
         var sut = _fixture.CreateSut();
 
-        var result = await sut.EditAsync(trainer.Id.Value, EditionRequest(
+        var result = await sut.EditAsync(EditionRequest(
             firstname: "Jane",
             lastname: "Smith",
             contactEmail: "jane.smith@example.com",
@@ -130,7 +130,7 @@ public sealed class TrainerApplicationServiceTests
             .ReturnsAsync(trainer);
         var sut = _fixture.CreateSut();
 
-        await sut.EditAsync(trainer.Id.Value, EditionRequest(firstname: "Jane"), trainer.RowVersion);
+        await sut.EditAsync(EditionRequest(firstname: "Jane"), trainer.RowVersion);
 
         _fixture.TrainerRepository.Verify(r => r.Update(trainer), Times.Once);
         _fixture.UnitOfWork.Verify(
@@ -147,7 +147,7 @@ public sealed class TrainerApplicationServiceTests
             .ReturnsAsync(trainer);
         var sut = _fixture.CreateSut();
 
-        var result = await sut.EditAsync(trainer.Id.Value, EditionRequest(bio: null), trainer.RowVersion);
+        var result = await sut.EditAsync(EditionRequest(bio: null), trainer.RowVersion);
 
         result.ShouldBeSuccess().Bio.Should().BeNull();
     }
@@ -160,7 +160,7 @@ public sealed class TrainerApplicationServiceTests
             .ReturnsAsync((Trainer?)null);
         var sut = _fixture.CreateSut();
 
-        var result = await sut.EditAsync(Guid.NewGuid(), EditionRequest(), []);
+        var result = await sut.EditAsync(EditionRequest(), []);
 
         result.ShouldContainError(ErrorCodes.NotFound);
     }
@@ -174,7 +174,7 @@ public sealed class TrainerApplicationServiceTests
             .ReturnsAsync(trainer);
         var sut = _fixture.CreateSut();
 
-        var result = await sut.EditAsync(trainer.Id.Value, EditionRequest(contactEmail: "invalid-email"), trainer.RowVersion);
+        var result = await sut.EditAsync(EditionRequest(contactEmail: "invalid-email"), trainer.RowVersion);
 
         result.ShouldBeFailure();
         _fixture.TrainerRepository.Verify(r => r.Update(It.IsAny<Trainer>()), Times.Never);
@@ -192,8 +192,7 @@ public sealed class TrainerApplicationServiceTests
             .ReturnsAsync(trainer);
         var sut = _fixture.CreateSut();
 
-        var result = await sut.EditAsync(
-            trainer.Id.Value, EditionRequest(firstname: "Jane"), [1, 2, 3, 4, 5, 6, 7, 8]);
+        var result = await sut.EditAsync(EditionRequest(firstname: "Jane"), [1, 2, 3, 4, 5, 6, 7, 8]);
 
         result.ShouldContainError(ErrorCodes.ConcurrencyConflict);
         _fixture.UnitOfWork.Verify(
@@ -216,8 +215,7 @@ public sealed class TrainerApplicationServiceTests
             .ThrowsAsync(new ConcurrencyConflictException("conflict", new Exception()));
         var sut = _fixture.CreateSut();
 
-        var result = await sut.EditAsync(
-            trainer.Id.Value, EditionRequest(firstname: "Jane"), trainer.RowVersion);
+        var result = await sut.EditAsync(EditionRequest(firstname: "Jane"), trainer.RowVersion);
 
         result.ShouldContainError(ErrorCodes.ConcurrencyConflict);
     }

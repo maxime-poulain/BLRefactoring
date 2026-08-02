@@ -50,6 +50,18 @@ public interface ITrainingApplicationService
     Task<List<TrainingDto>> GetByTrainerIdAsync(Guid trainerId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Retrieves all trainings belonging to the calling trainer.
+    /// </summary>
+    /// <remarks>
+    /// The same read as <see cref="GetByTrainerIdAsync"/> and deliberately a separate method, and it
+    /// takes no trainer at all: this one resolves the caller itself, exactly as
+    /// <see cref="CreateAsync"/> already does for the owner of a new training. One method takes a
+    /// trainer the caller names; the other serves a trainer the caller cannot choose, and having no
+    /// parameter is what makes that true rather than a convention.
+    /// </remarks>
+    Task<List<TrainingDto>> GetMineAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Retrieves all trainings matching the specified topic name.
     /// </summary>
     Task<List<TrainingDto>> GetByTopicAsync(string topic, CancellationToken cancellationToken = default);
@@ -201,6 +213,18 @@ public sealed class TrainingApplicationService(
         // error. Wrapping it made the controller write a failure branch that could not be taken
         // and declare a 400 no caller could receive.
         var trainings = await trainingRepository.GetByTrainerIdAsync(TrainerId.Create(trainerId), cancellationToken);
+        return trainings.ToDtos();
+    }
+
+    /// <inheritdoc />
+    public async Task<List<TrainingDto>> GetMineAsync(CancellationToken cancellationToken = default)
+    {
+        // Resolved here, not received. The same repository call the named-trainer read makes -- two
+        // reads answering "which trainings belong to this trainer" must not be able to disagree --
+        // and the only thing separating them is that this one cannot be pointed anywhere else.
+        var trainerId = TrainerId.Create(currentUserService.TrainerId);
+
+        var trainings = await trainingRepository.GetByTrainerIdAsync(trainerId, cancellationToken);
         return trainings.ToDtos();
     }
 

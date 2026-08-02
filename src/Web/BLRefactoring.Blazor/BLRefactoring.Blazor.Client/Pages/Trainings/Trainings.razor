@@ -2,7 +2,6 @@
 @attribute [Authorize]
 @using BLRefactoring.GeneratedClients
 @inject ITrainingClient TrainingClient
-@inject ITrainerClient TrainerClient
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
@@ -68,19 +67,16 @@
                         <MudCardActions>
                             @* The catalogue is readable by every signed-in trainer, but only its
                                owner may edit or delete it — the API enforces that with
-                               TrainingOwnerPolicy. Offering the buttons to everyone meant a
-                               confirmation dialog followed by a 403, and a 403 carries no body, so
-                               what the user actually read was "The HTTP status code of the response
-                               was not expected (403)". *@
-                            @if (training.TrainerId == _currentTrainerId)
-                            {
-                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                               Color="Color.Primary"
-                                               Href="@($"/trainings/edit/{training.Id}")" />
-                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                               Color="Color.Error"
-                                               OnClick="@(() => OpenDeleteDialog(training))" />
-                            }
+                               TrainingOwnerPolicy. This page used to load every training and hide
+                               the buttons on the ones belonging to somebody else, which meant the
+                               browser had already received them. It now asks for its own, so every
+                               row here is editable and there is nothing left to hide. *@
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Color="Color.Primary"
+                                           Href="@($"/trainings/edit/{training.Id}")" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Color="Color.Error"
+                                           OnClick="@(() => OpenDeleteDialog(training))" />
                         </MudCardActions>
                     </MudCard>
                 </MudItem>
@@ -97,35 +93,10 @@
     private bool _isLoading = true;
 
     /// <summary>
-    /// The signed-in trainer, or <c>null</c> when it could not be read.
-    /// </summary>
-    /// <remarks>
-    /// Null hides every Edit and Delete button rather than showing them all: if the identity of the
-    /// caller is unknown, the safe reading is that they own nothing. The API refuses either way —
-    /// this only decides what is offered.
-    /// </remarks>
-    private Guid? _currentTrainerId;
-
     protected override async Task OnInitializedAsync()
     {
-        await LoadCurrentTrainer();
         await LoadTrainings();
         StateHasChanged();
-    }
-
-    private async Task LoadCurrentTrainer()
-    {
-        try
-        {
-            var response = await TrainerClient.GetCurrentAsync();
-            _currentTrainerId = response.Result.Id;
-        }
-        catch (ApiException)
-        {
-            // Leave it null. Nothing to tell the user: the page is still fully usable for reading,
-            // and the buttons it hides are ones the API would have refused anyway.
-            _currentTrainerId = null;
-        }
     }
 
     private async Task LoadTrainings()
@@ -133,7 +104,12 @@
         _isLoading = true;
         try
         {
-            _trainings = await TrainingClient.GetAllAsync();
+            // The caller's own trainings, chosen by the server from the token. This used to be
+            // GetAllAsync() followed by a comparison in the markup, which is not filtering: the
+            // rows were already in the browser, and anyone could read them from the network tab.
+            // The trainer is no longer read separately either — the page had to know who it was
+            // only in order to do that comparison.
+            _trainings = await TrainingClient.GetMineAsync();
         }
         catch (ApiException<ProblemDetails> ex)
         {

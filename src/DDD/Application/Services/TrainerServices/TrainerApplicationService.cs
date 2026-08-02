@@ -26,7 +26,7 @@ public interface ITrainerApplicationService
     /// <paramref name="request"/>, provided nobody else changed it since
     /// <paramref name="expectedVersion"/> was read.
     /// </summary>
-    Task<Result<TrainerDto>> EditAsync(Guid id, TrainerEditionRequest request, byte[] expectedVersion, CancellationToken cancellationToken = default);
+    Task<Result<TrainerDto>> EditAsync(TrainerEditionRequest request, byte[] expectedVersion, CancellationToken cancellationToken = default);
 
     Task<Result<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<TrainerDto[]> GetAllAsync(CancellationToken cancellationToken = default);
@@ -34,6 +34,7 @@ public interface ITrainerApplicationService
 
 public sealed class TrainerApplicationService(
     ITrainerRepository trainerRepository,
+    ICurrentUserService currentUserService,
     IUnitOfWork unitOfWork)
     : ITrainerApplicationService
 {
@@ -57,8 +58,12 @@ public sealed class TrainerApplicationService(
         }, Result<TrainerDto>.FailureAsync);
     }
 
-    public async Task<Result<TrainerDto>> EditAsync(Guid id, TrainerEditionRequest request, byte[] expectedVersion, CancellationToken cancellationToken = default)
+    public async Task<Result<TrainerDto>> EditAsync(TrainerEditionRequest request, byte[] expectedVersion, CancellationToken cancellationToken = default)
     {
+        // Resolved here rather than received. PUT /Trainer/me has never had a trainer for a caller
+        // to choose, and taking one as a parameter made that a promise every call site had to keep.
+        var id = currentUserService.TrainerId;
+
         var trainer = await trainerRepository.GetByIdAsync(TrainerId.Create(id), cancellationToken);
 
         if (trainer is null)
