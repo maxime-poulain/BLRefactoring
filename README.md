@@ -899,12 +899,18 @@ Everything below is done by hand, once, outside the repository.
 
 #### Making the gate block a merge
 
-`sonar.yml` passes `sonar.qualitygate.wait=true`, so the job itself goes red when the gate fails —
-the verdict arrives as a check rather than as a link. To stop a failing pull request being merged,
-add a check to branch protection: **Settings → Branches → Add rule** on `master`, tick **Require
-status checks to pass before merging**, and select **`Analyze`**. The app's own
-`SonarCloud Code Analysis` check carries the same verdict and would do as well; `Analyze` is named
-here because it fails for a broken *analysis* too, not only for a failed gate.
+`sonar.yml` waits on the gate **for a pull request only**, so the job goes red where going red stops
+something — a change about to enter `master`. On a push to `master` the analysis still runs and
+still publishes its verdict, but does not fail the build: the code is already in, so a red cross
+there prevents nothing and only makes the default branch look broken. The verdict is not lost, it
+lives on the branch's dashboard and badge. See
+[ADR 0018](docs/adr/0018-fail-on-the-gate-where-failing-stops-something.md).
+
+To stop a failing pull request being merged, add a check to branch protection:
+**Settings → Branches → Add rule** on `master`, tick **Require status checks to pass before
+merging**, and select **`Analyze`**. The app's own `SonarCloud Code Analysis` check carries the same
+verdict and would do as well; `Analyze` is named here because it fails for a broken *analysis* too —
+a bad token, an unreachable server, an unparseable coverage report — not only for a failed gate.
 
 Do that *after* the first analysis of `master` comes back green. The default gate requires 80%
 coverage on new code, and switching the rule on before a baseline exists blocks every pull request
