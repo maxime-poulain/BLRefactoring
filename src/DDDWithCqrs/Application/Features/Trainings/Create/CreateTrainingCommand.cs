@@ -10,7 +10,7 @@ using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Create;
 
-public class CreateTrainingCommand : ICommand<Result>
+public sealed class CreateTrainingCommand : ICommand<Result>
 {
     public Guid TrainingId { get; init; } = Guid.NewGuid();
     public string Title { get; init; } = null!;
@@ -20,7 +20,7 @@ public class CreateTrainingCommand : ICommand<Result>
     public string AcquiredSkills { get; init; } = null!;
 }
 
-public class CreateTrainingCommandHandler(
+public sealed class CreateTrainingCommandHandler(
     ITrainingRepository trainingRepository,
     ITrainerRepository trainerRepository,
     IUniquenessTitleChecker titleChecker,
@@ -36,7 +36,7 @@ public class CreateTrainingCommandHandler(
 
         if (!await trainerRepository.ExistsAsync(trainerId, cancellationToken))
         {
-            return Result.Failure(ErrorCode.NotFound,
+            return Result.Failure(ErrorCodes.NotFound,
                 $"Trainer with id `{trainerId.Value}` not found.");
         }
 
@@ -68,7 +68,7 @@ public class CreateTrainingCommandHandler(
                 // A concurrent request slipped past the uniqueness pre-check;
                 // the unique index is the authoritative guard, so a lost race
                 // is the same business failure as a detected duplicate.
-                return Result.Failure(ErrorCode.DuplicateTitle,
+                return Result.Failure(TrainingErrorCodes.DuplicateTitle,
                     "A training with the same title already exists for this trainer.");
             }
             return Result.Success();

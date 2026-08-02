@@ -12,7 +12,7 @@ namespace BLRefactoring.DDD.Api.Controller;
 /// live in <see cref="AuthControllerBase"/>; this controller only supplies how
 /// the trainer is created, through the trainer application service.
 /// </summary>
-public class AuthController(
+public sealed class AuthController(
     UserManager<IdentityUser<Guid>> userManager,
     SignInManager<IdentityUser<Guid>> signInManager,
     ITokenService tokenService,

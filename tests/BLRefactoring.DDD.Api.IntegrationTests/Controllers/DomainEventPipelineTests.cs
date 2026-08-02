@@ -9,4 +9,4 @@ namespace BLRefactoring.DDD.Api.IntegrationTests.Controllers;
 /// host whose container answers, which is exactly what is being checked.
 /// </summary>
 [Collection("Api")]
-public class DomainEventPipelineTests(ApiFactory factory) : DomainEventPipelineTest<ApiFactory>(factory);
+public sealed class DomainEventPipelineTests(ApiFactory factory) : DomainEventPipelineTest<ApiFactory>(factory);

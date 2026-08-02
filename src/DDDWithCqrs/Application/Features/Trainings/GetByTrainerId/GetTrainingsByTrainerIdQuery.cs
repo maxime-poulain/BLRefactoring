@@ -7,7 +7,7 @@ namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetByTrainerI
 /// <summary>
 /// One page of a given trainer's trainings, newest first.
 /// </summary>
-public class GetTrainingsByTrainerIdQuery(Guid trainerId) : PagedQuery, IQuery<PagedResult<TrainingDto>>
+public sealed class GetTrainingsByTrainerIdQuery(Guid trainerId) : PagedQuery, IQuery<PagedResult<TrainingDto>>
 {
     public Guid TrainerId { get; } = trainerId;
 }

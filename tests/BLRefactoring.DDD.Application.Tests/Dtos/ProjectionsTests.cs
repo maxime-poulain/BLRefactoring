@@ -5,7 +5,7 @@ using Xunit;
 
 namespace BLRefactoring.DDD.Application.Tests.Dtos;
 
-public class ProjectionsTests
+public sealed class ProjectionsTests
 {
     [Fact]
     public void TrainerToDto_MapsIdCorrectly()

@@ -8,7 +8,7 @@ namespace BLRefactoring.DDDWithCqrs.Tests.Pagination;
 /// <summary>
 /// The arithmetic and the bounds of the query side's paging.
 /// </summary>
-public class PaginationTests
+public sealed class PaginationTests
 {
     private static PagedResult<string> Page(int page, int pageSize, int totalCount)
         => new([], page, pageSize, totalCount);

@@ -9,7 +9,7 @@ using Xunit;
 namespace BLRefactoring.DDD.Api.IntegrationTests.Controllers;
 
 [Collection("Api")]
-public class TrainerControllerTests(ApiFactory factory) : IntegrationTest(factory)
+public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest(factory)
 {
     // -- GetAll --
 

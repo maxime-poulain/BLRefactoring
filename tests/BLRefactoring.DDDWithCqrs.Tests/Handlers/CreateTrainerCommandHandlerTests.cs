@@ -8,7 +8,7 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Handlers;
 
-public class CreateTrainerCommandHandlerTests
+public sealed class CreateTrainerCommandHandlerTests
 {
     private readonly Mock<ITrainerRepository> _trainerRepository = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();

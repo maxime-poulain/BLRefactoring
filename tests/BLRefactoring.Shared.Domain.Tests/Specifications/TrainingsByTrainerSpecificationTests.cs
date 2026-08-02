@@ -10,7 +10,7 @@ namespace BLRefactoring.Shared.Domain.Tests.Specifications;
 /// Unit tests for <see cref="TrainingsByTrainerSpecification"/>.
 /// Validates that the specification correctly filters trainings by trainer identifier.
 /// </summary>
-public class TrainingsByTrainerSpecificationTests
+public sealed class TrainingsByTrainerSpecificationTests
 {
     /// <summary>
     /// Verifies that only trainings belonging to the specified trainer are returned.

@@ -13,7 +13,7 @@ namespace BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Controllers;
 /// The training endpoints of the CQRS host, exercised over HTTP.
 /// </summary>
 [Collection("Api")]
-public class TrainingControllerTests(ApiFactory factory) : IntegrationTest(factory)
+public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTest(factory)
 {
     // One definition of "a valid training", in the test kit, rather than the five copies of the
     // same object literal this suite and its twin used to carry between them.

@@ -52,14 +52,17 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
         body.ValueKind.Should().Be(JsonValueKind.Object, "an error body is a document, not a bare string");
         body.GetProperty("status").GetInt32().Should().Be(StatusCodes.Status409Conflict);
 
-        // The domain code survives the move to RFC 7807 — a client branching on DuplicateTitle
-        // keeps its logic and changes only where it reads it from. Under `domainErrors`, not
-        // `errors`: that name belongs to the field map a ValidationProblemDetails publishes, and
-        // the two shapes were colliding under it.
+        // The domain code survives the move to RFC 7807 — a client branching on it keeps its logic
+        // and changes only where it reads it from. Under `domainErrors`, not `errors`: that name
+        // belongs to the field map a ValidationProblemDetails publishes, and the two shapes were
+        // colliding under it.
+        //
+        // The code is a string, and it names its owner. It used to be a nested { name, value } pair
+        // because the kernel's smart enum happened to hold a number; nothing ever read the number.
         body.GetProperty("domainErrors")
             .EnumerateArray()
-            .Select(error => error.GetProperty("errorCode").GetProperty("name").GetString())
-            .Should().Contain("DuplicateTitle");
+            .Select(error => error.GetProperty("errorCode").GetString())
+            .Should().Contain("Training.DuplicateTitle");
     }
 
     [Fact]

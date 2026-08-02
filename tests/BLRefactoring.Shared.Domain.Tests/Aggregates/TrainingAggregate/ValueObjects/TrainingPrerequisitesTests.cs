@@ -1,12 +1,13 @@
 using AwesomeAssertions;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
+using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.Domain.Tests.Helpers;
 using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainingAggregate.ValueObjects;
 
-public class TrainingPrerequisitesTests
+public sealed class TrainingPrerequisitesTests
 {
     [Fact]
     public void Create_ValidPrerequisites_ReturnsSuccess()
@@ -35,7 +36,7 @@ public class TrainingPrerequisitesTests
         var result = TrainingPrerequisites.Create(null!);
 
         // Assert
-        result.ShouldContainError(ErrorCode.InvalidPrerequisites);
+        result.ShouldContainError(TrainingErrorCodes.InvalidPrerequisites);
     }
 
     [Fact]
@@ -45,7 +46,7 @@ public class TrainingPrerequisitesTests
         var result = TrainingPrerequisites.Create(string.Empty);
 
         // Assert
-        result.ShouldContainError(ErrorCode.InvalidPrerequisites);
+        result.ShouldContainError(TrainingErrorCodes.InvalidPrerequisites);
     }
 
     [Fact]
@@ -71,7 +72,7 @@ public class TrainingPrerequisitesTests
         var result = TrainingPrerequisites.Create(prerequisites);
 
         // Assert
-        result.ShouldContainError(ErrorCode.InvalidPrerequisites);
+        result.ShouldContainError(TrainingErrorCodes.InvalidPrerequisites);
     }
 
     [Fact]

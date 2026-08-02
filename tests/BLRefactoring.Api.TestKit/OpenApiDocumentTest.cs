@@ -115,7 +115,7 @@ public abstract class OpenApiDocumentTest<TFactory>(TFactory factory) : Integrat
 
         var success = Property(
             Property(
-                Property(Property(Property(document, "paths"), "/Training/{id}"), "get"),
+                Property(Property(Property(document, "paths"), "/Training/{trainingId}"), "get"),
                 "responses"),
             "200");
 
@@ -163,7 +163,7 @@ public abstract class OpenApiDocumentTest<TFactory>(TFactory factory) : Integrat
         var document = await DocumentAsync();
 
         var responses = Property(
-            Property(Property(Property(document, "paths"), "/Training/{id}"), "get"),
+            Property(Property(Property(document, "paths"), "/Training/{trainingId}"), "get"),
             "responses");
 
         responses.TryGetProperty("401", out var unauthorized).Should().BeTrue(
@@ -216,12 +216,12 @@ public abstract class OpenApiDocumentTest<TFactory>(TFactory factory) : Integrat
     /// </remarks>
     [Theory]
     [InlineData("/Training", "post", "Training_CreateTraining")]
-    [InlineData("/Training/{id}", "get", "Training_GetTrainingById")]
+    [InlineData("/Training/{trainingId}", "get", "Training_GetTrainingById")]
     [InlineData("/Training/{trainingId}", "put", "Training_UpdateTraining")]
     [InlineData("/Training/{trainingId}", "delete", "Training_DeleteTraining")]
     [InlineData("/Trainer/me", "get", "Trainer_GetCurrent")]
     [InlineData("/Trainer/me", "put", "Trainer_EditCurrent")]
-    [InlineData("/Trainer/{id}", "get", "Trainer_GetById")]
+    [InlineData("/Trainer/{trainerId}", "get", "Trainer_GetById")]
     public async Task Document_PublishesTheSameOperationId_OnBothHosts(
         string path, string verb, string operationId)
     {

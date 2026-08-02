@@ -1,8 +1,7 @@
 ﻿using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using BLRefactoring.Shared.Domain;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
+using BLRefactoring.Shared.Application.Queries;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -36,7 +35,7 @@ public interface ITokenService
 /// </remarks>
 public sealed class TokenService(
     IConfiguration configuration,
-    ITrainerRepository trainerRepository,
+    ITrainerIdentityQuery trainerIdentityQuery,
     TimeProvider timeProvider) : ITokenService
 {
     /// <summary>
@@ -57,7 +56,7 @@ public sealed class TokenService(
         // Define the signing credentials using the security key and HMAC-SHA256 algorithm.
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var trainer = await trainerRepository.GetByUserIdAsync(UserId.Create(user.Id), cancellationToken);
+        var trainer = await trainerIdentityQuery.GetByUserIdAsync(user.Id, cancellationToken);
 
         if (trainer is null)
         {
@@ -70,9 +69,9 @@ public sealed class TokenService(
             new (ClaimTypes.Name, user.UserName!),
             new (ClaimTypes.NameIdentifier, user.Id.ToString()),
             new (ClaimTypes.Email, user.Email!),
-            new ("firstname", trainer.Name.Firstname),
-            new ("lastname", trainer.Name.Lastname),
-            new ("trainer_id", trainer.Id.Value.ToString())
+            new ("firstname", trainer.Firstname),
+            new ("lastname", trainer.Lastname),
+            new ("trainer_id", trainer.TrainerId.ToString())
         };
 
         // Add role claims for each role assigned to the user.

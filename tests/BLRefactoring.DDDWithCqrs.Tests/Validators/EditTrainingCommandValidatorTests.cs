@@ -4,7 +4,7 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Validators;
 
-public class EditTrainingCommandValidatorTests
+public sealed class EditTrainingCommandValidatorTests
 {
     private readonly EditTrainingCommandValidator _sut = new();
 

@@ -24,7 +24,7 @@ namespace BLRefactoring.Shared.Api.Tests.Errors;
 /// handler directly. What the integration suites still prove is that it is registered.
 /// </para>
 /// </remarks>
-public class UnhandledExceptionHandlerTests
+public sealed class UnhandledExceptionHandlerTests
 {
     private static (HttpContext Context, MemoryStream Body) ContextWithRecordedBody()
     {

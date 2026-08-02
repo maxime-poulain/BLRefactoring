@@ -12,7 +12,7 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Behaviors;
 
-public class NoTrackingDuringQueryExecutionBehaviorTests : IDisposable
+public sealed class NoTrackingDuringQueryExecutionBehaviorTests : IDisposable
 {
     private readonly TrainingContext _context;
 

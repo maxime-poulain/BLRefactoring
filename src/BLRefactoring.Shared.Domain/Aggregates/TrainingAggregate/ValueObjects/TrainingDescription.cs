@@ -39,14 +39,14 @@ public sealed class TrainingDescription : ValueObject
         if (string.IsNullOrWhiteSpace(description))
         {
             return Result<TrainingDescription>.Failure(
-                ErrorCode.InvalidDescription,
+                TrainingErrorCodes.InvalidDescription,
                 "Training description cannot be empty.");
         }
 
         if (description.Length > MaxLength)
         {
             return Result<TrainingDescription>.Failure(
-                ErrorCode.InvalidDescription,
+                TrainingErrorCodes.InvalidDescription,
                 $"Training description cannot exceed {MaxLength} characters.");
         }
 

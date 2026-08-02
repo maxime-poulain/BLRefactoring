@@ -9,7 +9,7 @@ using Xunit;
 
 namespace BLRefactoring.DDD.Application.Tests.EventHandlers;
 
-public class DeleteTrainingWhenTrainerDeletedEventHandlerTests
+public sealed class DeleteTrainingWhenTrainerDeletedEventHandlerTests
 {
     private readonly Mock<ITrainingRepository> _trainingRepository = new();
 

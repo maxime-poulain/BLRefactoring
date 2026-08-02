@@ -7,6 +7,7 @@ using BLRefactoring.Shared.Api.Controllers;
 using BLRefactoring.Shared.Api.Http;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.CQS;
+using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -30,7 +31,7 @@ namespace BLRefactoring.DDDWithCqrs.Api.Controller;
 /// here is a published change rather than an internal one.
 /// </para>
 /// </remarks>
-public class TrainingController(
+public sealed class TrainingController(
     ICommandDispatcher commandDispatcher,
     IQueryDispatcher queryDispatcher)
     : ApiControllerBase
@@ -49,21 +50,21 @@ public class TrainingController(
         var result = await commandDispatcher.DispatchAsync(command, cancellationToken);
 
         return result.Match<ActionResult>(
-            () => CreatedAtAction("GetTrainingById", new { id = trainingId }, trainingId),
-            errors => errors.Any(e => e.ErrorCode == ErrorCode.DuplicateTitle)
+            () => CreatedAtAction("GetTrainingById", new { trainingId }, trainingId),
+            errors => errors.Any(e => e.ErrorCode == TrainingErrorCodes.DuplicateTitle)
                 ? this.Problem(StatusCodes.Status409Conflict, errors)
                 : this.Problem(StatusCodes.Status400BadRequest, errors));
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{trainingId:guid}")]
     [ProducesEntityTag]
     [ProducesResponseType(typeof(TrainingResponseHttp), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<TrainingResponseHttp>> GetTrainingByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<TrainingResponseHttp>> GetTrainingByIdAsync(Guid trainingId, CancellationToken cancellationToken = default)
     {
         var training = await queryDispatcher.DispatchAsync(
-            HttpToApplicationMappings.ToGetTrainingByIdQuery(id), cancellationToken);
+            HttpToApplicationMappings.ToGetTrainingByIdQuery(trainingId), cancellationToken);
 
         // Using a monad such Maybe<T,None> could be an alternative
         // to avoid potential null reference exception.
@@ -149,9 +150,9 @@ public class TrainingController(
                 return Ok(training.ToHttp());
             },
             onFailure: errors => ValueTask.FromResult<ActionResult>(
-                errors.Any(e => e.ErrorCode == ErrorCode.NotFound) ? NotFound()
-                : errors.Any(e => e.ErrorCode == ErrorCode.ConcurrencyConflict) ? this.Problem(StatusCodes.Status412PreconditionFailed, errors)
-                : errors.Any(e => e.ErrorCode == ErrorCode.DuplicateTitle) ? this.Problem(StatusCodes.Status409Conflict, errors)
+                errors.Any(e => e.ErrorCode == ErrorCodes.NotFound) ? NotFound()
+                : errors.Any(e => e.ErrorCode == ErrorCodes.ConcurrencyConflict) ? this.Problem(StatusCodes.Status412PreconditionFailed, errors)
+                : errors.Any(e => e.ErrorCode == TrainingErrorCodes.DuplicateTitle) ? this.Problem(StatusCodes.Status409Conflict, errors)
                 : this.Problem(StatusCodes.Status400BadRequest, errors)));
     }
 
@@ -196,6 +197,6 @@ public class TrainingController(
 
         return deletionResult.Match<ActionResult>(
             NoContent,
-            errors => errors.Any(e => e.ErrorCode == ErrorCode.NotFound) ? NotFound() : this.Problem(StatusCodes.Status400BadRequest, errors));
+            errors => errors.Any(e => e.ErrorCode == ErrorCodes.NotFound) ? NotFound() : this.Problem(StatusCodes.Status400BadRequest, errors));
     }
 }

@@ -4,7 +4,7 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Api.Tests.Http;
 
-public class EntityTagTests
+public sealed class EntityTagTests
 {
     [Fact]
     public void From_QuotesTheEncodedVersion()

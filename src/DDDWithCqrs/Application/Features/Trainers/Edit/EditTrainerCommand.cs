@@ -12,7 +12,7 @@ namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Edit;
 /// Replaces the profile of a trainer. The whole profile is replaced, so a
 /// <see langword="null"/> <see cref="Bio"/> clears the current one.
 /// </summary>
-public class EditTrainerCommand : ICommand<Result>
+public sealed class EditTrainerCommand : ICommand<Result>
 {
     /// <summary>
     /// The trainer being edited, resolved from the caller's token by the API layer.
@@ -37,7 +37,7 @@ public class EditTrainerCommand : ICommand<Result>
     public string? Bio { get; init; }
 }
 
-public class EditTrainerCommandHandler(
+public sealed class EditTrainerCommandHandler(
     ITrainerRepository trainerRepository,
     IUnitOfWork unitOfWork)
     : ICommandHandler<EditTrainerCommand, Result>
@@ -49,13 +49,13 @@ public class EditTrainerCommandHandler(
 
         if (trainer is null)
         {
-            return Result.Failure(ErrorCode.NotFound,
+            return Result.Failure(ErrorCodes.NotFound,
                 $"Trainer with id `{request.TrainerId}` could not be found.");
         }
 
         if (!trainer.IsAtVersion(request.ExpectedVersion))
         {
-            return Result.Failure(ErrorCode.ConcurrencyConflict, ConcurrencyMessage);
+            return Result.Failure(ErrorCodes.ConcurrencyConflict, ConcurrencyMessage);
         }
 
         var profileResult = TrainerProfileFactory.Create(
@@ -78,7 +78,7 @@ public class EditTrainerCommandHandler(
                     // A concurrent request slipped past the version pre-check; the
                     // concurrency token is the authoritative guard, so a lost race
                     // is the same business failure as a detected stale version.
-                    return Result.Failure(ErrorCode.ConcurrencyConflict, ConcurrencyMessage);
+                    return Result.Failure(ErrorCodes.ConcurrencyConflict, ConcurrencyMessage);
                 }
 
                 return Result.Success();

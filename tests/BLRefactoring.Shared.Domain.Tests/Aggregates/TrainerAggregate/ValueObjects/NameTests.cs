@@ -6,7 +6,7 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainerAggregate.ValueObjects;
 
-public class NameTests
+public sealed class NameTests
 {
     [Fact]
     public void Create_ValidNames_ReturnsSuccess()
@@ -36,7 +36,7 @@ public class NameTests
         var result = Name.Create("J", "Doe");
 
         // Assert
-        result.ShouldContainError(ErrorCode.Unspecified);
+        result.ShouldContainError(ErrorCodes.Unspecified);
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class NameTests
         var result = Name.Create("John", "D");
 
         // Assert
-        result.ShouldContainError(ErrorCode.Unspecified);
+        result.ShouldContainError(ErrorCodes.Unspecified);
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public class NameTests
         var result = Name.Create(firstname, "Doe");
 
         // Assert
-        result.ShouldContainError(ErrorCode.Unspecified);
+        result.ShouldContainError(ErrorCodes.Unspecified);
     }
 
     [Fact]

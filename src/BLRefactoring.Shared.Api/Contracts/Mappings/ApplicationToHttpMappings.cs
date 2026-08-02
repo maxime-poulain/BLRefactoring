@@ -84,10 +84,6 @@ public static class ApplicationToHttpMappings
         => [.. errors.Select(error => new ErrorResponseHttp
         {
             ErrorMessage = error.ErrorMessage,
-            ErrorCode = new ErrorCodeResponseHttp
-            {
-                Name = error.ErrorCode.Name,
-                Value = error.ErrorCode.Value
-            }
+            ErrorCode = error.ErrorCode.Value
         })];
 }

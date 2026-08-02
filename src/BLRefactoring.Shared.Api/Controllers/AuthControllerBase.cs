@@ -123,7 +123,7 @@ public abstract class AuthControllerBase(
                 return CreatedAtAction(
                     actionName: "GetById",
                     controllerName: "Trainer",
-                    routeValues: new { id = trainerId },
+                    routeValues: new { trainerId },
                     value: trainerId);
             },
             // Trainer creation fails on the domain's own rules, which carry this API's error codes,

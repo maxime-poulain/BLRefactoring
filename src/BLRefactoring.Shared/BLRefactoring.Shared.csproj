@@ -5,13 +5,13 @@
   </PropertyGroup>
 
   <!--
-    Ardalis.SmartEnum backs ErrorCode; Mediator.Abstractions backs IDomainEvent and the CQS
-    marker interfaces. Nothing else: EmailValidation moved to the domain project, next to the
-    Email value object that actually calls it, and neither Microsoft.Extensions.Logging nor
-    DependencyInjection was ever referenced from a single file here.
+    One third-party package, and it is the one ADR 0012 argues about: Mediator.Abstractions backs
+    IDomainEvent and the CQS marker interfaces. Nothing else. EmailValidation moved to the domain
+    project, next to the Email value object that calls it; neither Microsoft.Extensions.Logging nor
+    DependencyInjection was ever referenced from a single file here; and Ardalis.SmartEnum went with
+    the error codes, which now live with the aggregates that raise them. See ADR 0015.
   -->
   <ItemGroup>
-    <PackageReference Include="Ardalis.SmartEnum" />
     <PackageReference Include="Mediator.Abstractions" />
   </ItemGroup>
 

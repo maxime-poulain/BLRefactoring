@@ -11,7 +11,7 @@ namespace BLRefactoring.Shared.Domain.Tests.Helpers;
 /// Creation still returns a <see cref="Result{T}"/> because title uniqueness is a
 /// cross-aggregate rule the aggregate can only settle through the checker.
 /// </summary>
-public class TrainingBuilder
+public sealed class TrainingBuilder
 {
     private string _title = "Valid Training Title";
     private string _description = "A valid training description for testing purposes";
@@ -32,7 +32,7 @@ public class TrainingBuilder
     public Mock<IUniquenessTitleChecker> CreateTitleCheckerMock()
     {
         var mock = new Mock<IUniquenessTitleChecker>();
-        mock.Setup(c => c.TitleForTrainerExists(
+        mock.Setup(c => c.TitleForTrainerExistsAsync(
                 It.IsAny<TrainingTitle>(),
                 It.IsAny<TrainerId>(),
                 It.IsAny<CancellationToken>()))

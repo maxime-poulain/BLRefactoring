@@ -61,4 +61,4 @@ app.Run();
 /// Named so the BFF suite can host this application. Top-level statements compile to an internal
 /// <c>Program</c>, which <c>WebApplicationFactory&lt;T&gt;</c> cannot reach.
 /// </summary>
-public partial class Program { }
+public sealed partial class Program { }

@@ -1,6 +1,6 @@
 namespace BLRefactoring.Shared.Application.Dtos.Trainer;
 
-public class TrainerDto
+public sealed class TrainerDto
 {
     /// <summary>
     /// The version of the aggregate this representation was read at.

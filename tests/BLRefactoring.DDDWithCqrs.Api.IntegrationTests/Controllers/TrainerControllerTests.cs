@@ -19,7 +19,7 @@ namespace BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Controllers;
 /// rather than silently changing the HTTP contract.
 /// </remarks>
 [Collection("Api")]
-public class TrainerControllerTests(ApiFactory factory) : IntegrationTest(factory)
+public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest(factory)
 {
     private static EditTrainerRequestHttp ValidEdition(string firstname = "Edited", string lastname = "Profile") => new()
     {

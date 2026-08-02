@@ -2,7 +2,7 @@ using FluentValidation;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Create;
 
-public class CreateTrainingCommandValidator : AbstractValidator<CreateTrainingCommand>
+public sealed class CreateTrainingCommandValidator : AbstractValidator<CreateTrainingCommand>
 {
     public CreateTrainingCommandValidator()
     {

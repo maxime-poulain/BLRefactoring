@@ -39,14 +39,14 @@ public sealed class AcquiredSkills : ValueObject
         if (string.IsNullOrWhiteSpace(skills))
         {
             return Result<AcquiredSkills>.Failure(
-                ErrorCode.InvalidAcquiredSkills, 
+                TrainingErrorCodes.InvalidAcquiredSkills, 
                 "Acquired skills description cannot be empty.");
         }
 
         if (skills.Length > MaxLength)
         {
             return Result<AcquiredSkills>.Failure(
-                ErrorCode.InvalidAcquiredSkills, 
+                TrainingErrorCodes.InvalidAcquiredSkills, 
                 $"Acquired skills description cannot exceed {MaxLength} characters.");
         }
 

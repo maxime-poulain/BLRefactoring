@@ -1,12 +1,13 @@
 using AwesomeAssertions;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
+using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 using BLRefactoring.Shared.Domain.Tests.Helpers;
 using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainingAggregate.ValueObjects;
 
-public class TrainingTitleTests
+public sealed class TrainingTitleTests
 {
     [Fact]
     public void Create_ValidTitle_ReturnsSuccess()
@@ -35,7 +36,7 @@ public class TrainingTitleTests
         var result = TrainingTitle.Create(null!);
 
         // Assert
-        result.ShouldContainError(ErrorCode.InvalidTitle);
+        result.ShouldContainError(TrainingErrorCodes.InvalidTitle);
     }
 
     [Fact]
@@ -45,7 +46,7 @@ public class TrainingTitleTests
         var result = TrainingTitle.Create(string.Empty);
 
         // Assert
-        result.ShouldContainError(ErrorCode.InvalidTitle);
+        result.ShouldContainError(TrainingErrorCodes.InvalidTitle);
     }
 
     [Fact]
@@ -55,7 +56,7 @@ public class TrainingTitleTests
         var result = TrainingTitle.Create("Abcd");
 
         // Assert
-        result.ShouldContainError(ErrorCode.InvalidTitle);
+        result.ShouldContainError(TrainingErrorCodes.InvalidTitle);
     }
 
     [Fact]
@@ -91,7 +92,7 @@ public class TrainingTitleTests
         var result = TrainingTitle.Create(title);
 
         // Assert
-        result.ShouldContainError(ErrorCode.InvalidTitle);
+        result.ShouldContainError(TrainingErrorCodes.InvalidTitle);
     }
 
     [Fact]

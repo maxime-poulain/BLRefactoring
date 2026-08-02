@@ -1,6 +1,7 @@
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
+using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
 
 namespace BLRefactoring.Shared.Application.Factories;
 
@@ -50,7 +51,7 @@ public static class TrainingDetailsFactory
         {
             if (!Topic.TryFromName(topicName, out var topic))
             {
-                errors.Add(new Error(ErrorCode.InvalidTopic, $"Topic '{topicName}' does not exist."));
+                errors.Add(new Error(TrainingErrorCodes.InvalidTopic, $"Topic '{topicName}' does not exist."));
             }
             else
             {

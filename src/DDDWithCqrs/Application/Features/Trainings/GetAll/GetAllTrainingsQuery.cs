@@ -7,6 +7,6 @@ namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetAll;
 /// <summary>
 /// One page of trainings, newest first.
 /// </summary>
-public class GetAllTrainingsQuery : PagedQuery, IQuery<PagedResult<TrainingDto>>
+public sealed class GetAllTrainingsQuery : PagedQuery, IQuery<PagedResult<TrainingDto>>
 {
 }

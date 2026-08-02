@@ -22,12 +22,12 @@ public sealed class Name : ValueObject
         var errors = new ErrorCollection();
         if (firstname is not { Length: >= 2 and <= 50 })
         {
-            errors.Add(ErrorCode.Unspecified, "Firstname must be two characters long at least");
+            errors.Add(ErrorCodes.Unspecified, "Firstname must be two characters long at least");
         }
 
         if (lastname is not { Length: >= 2 and <= 50 })
         {
-            errors.Add(ErrorCode.Unspecified, "Lastname must be two characters long at least");
+            errors.Add(ErrorCodes.Unspecified, "Lastname must be two characters long at least");
         }
 
         if (errors.Any())

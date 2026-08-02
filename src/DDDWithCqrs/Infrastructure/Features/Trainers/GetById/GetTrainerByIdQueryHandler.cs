@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BLRefactoring.DDDWithCqrs.Infrastructure.Features.Trainers.GetById;
 
-public class GetTrainerByIdQueryHandler(TrainingContext trainingContext)
+public sealed class GetTrainerByIdQueryHandler(TrainingContext trainingContext)
     : IQueryHandler<GetTrainerByIdQuery, TrainerDto?>
 {
     public async ValueTask<TrainerDto?> Handle(GetTrainerByIdQuery request, CancellationToken cancellationToken)

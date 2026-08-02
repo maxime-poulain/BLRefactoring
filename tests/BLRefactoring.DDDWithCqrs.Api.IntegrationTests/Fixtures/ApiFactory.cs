@@ -20,4 +20,4 @@ public sealed class ApiFactory : ApiFactory<Program>;
 public abstract class IntegrationTest(ApiFactory factory) : IntegrationTest<ApiFactory>(factory);
 
 [CollectionDefinition("Api")]
-public class ApiCollection : ICollectionFixture<ApiFactory>;
+public sealed class ApiCollection : ICollectionFixture<ApiFactory>;

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BLRefactoring.Shared.Infrastructure.Repositories;
 
-public class TrainerRepository(TrainingContext trainingContext) : ITrainerRepository
+public sealed class TrainerRepository(TrainingContext trainingContext) : ITrainerRepository
 {
     public async Task<Trainer?> GetByIdAsync(
         TrainerId id,

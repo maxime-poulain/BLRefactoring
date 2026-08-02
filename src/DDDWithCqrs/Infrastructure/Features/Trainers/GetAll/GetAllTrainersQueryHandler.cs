@@ -9,7 +9,7 @@ using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
 
 namespace BLRefactoring.DDDWithCqrs.Infrastructure.Features.Trainers.GetAll;
 
-public class GetAllTrainersQueryHandler(TrainingContext trainingContext)
+public sealed class GetAllTrainersQueryHandler(TrainingContext trainingContext)
     : IQueryHandler<GetAllTrainersQuery, PagedResult<TrainerDto>>
 {
     public async ValueTask<PagedResult<TrainerDto>> Handle(

@@ -1,6 +1,8 @@
-﻿using BLRefactoring.Shared.Common;
+﻿using BLRefactoring.Shared.Application.Queries;
+using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
+using BLRefactoring.Shared.Infrastructure.Queries;
 using BLRefactoring.Shared.Infrastructure.Repositories;
 using BLRefactoring.Shared.Infrastructure.Services;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
@@ -26,6 +28,11 @@ public static class ServiceCollectionExtensions
             // only reason that was harmless is that both happened to share the DbContext.
             .AddScoped<IUniquenessTitleChecker>(serviceProvider =>
                 (TrainingRepository)serviceProvider.GetRequiredService<ITrainingRepository>())
+            // The read side of two questions the API used to ask a repository: who owns this
+            // training, and which trainer is behind this Identity user. Both answers are a handful
+            // of columns; both used to cost a whole aggregate.
+            .AddScoped<ITrainingOwnerQuery, TrainingOwnerQuery>()
+            .AddScoped<ITrainerIdentityQuery, TrainerIdentityQuery>()
             .AddDbContext<TrainingContext>((serviceProvider, options) =>
             {
                 options.UseSqlServer(configuration.GetConnectionString("TrainingContext"))

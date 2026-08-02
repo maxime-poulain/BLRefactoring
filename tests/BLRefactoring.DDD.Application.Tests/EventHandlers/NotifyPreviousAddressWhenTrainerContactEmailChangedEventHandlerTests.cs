@@ -9,7 +9,7 @@ using Xunit;
 
 namespace BLRefactoring.DDD.Application.Tests.EventHandlers;
 
-public class NotifyPreviousAddressWhenTrainerContactEmailChangedEventHandlerTests
+public sealed class NotifyPreviousAddressWhenTrainerContactEmailChangedEventHandlerTests
 {
     private readonly Mock<IEmailSender> _emailSender = new();
 

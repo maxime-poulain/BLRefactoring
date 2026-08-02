@@ -8,7 +8,7 @@ using Xunit;
 
 namespace BLRefactoring.DDD.Application.Tests.EventHandlers;
 
-public class TrainingSearchIndexEventHandlersTests
+public sealed class TrainingSearchIndexEventHandlersTests
 {
     private readonly Mock<ITrainingSearchIndexer> _searchIndexer = new();
 

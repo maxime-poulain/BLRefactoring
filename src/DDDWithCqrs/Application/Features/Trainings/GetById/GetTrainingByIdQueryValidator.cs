@@ -2,7 +2,7 @@
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetById;
 
-public class GetTrainingByIdQueryValidator : AbstractValidator<GetTrainingByIdQuery>
+public sealed class GetTrainingByIdQueryValidator : AbstractValidator<GetTrainingByIdQuery>
 {
     public GetTrainingByIdQueryValidator()
     {

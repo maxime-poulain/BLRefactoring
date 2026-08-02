@@ -31,7 +31,7 @@ public static class ResultAssertionExtensions
     {
         var errors = result.ShouldBeFailure();
         errors.Should().Contain(e => e.ErrorCode == code,
-            $"Expected errors to contain ErrorCode '{code.Name}'");
+            $"Expected errors to contain ErrorCode '{code}'");
     }
 
     public static T ShouldBeSuccess<T>(this Result<T> result)
@@ -62,6 +62,6 @@ public static class ResultAssertionExtensions
     {
         var errors = result.ShouldBeFailure();
         errors.Should().Contain(e => e.ErrorCode == code,
-            $"Expected errors to contain ErrorCode '{code.Name}'");
+            $"Expected errors to contain ErrorCode '{code}'");
     }
 }

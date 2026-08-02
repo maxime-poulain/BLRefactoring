@@ -11,7 +11,7 @@ namespace BLRefactoring.Shared.Domain.Tests.Specifications;
 /// Unit tests for <see cref="TrainingTitleExistsForTrainerSpecification"/>.
 /// Validates that the specification correctly matches trainings by title and trainer.
 /// </summary>
-public class TrainingTitleExistsForTrainerSpecificationTests
+public sealed class TrainingTitleExistsForTrainerSpecificationTests
 {
     /// <summary>
     /// Verifies that the specification matches a training with the exact title and trainer.

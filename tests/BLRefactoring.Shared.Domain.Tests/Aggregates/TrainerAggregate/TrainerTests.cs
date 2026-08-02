@@ -14,7 +14,7 @@ namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainerAggregate;
 /// the accumulation of several errors at once is covered by the application-layer
 /// factory. What is left to assert here is the aggregate's own behaviour.
 /// </summary>
-public class TrainerTests
+public sealed class TrainerTests
 {
     // --- Create ---
 

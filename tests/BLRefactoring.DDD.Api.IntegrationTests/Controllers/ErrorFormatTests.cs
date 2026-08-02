@@ -9,4 +9,4 @@ namespace BLRefactoring.DDD.Api.IntegrationTests.Controllers;
 /// the same API" something other than a sentence in a README.
 /// </summary>
 [Collection("Api")]
-public class ErrorFormatTests(ApiFactory factory) : ErrorFormatTest<ApiFactory>(factory);
+public sealed class ErrorFormatTests(ApiFactory factory) : ErrorFormatTest<ApiFactory>(factory);

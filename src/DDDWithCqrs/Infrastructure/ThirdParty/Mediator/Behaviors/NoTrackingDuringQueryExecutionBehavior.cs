@@ -8,7 +8,7 @@ namespace BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors
 /// <summary>
 /// Disables EF Core tracking during query execution.
 /// </summary>
-public class NoTrackingDuringQueryExecutionBehavior<TRequest, TResponse>(
+public sealed class NoTrackingDuringQueryExecutionBehavior<TRequest, TResponse>(
     TrainingContext trainingContext) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull, IMessage
 {

@@ -21,7 +21,7 @@ namespace BLRefactoring.DDDWithCqrs.Infrastructure.Features.Trainings.GetByTopic
 /// vocabulary belongs to the domain; a database collation is not entitled to widen it.
 /// </para>
 /// </remarks>
-public class GetTrainingsByTopicQueryHandler(TrainingContext trainingContext)
+public sealed class GetTrainingsByTopicQueryHandler(TrainingContext trainingContext)
     : IQueryHandler<GetTrainingsByTopicQuery, PagedResult<TrainingDto>>
 {
     public async ValueTask<PagedResult<TrainingDto>> Handle(

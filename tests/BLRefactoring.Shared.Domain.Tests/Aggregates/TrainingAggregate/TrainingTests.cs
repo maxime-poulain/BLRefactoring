@@ -16,7 +16,7 @@ namespace BLRefactoring.Shared.Domain.Tests.Aggregates.TrainingAggregate;
 /// aggregate is the one it cannot settle alone — a title must be unique among the
 /// trainings of the same trainer.
 /// </summary>
-public class TrainingTests
+public sealed class TrainingTests
 {
     // --- CreateAsync ---
 
@@ -195,7 +195,7 @@ public class TrainingTests
 
         // Assert
         checker.Verify(
-            c => c.TitleForTrainerExists(
+            c => c.TitleForTrainerExistsAsync(
                 It.IsAny<TrainingTitle>(),
                 It.IsAny<TrainerId>(),
                 It.IsAny<CancellationToken>()),
@@ -218,7 +218,7 @@ public class TrainingTests
 
         // Assert
         checker.Verify(
-            c => c.TitleForTrainerExists(
+            c => c.TitleForTrainerExistsAsync(
                 It.IsAny<TrainingTitle>(),
                 It.IsAny<TrainerId>(),
                 It.IsAny<CancellationToken>()),
@@ -235,7 +235,7 @@ public class TrainingTests
         var originalDescription = training.Description;
 
         var checker = new Mock<IUniquenessTitleChecker>();
-        checker.Setup(c => c.TitleForTrainerExists(
+        checker.Setup(c => c.TitleForTrainerExistsAsync(
                 It.IsAny<TrainingTitle>(),
                 It.IsAny<TrainerId>(),
                 It.IsAny<CancellationToken>()))
@@ -272,7 +272,7 @@ public class TrainingTests
     private static Mock<IUniquenessTitleChecker> AvailableTitleChecker()
     {
         var checker = new Mock<IUniquenessTitleChecker>();
-        checker.Setup(c => c.TitleForTrainerExists(
+        checker.Setup(c => c.TitleForTrainerExistsAsync(
                 It.IsAny<TrainingTitle>(),
                 It.IsAny<TrainerId>(),
                 It.IsAny<CancellationToken>()))

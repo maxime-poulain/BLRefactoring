@@ -8,7 +8,7 @@ using BLRefactoring.Shared.Application.Factories;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Edit;
 
-public class EditTrainingCommand : ICommand<Result>
+public sealed class EditTrainingCommand : ICommand<Result>
 {
     public Guid TrainingId { get; init; }
 
@@ -24,7 +24,7 @@ public class EditTrainingCommand : ICommand<Result>
     public string AcquiredSkills { get; init; } = null!;
 }
 
-public class EditTrainingCommandHandler(
+public sealed class EditTrainingCommandHandler(
     ITrainingRepository trainingRepository,
     IUniquenessTitleChecker titleChecker,
     IUnitOfWork unitOfWork)
@@ -39,13 +39,13 @@ public class EditTrainingCommandHandler(
 
         if (training == null)
         {
-            return Result.Failure(ErrorCode.NotFound,
+            return Result.Failure(ErrorCodes.NotFound,
                 $"Training with id `{request.TrainingId}` not found.");
         }
 
         if (!training.IsAtVersion(request.ExpectedVersion))
         {
-            return Result.Failure(ErrorCode.ConcurrencyConflict, ConcurrencyMessage);
+            return Result.Failure(ErrorCodes.ConcurrencyConflict, ConcurrencyMessage);
         }
 
         var detailsResult = TrainingDetailsFactory.Create(
@@ -75,14 +75,14 @@ public class EditTrainingCommandHandler(
                     // A concurrent request slipped past the uniqueness pre-check;
                     // the unique index is the authoritative guard, so a lost race
                     // is the same business failure as a detected duplicate.
-                    return Result.Failure(ErrorCode.DuplicateTitle,
+                    return Result.Failure(TrainingErrorCodes.DuplicateTitle,
                         "A training with the same title already exists for this trainer.");
                 }
                 catch (ConcurrencyConflictException)
                 {
                     // Same layering for the version: the concurrency token is the
                     // authoritative guard behind the pre-check above.
-                    return Result.Failure(ErrorCode.ConcurrencyConflict, ConcurrencyMessage);
+                    return Result.Failure(ErrorCodes.ConcurrencyConflict, ConcurrencyMessage);
                 }
                 return Result.Success();
             },

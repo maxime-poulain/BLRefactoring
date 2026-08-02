@@ -8,7 +8,7 @@ using Xunit;
 
 namespace BLRefactoring.DDDWithCqrs.Tests.Handlers;
 
-public class DeleteTrainingCommandHandlerTests
+public sealed class DeleteTrainingCommandHandlerTests
 {
     private readonly Mock<ITrainingRepository> _trainingRepository = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
@@ -44,6 +44,6 @@ public class DeleteTrainingCommandHandlerTests
 
         var result = await sut.Handle(new DeleteTrainingCommand(Guid.NewGuid()), CancellationToken.None);
 
-        result.ShouldContainError(ErrorCode.NotFound);
+        result.ShouldContainError(ErrorCodes.NotFound);
     }
 }

@@ -1,4 +1,5 @@
 using BLRefactoring.Shared.Api.Contracts.Errors;
+using BLRefactoring.Shared.Common.Errors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -58,11 +59,7 @@ public static class ConcurrencyControllerExtensions
                 {
                     ErrorMessage =
                         "This request must carry an If-Match header holding the ETag returned when the resource was read.",
-                    ErrorCode = new ErrorCodeResponseHttp
-                    {
-                        Name = Common.Errors.ErrorCode.ConcurrencyConflict.Name,
-                        Value = Common.Errors.ErrorCode.ConcurrencyConflict.Value
-                    }
+                    ErrorCode = ErrorCodes.ConcurrencyConflict.Value
                 }
             });
     }

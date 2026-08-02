@@ -10,7 +10,7 @@ using Xunit;
 
 namespace BLRefactoring.DDD.Application.Tests.Services.TrainerServices;
 
-public class TrainerApplicationServiceTests
+public sealed class TrainerApplicationServiceTests
 {
     private readonly TrainerServiceTestFixture _fixture = new();
 
@@ -162,7 +162,7 @@ public class TrainerApplicationServiceTests
 
         var result = await sut.EditAsync(Guid.NewGuid(), EditionRequest(), []);
 
-        result.ShouldContainError(ErrorCode.NotFound);
+        result.ShouldContainError(ErrorCodes.NotFound);
     }
 
     [Fact]
@@ -195,7 +195,7 @@ public class TrainerApplicationServiceTests
         var result = await sut.EditAsync(
             trainer.Id.Value, EditionRequest(firstname: "Jane"), [1, 2, 3, 4, 5, 6, 7, 8]);
 
-        result.ShouldContainError(ErrorCode.ConcurrencyConflict);
+        result.ShouldContainError(ErrorCodes.ConcurrencyConflict);
         _fixture.UnitOfWork.Verify(
             uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
@@ -219,7 +219,7 @@ public class TrainerApplicationServiceTests
         var result = await sut.EditAsync(
             trainer.Id.Value, EditionRequest(firstname: "Jane"), trainer.RowVersion);
 
-        result.ShouldContainError(ErrorCode.ConcurrencyConflict);
+        result.ShouldContainError(ErrorCodes.ConcurrencyConflict);
     }
 
     private static TrainerEditionRequest EditionRequest(
@@ -263,7 +263,7 @@ public class TrainerApplicationServiceTests
         var result = await sut.GetByIdAsync(Guid.NewGuid());
 
         var errors = result.ShouldBeFailure();
-        errors.Should().Contain(e => e.ErrorCode == ErrorCode.NotFound);
+        errors.Should().Contain(e => e.ErrorCode == ErrorCodes.NotFound);
     }
 
     // -- GetAllAsync --

@@ -4,14 +4,14 @@ using Xunit;
 
 namespace BLRefactoring.Shared.Domain.Tests.Common;
 
-public class EntityTests
+public sealed class EntityTests
 {
-    public class TestEntityId : EntityId<TestEntityId>
+    public sealed class TestEntityId : EntityId<TestEntityId>
     {
         private TestEntityId(Guid value) : base(value) { }
     }
 
-    public class TestEntity(TestEntityId id) : Entity<TestEntityId>(id);
+    public sealed class TestEntity(TestEntityId id) : Entity<TestEntityId>(id);
 
     [Fact]
     public void NewEntity_ExposesTheProvidedId()

@@ -64,7 +64,7 @@ public interface ITrainingApplicationService
 /// Implementation of <see cref="ITrainingApplicationService"/> that orchestrates
 /// training CRUD operations using domain services and repositories.
 /// </summary>
-public class TrainingApplicationService(
+public sealed class TrainingApplicationService(
     ITrainerRepository trainerRepository,
     IUniquenessTitleChecker uniquenessTitleChecker,
     ITrainingRepository trainingRepository,
@@ -80,7 +80,7 @@ public class TrainingApplicationService(
         if (!await trainerRepository.ExistsAsync(trainerId, cancellationToken))
         {
             return Result<TrainingDto>.Failure(
-                ErrorCode.NotFound,
+                ErrorCodes.NotFound,
                 $"Trainer with id `{trainerId.Value}` not found.");
         }
 
@@ -112,7 +112,7 @@ public class TrainingApplicationService(
                 // A concurrent request slipped past the uniqueness pre-check;
                 // the unique index is the authoritative guard, so a lost race
                 // is the same business failure as a detected duplicate.
-                return Result<TrainingDto>.Failure(ErrorCode.DuplicateTitle,
+                return Result<TrainingDto>.Failure(TrainingErrorCodes.DuplicateTitle,
                     "A training with the same title already exists for this trainer.");
             }
             return Result<TrainingDto>.Success(training.ToDto());
@@ -125,7 +125,7 @@ public class TrainingApplicationService(
         var training = await trainingRepository.GetByIdAsync(TrainingId.Create(id), cancellationToken);
 
         return training is null
-            ? Result<TrainingDto>.Failure(ErrorCode.NotFound, $"Training with id `{id}` not found.")
+            ? Result<TrainingDto>.Failure(ErrorCodes.NotFound, $"Training with id `{id}` not found.")
             : Result<TrainingDto>.Success(training.ToDto());
     }
 
@@ -143,13 +143,13 @@ public class TrainingApplicationService(
         if (training is null)
         {
             return Result<TrainingDto>.Failure(
-                ErrorCode.NotFound,
+                ErrorCodes.NotFound,
                 $"Training with id `{trainingId}` not found.");
         }
 
         if (!training.IsAtVersion(expectedVersion))
         {
-            return Result<TrainingDto>.Failure(ErrorCode.ConcurrencyConflict, ConcurrencyMessage);
+            return Result<TrainingDto>.Failure(ErrorCodes.ConcurrencyConflict, ConcurrencyMessage);
         }
 
         var detailsResult = TrainingDetailsFactory.Create(
@@ -179,14 +179,14 @@ public class TrainingApplicationService(
                     // A concurrent request slipped past the uniqueness pre-check;
                     // the unique index is the authoritative guard, so a lost race
                     // is the same business failure as a detected duplicate.
-                    return Result<TrainingDto>.Failure(ErrorCode.DuplicateTitle,
+                    return Result<TrainingDto>.Failure(TrainingErrorCodes.DuplicateTitle,
                         "A training with the same title already exists for this trainer.");
                 }
                 catch (ConcurrencyConflictException)
                 {
                     // Same layering for the version: the concurrency token is the
                     // authoritative guard behind the pre-check above.
-                    return Result<TrainingDto>.Failure(ErrorCode.ConcurrencyConflict, ConcurrencyMessage);
+                    return Result<TrainingDto>.Failure(ErrorCodes.ConcurrencyConflict, ConcurrencyMessage);
                 }
                 return Result<TrainingDto>.Success(training.ToDto());
             },
@@ -227,7 +227,7 @@ public class TrainingApplicationService(
         if (training is null)
         {
             return Result.Failure(
-                ErrorCode.NotFound,
+                ErrorCodes.NotFound,
                 $"Training with id `{trainingId}` not found.");
         }
 

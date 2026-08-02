@@ -2,7 +2,7 @@ using FluentValidation;
 
 namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Delete;
 
-public class DeleteTrainingCommandValidator : AbstractValidator<DeleteTrainingCommand>
+public sealed class DeleteTrainingCommandValidator : AbstractValidator<DeleteTrainingCommand>
 {
     public DeleteTrainingCommandValidator()
     {
