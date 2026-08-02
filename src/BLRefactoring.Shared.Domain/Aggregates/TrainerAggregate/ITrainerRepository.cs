@@ -55,18 +55,6 @@ public interface ITrainerRepository : IRepository<Trainer>
     void Update(Trainer trainer);
 
     /// <summary>
-    /// Gets all the <see cref="Trainer"/> entities from the repository.
-    /// </summary>
-    /// <param name="cancellationToken">
-    /// A <see cref="CancellationToken" /> to observe while waiting for the task to complete.
-    /// </param>
-    /// <returns>
-    /// A <see cref="Task{TResult}"/> of <see cref="List{T}"/> of <see cref="Trainer"/> entities representing
-    /// all the entities in the repository.
-    /// </returns>
-    Task<List<Trainer>> GetAllAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Stages a <see cref="Trainer"/> entity for deletion.
     /// </summary>
     /// <param name="trainer">The <see cref="Trainer"/> entity to delete.</param>

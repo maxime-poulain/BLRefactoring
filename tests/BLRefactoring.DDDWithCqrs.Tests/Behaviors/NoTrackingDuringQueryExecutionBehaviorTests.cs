@@ -1,8 +1,8 @@
 using AwesomeAssertions;
 using BLRefactoring.DDDWithCqrs.Application.Pagination;
-using BLRefactoring.Shared.Application.Dtos.Trainer;
+using BLRefactoring.Shared.Application.Dtos.Training;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetAll;
+using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetMine;
 using BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
@@ -27,15 +27,15 @@ public sealed class NoTrackingDuringQueryExecutionBehaviorTests : IDisposable
     [Fact]
     public async Task Handle_Query_SetsNoTrackingDuringExecution()
     {
-        var behavior = new NoTrackingDuringQueryExecutionBehavior<GetAllTrainersQuery, PagedResult<TrainerDto>>(_context);
-        var query = new GetAllTrainersQuery();
+        var behavior = new NoTrackingDuringQueryExecutionBehavior<GetMyTrainingsQuery, PagedResult<TrainingDto>>(_context);
+        var query = new GetMyTrainingsQuery();
 
         QueryTrackingBehavior? trackingDuringExecution = null;
 
-        MessageHandlerDelegate<GetAllTrainersQuery, PagedResult<TrainerDto>> next = (_, _) =>
+        MessageHandlerDelegate<GetMyTrainingsQuery, PagedResult<TrainingDto>> next = (_, _) =>
         {
             trackingDuringExecution = _context.ChangeTracker.QueryTrackingBehavior;
-            return new ValueTask<PagedResult<TrainerDto>>(new PagedResult<TrainerDto>([], Page: 1, PageSize: 20, TotalCount: 0));
+            return new ValueTask<PagedResult<TrainingDto>>(new PagedResult<TrainingDto>([], Page: 1, PageSize: 20, TotalCount: 0));
         };
 
         await behavior.Handle(query, next, CancellationToken.None);
@@ -48,11 +48,11 @@ public sealed class NoTrackingDuringQueryExecutionBehaviorTests : IDisposable
     {
         _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
 
-        var behavior = new NoTrackingDuringQueryExecutionBehavior<GetAllTrainersQuery, PagedResult<TrainerDto>>(_context);
-        var query = new GetAllTrainersQuery();
+        var behavior = new NoTrackingDuringQueryExecutionBehavior<GetMyTrainingsQuery, PagedResult<TrainingDto>>(_context);
+        var query = new GetMyTrainingsQuery();
 
-        MessageHandlerDelegate<GetAllTrainersQuery, PagedResult<TrainerDto>> next =
-            (_, _) => new ValueTask<PagedResult<TrainerDto>>(new PagedResult<TrainerDto>([], Page: 1, PageSize: 20, TotalCount: 0));
+        MessageHandlerDelegate<GetMyTrainingsQuery, PagedResult<TrainingDto>> next =
+            (_, _) => new ValueTask<PagedResult<TrainingDto>>(new PagedResult<TrainingDto>([], Page: 1, PageSize: 20, TotalCount: 0));
 
         await behavior.Handle(query, next, CancellationToken.None);
 

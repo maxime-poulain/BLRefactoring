@@ -2,8 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using BLRefactoring.DDDWithCqrs.Api.IntegrationTests.Fixtures;
-using BLRefactoring.DDDWithCqrs.Api.Contracts;
-using BLRefactoring.Shared.Api.Contracts.Trainers;
 using BLRefactoring.Shared.Api.Contracts.Trainings;
 using Xunit;
 
@@ -136,64 +134,6 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         var response = await client.GetAsync($"/Training/{Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
-    public async Task GetAll_Returns200()
-    {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        await CreateTrainingAsync(client);
-
-        var response = await client.GetAsync("/Training/all");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var trainings = (await response.Content.ReadFromJsonAsync<PagedResponseHttp<TrainingResponseHttp>>())!.Items;
-        trainings.Should().ContainSingle();
-    }
-
-    [Fact]
-    public async Task GetByTrainerId_Returns200()
-    {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        await CreateTrainingAsync(client);
-        var me = (await client.GetFromJsonAsync<TrainerResponseHttp>("/Trainer/me"))!;
-
-        var response = await client.GetAsync($"/Training/by-trainer/{me.Id}");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var trainings = (await response.Content.ReadFromJsonAsync<PagedResponseHttp<TrainingResponseHttp>>())!.Items;
-        trainings.Should().ContainSingle();
-    }
-
-    [Fact]
-    public async Task GetByTopic_Returns200()
-    {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        await CreateTrainingAsync(client);
-
-        var response = await client.GetAsync("/Training/by-topic/Programming");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var trainings = (await response.Content.ReadFromJsonAsync<PagedResponseHttp<TrainingResponseHttp>>())!.Items;
-        trainings.Should().ContainSingle();
-    }
-
-    [Fact]
-    public async Task GetByTopic_WrongCase_MatchesNothing()
-    {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        await CreateTrainingAsync(client);
-
-        var response = await client.GetAsync("/Training/by-topic/programming");
-
-        // This is the assertion that was missing while the two hosts disagreed. The handler sent
-        // the caller's string straight to SQL, where the default collation is case-insensitive, so
-        // this request returned the training here and nothing on the layered host — which resolves
-        // the name against the domain's closed set, ordinally. It resolves it here too now.
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var page = (await response.Content.ReadFromJsonAsync<PagedResponseHttp<TrainingResponseHttp>>())!;
-        page.Items.Should().BeEmpty();
-        page.TotalCount.Should().Be(0);
     }
 
     // -- Edit --

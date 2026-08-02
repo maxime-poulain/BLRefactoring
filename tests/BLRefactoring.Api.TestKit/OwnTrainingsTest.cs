@@ -6,13 +6,20 @@ using Xunit;
 namespace BLRefactoring.Api.TestKit;
 
 /// <summary>
-/// <c>GET /Training/me</c> answers with the caller's trainings and with nobody else's.
+/// The two reads that survive answer with the caller's trainings and with nobody else's.
 /// </summary>
 /// <remarks>
-/// Run against both hosts, because the endpoint exists on both and the two reach it by different
+/// Run against both hosts, because the endpoints exist on both and the two reach them by different
 /// routes: the layered host asks its application service for the trainer the token names, while the
 /// CQRS host dispatches a query whose <c>Where</c> is composed into SQL. Two implementations of one
 /// promise, and only a test crossing both can say they keep it.
+/// <para>
+/// Two endpoints are covered here, because the API's promise is about the pair rather than either.
+/// <c>GET /Training/my-trainings</c> takes no identifier, so isolation is structural; but the list
+/// hands out identifiers, and <c>GET /Training/{id}</c> takes one, so scoping the list while leaving
+/// the read by identifier open would hide nothing. The four catalogue reads that used to sit beside
+/// them are gone; these two are what remain, and both are asserted.
+/// </para>
 /// <para>
 /// The assertions are made on the raw body rather than on a deserialised type, and deliberately.
 /// The two hosts answer different shapes — a bare array here, a page envelope there — so a shared
@@ -47,7 +54,7 @@ public abstract class OwnTrainingsTest<TFactory>(TFactory factory) : Integration
         (await theirs.PostAsJsonAsync("/Training", TrainingRequests.Valid(Theirs)))
             .EnsureSuccessStatusCode();
 
-        var response = await mine.GetAsync("/Training/me");
+        var response = await mine.GetAsync("/Training/my-trainings");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var body = await response.Content.ReadAsStringAsync();
@@ -69,8 +76,9 @@ public abstract class OwnTrainingsTest<TFactory>(TFactory factory) : Integration
 
         // The endpoint binds nothing, so a query string naming somebody else is not a parameter —
         // it is noise. The answer must be the same as without it: this caller's trainings, which
-        // here is none. The point is that there is no input to tamper with, unlike by-trainer/{id}.
-        var response = await mine.GetAsync("/Training/me?trainerId=" + Guid.NewGuid());
+        // here is none. The point is that there is no input to tamper with; the endpoint that did
+        // take a trainer identifier is the one this replaced.
+        var response = await mine.GetAsync("/Training/my-trainings?trainerId=" + Guid.NewGuid());
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         (await response.Content.ReadAsStringAsync()).Should().NotContain(Theirs);
@@ -84,8 +92,45 @@ public abstract class OwnTrainingsTest<TFactory>(TFactory factory) : Integration
         // ApiControllerBase carries [Authorize] for every action, so this is refused before the
         // action runs. Asserted rather than assumed: the endpoint returns data scoped by a token,
         // and an unauthenticated call has no scope to be given.
-        var response = await anonymous.GetAsync("/Training/me");
+        var response = await anonymous.GetAsync("/Training/my-trainings");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task TrainingById_BelongingToAnotherTrainer_IsNotFound()
+    {
+        var mine = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        var theirs = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+
+        var creation = await theirs.PostAsJsonAsync("/Training", TrainingRequests.Valid(Theirs));
+        creation.EnsureSuccessStatusCode();
+        var trainingId = await creation.Content.ReadFromJsonAsync<Guid>();
+
+        // 404 rather than 403, and the distinction is the point: a 403 would confirm that this
+        // identifier names a real training, which is itself the thing being withheld. The caller
+        // cannot tell an identifier that belongs to somebody else from one that belongs to nobody.
+        var response = await mine.GetAsync($"/Training/{trainingId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        (await response.Content.ReadAsStringAsync()).Should().NotContain(Theirs);
+    }
+
+    [Fact]
+    public async Task TrainingById_BelongingToTheCaller_IsServed()
+    {
+        var mine = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+
+        var creation = await mine.PostAsJsonAsync("/Training", TrainingRequests.Valid(Mine));
+        creation.EnsureSuccessStatusCode();
+        var trainingId = await creation.Content.ReadFromJsonAsync<Guid>();
+
+        // The other half of the guard, and the half that breaks if the ownership clause is written
+        // wrong: a filter that matches nothing turns every read into a 404, the edit form never
+        // loads, and the suite above would not notice because it only ever asserts absence.
+        var response = await mine.GetAsync($"/Training/{trainingId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await response.Content.ReadAsStringAsync()).Should().Contain(Mine);
     }
 }

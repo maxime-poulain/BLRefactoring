@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetAll;
+using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetMine;
 using BLRefactoring.DDDWithCqrs.Application.Pagination;
 using Xunit;
 
@@ -50,7 +50,7 @@ public sealed class PaginationTests
     {
         // The cap is the whole point: without it, a single request restores the unbounded read
         // this work removed. A query built in code is capped just like one built from a request.
-        var query = new GetAllTrainersQuery { PageSize = requested };
+        var query = new GetMyTrainingsQuery { PageSize = requested };
 
         query.PageSize.Should().Be(expected);
     }
@@ -60,13 +60,13 @@ public sealed class PaginationTests
     [InlineData(-3, 1)]
     [InlineData(7, 7)]
     public void Page_NeverGoesBelowOne(int requested, int expected)
-        => new GetAllTrainersQuery { Page = requested }.Page.Should().Be(expected);
+        => new GetMyTrainingsQuery { Page = requested }.Page.Should().Be(expected);
 
     [Fact]
     public void ByDefault_AQueryIsPaged()
     {
         // A list query that forgot to be paged would be the one unbounded read left.
-        var query = new GetAllTrainersQuery();
+        var query = new GetMyTrainingsQuery();
 
         query.Page.Should().Be(1);
         query.PageSize.Should().Be(PagedQuery.DefaultPageSize);

@@ -263,34 +263,4 @@ public sealed class TrainerApplicationServiceTests
         var errors = result.ShouldBeFailure();
         errors.Should().Contain(e => e.ErrorCode == ErrorCodes.NotFound);
     }
-
-    // -- GetAllAsync --
-
-    [Fact]
-    public async Task GetAllAsync_ReturnsAllTrainerDtos()
-    {
-        var t1 = new TrainerBuilder().WithContactEmail("a@a.com").Build();
-        var t2 = new TrainerBuilder().WithContactEmail("b@b.com").Build();
-        _fixture.TrainerRepository
-            .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync([t1, t2]);
-        var sut = _fixture.CreateSut();
-
-        var result = await sut.GetAllAsync();
-
-        result.Should().HaveCount(2);
-    }
-
-    [Fact]
-    public async Task GetAllAsync_EmptyRepository_ReturnsEmptyArray()
-    {
-        _fixture.TrainerRepository
-            .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync([]);
-        var sut = _fixture.CreateSut();
-
-        var result = await sut.GetAllAsync();
-
-        result.Should().BeEmpty();
-    }
 }

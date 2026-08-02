@@ -25,8 +25,6 @@ public interface ITrainingRepository : IRepository<Training>
     /// </summary>
     void Update(Training training);
 
-    Task<List<Training>> GetAllAsync(CancellationToken cancellationToken = default);
-
     /// <summary>
     /// Stages a <see cref="Training"/> entity for deletion.
     /// </summary>

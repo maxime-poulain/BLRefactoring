@@ -1,6 +1,6 @@
 # 0011 — Answer a creation with 201 and the address of what was created
 
-- **Status:** Accepted
+- **Status:** Accepted, amended (see [Amendment](#amendment--the-address-changed-because-the-old-one-stopped-existing))
 - **Date:** 2026-08-01
 
 ## Context
@@ -51,10 +51,11 @@ the document described responses that could not happen, and omitted ones that al
   find it — and this is the shape `POST /Training` already publishes.
 - **`AuthControllerBase` asks each stack for the identifier** rather than deriving it, because the
   two know it by different routes. `CreateTrainerAsync` returns `Result<Guid>` instead of `Result`.
-- **The action is named by string across assemblies** — `CreatedAtAction("GetById", "Trainer", …)`
-  from a base class in `Shared.Api`, resolved against whichever host is running. That is a real
-  weakness, so an integration test on each host follows the published `Location` and asserts it
-  serves the trainer. A rename now fails the suite instead of the caller.
+- **The action is named by string across assemblies** — `CreatedAtAction("GetCurrent", "Trainer", …)`
+  from a base class in `Shared.Api`, resolved against whichever host is running. (It was `"GetById"`
+  when this was written; see the amendment at the end.) That is a real weakness, so an integration
+  test on each host follows the published `Location` and asserts it serves the trainer. A rename now
+  fails the suite instead of the caller.
 
 **A taken username or email is `409`, not `400`.** The distinction this API already draws for a
 duplicate training title: a `400` says the request is malformed, a `409` says the request is fine
@@ -143,3 +144,25 @@ also means taking over `JwtBearerEvents.OnChallenge`, which is where `WWW-Authen
 — the header a 401 is required to carry — and rewriting it by hand for the sake of a body nobody
 reads. An empty 401 is what the framework, the specification and every other API do; the defect was
 never the empty body, it was the document claiming otherwise.
+
+## Amendment — the address changed because the old one stopped existing
+
+`Location` on `POST /Auth/register` is now `/Trainer/me`. That is the alternative this record
+rejected above, and the rejection was right on its own terms: `me` is an address whose meaning
+depends on who asks, so two callers get the same string for two different trainers.
+
+What changed is not the argument but the surface. `GET /Trainer/{id}` served any trainer's name,
+contact email and bio to any authenticated caller, enumerable by identifier, and nothing in the
+application read it — the front end reads the signed-in trainer's profile and nothing else. It was
+withdrawn along with four other reads that returned resources the caller does not own. The address
+this record named no longer exists, and a `Location` header pointing at a route that answers `404`
+is worse than one whose meaning is relative.
+
+The decision itself survives intact: registration still answers `201`, still with the new trainer's
+identifier in the body, and still with the address of what it created. Only the address is
+different, and it is now the only address that resource has. The header remains the thing the
+decision was about — that a creation says what it created and where — and the identifier in the
+body is what a caller distinguishing two trainers uses, exactly as before.
+
+`AuthControllerTests` continues to assert that `Location` serves the created trainer; it follows
+the header rather than hard-coding the route, so it asserts the same property at the new address.

@@ -1,8 +1,9 @@
 using AwesomeAssertions;
 using BLRefactoring.DDDWithCqrs.Application.Pagination;
 using BLRefactoring.Shared.Application.Dtos.Trainer;
+using BLRefactoring.Shared.Application.Dtos.Training;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetAll;
+using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetMine;
 using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetById;
 using BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors;
 using BLRefactoring.Shared.Common.Errors;
@@ -191,14 +192,14 @@ public sealed class ValidationPipelineBehaviorTests
     [Fact]
     public async Task Handle_QueryWithoutValidator_DoesNotThrow()
     {
-        var behavior = new ValidationPipelineBehavior<GetAllTrainersQuery, PagedResult<TrainerDto>>(
-            Enumerable.Empty<IValidator<GetAllTrainersQuery>>());
+        var behavior = new ValidationPipelineBehavior<GetMyTrainingsQuery, PagedResult<TrainingDto>>(
+            Enumerable.Empty<IValidator<GetMyTrainingsQuery>>());
 
-        var query = new GetAllTrainersQuery();
-        var expected = new PagedResult<TrainerDto>([], Page: 1, PageSize: 20, TotalCount: 0);
+        var query = new GetMyTrainingsQuery();
+        var expected = new PagedResult<TrainingDto>([], Page: 1, PageSize: 20, TotalCount: 0);
 
-        MessageHandlerDelegate<GetAllTrainersQuery, PagedResult<TrainerDto>> next =
-            (_, _) => new ValueTask<PagedResult<TrainerDto>>(expected);
+        MessageHandlerDelegate<GetMyTrainingsQuery, PagedResult<TrainingDto>> next =
+            (_, _) => new ValueTask<PagedResult<TrainingDto>>(expected);
 
         var result = await behavior.Handle(query, next, CancellationToken.None);
 

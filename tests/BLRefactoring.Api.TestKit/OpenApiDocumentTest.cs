@@ -221,7 +221,7 @@ public abstract class OpenApiDocumentTest<TFactory>(TFactory factory) : Integrat
     [InlineData("/Training/{trainingId}", "delete", "Training_DeleteTraining")]
     [InlineData("/Trainer/me", "get", "Trainer_GetCurrent")]
     [InlineData("/Trainer/me", "put", "Trainer_EditCurrent")]
-    [InlineData("/Trainer/{trainerId}", "get", "Trainer_GetById")]
+    [InlineData("/Training/my-trainings", "get", "Training_GetMine")]
     public async Task Document_PublishesTheSameOperationId_OnBothHosts(
         string path, string verb, string operationId)
     {

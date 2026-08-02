@@ -66,11 +66,6 @@ public sealed class TrainingRepository(TrainingContext trainingContext) : ITrain
         return await GetAsync(spec, cancellationToken);
     }
 
-    public Task<List<Training>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        return trainingContext.Trainings.ToListAsync(cancellationToken);
-    }
-
     /// <inheritdoc />
     public async Task<List<Training>> GetAsync(ISpecification<Training> spec, CancellationToken cancellationToken = default)
     {

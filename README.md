@@ -335,16 +335,12 @@ in the infrastructure layer**, next to the persistence they project from.
 |---|---|---|---|
 | Create trainer | `TrainerApplicationService.CreateAsync` | `CreateTrainerCommand` | Application |
 | Edit own profile | `TrainerApplicationService.EditAsync` | `EditTrainerCommand` | Application |
-| Get trainer by id | `TrainerApplicationService.GetByIdAsync` | `GetTrainerByIdQuery` | Infrastructure |
-| Get all trainers | `TrainerApplicationService.GetAllAsync` | `GetAllTrainersQuery` | Infrastructure |
+| Read own profile | `TrainerApplicationService.GetByIdAsync` | `GetTrainerByIdQuery` | Infrastructure |
 | Create training | `TrainingApplicationService.CreateAsync` | `CreateTrainingCommand` | Application |
 | Edit training | `TrainingApplicationService.EditAsync` | `EditTrainingCommand` | Application |
 | Delete training | `TrainingApplicationService.DeleteAsync` | `DeleteTrainingCommand` | Application |
-| Get training by id | `TrainingApplicationService.GetByIdAsync` | `GetTrainingByIdQuery` | Infrastructure |
-| Get all trainings | `TrainingApplicationService.GetAllAsync` | `GetAllTrainingsQuery` | Infrastructure |
-| Get trainings by trainer | `TrainingApplicationService.GetByTrainerIdAsync` | `GetTrainingsByTrainerIdQuery` | Infrastructure |
-| Get own trainings | `TrainingApplicationService.GetMineAsync` | `GetMyTrainingsQuery` | Infrastructure |
-| Get trainings by topic | `TrainingApplicationService.GetByTopicAsync` | `GetTrainingsByTopicQuery` | Infrastructure |
+| Read one own training | `TrainingApplicationService.GetByIdAsync` | `GetTrainingByIdQuery` | Infrastructure |
+| List own trainings | `TrainingApplicationService.GetMineAsync` | `GetMyTrainingsQuery` | Infrastructure |
 
 The read paths differ by design: the layered stack loads aggregates through repositories and maps
 them, while the CQRS stack projects straight from `TrainingContext` into DTOs with
@@ -545,8 +541,8 @@ the application turn a lost uniqueness race into an ordinary business failure wi
 on the provider.
 
 Query criteria that belong to the domain are expressed as specifications — such as
-`TrainingsByTopicSpecification`, which takes a `Topic` rather than a name — and translated to
-`IQueryable` by `SpecificationEvaluator`.
+`TrainingsByTrainerSpecification`, which takes a `TrainerId` rather than a `Guid` — and translated
+to `IQueryable` by `SpecificationEvaluator`.
 
 ---
 
@@ -641,25 +637,33 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 
 | Verb | Route | Notes |
 |---|---|---|
-| `POST` | `/Auth/register` | `201` with the new trainer's identifier and `Location: /Trainer/{id}`; `409` when the username or email is taken, `400` otherwise, both keyed by field |
+| `POST` | `/Auth/register` | `201` with the new trainer's identifier and `Location: /Trainer/me`; `409` when the username or email is taken, `400` otherwise, both keyed by field |
 | `POST` | `/Auth/login` | `200` with a JWT, or `401` — the same answer for an unknown username, a wrong password and a locked-out account |
 | `GET` | `/Trainer/me` | The caller's own profile, with an `ETag`. `200`, `400`, `404` |
 | `PUT` | `/Trainer/me` | Requires `If-Match`. `200`, `400`, `404`, `412`, `428` |
-| `GET` | `/Trainer/{id}` | `200` with an `ETag`, `400` on a malformed identifier, or `404` |
-| `GET` | `/Trainer/all`, `/Training/all`, `/Training/by-trainer/{id}`, `/Training/by-topic/{topic}` | On the CQRS host: one page, `?page=` and `?pageSize=` (default 20, maximum 100), answered as `{ items, page, pageSize, totalCount, totalPages, hasNextPage, hasPreviousPage }`. On the layered host: the plain array |
-| `GET` | `/Trainer/all` | `200` |
 | `POST` | `/Training` | `201` with the new identifier, `409` on a duplicate title, `400` otherwise |
-| `GET` | `/Training/{id}` | `200` with an `ETag`, `400` on a malformed identifier, or `404` |
-| `GET` | `/Training/all` | `200` |
-| `GET` | `/Training/by-trainer/{trainerId}` | `200` |
-| `GET` | `/Training/by-topic/{topic}` | `200` |
+| `GET` | `/Training/my-trainings` | The caller's own trainings. Takes no identifier. On the CQRS host: one page, `?page=` and `?pageSize=` (default 20, maximum 100), answered as `{ items, page, pageSize, totalCount, totalPages, hasNextPage, hasPreviousPage }`. On the layered host: the plain array |
+| `GET` | `/Training/{id}` | Owner only. `200` with an `ETag`, `400` on a malformed identifier, or `404` — including when the training exists but belongs to somebody else |
 | `PUT` | `/Training/{trainingId}` | Owner only. Requires `If-Match`. `200` with the updated training and its new `ETag`, `400`, `403`, `404`, `409`, `412`, `428` |
 | `DELETE` | `/Training/{trainingId}` | Owner only. `204`, `400`, `403`, `404` |
+
+Nine endpoints, and not one of them serves a resource the caller does not own. There used to be
+five more — `/Trainer/all`, `/Trainer/{id}`, `/Training/all`, `/Training/by-trainer/{id}` and
+`/Training/by-topic/{topic}` — and between them they handed out every trainer's name, contact email
+and bio to any authenticated caller, enumerable. Nothing in the application asked for them: the
+front end reads the signed-in trainer's profile and that trainer's own trainings. They were removed
+rather than restricted, because a catalogue read scoped to one caller is not a catalogue read.
+
+What could not be removed was locked instead. `GET /Training/{id}` is what the edit form loads and
+what a creation's `Location` points at, so it stays — with the owner written into the query rather
+than checked after it. A training belonging to somebody else answers `404`, not `403`: a `403`
+would confirm that the identifier names something real, which is itself what is being withheld.
 
 Trainers are created only through registration — there is no `POST /Trainer` — and no endpoint
 deletes one. Removing a trainer is an administrative decision, and no role is entitled to it yet,
 so nothing is exposed rather than something exposed to the wrong caller. The two endpoints acting
-on a trainer's own profile are addressed as `me` rather than by identifier.
+on a trainer's own profile are addressed as `me` rather than by identifier, which is also where
+registration's `Location` now points: the address of what was created, from its creator's side.
 
 ---
 

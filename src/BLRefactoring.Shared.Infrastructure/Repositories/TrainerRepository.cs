@@ -43,14 +43,6 @@ public sealed class TrainerRepository(TrainingContext trainingContext) : ITraine
         trainingContext.Trainers.Update(trainer);
     }
 
-    public Task<List<Trainer>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        // No Include: owned types are part of the entity and come back with it. Naming two of
-        // the three here — Name and ContactEmail, but not Bio — read like a deliberate partial
-        // load, which it never was.
-        return trainingContext.Trainers.ToListAsync(cancellationToken);
-    }
-
     public void Delete(Trainer trainer)
     {
         trainingContext.Trainers.Remove(trainer);
