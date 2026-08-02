@@ -21,10 +21,6 @@ on:
     # the schedule after 60 days without repository activity.
     - cron: '17 3 * * *'
 
-# The workflow only reads the repository; GITHUB_TOKEN gets nothing more.
-permissions:
-  contents: read
-
 # One run at a time per ref. Grouping by ref rather than globally now that pushes
 # trigger this: two branches have no reason to wait for each other, while two pushes to
 # the same branch do — the second supersedes the first.
@@ -41,6 +37,11 @@ jobs:
     # A container that never becomes healthy would otherwise hang until the six-hour
     # platform limit.
     timeout-minutes: 30
+    # This job only reads the repository; GITHUB_TOKEN gets nothing more. Declared here rather than
+    # for the whole workflow so that a job added later starts from nothing and has to ask, instead
+    # of inheriting a grant written for somebody else.
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@v5

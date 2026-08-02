@@ -829,6 +829,7 @@ session, and signing out revokes access rather than merely forgetting it.
 |---|---|---|
 | `ci.yml` | Push on `master` and on `claude/**`, pull request on `master` | Regenerate and commit the HTTP client, build in Release, unit tests |
 | `integration-tests.yml` | Push on `claude/**`, manual dispatch, nightly at 03:17 UTC | The integration tests, publishing a TRX report as an artifact |
+| `sonar.yml` | Push on `master`, pull request on `master` | Static analysis and coverage, reported to SonarQube Cloud |
 
 The whole solution is built by both — including the integration test project, so a project that
 no longer compiles fails the pipeline even when its tests are not run. `integration-tests.yml`
@@ -845,6 +846,71 @@ The integration suite stays off the pull-request path — it starts a real SQL S
 Testcontainers — with one exception: pushes to an agent branch run it. The GitHub App an agent acts
 through has no `actions: write` and cannot dispatch a workflow, so without that trigger its work
 reached review having never met a database.
+
+### Static analysis
+
+`sonar.yml` reports to [SonarQube Cloud](https://sonarcloud.io): coverage, security hotspots,
+duplication and cognitive complexity — the things a rule cannot state as yes or no, and which the
+architecture suite therefore cannot check. It runs in a workflow of its own so that `ci.yml` stays
+fast and keeps its `contents: write` to itself. It runs the whole test suite, integration tests
+included, because a coverage figure produced without them would be false: this repository's
+assertions mostly cross the HTTP boundary. See
+[ADR 0017](docs/adr/0017-measure-what-the-rules-cannot-with-sonarqube-cloud.md).
+
+**Until the repository is connected, the analysis is skipped rather than failed.** A guard job reads
+`SONAR_TOKEN`; when it is absent the analysis job never starts, so a repository without the secret
+shows a neutral skip instead of a red check about a missing secret.
+
+#### One-time setup
+
+Everything below is done by hand, once, outside the repository.
+
+1. Sign in to [sonarcloud.io](https://sonarcloud.io) with GitHub and install the **SonarQube Cloud**
+   GitHub App on this repository. The app is what decorates a pull request — one summary comment,
+   edited in place rather than repeated per run, and a `SonarCloud Code Analysis` check. The
+   workflow alone cannot post either.
+2. Import the repository as a project. Note the two keys it shows — they must match what
+   `sonar.yml` passes on `begin`:
+
+   | Setting in `sonar.yml` | Value | Where to read it |
+   |---|---|---|
+   | Organization (`/o:`) | `9c1eb57d24115cbbd103219f` | the organization URL: `sonarcloud.io/organizations/<this>/projects` |
+   | Project key (`/k:`) | `maxime-poulain_BLRefactoring` | the project URL: `sonarcloud.io/project/overview?id=<this>` |
+
+   Neither is a secret: a key names something, it does not authorise anything. Both therefore sit in
+   the workflow, in the open, where a reader can see what is analysed and where it is reported. Only
+   the token is a secret. Note that the organization key is a generated string while the project key
+   is the `owner_repo` form — the second is what a GitHub import produces, so the project is bound
+   to this repository and pull-request decoration works.
+
+3. In the project's **Administration → Analysis Method**, turn **Automatic Analysis off**. It and
+   the CI-based analysis are mutually exclusive, and leaving it on makes the workflow fail with a
+   message that does not say so.
+   A project created by hand rather than imported carries no binding to the repository, and without
+   one the analysis still runs and reports — it simply decorates no pull request, which reads as the
+   app being broken rather than as an unset field. **Administration → General Settings → DevOps
+   Platform Integration** is where to check.
+4. Generate a token under **My Account → Security** — a *Project Analysis Token*, scoped to this
+   project, rather than a user token whose leak would carry a whole account. Add it under
+   **Settings → Secrets and variables → Actions → New repository secret**, named `SONAR_TOKEN`.
+
+   That is the only thing to configure. `GITHUB_TOKEN` is provided by Actions, and the two keys are
+   in the workflow. Until the secret exists the analysis job is skipped rather than failed.
+
+#### Making the gate block a merge
+
+`sonar.yml` passes `sonar.qualitygate.wait=true`, so the job itself goes red when the gate fails —
+the verdict arrives as a check rather than as a link. To stop a failing pull request being merged,
+add a check to branch protection: **Settings → Branches → Add rule** on `master`, tick **Require
+status checks to pass before merging**, and select **`Analyze`**. The app's own
+`SonarCloud Code Analysis` check carries the same verdict and would do as well; `Analyze` is named
+here because it fails for a broken *analysis* too, not only for a failed gate.
+
+Do that *after* the first analysis of `master` comes back green. The default gate requires 80%
+coverage on new code, and switching the rule on before a baseline exists blocks every pull request
+on a number nobody has seen yet. Note that a pull request touching no product code passes that
+condition at 0.0% — there is nothing to cover, so it does not apply. The figure that matters is the
+one the analysis of `master` produces.
 
 ---
 
