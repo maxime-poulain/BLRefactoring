@@ -1,5 +1,7 @@
 name: CI
 
+# Two triggers, one run. Which one fires depends on where the branch lives, and the job below
+# skips the case where both would.
 on:
   push:
     # Agent branches as well as master, for the same reason the integration suite runs on them:
@@ -8,6 +10,10 @@ on:
     # nobody — including the client regeneration below.
     branches: [master, 'claude/**']
   pull_request:
+    # Kept for one case that `push` cannot reach: a pull request from a fork. A push to somebody
+    # else's clone fires nothing here, so without this a fork's contribution would arrive at review
+    # having been built by nobody — the very problem the `push` trigger above was added to fix, for
+    # the contributors this repository does not own.
     branches: [master]
 
 # This workflow writes to the repository, so two runs on one branch can race: both regenerate, both
@@ -22,6 +28,22 @@ jobs:
     name: Build & Test
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
+    # The whole point of the two triggers above, in one condition: build a pull request only when
+    # its branch is not one this repository already built on push. A branch here fires both events
+    # for the same commit — the runs land in different concurrency groups, so neither cancels the
+    # other, and the same eighty seconds were being spent twice for one answer.
+    #
+    # A fork has no such push run, so it is the case this keeps. Expressed as "the head repository
+    # is not this one" rather than as a fork flag, because that is the fact that decides it: what
+    # matters is whether a push to that branch reaches this repository's Actions.
+    #
+    # The job is skipped rather than the workflow, so the check still appears on the pull request —
+    # as skipped, which GitHub counts as passing for a required check, beside the successful one the
+    # push run posted on the same commit.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name != github.repository
 
     # `contents: write` is for one step: the workflow regenerates the HTTP client and commits it
     # when the API has changed. Nothing else here writes. Declared on the job rather than on the

@@ -836,6 +836,15 @@ no longer compiles fails the pipeline even when its tests are not run. `integrat
 declares `permissions: contents: read`; `ci.yml` needs `contents: write` for one step, and one
 only — the client commit described below.
 
+**One run per commit.** A branch of this repository fires both `push` and `pull_request` for the
+same commit once a pull request is open, and the two land in different concurrency groups, so
+neither cancels the other: the same build was being paid for twice to answer the same question.
+`ci.yml` therefore skips its pull-request run when the head branch belongs to this repository —
+the push run has already built that commit and posted the check. What the `pull_request` trigger is
+kept for is the one case `push` cannot reach: **a fork**, whose pushes fire nothing here. The other
+two workflows never doubled — `sonar.yml` pushes only on `master`, and `integration-tests.yml` has
+no pull-request trigger at all.
+
 **CI writes the HTTP client.** On a push it regenerates the client from the API's own OpenAPI
 document and commits the result, so a controller change carries its client with it. The API is the
 source of truth and consumers are expected to follow — a regenerated client can rename a type and
