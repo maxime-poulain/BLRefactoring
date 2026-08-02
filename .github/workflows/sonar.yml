@@ -1,0 +1,151 @@
+name: Sonar
+
+# A second opinion on the same commit, and deliberately not a step inside ci.yml.
+#
+# ci.yml holds `contents: write` for one step — it commits the regenerated client — and it is the
+# fast, unconditional answer a pull request waits on. Wrapping an analyser around its build would
+# hand that write permission to a third-party tool and add a couple of minutes to the loop it exists
+# to keep short. The cost of a separate workflow is one extra build; the cost of merging them is
+# paid on every push.
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: sonar-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # The `secrets` context is not readable from a job-level `if`, so the check lives in a job of its
+  # own and the analysis depends on its answer. Without this, a repository that has not been
+  # connected to SonarQube Cloud yet shows a red check on every pull request for a missing secret —
+  # a failure that says nothing about the code. Skipped is the honest state, and it is neutral.
+  #
+  # The token is the only thing this workflow cannot carry itself: the organization and the project
+  # are named on `begin` below, in the open, because a key identifies something rather than
+  # authorising anything.
+  guard:
+    name: Configured?
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Nothing at all: this job checks out no code and calls no API, it reads one secret and answers
+    # yes or no. Declared per job rather than once for the workflow so that each says what it needs
+    # — a permission granted at workflow level is granted to every job added later, including the
+    # ones nobody thought about when writing this line.
+    permissions: {}
+    outputs:
+      configured: ${{ steps.token.outputs.configured }}
+    steps:
+      - id: token
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ -n "$SONAR_TOKEN" ]; then
+            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'configured=false' >> "$GITHUB_OUTPUT"
+            echo "::notice::SONAR_TOKEN is not set, so the analysis is skipped." \
+                 "See the Sonar section of README.md for the one-time setup."
+          fi
+
+  analyze:
+    name: Analyze
+    needs: guard
+    if: needs.guard.outputs.configured == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Read, and only read. The analysis clones the tree and reports to SonarQube Cloud, which posts
+    # its check through the Sonar GitHub App rather than through this token.
+    permissions:
+      contents: read
+
+    steps:
+      # Full history, not the default shallow clone. The analyser attributes each line to a commit
+      # to decide what "new code" means, and a shallow clone leaves it blaming everything on one
+      # commit — which silently turns "coverage on new code" into a figure about the whole file.
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      # The scanner is a .NET tool that shells out to a Java one; without a JDK it fails at the end
+      # step, after the build, having wasted the whole run.
+      - name: Setup JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Shares its key with ci.yml, which usually runs first on the same commit and fills it.
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '.config/dotnet-tools.json', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Cache Sonar analysis files
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: sonar-${{ runner.os }}
+          restore-keys: sonar-${{ runner.os }}
+
+      # For the same reason integration-tests.yml runs it: ci.yml commits the regenerated client
+      # with GITHUB_TOKEN, which triggers no workflow, so this run would otherwise compile against a
+      # client one commit stale and fail on contracts nobody broke. Nothing is committed here —
+      # policing drift stays ci.yml's job.
+      - name: Regenerate the HTTP client
+        run: ./scripts/generate-clients.sh
+
+      # Pinned in .config/dotnet-tools.json beside the NSwag CLI, rather than installed unpinned from
+      # the feed: an analyser that silently changes version between two runs turns "the gate went
+      # red" into a question nobody can answer from the diff.
+      - name: Restore the pinned tools
+        run: dotnet tool restore
+
+      - name: Analyze
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          # Read by the scanner to detect the pull request it is analysing, so the report lands on
+          # the right branch and the decoration on the right diff.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # The .NET scanner ignores sonar-project.properties — a well-worn trap. Every setting has
+          # to travel on `begin`, which is why they are here rather than in a file at the root.
+          dotnet sonarscanner begin \
+            /k:"maxime-poulain_BLRefactoring" \
+            /o:"9c1eb57d24115cbbd103219f" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.token="$SONAR_TOKEN" \
+            /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
+            /d:sonar.exclusions="src/BLRefactoring.GeneratedClients/**" \
+            /d:sonar.qualitygate.wait=true
+
+          # --no-incremental, because the scanner works by hooking the compilation: a project MSBuild
+          # skips as up to date is a project the analysis never sees, and it would be reported as
+          # having no issues rather than as not analysed.
+          dotnet build --configuration Release --no-incremental
+
+          # Both suites, integration tests included. ci.yml deliberately keeps them off the fast
+          # pull-request path, and that stays true — this is a separate, slower signal. But a
+          # coverage figure produced without them would be a lie: nearly every assertion in this
+          # repository crosses routing, model binding, authentication and a real database, and a
+          # gate reading only the unit suite would fail pull requests whose code is covered by tests
+          # that were never run. Testcontainers starts SQL Server itself; Docker is on the runner.
+          dotnet test --no-build --configuration Release \
+            --collect:"XPlat Code Coverage;Format=opencover"
+
+          # Fails the job when the quality gate fails, rather than reporting green and leaving the
+          # verdict on a website. This is the check to make required in branch protection — but only
+          # once the first analysis of master has come back green, or the rule blocks every pull
+          # request on a baseline nobody has seen yet.
+          dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"

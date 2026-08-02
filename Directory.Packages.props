@@ -17,6 +17,13 @@
       commercial Xceed licence; this keeps the same fluent API on a permissive one.
     -->
     <PackageVersion Include="AwesomeAssertions" Version="9.5.0" />
+    <!--
+      Collects line coverage during `dotnet test`, in OpenCover format, for the analysis to read.
+      Referenced by every project that runs tests and by no other — an architecture rule checks
+      that, because a test project without it reports no coverage at all rather than failing, and
+      the quality gate would read the silence as uncovered code.
+    -->
+    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
     <PackageVersion Include="EmailValidation" Version="1.3.0" />
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
