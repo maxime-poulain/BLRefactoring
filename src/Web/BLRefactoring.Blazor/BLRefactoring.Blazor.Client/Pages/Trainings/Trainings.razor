@@ -1,4 +1,4 @@
-﻿@page "/trainings"
+@page "/trainings"
 @attribute [Authorize]
 @using BLRefactoring.GeneratedClients
 @inject ITrainingClient TrainingClient
@@ -92,7 +92,6 @@
     private List<TrainingResponseHttp>? _trainings;
     private bool _isLoading = true;
 
-    /// <summary>
     protected override async Task OnInitializedAsync()
     {
         await LoadTrainings();

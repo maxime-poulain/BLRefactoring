@@ -1,5 +1,4 @@
 using AwesomeAssertions;
-using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;

@@ -145,7 +145,12 @@ jobs:
           # --no-incremental, because the scanner works by hooking the compilation: a project MSBuild
           # skips as up to date is a project the analysis never sees, and it would be reported as
           # having no issues rather than as not analysed.
-          dotnet build --configuration Release --no-incremental
+          # TreatWarningsAsErrors is off for this build alone. It runs inside `sonarscanner
+          # begin`, which injects SonarAnalyzer.CSharp and a ruleset whose quality-profile rules
+          # are warnings; promoting them would turn every Sonar finding into a compilation error
+          # and kill this workflow before it reaches the verdict it exists to publish. The gate is
+          # the gate here — ADR 0018 — and the build that fails on a warning is ci.yml's.
+          dotnet build --configuration Release --no-incremental -p:TreatWarningsAsErrors=false
 
           # Both suites, integration tests included. ci.yml deliberately keeps them off the fast
           # pull-request path, and that stays true — this is a separate, slower signal. But a

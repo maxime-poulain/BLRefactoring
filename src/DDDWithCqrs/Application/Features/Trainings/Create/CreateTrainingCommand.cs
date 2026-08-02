@@ -1,5 +1,4 @@
 using BLRefactoring.Shared;
-using BLRefactoring.Shared.Domain;
 using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;

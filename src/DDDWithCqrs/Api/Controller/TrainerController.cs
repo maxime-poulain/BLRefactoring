@@ -1,4 +1,3 @@
-using BLRefactoring.DDDWithCqrs.Api.Contracts;
 using BLRefactoring.DDDWithCqrs.Api.Mappings;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Api.Contracts.Mappings;

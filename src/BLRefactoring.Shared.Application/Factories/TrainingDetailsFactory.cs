@@ -20,6 +20,10 @@ public static class TrainingDetailsFactory
     /// <summary>
     /// Builds the value objects describing a training.
     /// </summary>
+    /// <param name="title">The raw title.</param>
+    /// <param name="description">The raw description.</param>
+    /// <param name="prerequisites">The raw prerequisites.</param>
+    /// <param name="acquiredSkills">The raw acquired skills.</param>
     /// <param name="topicNames">
     /// The raw topic names. Topics form a closed set owned by the domain, so an
     /// unknown name is a validation error rather than an exception — resolving it

@@ -29,20 +29,84 @@ namespace BLRefactoring.GeneratedClients
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial interface IAuthClient
     {
+        /// <summary>
+        /// Registers a new user with the provided username, email, and password.
+        /// </summary>
+        /// <remarks>
+        /// A registration creates something, so it answers `201` and says where. This used to be a
+        /// <br/>    `204`, argued from the account having no address of its own — which is true of the
+        /// <br/>    identity user and false of what the caller actually gets: registration creates a *trainer*,
+        /// <br/>    and a trainer is addressable at `/Trainer/me`. That is the `Location`, and the
+        /// <br/>    identifier is repeated in the body so a caller need not parse a URL to get it — the shape
+        /// <br/>    `POST /Training` already publishes.
+        /// <br/>    The address requires a token the registration response does not hand out. That is not a
+        /// <br/>reason to withhold it: Location identifies the resource created, it does not promise
+        /// <br/>the caller is authorised to read it, and the caller is one POST /Auth/login away.
+        /// <br/>/Trainer/me was the wrong candidate to compare it against — it is an alias for
+        /// <br/>whoever is calling, not the address of the thing this request created.
+        /// <br/>    A username or email already in use is a 409, not a 400: the request is
+        /// <br/>well-formed and the caller can act on it — by choosing another — which is exactly the
+        /// <br/>distinction this API already draws for a duplicate training title. Everything else Identity
+        /// <br/>rejects (password policy, malformed email, illegal characters in a username) stays a
+        /// <br/>400.
+        /// </remarks>
+        /// <param name="body">A token to cancel the operation.</param>
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterRequest body);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Registers a new user with the provided username, email, and password.
+        /// </summary>
+        /// <remarks>
+        /// A registration creates something, so it answers `201` and says where. This used to be a
+        /// <br/>    `204`, argued from the account having no address of its own — which is true of the
+        /// <br/>    identity user and false of what the caller actually gets: registration creates a *trainer*,
+        /// <br/>    and a trainer is addressable at `/Trainer/me`. That is the `Location`, and the
+        /// <br/>    identifier is repeated in the body so a caller need not parse a URL to get it — the shape
+        /// <br/>    `POST /Training` already publishes.
+        /// <br/>    The address requires a token the registration response does not hand out. That is not a
+        /// <br/>reason to withhold it: Location identifies the resource created, it does not promise
+        /// <br/>the caller is authorised to read it, and the caller is one POST /Auth/login away.
+        /// <br/>/Trainer/me was the wrong candidate to compare it against — it is an alias for
+        /// <br/>whoever is calling, not the address of the thing this request created.
+        /// <br/>    A username or email already in use is a 409, not a 400: the request is
+        /// <br/>well-formed and the caller can act on it — by choosing another — which is exactly the
+        /// <br/>distinction this API already draws for a duplicate training title. Everything else Identity
+        /// <br/>rejects (password policy, malformed email, illegal characters in a username) stays a
+        /// <br/>400.
+        /// </remarks>
+        /// <param name="body">A token to cancel the operation.</param>
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterRequest body, System.Threading.CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Authenticates a user and generates a JWT token if the credentials are valid.
+        /// </summary>
+        /// <remarks>
+        /// The 401 used to be `Unauthorized("Invalid username or password.")`, which serialises to
+        /// <br/>a bare JSON string — quotes included, no status, no member to read. ADR 0004 lists that
+        /// <br/>exact shape as the worst of the four it removed, and then left it standing on the first
+        /// <br/>call any client makes. The sentence is unchanged; only its wrapping is.
+        /// </remarks>
+        /// <param name="body">A token to cancel the operation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<LoginResponse> LoginAsync(LoginRequest body);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Authenticates a user and generates a JWT token if the credentials are valid.
+        /// </summary>
+        /// <remarks>
+        /// The 401 used to be `Unauthorized("Invalid username or password.")`, which serialises to
+        /// <br/>a bare JSON string — quotes included, no status, no member to read. ADR 0004 lists that
+        /// <br/>exact shape as the worst of the four it removed, and then left it standing on the first
+        /// <br/>call any client makes. The sentence is unchanged; only its wrapping is.
+        /// </remarks>
+        /// <param name="body">A token to cancel the operation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<LoginResponse> LoginAsync(LoginRequest body, System.Threading.CancellationToken cancellationToken);
@@ -81,6 +145,28 @@ namespace BLRefactoring.GeneratedClients
         partial void PrepareRequest(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request, System.Text.StringBuilder urlBuilder);
         partial void ProcessResponse(System.Net.Http.HttpClient client, System.Net.Http.HttpResponseMessage response);
 
+        /// <summary>
+        /// Registers a new user with the provided username, email, and password.
+        /// </summary>
+        /// <remarks>
+        /// A registration creates something, so it answers `201` and says where. This used to be a
+        /// <br/>    `204`, argued from the account having no address of its own — which is true of the
+        /// <br/>    identity user and false of what the caller actually gets: registration creates a *trainer*,
+        /// <br/>    and a trainer is addressable at `/Trainer/me`. That is the `Location`, and the
+        /// <br/>    identifier is repeated in the body so a caller need not parse a URL to get it — the shape
+        /// <br/>    `POST /Training` already publishes.
+        /// <br/>    The address requires a token the registration response does not hand out. That is not a
+        /// <br/>reason to withhold it: Location identifies the resource created, it does not promise
+        /// <br/>the caller is authorised to read it, and the caller is one POST /Auth/login away.
+        /// <br/>/Trainer/me was the wrong candidate to compare it against — it is an alias for
+        /// <br/>whoever is calling, not the address of the thing this request created.
+        /// <br/>    A username or email already in use is a 409, not a 400: the request is
+        /// <br/>well-formed and the caller can act on it — by choosing another — which is exactly the
+        /// <br/>distinction this API already draws for a duplicate training title. Everything else Identity
+        /// <br/>rejects (password policy, malformed email, illegal characters in a username) stays a
+        /// <br/>400.
+        /// </remarks>
+        /// <param name="body">A token to cancel the operation.</param>
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         public virtual System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterRequest body)
@@ -89,6 +175,28 @@ namespace BLRefactoring.GeneratedClients
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Registers a new user with the provided username, email, and password.
+        /// </summary>
+        /// <remarks>
+        /// A registration creates something, so it answers `201` and says where. This used to be a
+        /// <br/>    `204`, argued from the account having no address of its own — which is true of the
+        /// <br/>    identity user and false of what the caller actually gets: registration creates a *trainer*,
+        /// <br/>    and a trainer is addressable at `/Trainer/me`. That is the `Location`, and the
+        /// <br/>    identifier is repeated in the body so a caller need not parse a URL to get it — the shape
+        /// <br/>    `POST /Training` already publishes.
+        /// <br/>    The address requires a token the registration response does not hand out. That is not a
+        /// <br/>reason to withhold it: Location identifies the resource created, it does not promise
+        /// <br/>the caller is authorised to read it, and the caller is one POST /Auth/login away.
+        /// <br/>/Trainer/me was the wrong candidate to compare it against — it is an alias for
+        /// <br/>whoever is calling, not the address of the thing this request created.
+        /// <br/>    A username or email already in use is a 409, not a 400: the request is
+        /// <br/>well-formed and the caller can act on it — by choosing another — which is exactly the
+        /// <br/>distinction this API already draws for a duplicate training title. Everything else Identity
+        /// <br/>rejects (password policy, malformed email, illegal characters in a username) stays a
+        /// <br/>400.
+        /// </remarks>
+        /// <param name="body">A token to cancel the operation.</param>
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         public virtual async System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterRequest body, System.Threading.CancellationToken cancellationToken)
@@ -186,6 +294,16 @@ namespace BLRefactoring.GeneratedClients
             }
         }
 
+        /// <summary>
+        /// Authenticates a user and generates a JWT token if the credentials are valid.
+        /// </summary>
+        /// <remarks>
+        /// The 401 used to be `Unauthorized("Invalid username or password.")`, which serialises to
+        /// <br/>a bare JSON string — quotes included, no status, no member to read. ADR 0004 lists that
+        /// <br/>exact shape as the worst of the four it removed, and then left it standing on the first
+        /// <br/>call any client makes. The sentence is unchanged; only its wrapping is.
+        /// </remarks>
+        /// <param name="body">A token to cancel the operation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         public virtual System.Threading.Tasks.Task<LoginResponse> LoginAsync(LoginRequest body)
@@ -194,6 +312,16 @@ namespace BLRefactoring.GeneratedClients
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Authenticates a user and generates a JWT token if the credentials are valid.
+        /// </summary>
+        /// <remarks>
+        /// The 401 used to be `Unauthorized("Invalid username or password.")`, which serialises to
+        /// <br/>a bare JSON string — quotes included, no status, no member to read. ADR 0004 lists that
+        /// <br/>exact shape as the worst of the four it removed, and then left it standing on the first
+        /// <br/>call any client makes. The sentence is unchanged; only its wrapping is.
+        /// </remarks>
+        /// <param name="body">A token to cancel the operation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         public virtual async System.Threading.Tasks.Task<LoginResponse> LoginAsync(LoginRequest body, System.Threading.CancellationToken cancellationToken)
@@ -1608,6 +1736,9 @@ namespace BLRefactoring.GeneratedClients
         }
     }
 
+    /// <summary>
+    /// The body of `POST /Training`.
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CreateTrainingRequestHttp
     {
@@ -1617,6 +1748,11 @@ namespace BLRefactoring.GeneratedClients
         [System.ComponentModel.DataAnnotations.StringLength(100, MinimumLength = 5)]
         public string Title { get; set; } = default!;
 
+        /// <summary>
+        /// Names of the topics the training covers, resolved against the closed set by the
+        /// <br/>application layer — which is also what rejects a name that matches nothing. Only the
+        /// <br/>presence of at least one is a question about the message.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("topics")]
         [System.ComponentModel.DataAnnotations.Required]
         [System.ComponentModel.DataAnnotations.MinLength(1)]
@@ -1648,6 +1784,9 @@ namespace BLRefactoring.GeneratedClients
 
     }
 
+    /// <summary>
+    /// The body of `PUT /Trainer/me`: the new state of the caller's profile.
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class EditTrainerRequestHttp
     {
@@ -1662,10 +1801,17 @@ namespace BLRefactoring.GeneratedClients
         [System.ComponentModel.DataAnnotations.StringLength(50, MinimumLength = 2)]
         public string Lastname { get; set; } = default!;
 
+        /// <summary>
+        /// The address at which the trainer wishes to be contacted. Editing it has no effect on the
+        /// <br/>identity account used to sign in.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("contactEmail")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string ContactEmail { get; set; } = default!;
 
+        /// <summary>
+        /// The new bio, or `null` to clear it.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("bio")]
         [System.ComponentModel.DataAnnotations.StringLength(500)]
         public string? Bio { get; set; } = default!;
@@ -1681,6 +1827,9 @@ namespace BLRefactoring.GeneratedClients
 
     }
 
+    /// <summary>
+    /// The body of `PUT /Training/{trainingId}`: the new state of the training.
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class EditTrainingRequestHttp
     {
@@ -1690,6 +1839,9 @@ namespace BLRefactoring.GeneratedClients
         [System.ComponentModel.DataAnnotations.StringLength(100, MinimumLength = 5)]
         public string Title { get; set; } = default!;
 
+        /// <summary>
+        /// The complete set of topics after the edit: topics are replaced, not merged.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("topics")]
         [System.ComponentModel.DataAnnotations.Required]
         [System.ComponentModel.DataAnnotations.MinLength(1)]
@@ -1721,14 +1873,23 @@ namespace BLRefactoring.GeneratedClients
 
     }
 
+    /// <summary>
+    /// Represents a request to log in a user.
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class LoginRequest
     {
 
+        /// <summary>
+        /// The username of the user attempting to log in.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("username")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Username { get; set; } = default!;
 
+        /// <summary>
+        /// The password of the user attempting to log in.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("password")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Password { get; set; } = default!;
@@ -1744,10 +1905,16 @@ namespace BLRefactoring.GeneratedClients
 
     }
 
+    /// <summary>
+    /// Represents the response returned after a successful login.
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class LoginResponse
     {
 
+        /// <summary>
+        /// The JWT token generated for the authenticated user.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("token")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Token { get; set; } = default!;
@@ -1794,30 +1961,51 @@ namespace BLRefactoring.GeneratedClients
 
     }
 
+    /// <summary>
+    /// Represents a request to register a new user.
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class RegisterRequest
     {
 
+        /// <summary>
+        /// The username of the new user.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("username")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Username { get; set; } = default!;
 
+        /// <summary>
+        /// The email address of the new user.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("email")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Email { get; set; } = default!;
 
+        /// <summary>
+        /// The password for the new user.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("password")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Password { get; set; } = default!;
 
+        /// <summary>
+        /// The confirmation of the password.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("confirmPassword")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string ConfirmPassword { get; set; } = default!;
 
+        /// <summary>
+        /// The first name of the new user.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("firstname")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Firstname { get; set; } = default!;
 
+        /// <summary>
+        /// The last name of the new user.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("lastname")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Lastname { get; set; } = default!;
@@ -1833,6 +2021,9 @@ namespace BLRefactoring.GeneratedClients
 
     }
 
+    /// <summary>
+    /// A trainer as the API publishes it.
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class TrainerResponseHttp
     {
@@ -1849,10 +2040,17 @@ namespace BLRefactoring.GeneratedClients
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Lastname { get; set; } = default!;
 
+        /// <summary>
+        /// The address at which the trainer wishes to be contacted, which is not the email of their
+        /// <br/>identity account.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("contactEmail")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string ContactEmail { get; set; } = default!;
 
+        /// <summary>
+        /// The trainer's bio, or `null` when none was provided.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("bio")]
         public string? Bio { get; set; } = default!;
 
@@ -1867,6 +2065,9 @@ namespace BLRefactoring.GeneratedClients
 
     }
 
+    /// <summary>
+    /// A training as the API publishes it.
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class TrainingResponseHttp
     {
@@ -1879,6 +2080,9 @@ namespace BLRefactoring.GeneratedClients
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Title { get; set; } = default!;
 
+        /// <summary>
+        /// The trainer who owns the training, and the only one allowed to edit or delete it.
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("trainerId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid TrainerId { get; set; } = default!;

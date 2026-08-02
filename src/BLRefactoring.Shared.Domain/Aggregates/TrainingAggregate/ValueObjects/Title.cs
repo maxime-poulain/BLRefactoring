@@ -1,6 +1,5 @@
-﻿
+
 using BLRefactoring.Shared.Common;
-using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 
 namespace BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;

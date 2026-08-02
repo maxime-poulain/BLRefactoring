@@ -14,4 +14,46 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <!--
+    What makes `.editorconfig` a ruleset rather than a list of preferences. Seventy-three rules
+    were declared there at `warning` severity while nothing turned a warning into a failure, so
+    every one of them was emitted and scrolled past — ADR 0017 recorded exactly that and left it.
+    See ADR 0019 for the census that made turning this on safe, and for why each carve-out exists.
+
+    The properties rather than `dotnet build -warnaserror`: the CLI switch also promotes what the
+    MSBuild engine emits — assembly-version conflicts, restore-graph noise — none of which is code
+    quality, and any of which would fail a build for a reason nobody chose.
+
+    EnforceCodeStyleInBuild is the half that was never running: without it the IDE* rules exist in
+    an editor and nowhere else.
+  -->
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!--
+      IDE0005 (unnecessary usings) rides on the compiler's unused-using detection, which is off
+      unless documentation generation is on. Measured, not assumed: zero occurrences without this,
+      twenty-eight with. CS1591 is silenced in .editorconfig rather than here — see the comment
+      there for why nine hundred missing doc comments are a separate decision.
+    -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!--
+      AnalysisLevel follows the target framework, so the three net9.0 projects would analyse at a
+      different level from the other twenty-three and the ruleset would quietly differ across one
+      solution. Pinned after measuring that aligning them costs nothing.
+    -->
+    <AnalysisLevel>10.0</AnalysisLevel>
+
+    <!--
+      NuGet audit findings stay loud and stop blocking. They are not rules this repository chose
+      and then ignored — they are security advisories about the dependency graph, and promoting
+      them means a CVE published against any transitive package turns all three workflows red with
+      nobody having pushed anything. Directory.Packages.props already pins one package to close a
+      GHSA, so this is a live hazard rather than a theoretical one.
+    -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904;NU1605</WarningsNotAsErrors>
+  </PropertyGroup>
+
 </Project>
