@@ -226,7 +226,11 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         // With a valid If-Match, deliberately. Without one the request is refused for the missing
         // precondition and the 403 proves only that authorization runs before that check — it would
         // still pass with the ownership rule deleted.
-        var entityTag = await otherClient.GetETagAsync($"/Training/{trainingId}");
+        //
+        // Read by the owner, because the intruder can no longer obtain it: the read by identifier
+        // answers them 404 now. Handing them a version they could not have fetched is what keeps
+        // this test about the write policy rather than about the read that precedes it.
+        var entityTag = await ownerClient.GetETagAsync($"/Training/{trainingId}");
         var response = await otherClient.PutWithIfMatchAsync(
             $"/Training/{trainingId}", editRequest, entityTag);
 
