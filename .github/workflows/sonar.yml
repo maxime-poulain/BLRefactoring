@@ -121,13 +121,25 @@ jobs:
 
           # The .NET scanner ignores sonar-project.properties — a well-worn trap. Every setting has
           # to travel on `begin`, which is why they are here rather than in a file at the root.
+          #
+          # Two families are excluded, and both for one reason: nobody writes them. The generated
+          # client is two thousand four hundred lines of NSwag output; the EF Core migrations are two
+          # thousand five hundred more, a fifth of everything the analysis would otherwise call
+          # production code. Their snapshots are near-identical by construction, so they decide the
+          # duplication figure; nothing hand-written covers them, so they decide the coverage figure;
+          # and an issue raised in either is fixed by regenerating, never by editing. Measuring them
+          # produces numbers about a tool rather than about this codebase.
+          #
+          # `**/Migrations/**` rather than the two paths that exist today: a third DbContext would
+          # arrive with its own folder, and the exclusion should already cover it.
           dotnet sonarscanner begin \
             /k:"maxime-poulain_BLRefactoring" \
             /o:"9c1eb57d24115cbbd103219f" \
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.token="$SONAR_TOKEN" \
             /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
-            /d:sonar.exclusions="src/BLRefactoring.GeneratedClients/**" \
+            /d:sonar.cs.vstest.reportsPaths="TestResults/*.trx" \
+            /d:sonar.exclusions="src/BLRefactoring.GeneratedClients/**,**/Migrations/**" \
             /d:sonar.qualitygate.wait=${{ github.event_name == 'pull_request' }}
 
           # --no-incremental, because the scanner works by hooking the compilation: a project MSBuild
@@ -141,8 +153,14 @@ jobs:
           # repository crosses routing, model binding, authentication and a real database, and a
           # gate reading only the unit suite would fail pull requests whose code is covered by tests
           # that were never run. Testcontainers starts SQL Server itself; Docker is on the runner.
+          # --logger trx alongside the coverage collector, because the two answer different
+          # questions. Coverage says which lines ran; the TRX says how many tests ran, how long they
+          # took and which failed. Without it the project's Tests metric reads zero, and a reader of
+          # the dashboard would conclude this repository has none — which, for a repository whose
+          # argument is its test suite, is the one wrong impression to leave.
           dotnet test --no-build --configuration Release \
-            --collect:"XPlat Code Coverage;Format=opencover"
+            --collect:"XPlat Code Coverage;Format=opencover" \
+            --logger trx --results-directory TestResults
 
           # Fails the job when the gate fails — on a pull request, where failing is the point:
           # something is about to enter master and the gate is what stops it. On a push to master

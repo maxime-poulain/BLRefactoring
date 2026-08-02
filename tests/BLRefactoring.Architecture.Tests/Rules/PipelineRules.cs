@@ -108,9 +108,16 @@ public sealed class PipelineRules
             (Setting: "branches: [master]",
              Wrong: "analyses no push to master, so there is no baseline for a pull request to be " +
                     "compared against"),
-            (Setting: "sonar.exclusions",
-             Wrong: "excludes nothing, so the generated client is measured like code somebody wrote " +
-                    "— two thousand machine-written lines deciding the duplication figure")
+            (Setting: "src/BLRefactoring.GeneratedClients/**",
+             Wrong: "measures the generated client like code somebody wrote — two thousand four " +
+                    "hundred lines of NSwag output deciding the duplication figure"),
+            (Setting: "**/Migrations/**",
+             Wrong: "measures the EF Core migrations like code somebody wrote — two thousand five " +
+                    "hundred lines, a fifth of this repository's production code, that nobody " +
+                    "writes and nothing covers"),
+            (Setting: "sonar.cs.vstest.reportsPaths",
+             Wrong: "publishes no test results, so the dashboard reports zero tests for a " +
+                    "repository whose argument is its test suite")
         }
             .Selected("setting the analysis depends on")
             .Where(rule => !text.Contains(rule.Setting, StringComparison.Ordinal))
