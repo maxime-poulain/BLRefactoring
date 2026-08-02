@@ -87,9 +87,12 @@ public sealed class TrainerController(
             return this.PreconditionRequired();
         }
 
-        var trainerId = currentUserService.TrainerId;
         var result = await commandDispatcher.DispatchAsync(
-            request.ToCommand(trainerId, expectedVersion), cancellationToken);
+            request.ToCommand(expectedVersion), cancellationToken);
+
+        // Still needed for the read-back below, and only for it: GetTrainerByIdQuery serves
+        // /Trainer/{id} as well, so it cannot drop its parameter the way the command did.
+        var trainerId = currentUserService.TrainerId;
 
         return await result.MatchAsync<ActionResult>(
             onSuccess: async () =>

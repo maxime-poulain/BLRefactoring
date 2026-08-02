@@ -17,10 +17,12 @@ public sealed class TrainingConfiguration : AggregateRootTypeConfiguration<Train
                 id => id.Value,
                 value => TrainerId.Create(value));
 
-        // The column is wider than the rule the value object enforces (30 characters), on
-        // purpose: the length that matters is checked by TrainingTitle before anything reaches
-        // here, and leaving the column roomier means tightening or relaxing that rule does not
-        // drag a migration along.
+        // The column and the rule now agree, at a hundred characters. They did not always: the
+        // column was deliberately made roomier than TrainingTitle enforced, so that tightening or
+        // relaxing that rule cost no schema change — slack that absorbed the move from thirty to
+        // fifty without a migration. Raising the rule to meet the column spends it. Widening the
+        // title again is a migration now, and one that drops and recreates the unique index below,
+        // since SQL Server will not alter a column an index covers.
         builder.Property(training => training.Title)
             .HasConversion(
                 title => title.Value,

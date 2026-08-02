@@ -15,11 +15,6 @@ namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Edit;
 public sealed class EditTrainerCommand : ICommand<Result>
 {
     /// <summary>
-    /// The trainer being edited, resolved from the caller's token by the API layer.
-    /// </summary>
-    public Guid TrainerId { get; init; }
-
-    /// <summary>
     /// The version the caller read the profile at, taken from the <c>If-Match</c> header by the
     /// API layer.
     /// </summary>
@@ -37,20 +32,35 @@ public sealed class EditTrainerCommand : ICommand<Result>
     public string? Bio { get; init; }
 }
 
+/// <summary>
+/// Edits the calling trainer's own profile, and only ever that one.
+/// </summary>
+/// <remarks>
+/// The trainer is resolved here rather than carried on the command. The endpoint is
+/// <c>PUT /Trainer/me</c> — there has never been a trainer for a caller to choose — and taking one
+/// as a field made that a promise the API layer had to keep on every call site instead of a fact.
+/// The same reasoning as <c>CreateTrainingCommandHandler</c>, which resolves the owner of a new
+/// training the same way.
+/// </remarks>
 public sealed class EditTrainerCommandHandler(
     ITrainerRepository trainerRepository,
+    ICurrentUserService currentUserService,
     IUnitOfWork unitOfWork)
     : ICommandHandler<EditTrainerCommand, Result>
 {
     public async ValueTask<Result> Handle(EditTrainerCommand request, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var trainerId = currentUserService.TrainerId;
+
         var trainer = await trainerRepository.GetByIdAsync(
-            TrainerId.Create(request.TrainerId), cancellationToken);
+            TrainerId.Create(trainerId), cancellationToken);
 
         if (trainer is null)
         {
             return Result.Failure(ErrorCodes.NotFound,
-                $"Trainer with id `{request.TrainerId}` could not be found.");
+                $"Trainer with id `{trainerId}` could not be found.");
         }
 
         if (!trainer.IsAtVersion(request.ExpectedVersion))

@@ -11,13 +11,13 @@ namespace BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 /// and must be descriptive yet concise.
 /// </summary>
 /// <remarks>
-/// The title must be between 5 and 30 characters to ensure it's both
+/// The title must be between 5 and 100 characters to ensure it's both
 /// meaningful and brief enough for display purposes.
 /// </remarks>
 public sealed class TrainingTitle : ValueObject
 {
     private const int MinLength = 5;
-    private const int MaxLength = 30;
+    private const int MaxLength = 100;
 
     /// <summary>
     /// Gets the title text.

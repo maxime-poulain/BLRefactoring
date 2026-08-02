@@ -265,7 +265,7 @@ invalid instance cannot exist.
 | `Name` | Firstname and lastname 2–50 characters; **both errors accumulate** | `Unspecified` |
 | `Email` | Non-empty, valid format via `EmailValidation` | `InvalidEmail` |
 | `Bio` | Non-empty, at most 500 characters | `BioEmpty`, `BioExceeds500Characters` |
-| `TrainingTitle` | Non-empty, 5–30 characters once trimmed | `InvalidTitle` |
+| `TrainingTitle` | Non-empty, 5–100 characters once trimmed | `InvalidTitle` |
 | `TrainingDescription` | Non-empty, at most 500 characters | `InvalidDescription` |
 | `TrainingPrerequisites` | Non-empty, at most 500 characters | `InvalidPrerequisites` |
 | `AcquiredSkills` | Non-empty, at most 500 characters | `InvalidAcquiredSkills` |
@@ -343,6 +343,7 @@ in the infrastructure layer**, next to the persistence they project from.
 | Get training by id | `TrainingApplicationService.GetByIdAsync` | `GetTrainingByIdQuery` | Infrastructure |
 | Get all trainings | `TrainingApplicationService.GetAllAsync` | `GetAllTrainingsQuery` | Infrastructure |
 | Get trainings by trainer | `TrainingApplicationService.GetByTrainerIdAsync` | `GetTrainingsByTrainerIdQuery` | Infrastructure |
+| Get own trainings | `TrainingApplicationService.GetMineAsync` | `GetMyTrainingsQuery` | Infrastructure |
 | Get trainings by topic | `TrainingApplicationService.GetByTopicAsync` | `GetTrainingsByTopicQuery` | Infrastructure |
 
 The read paths differ by design: the layered stack loads aggregates through repositories and maps

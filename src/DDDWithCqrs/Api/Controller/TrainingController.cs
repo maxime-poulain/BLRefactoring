@@ -95,6 +95,34 @@ public sealed class TrainingController(
         return Ok(page.ToHttp(trainings => trainings.ToHttp()));
     }
 
+    /// <summary>
+    /// Returns one page of the caller's own trainings, newest first.
+    /// </summary>
+    /// <remarks>
+    /// The counterpart of <c>GET /Trainer/me</c>, and the endpoint a screen listing "my trainings"
+    /// is meant to call. It takes no identifier and passes none: the query carries paging only, and
+    /// the handler resolves the trainer from the authenticated caller. Unlike
+    /// <c>by-trainer/{trainerId}</c> there is nothing here to point at somebody else — not in the
+    /// route, and not in what this action dispatches.
+    /// <para>
+    /// <c>[Authorize]</c> is not written here: <see cref="ApiControllerBase"/> carries it for every
+    /// action of every controller, which is why an unauthenticated call to this one is a 401 before
+    /// the action is reached. Repeating it would suggest the others are open.
+    /// </para>
+    /// </remarks>
+    [HttpGet("me")]
+    [ProducesResponseType(typeof(PagedResponseHttp<TrainingResponseHttp>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResponseHttp<TrainingResponseHttp>>> GetMineAsync(
+        [FromQuery] PaginationRequestHttp pagination,
+        CancellationToken cancellationToken = default)
+    {
+        var page = await queryDispatcher.DispatchAsync(
+            pagination.ToGetMyTrainingsQuery(), cancellationToken);
+
+        return Ok(page.ToHttp(trainings => trainings.ToHttp()));
+    }
+
     /// <remarks>
     /// <c>If-Match</c> is bound rather than read off <c>Request.Headers</c>, so that it reaches the
     /// OpenAPI document and generated clients can send it; and nullable, so that its absence is

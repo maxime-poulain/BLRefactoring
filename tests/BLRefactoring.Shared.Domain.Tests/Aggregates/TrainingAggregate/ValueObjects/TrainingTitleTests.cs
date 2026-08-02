@@ -73,7 +73,7 @@ public sealed class TrainingTitleTests
     public void Create_ExactlyMaxLength_ReturnsSuccess()
     {
         // Arrange
-        var title = new string('a', 30);
+        var title = new string('a', 100);
 
         // Act
         var result = TrainingTitle.Create(title);
@@ -86,7 +86,7 @@ public sealed class TrainingTitleTests
     public void Create_TooLong_ReturnsFailure()
     {
         // Arrange
-        var title = new string('a', 31);
+        var title = new string('a', 101);
 
         // Act
         var result = TrainingTitle.Create(title);
