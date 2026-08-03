@@ -45,3 +45,4 @@ simpler from the outside.
 | [0020](0020-declare-every-rule-this-codebase-already-satisfies.md) | Declare every rule this codebase already satisfies | Accepted |
 | [0021](0021-store-a-photo-beside-the-row-that-names-it.md) | Store a photo beside the row that names it, and never overwrite in place | Accepted |
 | [0022](0022-name-the-repository-after-the-domain-it-serves.md) | Name the repository after the domain it serves | Accepted |
+| [0023](0023-document-the-strategic-design-and-hold-it-to-the-model.md) | Document the strategic design, and hold it to the model | Accepted |
