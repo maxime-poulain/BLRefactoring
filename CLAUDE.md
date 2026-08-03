@@ -98,6 +98,12 @@ The build enforces the style, so match what is there rather than normalising it:
   constructors elsewhere; IDE0290 is a suggestion on purpose, so do not convert the four that remain.
 - File-scoped namespaces, `var`, Allman braces, and a hundred and sixty analyzer severities, all
   enforced at build time.
+- **Where SonarQube and this repository's ruleset disagree, the ruleset wins.** A Sonar finding is
+  never on its own a reason to rewrite code `.editorconfig` deliberately allows: the quality profile
+  is somebody else's list, while every severity here was chosen for this codebase and every demotion
+  carries the argument for it (`EveryDemotedRule_SaysWhyItWasDemoted`). Act on a finding when it
+  names a real defect; never to make a style rule stop reporting. Examples written in this file
+  follow the same rule — a complete member rather than a fragment.
 
 ## Tests
 
