@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using MudBlazor;
-using MudBlazor.Services;
 using Xunit;
 
 namespace TrainingHub.Blazor.Client.Tests.Pages;
@@ -22,7 +21,7 @@ namespace TrainingHub.Blazor.Client.Tests.Pages;
 /// photo's identity, and the decision to show the server's refusal in its own words rather than a
 /// guess about which rule was broken.
 /// </remarks>
-public sealed class ProfileTests : BunitContext
+public sealed class ProfileTests : ComponentTest
 {
     private readonly Mock<ITrainerClient> _trainerClient = new();
 
@@ -31,12 +30,6 @@ public sealed class ProfileTests : BunitContext
     /// </summary>
     public ProfileTests()
     {
-        // MudBlazor reaches for the browser on render — scroll listeners, popovers, resize
-        // observers. Loose mode answers all of it with a no-op, which is what a test of this
-        // page's decisions wants: none of them are about the DOM.
-        JSInterop.Mode = JSRuntimeMode.Loose;
-
-        Services.AddMudServices();
         Services.AddSingleton(_trainerClient.Object);
 
         GivenProfile(new TrainerResponseHttp
