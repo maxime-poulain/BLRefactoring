@@ -163,8 +163,8 @@ public abstract class AuthControllerBase(
         var rejections = errors.ToList();
 
         var isTaken = rejections.Any(error =>
-            error.Code == nameof(IdentityErrorDescriber.DuplicateUserName) ||
-            error.Code == nameof(IdentityErrorDescriber.DuplicateEmail));
+            error.Code is nameof(IdentityErrorDescriber.DuplicateUserName)
+                       or nameof(IdentityErrorDescriber.DuplicateEmail));
 
         var failures = rejections
             .GroupBy(FieldAtFault)

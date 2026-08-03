@@ -20,6 +20,11 @@
     <PackageReference Include="AwesomeAssertions" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Respawn" />
+    <!--
+      The container core, for the object store. SeaweedFS has no Testcontainers module of its own,
+      so the builder is used directly rather than through one.
+    -->
+    <PackageReference Include="Testcontainers" />
     <PackageReference Include="Testcontainers.MsSql" />
     <PackageReference Include="xunit" />
   </ItemGroup>

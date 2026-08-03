@@ -11,15 +11,26 @@ public sealed class CurrentUserService(IHttpContextAccessor httpContextAccessor)
     /// <summary>
     /// The identity account behind the request, read from the subject claim.
     /// </summary>
-    public Guid UserId => httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value is
-        { } userId
-        ? Guid.Parse(userId)
-        : throw new ApplicationException("Invalid user id");
+    /// <exception cref="InvalidOperationException">
+    /// The request carries no subject claim. Every route that reaches this is behind
+    /// authentication, so the absence of the claim is a configuration fault rather than a caller
+    /// error, and it is raised rather than returned.
+    /// </exception>
+    public Guid UserId =>
+        httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value is { } userId
+            ? Guid.Parse(userId)
+            : throw new InvalidOperationException(
+                "The request carries no subject claim, so there is no signed-in user to read.");
 
     /// <summary>
     /// The trainer the caller is, read from the <c>trainer_id</c> claim.
     /// </summary>
-    public Guid TrainerId => httpContextAccessor.HttpContext?.User.FindFirst("trainer_id")?.Value is { } trainerId
-        ? Guid.Parse(trainerId)
-        : throw new ApplicationException("Invalid trainer id");
+    /// <exception cref="InvalidOperationException">
+    /// The request carries no <c>trainer_id</c> claim.
+    /// </exception>
+    public Guid TrainerId =>
+        httpContextAccessor.HttpContext?.User.FindFirst("trainer_id")?.Value is { } trainerId
+            ? Guid.Parse(trainerId)
+            : throw new InvalidOperationException(
+                "The request carries no trainer_id claim, so there is no trainer to act as.");
 }

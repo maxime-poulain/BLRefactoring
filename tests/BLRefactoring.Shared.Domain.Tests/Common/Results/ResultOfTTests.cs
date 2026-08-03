@@ -176,8 +176,8 @@ public sealed class ResultOfTTests
     {
         var result = Result<string>.Failure(ErrorCodes.NotFound, "not found");
 
-        result.Match(
-            value => (ErrorCode?)null,
+        result.Match<ErrorCode?>(
+            value => null,
             errors => errors.First().ErrorCode).Should().Be(ErrorCodes.NotFound);
     }
 

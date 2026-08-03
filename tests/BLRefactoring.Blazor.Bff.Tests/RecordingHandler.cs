@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Text;
 using Yarp.ReverseProxy.Forwarder;
@@ -50,6 +51,11 @@ public sealed class RecordingHandler : HttpMessageHandler
     /// handlers it owns; a test reading <see cref="Requests"/> afterwards would otherwise be reading
     /// a disposed object.
     /// </remarks>
+    [SuppressMessage("Usage", "CA2215:Dispose methods should call base class dispose",
+        Justification = "Not calling base is the whole content of this override, and the reason is " +
+                        "in the remarks above: the factory disposes the handlers it owns, and these " +
+                        "tests read what the handler recorded after the client is gone. The rule is " +
+                        "right about what the code does and wrong about whether it should.")]
     protected override void Dispose(bool disposing)
     {
     }

@@ -12,7 +12,7 @@ public interface ICurrentUserService
     /// <summary>
     /// The identity user behind the request — who signed in.
     /// </summary>
-    public Guid UserId { get; }
+    Guid UserId { get; }
 
     /// <summary>
     /// The trainer the signed-in user is, which is the identity the domain works in.
@@ -21,5 +21,5 @@ public interface ICurrentUserService
     /// Distinct from <see cref="UserId"/> on purpose: authentication knows about accounts, the
     /// domain knows about trainers, and conflating them is what lets one caller edit another's work.
     /// </remarks>
-    public Guid TrainerId { get; }
+    Guid TrainerId { get; }
 }

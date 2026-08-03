@@ -26,6 +26,41 @@ services:
       retries: 5
       start_period: 20s
 
+  # The object store photos live in. SeaweedFS rather than MinIO: MinIO archived its community
+  # repository in April 2026 and ships no binaries from it. Both speak S3, which is the part that
+  # matters — the API talks to this through AWSSDK.S3, so pointing it at a hosted bucket later is a
+  # change of four environment variables and no code. See ADR 0021.
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.40
+    container_name: seaweedfs
+    # One process running master, volume server and the S3 gateway together. Fine for a machine
+    # running the stack locally, and the only alternative is three containers to say the same thing.
+    # -s3.config is not optional dressing. Started without one, SeaweedFS allows anonymous
+    # requests and refuses signed ones outright — and every AWS SDK signs everything, so the API
+    # would get a 500 on each upload from a container reporting itself healthy.
+    command: server -s3 -dir=/data -s3.config=/etc/seaweedfs/s3.json
+    ports:
+      # The S3 endpoint. 9333 is the master's own UI, exposed because it is the only way to see
+      # what the store actually holds without a client.
+      - "8333:8333"
+      - "9333:9333"
+    volumes:
+      - seaweedfs_data:/data
+      - ./docker/seaweedfs-s3.json:/etc/seaweedfs/s3.json:ro
+    healthcheck:
+      # /dir/assign, which asks the master to allocate somewhere to put bytes. That is a stronger
+      # question than "is the master answering": until a volume server has registered, allocation
+      # fails while everything else looks healthy — a bucket can still be created, because that is
+      # metadata, and the first upload is what discovers the problem. The assigned id is discarded.
+      #
+      # Not the S3 port: an unsigned request there answers 403 and busybox wget treats that as a
+      # failure, so the check would never pass on a container that is perfectly well.
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:9333/dir/assign || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   ddd-api:
     build:
       context: .
@@ -40,9 +75,20 @@ services:
       - Jwt__Issuer=BLRefactoring.Api
       - Jwt__Audience=BLRefactoring.Web
       - Jwt__ExpireMinutes=60
+      # Service name, not localhost: inside the network the store is another host. The credentials
+      # are checked — they have to match an identity in docker/seaweedfs-s3.json, which is what
+      # makes the store accept a signed request at all.
+      - ObjectStorage__ServiceUrl=http://seaweedfs:8333
+      - ObjectStorage__BucketName=blrefactoring
+      - ObjectStorage__AccessKey=blrefactoring
+      - ObjectStorage__SecretKey=blrefactoring
+      - ObjectStorage__CreateBucketOnStartup=true
     depends_on:
       sqlserver:
+        condition: service_healthy
+      seaweedfs:
         condition: service_healthy
 
 volumes:
   sqlserver_data:
+  seaweedfs_data:

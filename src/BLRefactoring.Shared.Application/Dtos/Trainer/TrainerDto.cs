@@ -40,4 +40,14 @@ public sealed class TrainerDto
     /// The bio of the trainer, or <see langword="null"/> when none was provided.
     /// </summary>
     public string? Bio { get; init; }
+
+    /// <summary>
+    /// Identifies the trainer's photo, or <see langword="null"/> when they have none.
+    /// </summary>
+    /// <remarks>
+    /// Not the bytes and not an address: a client that has this knows a photo exists and knows the
+    /// value changes on every replacement, which is exactly what it needs to stop showing the
+    /// previous one out of its cache.
+    /// </remarks>
+    public Guid? PhotoId { get; init; }
 }

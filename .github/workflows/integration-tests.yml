@@ -90,6 +90,14 @@ jobs:
           --logger trx
           --results-directory ./TestResults
 
+      # Before the artifact, because this is what makes the run's own page say something. The
+      # artifact is the full record and stays the full record; an annotation is what a reader — or
+      # an agent without a path to Azure blob storage — can act on without downloading anything.
+      # A red run that says only "exit code 1" costs a whole second run to diagnose.
+      - name: Report failing tests
+        if: failure()
+        run: python3 scripts/report-test-failures.py TestResults
+
       # Published even on failure: this suite is slow and mostly triggered by hand, so
       # the report has to be readable without paying for another run. It has to be the
       # whole report, too — a fixed LogFileName had both projects writing the same file,

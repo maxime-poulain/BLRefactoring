@@ -41,4 +41,14 @@ public sealed class TrainerResponseHttp
     /// The trainer's bio, or <see langword="null"/> when none was provided.
     /// </summary>
     public string? Bio { get; init; }
+
+    /// <summary>
+    /// Identifies the trainer's photo, or <see langword="null"/> when they have none.
+    /// </summary>
+    /// <remarks>
+    /// The photo itself is at <c>GET /Trainer/{id}/photo</c>, which is cached hard because the
+    /// bytes under it never change. This value does change on every replacement, so a client that
+    /// appends it to that address gets the new portrait instead of the one it already has.
+    /// </remarks>
+    public Guid? PhotoId { get; init; }
 }

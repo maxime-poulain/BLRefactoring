@@ -1,9 +1,13 @@
 using BLRefactoring.DDDWithCqrs.Api.Mappings;
+using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetPhoto;
+using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.RemovePhoto;
+using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.SetPhoto;
 using BLRefactoring.Shared;
 using BLRefactoring.Shared.Api.Contracts.Mappings;
 using BLRefactoring.Shared.Api.Contracts.Trainers;
 using BLRefactoring.Shared.Api.Controllers;
 using BLRefactoring.Shared.Api.Http;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.CQS;
 using Microsoft.AspNetCore.Mvc;
@@ -111,5 +115,106 @@ public sealed class TrainerController(
                 errors.Any(error => error.ErrorCode == ErrorCodes.NotFound) ? NotFound()
                 : errors.Any(error => error.ErrorCode == ErrorCodes.ConcurrencyConflict) ? this.Problem(StatusCodes.Status412PreconditionFailed, errors)
                 : this.Problem(StatusCodes.Status400BadRequest, errors)));
+    }
+
+    /// <summary>
+    /// Serves a trainer's photo.
+    /// </summary>
+    /// <param name="id">The trainer whose photo is wanted.</param>
+    /// <param name="cancellationToken">Cancels the request.</param>
+    /// <returns>The image, or 404 when the trainer has none.</returns>
+    /// <remarks>
+    /// By identifier rather than <c>me</c>, unlike the two below. Publishing a portrait is
+    /// self-service; looking at one is what a catalogue does, and this is the shape that survives
+    /// the day the catalogue is public — <c>[AllowAnonymous]</c> and nothing else.
+    /// </remarks>
+    [HttpGet("{id:guid}/photo")]
+    // byte[], which the document generator renders as `type: string, format: binary` — the schema
+    // for "this response is a file". Naming a FileResult here instead described the body as a JSON
+    // object with that name, and the generated client dutifully offered to deserialise a portrait.
+    [Produces(TrainerPhoto.PngContentType, TrainerPhoto.JpegContentType, TrainerPhoto.WebpContentType)]
+    [ProducesResponseType(typeof(byte[]), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status304NotModified)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> GetPhotoAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var photo = await queryDispatcher.DispatchAsync(
+            new GetTrainerPhotoQuery(id), cancellationToken);
+
+        return photo is null ? NotFound() : this.PhotoFile(photo);
+    }
+
+    /// <summary>
+    /// Publishes a photo on the calling trainer's profile, replacing any they had.
+    /// </summary>
+    /// <param name="request">The multipart body carrying the image.</param>
+    /// <param name="cancellationToken">Cancels the request.</param>
+    /// <returns>The updated profile, or why the photo was refused.</returns>
+    /// <remarks>
+    /// One verb for publishing and replacing, because there is no third thing to do to a photo and
+    /// no reason a caller should have to know which of the two they are performing. PUT also makes
+    /// this idempotent, which matters for a body this size on a connection that may drop: a retry
+    /// after a timeout costs an orphaned object, never a wrong answer.
+    /// </remarks>
+    /// <remarks>
+    /// No 413 is declared, and that is a finding rather than an omission. The request size limit
+    /// does stop the server reading an arbitrary payload, but a body-read failure inside model
+    /// binding never reaches an exception handler: MVC folds it into model state and answers 400
+    /// with an unbound file. A handler was written to publish 413 in this API's problem shape, and
+    /// the integration suite proved it is never called.
+    /// </remarks>
+    [HttpPut("me/photo")]
+    // Stated rather than inferred. Left to itself the document generator describes a bound model
+    // carrying a file as application/x-www-form-urlencoded, and NSwag faithfully generates a client
+    // that URL-encodes the bytes — a client that cannot upload a photo, produced from a document
+    // that reads fine.
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(TrainerPhotoControllerExtensions.MaxRequestBytes)]
+    [ProducesResponseType(typeof(TrainerResponseHttp), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<TrainerResponseHttp>> SetPhotoAsync(
+        [FromForm] UploadTrainerPhotoRequestHttp request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var content = await request.Photo.ReadAllBytesAsync(cancellationToken);
+
+        var result = await commandDispatcher.DispatchAsync(
+            new SetTrainerPhotoCommand { Content = content, ContentType = request.Photo.ContentType },
+            cancellationToken);
+
+        var trainerId = currentUserService.TrainerId;
+
+        return await result.MatchAsync<ActionResult>(
+            onSuccess: async () =>
+            {
+                var trainer = await queryDispatcher.DispatchAsync(
+                    HttpToApplicationMappings.ToGetTrainerByIdQuery(trainerId), cancellationToken);
+
+                return trainer is null ? NotFound() : Ok(trainer.ToHttp());
+            },
+            onFailure: errors => ValueTask.FromResult(this.PhotoProblem(errors)));
+    }
+
+    /// <summary>
+    /// Takes the calling trainer's photo down.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the request.</param>
+    /// <returns>Nothing, or why there was nothing to take down.</returns>
+    [HttpDelete("me/photo")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult> DeletePhotoAsync(CancellationToken cancellationToken = default)
+    {
+        var result = await commandDispatcher.DispatchAsync(
+            new RemoveTrainerPhotoCommand(), cancellationToken);
+
+        return result.Match<ActionResult>(
+            onSuccess: NoContent,
+            onFailure: this.PhotoProblem);
     }
 }

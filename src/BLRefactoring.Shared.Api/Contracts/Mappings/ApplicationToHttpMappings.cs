@@ -37,7 +37,8 @@ public static class ApplicationToHttpMappings
             Firstname = trainer.Firstname,
             Lastname = trainer.Lastname,
             ContactEmail = trainer.ContactEmail,
-            Bio = trainer.Bio
+            Bio = trainer.Bio,
+            PhotoId = trainer.PhotoId
         };
     }
 

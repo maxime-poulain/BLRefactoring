@@ -53,6 +53,7 @@ public static class ServiceCollectionExtensions
                     options.EnableSensitiveDataLogging();
                 }
             })
+            .AddObjectStorage(configuration)
             .AddScoped<DomainEventInterceptor>()
             // The system clock, injected so the audit stamps can be driven by a test.
             .AddSingleton(TimeProvider.System)

@@ -34,8 +34,11 @@
     <!--
       IDE0005 (unnecessary usings) rides on the compiler's unused-using detection, which is off
       unless documentation generation is on. Measured, not assumed: zero occurrences without this,
-      twenty-eight with. CS1591 is silenced in .editorconfig rather than here — see the comment
-      there for why nine hundred missing doc comments are a separate decision.
+      twenty-eight with.
+
+      It also turns on CS1591, "missing XML comment on a publicly visible type or member", on nine
+      hundred and eleven members at the time. ADR 0019 silenced it and ADR 0020 wrote them instead,
+      so nothing exempts it now — and the document ASP.NET Core publishes carries the result.
     -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
@@ -45,6 +48,41 @@
       solution. Pinned after measuring that aligning them costs nothing.
     -->
     <AnalysisLevel>10.0</AnalysisLevel>
+
+    <!--
+      The .NET analyzers ship around four hundred and fifty CA rules and enable a fraction of them
+      by default. `.editorconfig` names forty-nine more, all hand-picked, with nothing recorded
+      about where the list came from. Switching every category on at once (`AnalysisMode=All`)
+      produces one thousand and thirty warnings — of which five hundred and forty-seven are
+      CA1707, "identifiers should not contain underscores", against test names this repository
+      writes as sentences on purpose, and one hundred and forty-four are CA2007, ConfigureAwait,
+      in an application that has no synchronization context to return to.
+
+      So: by category, and only the categories that measured cheap. These three are free — the
+      census found not one occurrence in any of them, which is worth more than it sounds. Security
+      is the whole CA2100/CA3xxx/CA5xxx family, in a codebase holding a JWT issuer, a reverse
+      proxy that attaches tokens server-side, and EF Core; that it reports nothing today is the
+      reason to keep it reporting.
+    -->
+    <AnalysisModeSecurity>All</AnalysisModeSecurity>
+    <AnalysisModeDocumentation>All</AnalysisModeDocumentation>
+    <AnalysisModeInteroperability>All</AnalysisModeInteroperability>
+
+    <!--
+      Globalization costs four: CA1307 three times and CA1308 once, all four fixed here. Kept
+      because CA1305, its sibling, has been enforced all along — a ruleset that demands an
+      IFormatProvider on formatting and says nothing about StringComparison on comparison is
+      enforcing half a rule.
+
+      Maintainability is the category that was measured and left out. Its only two findings were
+      CA1515 sixty-three times — make an application's public types internal, which would need
+      InternalsVisibleTo plumbing to keep `WebApplicationFactory<Program>`, MVC's controller
+      discovery and the shared test kit compiling — and CA1508 four times, all four in equality
+      tests that assert at run time what the analyzer proves at compile time. A category switch
+      whose every consequence is turned down reads like enforcement and does nothing, so CA1508 is
+      declared on its own in .editorconfig, under src/ where it costs nothing and means something.
+    -->
+    <AnalysisModeGlobalization>All</AnalysisModeGlobalization>
 
     <!--
       NuGet audit findings stay loud and stop blocking. They are not rules this repository chose

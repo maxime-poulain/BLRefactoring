@@ -52,8 +52,13 @@ csharp_new_line_before_members_in_anonymous_types = true
 # Namespace settings
 csharp_style_namespace_declarations = file_scoped
 
-# Brace settings
-csharp_prefer_braces = true # Prefer curly braces even for one line of code
+# Brace settings — prefer curly braces even for one line of code.
+# The comment is on its own line, and has to be: EditorConfig comments are recognised at the start
+# of a line only, so `= true # …` makes the value the whole string after the `=`. The parser then
+# fails to read it and falls back to the default, which happens to be `true` — so this one read
+# correctly by luck, and would have gone silently unapplied the day anyone wrote `when_multiline`.
+# Exactly the trap the header of this file warns about, in a second form.
+csharp_prefer_braces = true
 
 [*.{xml,config,*proj,nuspec,props,resx,targets,yml,tasks}]
 indent_size = 2
@@ -105,7 +110,10 @@ dotnet_diagnostic.CA1512.severity = warning
 dotnet_diagnostic.CA1513.severity = warning
 
 # CA1725: Parameter names should match base declaration
-dotnet_diagnostic.CA1725.severity = suggestion
+# Was a suggestion, with nothing written down to say why, in a file whose stated rule is that a
+# demotion carries its argument. Measured before promoting it: zero occurrences. It had been the
+# cheapest thing in the ruleset to enforce for as long as it had been declared.
+dotnet_diagnostic.CA1725.severity = warning
 
 # CA1802: Use literals where appropriate
 dotnet_diagnostic.CA1802.severity = warning
@@ -269,7 +277,10 @@ dotnet_diagnostic.IDE0031.severity = warning
 dotnet_diagnostic.IDE0035.severity = warning
 
 # IDE0036: Order modifiers
-csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:suggestion
+# No `:suggestion` on the preference. The trailing form is the older way of writing a severity, and
+# where both forms appear the `dotnet_diagnostic` line below wins — so the suffix said "suggestion"
+# about a rule that was an error, to every reader of this file and to no compiler.
+csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async
 dotnet_diagnostic.IDE0036.severity = warning
 
 # IDE0038: Use pattern matching to avoid is check followed by a cast (without variable)
@@ -289,7 +300,12 @@ dotnet_diagnostic.IDE0044.severity = warning
 dotnet_diagnostic.IDE0051.severity = warning
 
 # IDE0055: All formatting rules
-dotnet_diagnostic.IDE0055.severity = suggestion
+# The single most consequential line in this file, and it had been a suggestion with no reason
+# written beside it. Every formatting decision above — Allman braces, the newline settings, System
+# directives sorted first, four-space indentation — is reported through IDE0055 and through nothing
+# else. While this said `suggestion`, all of them were preferences an editor might apply and a build
+# would not check. Measured before promoting: seven occurrences in the whole solution.
+dotnet_diagnostic.IDE0055.severity = warning
 
 # IDE0059: Unnecessary assignment to a value
 dotnet_diagnostic.IDE0059.severity = warning
@@ -310,6 +326,285 @@ dotnet_diagnostic.IDE0200.severity = warning
 # IDE2000: Disallow multiple blank lines
 dotnet_style_allow_multiple_blank_lines_experimental = false
 dotnet_diagnostic.IDE2000.severity = warning
+
+
+# ---------------------------------------------------------------------------------------------
+# Rules this file had never named, and what each of them costs.
+#
+# The list above is a curated forty-nine CA rules and twenty-four IDE ones. Nothing recorded where
+# the curation came from or what was left out, and the answer turned out to be: almost everything.
+# The .NET analyzers ship roughly four hundred and fifty CA rules and a hundred IDE ones.
+#
+# A census measured them, because guessing is what left this file unenforced for a whole record
+# (ADR 0017, then ADR 0019). Every rule below carries the number it produced when it was switched
+# on against this tree. See ADR 0020.
+# ---------------------------------------------------------------------------------------------
+
+# --- Free. Sixty rules, and every one of them reported zero occurrences. -----------------------
+#
+# The reason this block is worth having is not the rules it turns on today — it is that the tree
+# already satisfied all sixty and nothing was holding it there. A rule this codebase obeys by habit
+# is a rule the next commit may break in silence; declared, it cannot.
+#
+# Four of them make an existing preference real. `dotnet_style_qualification_for_field/property`,
+# `dotnet_style_predefined_type_*`, `csharp_style_var_*` and `csharp_style_throw_expression` are
+# stated at the top of this file with a trailing `:suggestion`, which is to say they were opinions
+# no build acted on. IDE0003/IDE0009, IDE0049, IDE0007 and IDE0016 are the diagnostics that report
+# them, and all four cost nothing.
+dotnet_diagnostic.IDE0001.severity = warning
+dotnet_diagnostic.IDE0002.severity = warning
+dotnet_diagnostic.IDE0003.severity = warning
+dotnet_diagnostic.IDE0007.severity = warning
+dotnet_diagnostic.IDE0009.severity = warning
+dotnet_diagnostic.IDE0010.severity = warning
+dotnet_diagnostic.IDE0016.severity = warning
+dotnet_diagnostic.IDE0017.severity = warning
+dotnet_diagnostic.IDE0018.severity = warning
+dotnet_diagnostic.IDE0019.severity = warning
+dotnet_diagnostic.IDE0025.severity = warning
+dotnet_diagnostic.IDE0026.severity = warning
+dotnet_diagnostic.IDE0027.severity = warning
+dotnet_diagnostic.IDE0033.severity = warning
+dotnet_diagnostic.IDE0034.severity = warning
+dotnet_diagnostic.IDE0037.severity = warning
+dotnet_diagnostic.IDE0042.severity = warning
+dotnet_diagnostic.IDE0047.severity = warning
+dotnet_diagnostic.IDE0048.severity = warning
+dotnet_diagnostic.IDE0049.severity = warning
+# IDE0052 is IDE0051's other half: one finds a private member nobody calls, this one finds a
+# private member written and never read. The first was declared and the second was not.
+dotnet_diagnostic.IDE0052.severity = warning
+dotnet_diagnostic.IDE0054.severity = warning
+dotnet_diagnostic.IDE0056.severity = warning
+dotnet_diagnostic.IDE0057.severity = warning
+dotnet_diagnostic.IDE0063.severity = warning
+dotnet_diagnostic.IDE0065.severity = warning
+dotnet_diagnostic.IDE0066.severity = warning
+dotnet_diagnostic.IDE0071.severity = warning
+dotnet_diagnostic.IDE0072.severity = warning
+dotnet_diagnostic.IDE0074.severity = warning
+dotnet_diagnostic.IDE0075.severity = warning
+# IDE0079 removes a suppression that no longer suppresses anything. Five `[SuppressMessage]`
+# attributes stand in this repository, each carrying a paragraph about a private constructor an
+# expression tree reaches; the day that mechanism changes, this is what says so.
+dotnet_diagnostic.IDE0079.severity = warning
+dotnet_diagnostic.IDE0080.severity = warning
+dotnet_diagnostic.IDE0082.severity = warning
+dotnet_diagnostic.IDE0083.severity = warning
+dotnet_diagnostic.IDE0090.severity = warning
+dotnet_diagnostic.IDE0100.severity = warning
+dotnet_diagnostic.IDE0110.severity = warning
+dotnet_diagnostic.IDE0120.severity = warning
+# IDE0130 requires a namespace to match the folder it is in. Zero occurrences, in a repository
+# whose argument is that structure is checked rather than described — this is the compiler saying
+# the same thing the architecture tests say, about the one thing they do not cover.
+dotnet_diagnostic.IDE0130.severity = warning
+dotnet_diagnostic.IDE0150.severity = warning
+dotnet_diagnostic.IDE0170.severity = warning
+dotnet_diagnostic.IDE0180.severity = warning
+dotnet_diagnostic.IDE0210.severity = warning
+dotnet_diagnostic.IDE0220.severity = warning
+dotnet_diagnostic.IDE0240.severity = warning
+dotnet_diagnostic.IDE0241.severity = warning
+dotnet_diagnostic.IDE0250.severity = warning
+dotnet_diagnostic.IDE0251.severity = warning
+dotnet_diagnostic.IDE0260.severity = warning
+dotnet_diagnostic.IDE0280.severity = warning
+dotnet_diagnostic.IDE0302.severity = warning
+dotnet_diagnostic.IDE0303.severity = warning
+dotnet_diagnostic.IDE0304.severity = warning
+dotnet_diagnostic.IDE0320.severity = warning
+dotnet_diagnostic.IDE0330.severity = warning
+dotnet_diagnostic.IDE0340.severity = warning
+dotnet_diagnostic.IDE0350.severity = warning
+dotnet_diagnostic.IDE1005.severity = warning
+
+# --- Adopted, and paid for. Thirty-two occurrences, all fixed in the same change. --------------
+
+# CA2201: Do not raise reserved exception types (6)
+# CA1065: Do not raise exceptions in unexpected locations (2)
+# The same defect seen twice. `CurrentUserService` raised `ApplicationException` — the type the
+# framework documents as "do not use" — from two property getters, which is the one place a getter
+# is not allowed to throw from. The repository has an error vocabulary and a record about it
+# (ADR 0015); reaching for the base exception type inside it is the thing that vocabulary exists to
+# replace. `InvalidOperationException` satisfies both rules and says what actually went wrong.
+dotnet_diagnostic.CA2201.severity = warning
+dotnet_diagnostic.CA1065.severity = warning
+
+# CA2215: Dispose methods should call base class dispose (1)
+# One occurrence, and it is deliberate: a recording handler whose whole override exists so that a
+# test can read what it captured after the client that owned it is gone. It carries the argument in
+# a [SuppressMessage] at the site. The rule stays on because a DelegatingHandler that forgets its
+# base leaks the inner handler, and nothing else would say so.
+dotnet_diagnostic.CA2215.severity = warning
+
+# IDE0004: Cast is redundant (2)
+dotnet_diagnostic.IDE0004.severity = warning
+
+# IDE0040: Accessibility modifiers required (8)
+dotnet_style_require_accessibility_modifiers = for_non_interface_members
+dotnet_diagnostic.IDE0040.severity = warning
+
+# IDE0041: Use is-null check (1)
+dotnet_diagnostic.IDE0041.severity = warning
+
+# IDE0078: Use pattern matching (1)
+dotnet_diagnostic.IDE0078.severity = warning
+
+# --- Declined, with the count that decided it. -------------------------------------------------
+#
+# Declared rather than left unmentioned, so that the file records a decision taken instead of a
+# rule nobody looked at. Each of these was measured against this tree and lost on its merits.
+
+# IDE0058: Expression value is never used (861)
+# Eight hundred and sixty-one, and seven in every eight are a test asserting through a fluent call
+# whose return value is the assertion. Obeying it means `_ =` in front of most lines of most test
+# files. The rule is written for code that ignores a Result; this repository's Result is checked by
+# an architecture rule that reads the call sites, which is the version of the check that works.
+dotnet_diagnostic.IDE0058.severity = suggestion
+
+# IDE0021, IDE0022, IDE0023, IDE0024: Use block body for … (2, 210, 2, 2)
+# The expression-bodied family, and the repository genuinely uses both forms: a block where there
+# is a guard clause, an arrow where the member is one expression. There is no preference declared
+# here, so the analyzer applies its own — "always a block" — and asks for two hundred and sixteen
+# rewrites that change no behaviour. Forcing the opposite default would ask for as many the other
+# way. A rule that cannot be satisfied without picking a side this codebase has not picked.
+dotnet_diagnostic.IDE0021.severity = suggestion
+dotnet_diagnostic.IDE0022.severity = suggestion
+dotnet_diagnostic.IDE0023.severity = suggestion
+dotnet_diagnostic.IDE0024.severity = suggestion
+
+# IDE0045, IDE0046: Use conditional expression for assignment / return (0, 24)
+# Declined together although only one of them fires: they are one preference applied in two
+# positions, and enforcing the half that happens to cost nothing today would be an accident rather
+# than a decision. The twenty-four are `if (…) return a; return b;` in equality and comparison
+# members, where the ternary is shorter and not clearer.
+dotnet_diagnostic.IDE0045.severity = suggestion
+dotnet_diagnostic.IDE0046.severity = suggestion
+
+# IDE0028, IDE0300, IDE0301, IDE0305: Collection initialization can be simplified (8, 10, 2, 3)
+# Collection expressions, `[a, b]` for `new List<T> { a, b }`. Twenty-three mechanical rewrites for
+# a syntax this repository has not adopted anywhere yet. Adopting a language feature is a decision
+# about how the code reads, and it belongs to whoever makes it — not to a ruleset changing the
+# subject in the middle of enforcing one.
+dotnet_diagnostic.IDE0028.severity = suggestion
+dotnet_diagnostic.IDE0300.severity = suggestion
+dotnet_diagnostic.IDE0301.severity = suggestion
+dotnet_diagnostic.IDE0305.severity = suggestion
+
+# IDE0039: Use local function instead of lambda (10)
+# All ten are one-line test doubles passed straight into a call. A local function would name them
+# and move them away from the assertion that reads them.
+dotnet_diagnostic.IDE0039.severity = suggestion
+
+# IDE0032: Use auto property (2)
+# Both are `PagedQuery`, whose backing fields are written by its constructor after validation and
+# never again. An auto property would be a settable one.
+dotnet_diagnostic.IDE0032.severity = suggestion
+
+# IDE0230: Use UTF-8 string literal (1)
+# One occurrence, in a test that builds an ETag byte-for-byte on purpose — the literal is the
+# subject of the test, not an optimisation waiting to happen.
+dotnet_diagnostic.IDE0230.severity = suggestion
+
+# IDE0270: Null check can be simplified (2)
+# It asks for `x ?? throw new …`, which is a throw expression, which line 42 of this file declares
+# this repository does not use. Two rules of the same ruleset pointing opposite ways: the older
+# statement wins, and the newer one is turned down here so that the contradiction is visible.
+dotnet_diagnostic.IDE0270.severity = suggestion
+
+# IDE0290: Use primary constructor (4)
+# Primary constructor parameters stay in scope for the whole class body and can be captured by any
+# member, which is a different thing from a constructor that assigns readonly fields once. Four
+# occurrences is not a reason to trade the second for the first.
+dotnet_diagnostic.IDE0290.severity = suggestion
+
+
+# --- Naming. -----------------------------------------------------------------------------------
+#
+# This repository had no naming convention of any kind. Not one `dotnet_naming_rule` existed
+# anywhere, so IDE1006 had nothing to enforce and every identifier in the codebase held by
+# agreement alone — which is the same state the whole ruleset was in before ADR 0019, one level
+# down.
+#
+# The first attempt at these rules reported thirty violations and every one of them was wrong: a
+# `private static readonly` field in PascalCase, or a `private const` in PascalCase, both of which
+# are what this codebase does and what C# convention says. The rules were describing a convention
+# nobody follows. Written as they are below — static and const matched first, so the underscore
+# rule only ever sees an instance field — they cost nothing, which is the point: the convention was
+# already there and only its enforcement was missing.
+#
+# Order is the mechanism, not an accident. Roslyn applies the first rule whose symbol specification
+# matches, so `const` and `static` have to come before the general private-field rule or it claims
+# them first and asks for an underscore on both.
+dotnet_diagnostic.IDE1006.severity = warning
+
+dotnet_naming_rule.constants_are_pascal.severity = warning
+dotnet_naming_rule.constants_are_pascal.symbols = any_constant
+dotnet_naming_rule.constants_are_pascal.style = pascal
+dotnet_naming_symbols.any_constant.applicable_kinds = field
+dotnet_naming_symbols.any_constant.applicable_accessibilities = *
+dotnet_naming_symbols.any_constant.required_modifiers = const
+
+# `static readonly`, and not merely `static`: PascalCase is the convention for a value fixed at
+# first use, and `_camelCase` for one that changes. A mutable counter is the second thing, and an
+# earlier version of this rule asked it to be the first.
+dotnet_naming_rule.private_static_fields_are_pascal.severity = warning
+dotnet_naming_rule.private_static_fields_are_pascal.symbols = private_static_field
+dotnet_naming_rule.private_static_fields_are_pascal.style = pascal
+dotnet_naming_symbols.private_static_field.applicable_kinds = field
+dotnet_naming_symbols.private_static_field.applicable_accessibilities = private,internal
+dotnet_naming_symbols.private_static_field.required_modifiers = static,readonly
+
+dotnet_naming_rule.private_fields_are_underscored.severity = warning
+dotnet_naming_rule.private_fields_are_underscored.symbols = private_field
+dotnet_naming_rule.private_fields_are_underscored.style = underscored_camel
+dotnet_naming_symbols.private_field.applicable_kinds = field
+dotnet_naming_symbols.private_field.applicable_accessibilities = private
+dotnet_naming_style.underscored_camel.required_prefix = _
+dotnet_naming_style.underscored_camel.capitalization = camel_case
+
+dotnet_naming_rule.parameters_are_camel.severity = warning
+dotnet_naming_rule.parameters_are_camel.symbols = any_parameter
+dotnet_naming_rule.parameters_are_camel.style = camel
+dotnet_naming_symbols.any_parameter.applicable_kinds = parameter
+dotnet_naming_symbols.any_parameter.applicable_accessibilities = *
+dotnet_naming_style.camel.capitalization = camel_case
+
+dotnet_naming_rule.interfaces_are_i_prefixed.severity = warning
+dotnet_naming_rule.interfaces_are_i_prefixed.symbols = any_interface
+dotnet_naming_rule.interfaces_are_i_prefixed.style = i_prefixed
+dotnet_naming_symbols.any_interface.applicable_kinds = interface
+dotnet_naming_symbols.any_interface.applicable_accessibilities = *
+dotnet_naming_style.i_prefixed.required_prefix = I
+dotnet_naming_style.i_prefixed.capitalization = pascal_case
+
+dotnet_naming_rule.types_are_pascal.severity = warning
+dotnet_naming_rule.types_are_pascal.symbols = any_type
+dotnet_naming_rule.types_are_pascal.style = pascal
+dotnet_naming_symbols.any_type.applicable_kinds = class,struct,enum,delegate
+dotnet_naming_symbols.any_type.applicable_accessibilities = *
+dotnet_naming_style.pascal.capitalization = pascal_case
+
+# Methods, properties and events in PascalCase — under src/ only, and this is the one place the
+# convention genuinely splits. Test methods here are written as prose:
+# `Registering_a_trainer_answers_201_and_a_location`. No capitalization scheme accepts that, and
+# the sentence is the point: a failing test names what stopped being true. So the rule applies
+# where a member name is an identifier and not where it is a claim.
+[src/**.cs]
+dotnet_naming_rule.members_are_pascal.severity = warning
+dotnet_naming_rule.members_are_pascal.symbols = any_member
+dotnet_naming_rule.members_are_pascal.style = pascal
+dotnet_naming_symbols.any_member.applicable_kinds = property,method,event
+dotnet_naming_symbols.any_member.applicable_accessibilities = *
+
+# CA1508: Avoid dead conditional code
+# Under src/ for the same reason, from the other direction. Its four findings tree-wide are all in
+# equality tests — `vo.Equals(null)`, `entity == nullEntity` — where the analyzer proving the
+# answer at compile time is not a defect but the assertion restated. In production code a condition
+# that cannot change is dead code, and there it is worth a build failure.
+dotnet_diagnostic.CA1508.severity = warning
+
 
 
 # EF Core migrations are generated, not written. Holding them to the analyzer rules

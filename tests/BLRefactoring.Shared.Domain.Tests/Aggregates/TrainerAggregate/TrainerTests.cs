@@ -328,6 +328,126 @@ public sealed class TrainerTests
         domainEvent.TrainerId.Should().Be(trainer.Id);
     }
 
+    // --- AttachPhoto and RemovePhoto ---
+
+    /// <summary>
+    /// Attach photo, no photo yet, publishes it and displaces nothing.
+    /// </summary>
+    [Fact]
+    public void AttachPhoto_NoPhotoYet_PublishesItAndDisplacesNothing()
+    {
+        // Arrange
+        var trainer = new TrainerBuilder().Build();
+        var photo = TrainerPortrait();
+
+        // Act
+        trainer.AttachPhoto(photo);
+
+        // Assert
+        trainer.Photo.Should().Be(photo);
+    }
+
+    /// <summary>
+    /// Attach photo, photo already published, replaces it.
+    /// </summary>
+    /// <remarks>
+    /// The caller reads <c>Photo</c> before calling this when it needs to know what it is about to
+    /// displace — the old bytes still have to be deleted, after the new profile is committed. The
+    /// aggregate does not hand it back: it answers whether a change was allowed, and is not a way
+    /// of reading through to the data.
+    /// </remarks>
+    [Fact]
+    public void AttachPhoto_PhotoAlreadyPublished_ReplacesIt()
+    {
+        // Arrange
+        var trainer = new TrainerBuilder().Build();
+        var first = TrainerPortrait();
+        var second = TrainerPortrait();
+        trainer.AttachPhoto(first);
+
+        // Act
+        trainer.AttachPhoto(second);
+
+        // Assert
+        trainer.Photo.Should().Be(second);
+    }
+
+    /// <summary>
+    /// Attach photo, null photo, throws.
+    /// </summary>
+    [Fact]
+    public void AttachPhoto_NullPhoto_Throws()
+    {
+        // Arrange
+        var trainer = new TrainerBuilder().Build();
+
+        // Act
+        var act = () => trainer.AttachPhoto(null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    /// <summary>
+    /// Remove photo, photo published, clears it.
+    /// </summary>
+    [Fact]
+    public void RemovePhoto_PhotoPublished_ClearsIt()
+    {
+        // Arrange
+        var trainer = new TrainerBuilder().Build();
+        trainer.AttachPhoto(TrainerPortrait());
+
+        // Act
+        trainer.RemovePhoto();
+
+        // Assert
+        trainer.Photo.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Remove photo, no photo, changes nothing rather than complaining.
+    /// </summary>
+    [Fact]
+    public void RemovePhoto_NoPhoto_ChangesNothing()
+    {
+        // Arrange
+        var trainer = new TrainerBuilder().Build();
+
+        // Act
+        trainer.RemovePhoto();
+
+        // Assert
+        trainer.Photo.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Attach photo, raises no domain event.
+    /// </summary>
+    /// <remarks>
+    /// Deliberate. A domain event here would have to be handled, and handlers run inside the
+    /// transaction the aggregate is saved in — so deleting the displaced bytes would happen at the
+    /// one moment a rollback could still want them back.
+    /// </remarks>
+    [Fact]
+    public void AttachPhoto_RaisesNoDomainEvent()
+    {
+        // Arrange
+        var trainer = new TrainerBuilder().Build();
+        trainer.ClearDomainEvents();
+
+        // Act
+        trainer.AttachPhoto(TrainerPortrait());
+
+        // Assert
+        trainer.DomainEvents.Should().BeEmpty();
+    }
+
+    private static TrainerPhoto TrainerPortrait() =>
+        TrainerPhoto.Create(
+            [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00],
+            TrainerPhoto.PngContentType).ShouldBeSuccess();
+
     private static Name TrainerName(string firstname = "John", string lastname = "Doe")
         => Name.Create(firstname, lastname).ShouldBeSuccess();
 

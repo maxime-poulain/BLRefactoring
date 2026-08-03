@@ -7,6 +7,7 @@ using BLRefactoring.Shared.Common.Errors;
 using BLRefactoring.Shared.Common.Results;
 using BLRefactoring.Shared.Domain;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
+using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 
 namespace BLRefactoring.DDD.Application.Services.TrainerServices;
 
@@ -45,6 +46,33 @@ public interface ITrainerApplicationService
     /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     /// <returns>The trainer, or a not-found failure.</returns>
     Task<Result<TrainerDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Publishes a photo on the calling trainer's profile, replacing any they already had.
+    /// </summary>
+    /// <param name="content">The uploaded bytes.</param>
+    /// <param name="contentType">The media type the caller claims they have.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>The updated profile, or why the photo was refused.</returns>
+    Task<Result<TrainerDto>> SetPhotoAsync(
+        byte[] content,
+        string? contentType,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Takes the calling trainer's photo down.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>Success, or why nothing was taken down.</returns>
+    Task<Result> RemovePhotoAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reads a trainer's photo.
+    /// </summary>
+    /// <param name="id">The trainer whose photo is wanted.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>The photo, or <see langword="null"/> when there is none.</returns>
+    Task<TrainerPhotoDto?> GetPhotoAsync(Guid id, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -53,6 +81,7 @@ public interface ITrainerApplicationService
 /// </summary>
 public sealed class TrainerApplicationService(
     ITrainerRepository trainerRepository,
+    ITrainerPhotoStore photoStore,
     ICurrentUserService currentUserService,
     IUnitOfWork unitOfWork)
     : ITrainerApplicationService
@@ -144,4 +173,113 @@ public sealed class TrainerApplicationService(
 
         return Result<TrainerDto>.Success(trainer.ToDto());
     }
+
+    /// <inheritdoc />
+    public async Task<Result<TrainerDto>> SetPhotoAsync(
+        byte[] content,
+        string? contentType,
+        CancellationToken cancellationToken = default)
+    {
+        var id = currentUserService.TrainerId;
+
+        var trainer = await trainerRepository.GetByIdAsync(TrainerId.Create(id), cancellationToken);
+
+        if (trainer is null)
+        {
+            return Result<TrainerDto>.Failure(ErrorCodes.NotFound, $"Trainer with id `{id}` could not be found.");
+        }
+
+        // What counts as a photo is the aggregate's rule, read off the bytes themselves.
+        var photoResult = TrainerPhoto.Create(content, contentType);
+
+        return await photoResult.MatchAsync(async photo =>
+        {
+            // Storage is not transactional with the database, so the order below is what decides
+            // which failure is possible at all. New bytes first, under a key nothing names yet…
+            await photoStore.StoreAsync(trainer.Id, photo, content, cancellationToken);
+
+            // …then the row that names them. What it displaces is read before the change rather
+            // than returned by it: the aggregate answers whether a change was allowed, nothing more.
+            var replaced = trainer.Photo;
+            trainer.AttachPhoto(photo);
+            trainerRepository.Update(trainer);
+
+            try
+            {
+                await unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+            catch (ConcurrencyConflictException)
+            {
+                return Result<TrainerDto>.Failure(ErrorCodes.ConcurrencyConflict, PhotoConcurrencyMessage);
+            }
+
+            // …and only now what it displaced. Every crash point above leaves an orphaned object,
+            // which is collectable; none leaves a profile pointing at bytes that are gone.
+            if (replaced is not null)
+            {
+                await photoStore.DeleteAsync(trainer.Id, replaced, cancellationToken);
+            }
+
+            return Result<TrainerDto>.Success(trainer.ToDto());
+        }, Result<TrainerDto>.FailureAsync);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> RemovePhotoAsync(CancellationToken cancellationToken = default)
+    {
+        var id = currentUserService.TrainerId;
+
+        var trainer = await trainerRepository.GetByIdAsync(TrainerId.Create(id), cancellationToken);
+
+        if (trainer is null)
+        {
+            return Result.Failure(ErrorCodes.NotFound, $"Trainer with id `{id}` could not be found.");
+        }
+
+        var removed = trainer.Photo;
+
+        if (removed is null)
+        {
+            return Result.Failure(ErrorCodes.NotFound, "This trainer has no photo.");
+        }
+
+        trainer.RemovePhoto();
+
+        trainerRepository.Update(trainer);
+
+        try
+        {
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (ConcurrencyConflictException)
+        {
+            return Result.Failure(ErrorCodes.ConcurrencyConflict, PhotoConcurrencyMessage);
+        }
+
+        await photoStore.DeleteAsync(trainer.Id, removed, cancellationToken);
+
+        return Result.Success();
+    }
+
+    /// <inheritdoc />
+    public async Task<TrainerPhotoDto?> GetPhotoAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var trainer = await trainerRepository.GetByIdAsync(TrainerId.Create(id), cancellationToken);
+
+        if (trainer?.Photo is null)
+        {
+            return null;
+        }
+
+        var stored = await photoStore.FetchAsync(trainer.Id, trainer.Photo, cancellationToken);
+
+        // A row naming bytes the store does not hold should not happen, since writes go in the
+        // order that prevents it. Answering "no photo" beats an error nobody can act on.
+        return stored is null
+            ? null
+            : new TrainerPhotoDto(trainer.Photo.PhotoId, stored.Content, stored.ContentType);
+    }
+
+    private const string PhotoConcurrencyMessage =
+        "The photo was changed by another request while this one was in flight. Try again.";
 }

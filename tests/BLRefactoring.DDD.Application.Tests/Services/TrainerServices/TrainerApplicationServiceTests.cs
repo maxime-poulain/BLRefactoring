@@ -248,7 +248,7 @@ public sealed class TrainerApplicationServiceTests
             .ReturnsAsync(trainer);
         _fixture.UnitOfWork
             .Setup(uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new ConcurrencyConflictException("conflict", new Exception()));
+            .ThrowsAsync(new ConcurrencyConflictException("conflict", new InvalidOperationException("inner")));
         var sut = _fixture.CreateSut();
 
         var result = await sut.EditAsync(EditionRequest(firstname: "Jane"), trainer.RowVersion);

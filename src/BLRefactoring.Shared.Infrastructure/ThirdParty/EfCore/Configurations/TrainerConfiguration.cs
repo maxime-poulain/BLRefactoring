@@ -52,6 +52,23 @@ public sealed class TrainerConfiguration : AggregateRootTypeConfiguration<Traine
                 .IsRequired(false);
         });
 
+        // Owned, like every other value object on this aggregate, and optional: a trainer without
+        // a photo has nulls in these three columns rather than a row somewhere else. What is
+        // stored is the photo's identity — never a bucket, a key or a URL — so moving the bytes to
+        // a different store changes configuration and leaves this table alone. See ADR 0021.
+        builder.OwnsOne(e => e.Photo, photoBuilder =>
+        {
+            photoBuilder.Property(p => p.PhotoId)
+                .HasColumnName("PhotoId");
+
+            photoBuilder.Property(p => p.ContentType)
+                .HasColumnName("PhotoContentType")
+                .HasMaxLength(64);
+
+            photoBuilder.Property(p => p.ByteSize)
+                .HasColumnName("PhotoByteSize");
+        });
+
         builder.Property(p => p.UserId)
             .HasConversion(v => v.Value, v => UserId.Create(v))
             .HasColumnName("UserId")

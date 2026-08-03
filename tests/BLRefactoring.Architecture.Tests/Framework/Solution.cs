@@ -98,6 +98,15 @@ internal static class Solution
     /// inherited, and sealing it would not compile — so the rule that says it has to see every test
     /// project too. That is what the six unit-test references in this csproj are for; nothing else
     /// uses them.
+    /// <para>
+    /// BLRefactoring.Blazor.Client.Tests is the one absentee, and it is worth naming rather than
+    /// leaving to be noticed. It overrides the centrally pinned Components version for itself —
+    /// bUnit's net10.0 assets want 10.x while the Blazor projects target net9.0 — and referencing
+    /// it from here drags that override into a project that also reaches the net9.0 graph, which
+    /// central transitive pinning refuses outright. The cost is two sealed classes this suite
+    /// cannot see. The fix is to move the Blazor projects to net10.0, at which point the override
+    /// disappears and so does this paragraph.
+    /// </para>
     /// </remarks>
     public static readonly IReadOnlyList<Assembly> All =
     [

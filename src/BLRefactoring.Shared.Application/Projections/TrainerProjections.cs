@@ -28,7 +28,8 @@ public static class TrainerProjections
         ContactEmail = trainer.ContactEmail.FullAddress,
         Firstname = trainer.Name.Firstname,
         Lastname = trainer.Name.Lastname,
-        Bio = trainer.Bio == null ? null : trainer.Bio.Value
+        Bio = trainer.Bio == null ? null : trainer.Bio.Value,
+        PhotoId = trainer.Photo == null ? null : trainer.Photo.PhotoId
     };
 
     private static readonly Func<Trainer, TrainerDto> Compiled = ToDtoExpression.Compile();

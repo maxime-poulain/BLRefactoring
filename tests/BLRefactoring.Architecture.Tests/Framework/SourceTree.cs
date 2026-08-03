@@ -166,7 +166,7 @@ internal static class SourceTree
                 continue;
             }
 
-            var value = line[(line.IndexOf('=') + 1)..].Trim();
+            var value = line[(line.IndexOf("=", StringComparison.Ordinal) + 1)..].Trim();
 
             if (value.Equals("true", StringComparison.OrdinalIgnoreCase))
             {
@@ -187,7 +187,7 @@ internal static class SourceTree
     /// </remarks>
     private static Regex GlobToRegex(string glob)
     {
-        var pattern = new StringBuilder(glob.Contains('/') ? "^" : "^(?:.*/)?");
+        var pattern = new StringBuilder(glob.Contains('/', StringComparison.Ordinal) ? "^" : "^(?:.*/)?");
 
         for (var index = 0; index < glob.Length; index++)
         {

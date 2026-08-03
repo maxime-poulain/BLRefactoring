@@ -163,7 +163,7 @@ public sealed class EditTrainerCommandHandlerTests
         GivenTrainer(trainer);
         _unitOfWork
             .Setup(uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new ConcurrencyConflictException("conflict", new Exception()));
+            .ThrowsAsync(new ConcurrencyConflictException("conflict", new InvalidOperationException("inner")));
         var sut = CreateSut();
 
         var result = await sut.Handle(
