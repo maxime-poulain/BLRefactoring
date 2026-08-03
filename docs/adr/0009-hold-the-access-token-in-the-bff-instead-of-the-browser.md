@@ -58,7 +58,7 @@ Concretely:
   is instead of decoding anything. The answer is cached for the application's lifetime and dropped
   on sign-in and sign-out, so an `AuthorizeView` in every page does not mean a request in every
   page.
-- **`X-Requested-With: BLRefactoring.Blazor` on every call**, added by a `DelegatingHandler` and
+- **`X-Requested-With: TrainingHub.Blazor` on every call**, added by a `DelegatingHandler` and
   required by both the `/bff` group and the `/api` prefix. See the trade-offs below for why this is
   the forgery mitigation.
 - **The cookie expires with the token it carries.** `ExpiresUtc` is taken from the JWT's own `exp`
@@ -170,7 +170,7 @@ Worth revisiting when a second front end appears.
 
 ## Verification
 
-`BLRefactoring.Blazor.Bff.Tests` hosts the real `Program.cs` — pipeline order included — with only
+`TrainingHub.Blazor.Bff.Tests` hosts the real `Program.cs` — pipeline order included — with only
 the far side of the proxy replaced by a handler that records what the API was sent. Cookie
 authentication, the forgery guard, the authorization on the proxied route and the token transform
 are the production ones, so what the suite asserts is what this record claims:

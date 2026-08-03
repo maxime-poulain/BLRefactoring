@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
+namespace TrainingHub.DDDWithCqrs.Application.Features.Trainers.Create;
 
 /// <summary>
 /// Checks <see cref="CreateTrainerCommand"/> before any handler sees it.

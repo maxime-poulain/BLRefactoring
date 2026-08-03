@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DDDWithCqrs\Application\TrainingHub.DDDWithCqrs.Application.csproj" />
+    <ProjectReference Include="..\..\src\DDDWithCqrs\Infrastructure\TrainingHub.DDDWithCqrs.Infrastructure.csproj" />
+    <ProjectReference Include="..\TrainingHub.Shared.Domain.Tests\TrainingHub.Shared.Domain.Tests.csproj" />
+  </ItemGroup>
+
+</Project>

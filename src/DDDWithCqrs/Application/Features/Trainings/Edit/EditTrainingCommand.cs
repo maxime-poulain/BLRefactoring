@@ -1,12 +1,12 @@
-using BLRefactoring.Shared;
-using BLRefactoring.Shared.Common;
-using BLRefactoring.Shared.Common.Errors;
-using BLRefactoring.Shared.Common.Results;
-using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
-using BLRefactoring.Shared.Application.Factories;
+using TrainingHub.Shared;
+using TrainingHub.Shared.Common;
+using TrainingHub.Shared.Common.Errors;
+using TrainingHub.Shared.Common.Results;
+using TrainingHub.Shared.CQS;
+using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
+using TrainingHub.Shared.Application.Factories;
 
-namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Edit;
+namespace TrainingHub.DDDWithCqrs.Application.Features.Trainings.Edit;
 
 /// <summary>
 /// Asks that a training be edited.

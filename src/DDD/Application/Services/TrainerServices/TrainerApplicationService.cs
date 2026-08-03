@@ -1,15 +1,15 @@
-using BLRefactoring.Shared.Common;
-using BLRefactoring.Shared;
-using BLRefactoring.Shared.Application.Projections;
-using BLRefactoring.Shared.Application.Dtos.Trainer;
-using BLRefactoring.Shared.Application.Factories;
-using BLRefactoring.Shared.Common.Errors;
-using BLRefactoring.Shared.Common.Results;
-using BLRefactoring.Shared.Domain;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
+using TrainingHub.Shared.Common;
+using TrainingHub.Shared;
+using TrainingHub.Shared.Application.Projections;
+using TrainingHub.Shared.Application.Dtos.Trainer;
+using TrainingHub.Shared.Application.Factories;
+using TrainingHub.Shared.Common.Errors;
+using TrainingHub.Shared.Common.Results;
+using TrainingHub.Shared.Domain;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 
-namespace BLRefactoring.DDD.Application.Services.TrainerServices;
+namespace TrainingHub.DDD.Application.Services.TrainerServices;
 
 // A good alternative would have been to have one application service per use case.
 // This would have allowed us to have a more granular control over the dependencies.

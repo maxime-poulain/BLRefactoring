@@ -1,7 +1,7 @@
-using BLRefactoring.Shared.Application.Dtos.Trainer;
-using BLRefactoring.Shared.CQS;
+using TrainingHub.Shared.Application.Dtos.Trainer;
+using TrainingHub.Shared.CQS;
 
-namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetById;
+namespace TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetById;
 
 /// <summary>
 /// Asks for a trainer by id.

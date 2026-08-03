@@ -97,7 +97,7 @@
     <PackageVersion Include="MudBlazor" Version="9.7.0" />
     <!--
       Reads compiled assemblies with Mono.Cecil and states an architectural rule as a fluent
-      predicate, for BLRefactoring.Architecture.Tests. The eNhanced fork rather than
+      predicate, for TrainingHub.Architecture.Tests. The eNhanced fork rather than
       NetArchTest.Rules: the original has shipped nothing since May 2021 and still carries
       Mono.Cecil 0.11.3, which predates every metadata change since. This one is maintained, and
       its failures name why a type failed and where it is declared — the difference between a

@@ -1,11 +1,11 @@
-# BLRefactoring.DDD.Infrastructure — intentionally empty
+# TrainingHub.DDD.Infrastructure — intentionally empty
 
 This project contains no code, and that is deliberate.
 
 Persistence is shared. The `DbContext`, the entity configurations, the migrations, the repository
 implementations, the unit of work and the interceptors that dispatch domain events and stamp audit
 columns all live in
-[`src/BLRefactoring.Shared.Infrastructure`](../../BLRefactoring.Shared.Infrastructure), because
+[`src/TrainingHub.Shared.Infrastructure`](../../TrainingHub.Shared.Infrastructure), because
 both stacks store the same aggregates in the same schema. Two sets of mappings would be two things
 to keep in step, and the first divergence would be a silent one.
 

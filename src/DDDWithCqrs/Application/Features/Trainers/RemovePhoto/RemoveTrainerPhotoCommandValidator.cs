@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.RemovePhoto;
+namespace TrainingHub.DDDWithCqrs.Application.Features.Trainers.RemovePhoto;
 
 /// <summary>
 /// Validates <see cref="RemoveTrainerPhotoCommand"/>.

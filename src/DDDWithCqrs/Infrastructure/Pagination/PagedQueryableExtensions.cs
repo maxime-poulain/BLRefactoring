@@ -1,8 +1,8 @@
 using System.Linq.Expressions;
-using BLRefactoring.DDDWithCqrs.Application.Pagination;
+using TrainingHub.DDDWithCqrs.Application.Pagination;
 using Microsoft.EntityFrameworkCore;
 
-namespace BLRefactoring.DDDWithCqrs.Infrastructure.Pagination;
+namespace TrainingHub.DDDWithCqrs.Infrastructure.Pagination;
 
 /// <summary>
 /// Turns an ordered query into one page of read models.

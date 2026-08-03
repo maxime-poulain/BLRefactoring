@@ -1,10 +1,10 @@
-# BLRefactoring.DDDWithCqrs.Infrastructure
+# TrainingHub.DDDWithCqrs.Infrastructure
 
 The read side of the CQRS stack, plus the Mediator plumbing it runs on.
 
 Shared persistence — the `DbContext`, the entity configurations, the migrations, the repositories,
 the unit of work and the save-time interceptors — lives in
-[`src/BLRefactoring.Shared.Infrastructure`](../../BLRefactoring.Shared.Infrastructure) and is used
+[`src/TrainingHub.Shared.Infrastructure`](../../TrainingHub.Shared.Infrastructure) and is used
 by both stacks. What is here is what only the CQRS stack has.
 
 ## What it holds

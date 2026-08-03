@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Edit;
+namespace TrainingHub.DDDWithCqrs.Application.Features.Trainings.Edit;
 
 /// <summary>
 /// Checks <see cref="EditTrainingCommand"/> before any handler sees it.

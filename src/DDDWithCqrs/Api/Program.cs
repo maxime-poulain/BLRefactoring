@@ -1,11 +1,11 @@
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
-using BLRefactoring.Shared.Application.EventHandlers;
-using BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator;
-using BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors;
-using BLRefactoring.Shared.Api.Extensions;
-using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
-using BLRefactoring.Shared.Infrastructure.Extensions;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Create;
+using TrainingHub.Shared.Application.EventHandlers;
+using TrainingHub.DDDWithCqrs.Infrastructure.ThirdParty.Mediator;
+using TrainingHub.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors;
+using TrainingHub.Shared.Api.Extensions;
+using TrainingHub.Shared.CQS;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
+using TrainingHub.Shared.Infrastructure.Extensions;
 using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,7 +47,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddValidatorsFromAssembly(typeof(CreateTrainerCommandValidator).Assembly);
 
 // Identity, JWT validation and the ownership policy are the same on both hosts, and are declared
-// once in BLRefactoring.Shared.Api so neither can quietly lose a rule the other keeps.
+// once in TrainingHub.Shared.Api so neither can quietly lose a rule the other keeps.
 builder.Services.AddApiIdentity(builder.Configuration);
 builder.Services.AddJwtBearerAuthentication(builder.Configuration);
 builder.Services.AddTrainingOwnerAuthorization();

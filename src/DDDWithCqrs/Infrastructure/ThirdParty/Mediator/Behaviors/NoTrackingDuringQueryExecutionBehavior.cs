@@ -1,9 +1,9 @@
-using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
+using TrainingHub.Shared.CQS;
+using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 
-namespace BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors;
+namespace TrainingHub.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors;
 
 /// <summary>
 /// Disables EF Core tracking during query execution.

@@ -1,14 +1,14 @@
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetById;
-using BLRefactoring.Shared;
-using BLRefactoring.Shared.Application.Dtos.Training;
-using BLRefactoring.Shared.Application.Projections;
-using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
-using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
-using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetById;
+using TrainingHub.Shared;
+using TrainingHub.Shared.Application.Dtos.Training;
+using TrainingHub.Shared.Application.Projections;
+using TrainingHub.Shared.CQS;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
+using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
+using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace BLRefactoring.DDDWithCqrs.Infrastructure.Features.Trainings.GetById;
+namespace TrainingHub.DDDWithCqrs.Infrastructure.Features.Trainings.GetById;
 
 /// <summary>
 /// Reads one training, and only if it belongs to the caller.

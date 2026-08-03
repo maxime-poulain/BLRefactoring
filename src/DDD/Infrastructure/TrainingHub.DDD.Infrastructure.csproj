@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\TrainingHub.Shared.Infrastructure\TrainingHub.Shared.Infrastructure.csproj" />
+    <ProjectReference Include="..\Application\TrainingHub.DDD.Application.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+</Project>

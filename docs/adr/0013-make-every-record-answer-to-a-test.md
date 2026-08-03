@@ -29,7 +29,7 @@ What all of these have in common is that the failure is silent and the diff look
 Every architectural decision still in force is defended by a test, or carries a written reason why
 it cannot be.
 
-The suite is `tests/BLRefactoring.Architecture.Tests`. It states around fifty rules, drawn from the
+The suite is `tests/TrainingHub.Architecture.Tests`. It states around fifty rules, drawn from the
 records and from the README's own claims, over four mechanisms: dependency predicates on compiled
 assemblies through NetArchTest, reflection over types and members, MSBuild over the project files,
 and a scan of the source tree. It runs in the fast CI job with every other unit test.

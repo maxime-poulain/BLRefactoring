@@ -1,16 +1,16 @@
-using BLRefactoring.DDD.Api.Mappings;
-using BLRefactoring.DDD.Application.Services.TrainingServices;
-using BLRefactoring.Shared.Api.Authorization;
-using BLRefactoring.Shared.Api.Contracts.Mappings;
-using BLRefactoring.Shared.Api.Contracts.Trainings;
-using BLRefactoring.Shared.Api.Controllers;
-using BLRefactoring.Shared.Api.Http;
-using BLRefactoring.Shared.Common.Errors;
-using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
+using TrainingHub.DDD.Api.Mappings;
+using TrainingHub.DDD.Application.Services.TrainingServices;
+using TrainingHub.Shared.Api.Authorization;
+using TrainingHub.Shared.Api.Contracts.Mappings;
+using TrainingHub.Shared.Api.Contracts.Trainings;
+using TrainingHub.Shared.Api.Controllers;
+using TrainingHub.Shared.Api.Http;
+using TrainingHub.Shared.Common.Errors;
+using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BLRefactoring.DDD.Api.Controller;
+namespace TrainingHub.DDD.Api.Controller;
 
 /// <summary>
 /// API controller for managing training resources.

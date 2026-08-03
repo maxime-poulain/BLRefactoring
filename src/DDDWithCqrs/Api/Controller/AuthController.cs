@@ -1,11 +1,11 @@
-using BLRefactoring.DDDWithCqrs.Api.Mappings;
-using BLRefactoring.Shared.Common.Results;
-using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.Api.Controllers;
-using BLRefactoring.Shared.Api.Identity;
+using TrainingHub.DDDWithCqrs.Api.Mappings;
+using TrainingHub.Shared.Common.Results;
+using TrainingHub.Shared.CQS;
+using TrainingHub.Shared.Api.Controllers;
+using TrainingHub.Shared.Api.Identity;
 using Microsoft.AspNetCore.Identity;
 
-namespace BLRefactoring.DDDWithCqrs.Api.Controller;
+namespace TrainingHub.DDDWithCqrs.Api.Controller;
 
 /// <summary>
 /// Authentication endpoints of the CQRS stack. The registration and login flows

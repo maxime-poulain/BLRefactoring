@@ -1,10 +1,10 @@
-# BLRefactoring.DDD.Domain — intentionally empty
+# TrainingHub.DDD.Domain — intentionally empty
 
 This project contains no code, and that is deliberate.
 
 The domain is shared. Both stacks — the layered one under `src/DDD` and the CQRS one under
 `src/DDDWithCqrs` — build on the same aggregates, value objects, domain events and repository
-ports, which live in [`src/BLRefactoring.Shared.Domain`](../../BLRefactoring.Shared.Domain).
+ports, which live in [`src/TrainingHub.Shared.Domain`](../../TrainingHub.Shared.Domain).
 That is the premise of the whole repository: the two stacks are compared at equal business scope,
 so a rule written twice would make every comparison meaningless.
 

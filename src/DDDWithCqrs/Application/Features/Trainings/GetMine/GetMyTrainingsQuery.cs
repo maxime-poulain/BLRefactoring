@@ -1,8 +1,8 @@
-using BLRefactoring.DDDWithCqrs.Application.Pagination;
-using BLRefactoring.Shared.Application.Dtos.Training;
-using BLRefactoring.Shared.CQS;
+using TrainingHub.DDDWithCqrs.Application.Pagination;
+using TrainingHub.Shared.Application.Dtos.Training;
+using TrainingHub.Shared.CQS;
 
-namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetMine;
+namespace TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetMine;
 
 /// <summary>
 /// One page of the calling trainer's own trainings, newest first.

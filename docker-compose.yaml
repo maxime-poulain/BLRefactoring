@@ -70,10 +70,10 @@ services:
       - "5085:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__TrainingContext=Server=sqlserver;Database=BLRefactoring;User Id=sa;Password=Password@;TrustServerCertificate=True;MultipleActiveResultSets=True
+      - ConnectionStrings__TrainingContext=Server=sqlserver;Database=TrainingHub;User Id=sa;Password=Password@;TrustServerCertificate=True;MultipleActiveResultSets=True
       - Jwt__Key=<(_aHuci8-$=j0J}c>Y{}J?msu3Xe;W*
-      - Jwt__Issuer=BLRefactoring.Api
-      - Jwt__Audience=BLRefactoring.Web
+      - Jwt__Issuer=TrainingHub.Api
+      - Jwt__Audience=TrainingHub.Web
       - Jwt__ExpireMinutes=60
       # Service name, not localhost: inside the network the store is another host. The credentials
       # are checked — they have to match an identity in docker/seaweedfs-s3.json, which is what

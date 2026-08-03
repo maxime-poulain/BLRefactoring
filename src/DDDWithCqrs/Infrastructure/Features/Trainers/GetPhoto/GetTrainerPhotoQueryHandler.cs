@@ -1,11 +1,11 @@
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetPhoto;
-using BLRefactoring.Shared.Application.Dtos.Trainer;
-using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
-using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetPhoto;
+using TrainingHub.Shared.Application.Dtos.Trainer;
+using TrainingHub.Shared.CQS;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
+using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace BLRefactoring.DDDWithCqrs.Infrastructure.Features.Trainers.GetPhoto;
+namespace TrainingHub.DDDWithCqrs.Infrastructure.Features.Trainers.GetPhoto;
 
 /// <summary>
 /// Handles <see cref="GetTrainerPhotoQuery"/>.

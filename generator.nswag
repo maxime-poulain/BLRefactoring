@@ -3,7 +3,7 @@
   "defaultVariables": null,
   "documentGenerator": {
     "fromDocument": {
-      "url": "src/DDD/Api/BLRefactoring.DDD.Api.json",
+      "url": "src/DDD/Api/TrainingHub.DDD.Api.json",
       "output": null,
       "newLineBehavior": "LF"
     }
@@ -59,7 +59,7 @@
       ],
       "generateResponseClasses": true,
       "responseClass": "SwaggerResponse",
-      "namespace": "BLRefactoring.GeneratedClients",
+      "namespace": "TrainingHub.GeneratedClients",
       "requiredPropertiesMustBeDefined": true,
       "dateType": "System.DateTimeOffset",
       "jsonConverters": null,
@@ -97,7 +97,7 @@
       "serviceSchemes": [
         "https"
       ],
-      "output": "src/BLRefactoring.GeneratedClients/Clients.Generated.cs",
+      "output": "src/TrainingHub.GeneratedClients/Clients.Generated.cs",
       "newLineBehavior": "LF"
     }
   }

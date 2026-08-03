@@ -1,11 +1,11 @@
-using BLRefactoring.Shared;
-using BLRefactoring.Shared.Domain;
-using BLRefactoring.Shared.Common.Results;
-using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
-using BLRefactoring.Shared.Application.Factories;
+using TrainingHub.Shared;
+using TrainingHub.Shared.Domain;
+using TrainingHub.Shared.Common.Results;
+using TrainingHub.Shared.CQS;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
+using TrainingHub.Shared.Application.Factories;
 
-namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
+namespace TrainingHub.DDDWithCqrs.Application.Features.Trainers.Create;
 
 /// <summary>
 /// Asks that a trainer be created.

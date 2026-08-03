@@ -1,17 +1,17 @@
-using BLRefactoring.DDDWithCqrs.Api.Contracts;
-using BLRefactoring.DDDWithCqrs.Api.Mappings;
-using BLRefactoring.Shared.Api.Authorization;
-using BLRefactoring.Shared.Api.Contracts.Mappings;
-using BLRefactoring.Shared.Api.Contracts.Trainings;
-using BLRefactoring.Shared.Api.Controllers;
-using BLRefactoring.Shared.Api.Http;
-using BLRefactoring.Shared.Common.Errors;
-using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
+using TrainingHub.DDDWithCqrs.Api.Contracts;
+using TrainingHub.DDDWithCqrs.Api.Mappings;
+using TrainingHub.Shared.Api.Authorization;
+using TrainingHub.Shared.Api.Contracts.Mappings;
+using TrainingHub.Shared.Api.Contracts.Trainings;
+using TrainingHub.Shared.Api.Controllers;
+using TrainingHub.Shared.Api.Http;
+using TrainingHub.Shared.Common.Errors;
+using TrainingHub.Shared.CQS;
+using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BLRefactoring.DDDWithCqrs.Api.Controller;
+namespace TrainingHub.DDDWithCqrs.Api.Controller;
 
 /// <summary>
 /// REST endpoints for trainings, on the CQRS stack.

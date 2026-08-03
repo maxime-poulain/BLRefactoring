@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetById;
+namespace TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetById;
 
 /// <summary>
 /// Checks <see cref="GetTrainingByIdQuery"/> before any handler sees it.

@@ -1,12 +1,12 @@
-using BLRefactoring.Shared;
-using BLRefactoring.Shared.Common;
-using BLRefactoring.Shared.Common.Errors;
-using BLRefactoring.Shared.Common.Results;
-using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
+using TrainingHub.Shared;
+using TrainingHub.Shared.Common;
+using TrainingHub.Shared.Common.Errors;
+using TrainingHub.Shared.Common.Results;
+using TrainingHub.Shared.CQS;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 
-namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.SetPhoto;
+namespace TrainingHub.DDDWithCqrs.Application.Features.Trainers.SetPhoto;
 
 /// <summary>
 /// Publishes a photo on the calling trainer's profile, replacing any they already had.

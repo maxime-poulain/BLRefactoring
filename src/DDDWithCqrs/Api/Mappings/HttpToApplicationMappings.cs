@@ -1,18 +1,18 @@
-using BLRefactoring.DDDWithCqrs.Api.Contracts;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Create;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Edit;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetById;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Create;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Delete;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Edit;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetById;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainings.GetMine;
-using BLRefactoring.Shared.Api.Contracts.Trainers;
-using BLRefactoring.Shared.Api.Controllers;
-using BLRefactoring.Shared.Api.Contracts.Trainings;
-using BLRefactoring.DDDWithCqrs.Application.Pagination;
+using TrainingHub.DDDWithCqrs.Api.Contracts;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Create;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Edit;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetById;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Create;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Delete;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Edit;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetById;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetMine;
+using TrainingHub.Shared.Api.Contracts.Trainers;
+using TrainingHub.Shared.Api.Controllers;
+using TrainingHub.Shared.Api.Contracts.Trainings;
+using TrainingHub.DDDWithCqrs.Application.Pagination;
 
-namespace BLRefactoring.DDDWithCqrs.Api.Mappings;
+namespace TrainingHub.DDDWithCqrs.Api.Mappings;
 
 /// <summary>
 /// Turns the API's request contracts into this stack's commands and queries.

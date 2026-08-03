@@ -1,4 +1,4 @@
-namespace BLRefactoring.DDDWithCqrs.Api.Contracts;
+namespace TrainingHub.DDDWithCqrs.Api.Contracts;
 
 /// <summary>
 /// One page of a collection, as the API publishes it.

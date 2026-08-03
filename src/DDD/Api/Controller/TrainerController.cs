@@ -1,15 +1,15 @@
-using BLRefactoring.DDD.Api.Mappings;
-using BLRefactoring.DDD.Application.Services.TrainerServices;
-using BLRefactoring.Shared;
-using BLRefactoring.Shared.Api.Contracts.Mappings;
-using BLRefactoring.Shared.Api.Contracts.Trainers;
-using BLRefactoring.Shared.Api.Controllers;
-using BLRefactoring.Shared.Api.Http;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
-using BLRefactoring.Shared.Common.Errors;
+using TrainingHub.DDD.Api.Mappings;
+using TrainingHub.DDD.Application.Services.TrainerServices;
+using TrainingHub.Shared;
+using TrainingHub.Shared.Api.Contracts.Mappings;
+using TrainingHub.Shared.Api.Contracts.Trainers;
+using TrainingHub.Shared.Api.Controllers;
+using TrainingHub.Shared.Api.Http;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
+using TrainingHub.Shared.Common.Errors;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BLRefactoring.DDD.Api.Controller;
+namespace TrainingHub.DDD.Api.Controller;
 
 /// <summary>
 /// API controller for reading and editing trainer resources.

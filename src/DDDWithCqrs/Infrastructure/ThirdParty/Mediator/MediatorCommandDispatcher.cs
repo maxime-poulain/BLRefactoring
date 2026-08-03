@@ -1,8 +1,8 @@
-using BLRefactoring.Shared.Common.Results;
-using BLRefactoring.Shared.CQS;
+using TrainingHub.Shared.Common.Results;
+using TrainingHub.Shared.CQS;
 using Mediator;
 
-namespace BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator;
+namespace TrainingHub.DDDWithCqrs.Infrastructure.ThirdParty.Mediator;
 
 /// <summary>
 /// Implements <see cref="ICommandDispatcher"/> using Mediator.

@@ -27,7 +27,7 @@ next to it, which was the exception rather than the rule.
 ## Decision
 
 **AwesomeAssertions**, the community fork of FluentAssertions 7 published under Apache 2.0, in every
-test project including `BLRefactoring.Api.TestKit`.
+test project including `TrainingHub.Api.TestKit`.
 
 The convention is now stated in the README's repository conventions, and this record holds the
 reasoning: `subject.Should().Be(…)` everywhere, and no `Assert.*`.

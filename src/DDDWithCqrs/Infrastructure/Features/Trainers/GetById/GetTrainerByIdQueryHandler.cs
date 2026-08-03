@@ -1,12 +1,12 @@
-using BLRefactoring.Shared.Application.Dtos.Trainer;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetById;
-using BLRefactoring.Shared.Application.Projections;
-using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
-using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
+using TrainingHub.Shared.Application.Dtos.Trainer;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetById;
+using TrainingHub.Shared.Application.Projections;
+using TrainingHub.Shared.CQS;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
+using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace BLRefactoring.DDDWithCqrs.Infrastructure.Features.Trainers.GetById;
+namespace TrainingHub.DDDWithCqrs.Infrastructure.Features.Trainers.GetById;
 
 /// <summary>
 /// Answers <see cref="GetTrainerByIdQuery"/>.

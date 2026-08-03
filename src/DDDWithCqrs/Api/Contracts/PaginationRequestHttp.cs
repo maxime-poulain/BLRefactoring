@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using BLRefactoring.DDDWithCqrs.Application.Pagination;
+using TrainingHub.DDDWithCqrs.Application.Pagination;
 
-namespace BLRefactoring.DDDWithCqrs.Api.Contracts;
+namespace TrainingHub.DDDWithCqrs.Api.Contracts;
 
 /// <summary>
 /// The page a caller asks for, bound from the query string.

@@ -1,6 +1,6 @@
-using BLRefactoring.Shared.Common;
+using TrainingHub.Shared.Common;
 
-namespace BLRefactoring.DDDWithCqrs.Infrastructure.Pagination;
+namespace TrainingHub.DDDWithCqrs.Infrastructure.Pagination;
 
 /// <summary>
 /// The order every paged read uses, defined once for every aggregate.

@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetPhoto;
+namespace TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetPhoto;
 
 /// <summary>
 /// Validates <see cref="GetTrainerPhotoQuery"/>.

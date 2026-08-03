@@ -44,3 +44,4 @@ simpler from the outside.
 | [0019](0019-enforce-the-ruleset-this-repository-already-declared.md) | Enforce the ruleset this repository already declared | Accepted — amended by 0020 |
 | [0020](0020-declare-every-rule-this-codebase-already-satisfies.md) | Declare every rule this codebase already satisfies | Accepted |
 | [0021](0021-store-a-photo-beside-the-row-that-names-it.md) | Store a photo beside the row that names it, and never overwrite in place | Accepted |
+| [0022](0022-name-the-repository-after-the-domain-it-serves.md) | Name the repository after the domain it serves | Accepted |

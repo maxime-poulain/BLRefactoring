@@ -1,11 +1,11 @@
-using BLRefactoring.Shared;
-using BLRefactoring.Shared.Common;
-using BLRefactoring.Shared.Common.Errors;
-using BLRefactoring.Shared.Common.Results;
-using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
+using TrainingHub.Shared;
+using TrainingHub.Shared.Common;
+using TrainingHub.Shared.Common.Errors;
+using TrainingHub.Shared.Common.Results;
+using TrainingHub.Shared.CQS;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 
-namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.RemovePhoto;
+namespace TrainingHub.DDDWithCqrs.Application.Features.Trainers.RemovePhoto;
 
 /// <summary>
 /// Takes the calling trainer's photo down.

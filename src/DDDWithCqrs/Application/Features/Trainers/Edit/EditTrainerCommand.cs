@@ -1,12 +1,12 @@
-using BLRefactoring.Shared.Common;
-using BLRefactoring.Shared;
-using BLRefactoring.Shared.Common.Errors;
-using BLRefactoring.Shared.Common.Results;
-using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
-using BLRefactoring.Shared.Application.Factories;
+using TrainingHub.Shared.Common;
+using TrainingHub.Shared;
+using TrainingHub.Shared.Common.Errors;
+using TrainingHub.Shared.Common.Results;
+using TrainingHub.Shared.CQS;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
+using TrainingHub.Shared.Application.Factories;
 
-namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Edit;
+namespace TrainingHub.DDDWithCqrs.Application.Features.Trainers.Edit;
 
 /// <summary>
 /// Replaces the profile of a trainer. The whole profile is replaced, so a
