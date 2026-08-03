@@ -15,7 +15,7 @@ public abstract class Entity<TEntityId> : Entity, IAuditable
     /// <summary>
     /// Gets or sets the date and time the entity was created.
     /// </summary>
-    public DateTime CreatedOn { get;  }
+    public DateTime CreatedOn { get; }
 
     /// <summary>
     /// Gets or sets the date and time the entity was last modified, if any.
@@ -136,12 +136,12 @@ public interface IAuditable
     /// Set by the persistence layer's interceptor rather than by any behaviour method, so the
     /// domain never has to be handed a clock.
     /// </remarks>
-    public DateTime CreatedOn { get; }
+    DateTime CreatedOn { get; }
 
     /// <summary>
     /// When the row behind this entity was last changed, or <see langword="null"/> if it never was.
     /// </summary>
-    public DateTime? ModifiedOn { get; }
+    DateTime? ModifiedOn { get; }
 }
 
 /// <summary>
@@ -160,7 +160,7 @@ public interface IHasDomainEvents
     /// <summary>
     /// Gets the domain events raised by this aggregate root.
     /// </summary>
-    public IReadOnlyList<IDomainEvent> DomainEvents { get; }
+    IReadOnlyList<IDomainEvent> DomainEvents { get; }
 
     /// <summary>
     /// Clears the domain events raised by the aggregate root.

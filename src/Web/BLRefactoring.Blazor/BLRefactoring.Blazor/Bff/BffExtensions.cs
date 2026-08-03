@@ -130,7 +130,7 @@ public static class BffExtensions
         // not have been made is worth refusing before any work is done on it. The proxy has no
         // endpoint filter to hang this on, so it is ordinary middleware, scoped to the prefix.
         app.UseWhen(
-            context => context.Request.Path.StartsWithSegments(ApiPrefix),
+            context => context.Request.Path.StartsWithSegments(ApiPrefix, StringComparison.Ordinal),
             branch => branch.Use(async (context, next) =>
             {
                 if (!IsFromThisApplication(context.Request))

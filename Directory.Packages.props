@@ -18,6 +18,21 @@
     -->
     <PackageVersion Include="AwesomeAssertions" Version="9.5.0" />
     <!--
+      Renders a Blazor component in-process so a test can drive it. Added because the profile page
+      is the first component in this repository carrying logic worth proving — a size check
+      mirroring the API's, an address built to defeat a year-long cache, and a failure path that
+      shows the server's own words.
+    -->
+    <PackageVersion Include="bunit" Version="2.8.6" />
+    <!--
+      The S3 client, under Apache 2.0. Named for Amazon, but nothing here talks to Amazon: the
+      adapter points it at whatever endpoint the configuration names, which is a SeaweedFS
+      container locally. S3 is the protocol every object store on the shortlist speaks, so the
+      choice of client is what makes the provider a configuration value rather than a rewrite —
+      the server is the replaceable part. See ADR 0021.
+    -->
+    <PackageVersion Include="AWSSDK.S3" Version="4.0.101.6" />
+    <!--
       Collects line coverage during `dotnet test`, in OpenCover format, for the analysis to read.
       Referenced by every project that runs tests and by no other — an architecture rule checks
       that, because a test project without it reports no coverage at all rather than failing, and
@@ -98,6 +113,13 @@
     -->
     <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />
+    <!--
+      The container core, referenced directly rather than only pulled in by Testcontainers.MsSql
+      below: the object store the integration suite runs against is a plain SeaweedFS image with no
+      module of its own, so the builder is used by hand. Same version as the MsSql module on
+      purpose — they share this assembly, and letting them drift resolves one of the two twice.
+    -->
+    <PackageVersion Include="Testcontainers" Version="4.13.0" />
     <PackageVersion Include="Testcontainers.MsSql" Version="4.13.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />

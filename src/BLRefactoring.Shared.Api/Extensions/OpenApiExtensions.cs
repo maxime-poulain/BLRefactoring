@@ -33,6 +33,7 @@ public static class OpenApiExtensions
         return services.AddOpenApi(options =>
         {
             options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+            options.AddDocumentTransformer<UploadedFileTransformer>();
             options.AddOperationTransformer<OperationIdTransformer>();
             options.AddOperationTransformer<EntityTagTransformer>();
         });
@@ -148,6 +149,89 @@ internal sealed class EntityTagTransformer : IOpenApiOperationTransformer
 
         return Task.CompletedTask;
     }
+}
+
+/// <summary>
+/// Describes an uploaded file inline, and takes the name <c>IFormFile</c> out of the document.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Left alone, the generator emits a component named <c>IFormFile</c> holding
+/// <c>{ type: string, format: binary }</c> and points every upload at it by reference. Two things
+/// are wrong with that. The lesser is that a document meant to be language-neutral names an
+/// ASP.NET Core interface. The greater is that generators look for an inline binary schema when
+/// deciding whether an operation uploads a file — NSwag produced a client whose method signature
+/// took a file and whose supporting class it never emitted, so the generated code did not compile
+/// and the reason was three layers from the symptom.
+/// </para>
+/// <para>
+/// So the reference is replaced by what it points at, and the component is dropped.
+/// </para>
+/// </remarks>
+public sealed class UploadedFileTransformer : IOpenApiDocumentTransformer
+{
+    private const string FormFileSchemaName = "IFormFile";
+
+    /// <summary>
+    /// Inlines every reference to the form-file schema and drops the component.
+    /// </summary>
+    /// <param name="document">The document being emitted.</param>
+    /// <param name="context">Unused: the change is decided from the document alone.</param>
+    /// <param name="cancellationToken">Unused.</param>
+    /// <returns>A completed task.</returns>
+    public Task TransformAsync(
+        OpenApiDocument document,
+        OpenApiDocumentTransformerContext context,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+
+        if (document.Components?.Schemas?.ContainsKey(FormFileSchemaName) is not true)
+        {
+            return Task.CompletedTask;
+        }
+
+        foreach (var operation in document.Paths?.Values.SelectMany(Operations) ?? [])
+        {
+            InlineFileProperties(operation);
+        }
+
+        document.Components.Schemas.Remove(FormFileSchemaName);
+
+        return Task.CompletedTask;
+    }
+
+    private static IEnumerable<OpenApiOperation> Operations(IOpenApiPathItem path) =>
+        path.Operations is null ? [] : path.Operations.Values;
+
+    private static void InlineFileProperties(OpenApiOperation operation)
+    {
+        var bodies = operation.RequestBody?.Content?.Values ?? [];
+
+        foreach (var body in bodies)
+        {
+            if (body.Schema?.Properties is not { } properties)
+            {
+                continue;
+            }
+
+            foreach (var name in properties
+                .Where(property => IsFormFileReference(property.Value))
+                .Select(property => property.Key)
+                .ToArray())
+            {
+                properties[name] = new OpenApiSchema
+                {
+                    Type = JsonSchemaType.String,
+                    Format = "binary"
+                };
+            }
+        }
+    }
+
+    private static bool IsFormFileReference(IOpenApiSchema schema) =>
+        schema is OpenApiSchemaReference reference
+        && string.Equals(reference.Reference?.Id, FormFileSchemaName, StringComparison.Ordinal);
 }
 
 /// <summary>

@@ -215,6 +215,8 @@ rooted at the shared kernel.
 ```csharp
 public static Trainer Create(TrainerId id, UserId userId, Name name, Email contactEmail, Bio? bio);
 public void Edit(Name name, Email contactEmail, Bio? bio);
+public void AttachPhoto(TrainerPhoto photo);
+public void RemovePhoto();
 public void MarkForDeletion();
 ```
 
@@ -231,6 +233,15 @@ point rather than one mutator per attribute. Events are computed **before** muta
 `ContactEmail` is the address a trainer publishes — deliberately distinct from the credential of
 their Identity account, which the aggregate only ever references through `UserId`. Two trainers
 of the same organisation may share one, so no uniqueness rule applies to it.
+
+`Photo` holds an identity, a media type and a size — never a bucket, a key or a URL. The aggregate
+says *which* photo a trainer has; where the bytes live is the infrastructure's business, which is
+why moving them to a different store touches no file in the domain. `TrainerPhoto.Create` mints a
+fresh identity every time, and that is load-bearing rather than incidental: a replacement therefore
+writes to a key nothing names yet, so the row can be committed before anything is deleted. Neither
+`AttachPhoto` nor `RemovePhoto` hands the displaced photo back — an aggregate answers whether a
+change was allowed and is not a way of reading through it — so a caller that has cleanup to do
+reads `Photo` before the call. See ADR 0021.
 
 ### Training
 
@@ -641,13 +652,16 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 | `POST` | `/Auth/login` | `200` with a JWT, or `401` — the same answer for an unknown username, a wrong password and a locked-out account |
 | `GET` | `/Trainer/me` | The caller's own profile, with an `ETag`. `200`, `400`, `404` |
 | `PUT` | `/Trainer/me` | Requires `If-Match`. `200`, `400`, `404`, `412`, `428` |
+| `GET` | `/Trainer/{id}/photo` | The trainer's portrait, with a strong `ETag` and a year-long immutable cache. `200`, `304`, `404` |
+| `PUT` | `/Trainer/me/photo` | `multipart/form-data`. Publishes **and** replaces. `200` with the updated profile, `400`, `404`, `409` |
+| `DELETE` | `/Trainer/me/photo` | `204`, `404`, `409` |
 | `POST` | `/Training` | `201` with the new identifier, `409` on a duplicate title, `400` otherwise |
 | `GET` | `/Training/my-trainings` | The caller's own trainings. Takes no identifier. On the CQRS host: one page, `?page=` and `?pageSize=` (default 20, maximum 100), answered as `{ items, page, pageSize, totalCount, totalPages, hasNextPage, hasPreviousPage }`. On the layered host: the plain array |
 | `GET` | `/Training/{id}` | Owner only. `200` with an `ETag`, `400` on a malformed identifier, or `404` — including when the training exists but belongs to somebody else |
 | `PUT` | `/Training/{trainingId}` | Owner only. Requires `If-Match`. `200` with the updated training and its new `ETag`, `400`, `403`, `404`, `409`, `412`, `428` |
 | `DELETE` | `/Training/{trainingId}` | Owner only. `204`, `400`, `403`, `404` |
 
-Nine endpoints, and not one of them serves a resource the caller does not own. There used to be
+Twelve endpoints, and not one of them serves a resource the caller does not own. There used to be
 five more — `/Trainer/all`, `/Trainer/{id}`, `/Training/all`, `/Training/by-trainer/{id}` and
 `/Training/by-topic/{topic}` — and between them they handed out every trainer's name, contact email
 and bio to any authenticated caller, enumerable. Nothing in the application asked for them: the
@@ -658,6 +672,23 @@ What could not be removed was locked instead. `GET /Training/{id}` is what the e
 what a creation's `Location` points at, so it stays — with the owner written into the query rather
 than checked after it. A training belonging to somebody else answers `404`, not `403`: a `403`
 would confirm that the identifier names something real, which is itself what is being withheld.
+
+The photo is the one read addressed by identifier rather than by `me`, and deliberately so:
+publishing a portrait is self-service, but looking at one is what a catalogue of trainers does. It
+is already shaped for that day — making it public is `[AllowAnonymous]` and nothing else. Its cache
+is aggressive because the address changes whenever the picture does: a replacement mints a new photo
+identity, so the bytes under any one `ETag` genuinely never change, and a CDN can sit in front of
+the route without a line moving. Writing is one verb, `PUT`, because there is no third thing to do
+to a photo and because its idempotence makes a retried five-megabyte upload safe.
+
+A body past the request size limit answers `400`, not `413`, and that is a finding rather than an
+oversight. The limit does stop the server reading an arbitrary payload — which is the property
+worth having — but a body-read failure inside model binding never reaches an exception handler:
+MVC folds it into model state and answers with an unbound file. A handler was written to publish
+`413` in this API's problem shape, the integration suite established that nothing ever calls it,
+and it was deleted rather than left to suggest a status the API cannot produce. No `If-Match`:
+nothing is being edited against a version the caller read, so a lost race answers `409` rather than
+a `412` no precondition was asked for.
 
 Trainers are created only through registration — there is no `POST /Trainer` — and no endpoint
 deletes one. Removing a trainer is an administrative decision, and no role is entitled to it yet,
@@ -680,8 +711,10 @@ registration's `Location` now points: the address of what was created, from its 
 | `Microsoft.AspNetCore.OpenApi`, `Scalar.AspNetCore` | The OpenAPI document and its reference UI |
 | `MudBlazor` | Component library of the Blazor WebAssembly front end |
 | `Yarp.ReverseProxy` | The BFF's proxy — forwards `/api` to the REST API and attaches the access token from the session cookie |
+| `bunit` | Renders a Blazor component in-process, so the profile page's client-side decisions are tested rather than only clicked |
 | `xunit`, `AwesomeAssertions`, `Moq` | Testing — `AwesomeAssertions` is the Apache 2.0 community fork of FluentAssertions, whose 8.x line moved to a commercial licence |
-| `Testcontainers.MsSql` | A real SQL Server per integration test run |
+| `AWSSDK.S3` | The object store photos live in — pointed at a SeaweedFS container locally, and at any S3-compatible provider by configuration |
+| `Testcontainers`, `Testcontainers.MsSql` | A real SQL Server and a real object store per integration test run |
 | `Respawn` | Database reset between integration tests |
 
 Versions are managed centrally in `Directory.Packages.props` — projects reference packages
@@ -694,15 +727,20 @@ without a version attribute, every version is exact, and transitive pinning is e
 ### Prerequisites
 
 - **.NET SDK 10**
-- **Docker** — for SQL Server, and required by the integration tests
+- **Docker** — for SQL Server and the object store, and required by the integration tests
 
-### Run the database
+### Run the dependencies
 
 ```bash
-docker compose up -d sqlserver
+docker compose up -d sqlserver seaweedfs
 ```
 
-This starts SQL Server 2022 on port `1433` with a named volume. `docker compose up` also builds
+This starts SQL Server 2022 on port `1433` and SeaweedFS on `8333` (its S3 endpoint) and `9333`
+(the master's own UI), each with a named volume. SeaweedFS rather than MinIO, whose community
+repository was archived in April 2026 and publishes no binaries; both speak S3, and the API talks to
+whichever through `AWSSDK.S3`, so the provider is four configuration values rather than a rewrite.
+The bucket is created at startup in `Development`, in the same spirit as the migrations below. See
+[ADR 0021](docs/adr/0021-store-a-photo-beside-the-row-that-names-it.md). `docker compose up` also builds
 and runs the layered API on <http://localhost:5085> — but nothing in CI builds that image, so
 treat a `docker build` as the check rather than the guarantee. It went unbuildable once already:
 the restore stage stopped copying two files it needs, and the README said this sentence throughout.
@@ -746,6 +784,10 @@ Each API expects:
 | `Jwt:Issuer`, `Jwt:Audience` | Token validation parameters |
 | `Jwt:ExpireMinutes` | Token lifetime |
 | `Cors:AllowedOrigins` | Origins allowed to call the API from a browser. Absent or empty means no cross-origin caller is accepted, and the host logs a warning at startup |
+| `ObjectStorage:ServiceUrl` | The S3 endpoint photos are stored at. The host **fails fast at startup** when it is missing |
+| `ObjectStorage:BucketName` | The bucket they go in. Also required at startup |
+| `ObjectStorage:AccessKey`, `ObjectStorage:SecretKey` | Credentials. They must match an identity in `docker/seaweedfs-s3.json`: started without that file SeaweedFS accepts anonymous requests and **refuses signed ones**, so an SDK — which signs everything — gets a 500 per upload from a container that reports itself healthy |
+| `ObjectStorage:CreateBucketOnStartup` | Creates the bucket when absent. On for the local container, which comes up empty; off elsewhere, where a bucket is provisioned once by whoever owns the account |
 
 Supply them through `appsettings.Development.json`, user secrets, or environment variables — the
 `docker compose` service passes them as `ConnectionStrings__TrainingContext`, `Jwt__Key` and so
@@ -785,10 +827,11 @@ The two filters are exact inverses, so between them every test runs exactly once
 | `BLRefactoring.Shared.Domain.Tests` | Aggregates, value objects, typed identifiers, `Result`, specifications |
 | `BLRefactoring.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers |
 | `BLRefactoring.DDDWithCqrs.Tests` | Command handlers, validators, pipeline behaviours |
-| `BLRefactoring.Shared.Api.Tests` | Entity-tag encoding and parsing, the guard that keeps client generation away from a database, and what the unhandled-exception handler is allowed to tell a caller |
-| `BLRefactoring.Shared.Infrastructure.Tests` | The auditable-entities interceptor: that it stamps, and that it reads the clock once per entity |
+| `BLRefactoring.Shared.Api.Tests` | Entity-tag encoding and parsing, the guard that keeps client generation away from a database, what the unhandled-exception handler is allowed to tell a caller, and the transformer that describes an uploaded file inline so a client generator recognises it as one |
+| `BLRefactoring.Shared.Infrastructure.Tests` | The auditable-entities interceptor — that it stamps, and reads the clock once per entity — and the bucket bootstrapper, mostly for when it does nothing |
 | `BLRefactoring.Blazor.Bff.Tests` | The backend for frontend over HTTP: the cookie's flags, the forgery guard, the token attached to a forwarded call, and what signing out revokes |
-| `BLRefactoring.DDD.Api.IntegrationTests` | The layered host, HTTP end to end against a real SQL Server |
+| `BLRefactoring.Blazor.Client.Tests` | The profile page, rendered in-process with bUnit: the size ceiling that refuses a file before it is uploaded, the image address that defeats a year-long cache, and the server's refusal shown in its own words |
+| `BLRefactoring.DDD.Api.IntegrationTests` | The layered host, HTTP end to end against a real SQL Server and a real object store |
 | `BLRefactoring.DDDWithCqrs.Api.IntegrationTests` | The CQRS host, same treatment |
 | `BLRefactoring.Architecture.Tests` | The decisions themselves: the dependency rule, the CQRS shape, the modelling conventions, and a rule that fails when a record is defended by nothing — see [ADR 0013](docs/adr/0013-make-every-record-answer-to-a-test.md) |
 | `BLRefactoring.Api.TestKit` | Not a test project: the fixtures both integration suites share |
@@ -835,7 +878,7 @@ session, and signing out revokes access rather than merely forgetting it.
 | Workflow | Trigger | What it runs |
 |---|---|---|
 | `ci.yml` | Push on `master` and on `claude/**`, pull request on `master` | Regenerate and commit the HTTP client, build in Release, unit tests |
-| `integration-tests.yml` | Push on `claude/**`, manual dispatch, nightly at 03:17 UTC | The integration tests, publishing a TRX report as an artifact |
+| `integration-tests.yml` | Push on `claude/**`, manual dispatch, nightly at 03:17 UTC | The integration tests, naming every failed test as an annotation and publishing the TRX report as an artifact |
 | `sonar.yml` | Push on `master`, pull request on `master` | Static analysis and coverage, reported to SonarQube Cloud |
 
 The whole solution is built by both — including the integration test project, so a project that
@@ -951,11 +994,16 @@ one the analysis of `master` produces.
 ## Repository conventions
 
 - **Central package management.** Every NuGet version lives in `Directory.Packages.props`; no
-  project carries a `Version` attribute and no version is a wildcard.
+  project carries a `Version` attribute and no version is a wildcard. One project carries a
+  `VersionOverride`, which is the exception that has to be stated rather than discovered:
+  `BLRefactoring.Blazor.Client.Tests` raises the ASP.NET Core Components family to 10.x for itself,
+  because bUnit's net10.0 assets require it while the Blazor projects target net9.0 and the central
+  pin follows them. Moving those projects to net10.0 removes the override and this sentence with it.
 - **Shared MSBuild properties.** `Nullable` and `ImplicitUsings` are enabled solution-wide from
   the root `Directory.Build.props`; target frameworks stay per-project.
 - **Code style** is described in `.editorconfig`: file-scoped namespaces, `var`, Allman braces,
-  and a large set of analyzer severities.
+  naming conventions, and a hundred and sixty analyzer severities — all of them enforced at build
+  time, including the formatting ones.
 - **Line endings** are normalised to LF by `.gitattributes`, in the repository and the working
   tree, whatever the contributor's platform.
 - **Commits** are imperative one-liners, squash-merged from a pull request.
@@ -966,14 +1014,18 @@ one the analysis of `master` produces.
 - **Architecture decision records** live in [`docs/adr/`](docs/adr/), one numbered file per
   decision, each recording the alternatives and why they lost. A decision that changes gets a new
   record superseding the old one; merged records are not rewritten.
-- **The build fails on a warning.** `.editorconfig` sets seventy-three analyzer rules high on
+- **The build fails on a warning.** `.editorconfig` sets a hundred and sixty analyzer rules on
   purpose, and `Directory.Build.props` turns a warning into an error, so the severities written
   there are rules rather than preferences — an architecture rule checks that they stay that way.
-  Every rule is either enforced or demoted with its reason beside it; there is no third category.
-  EF Core migrations are exempt, and the generated HTTP client with them, because nobody writes
-  either. See [ADR 0019](docs/adr/0019-enforce-the-ruleset-this-repository-already-declared.md),
-  which records what the census found — including that the ruleset had been declaring a rule twice
-  and silently demoting it.
+  Every rule is either enforced or demoted with the argument for lowering it written beside it;
+  there is no third category, and that too is a rule rather than a promise. EF Core migrations are
+  exempt, and the generated HTTP client with them, because nobody writes either.
+  See [ADR 0019](docs/adr/0019-enforce-the-ruleset-this-repository-already-declared.md), which
+  records the census that made enforcing them safe — including that the ruleset had been declaring
+  a rule twice and silently demoting it — and
+  [ADR 0020](docs/adr/0020-declare-every-rule-this-codebase-already-satisfies.md), which measured
+  the four hundred rules nobody had asked about and declared the sixty this codebase already
+  satisfied for nothing.
 
 ---
 

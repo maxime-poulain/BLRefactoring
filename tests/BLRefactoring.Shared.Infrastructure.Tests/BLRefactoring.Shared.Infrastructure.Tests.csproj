@@ -11,6 +11,8 @@
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="AwesomeAssertions" />
+    <!-- For ObjectStorageBootstrapperTests: the S3 client is the boundary being stood in for. -->
+    <PackageReference Include="Moq" />
     <!-- The interceptor is exercised through a real change tracker; the store itself is
          irrelevant to what is asserted, so the in-memory provider is enough. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />

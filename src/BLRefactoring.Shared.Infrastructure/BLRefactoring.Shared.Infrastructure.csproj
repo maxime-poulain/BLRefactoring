@@ -15,6 +15,13 @@
       <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
       <!--
+        The S3 client, for S3ObjectStore. This is the only project that references it, and an
+        architecture rule holds that line: the point of IObjectStore is that nothing above the
+        infrastructure knows which storage protocol is in use, and a reference reaching one project
+        further up would quietly make that untrue. See ADR 0021.
+      -->
+      <PackageReference Include="AWSSDK.S3" />
+      <!--
         AddInfrastructure asks IHostEnvironment whether it is running in Development before
         enabling EF Core's sensitive-data logging. That abstraction used to arrive through the
         ASP.NET Core framework reference; now that persistence no longer carries the whole web

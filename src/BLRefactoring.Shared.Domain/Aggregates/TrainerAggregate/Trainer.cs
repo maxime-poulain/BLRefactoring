@@ -34,6 +34,15 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     public Bio? Bio { get; private set; }
 
     /// <summary>
+    /// Gets the portrait the trainer publishes, or <see langword="null"/> when they have none.
+    /// </summary>
+    /// <remarks>
+    /// The aggregate holds the photo's identity and never its address. Where the bytes are kept is
+    /// the infrastructure's business, exactly as it is for every other attribute here.
+    /// </remarks>
+    public TrainerPhoto? Photo { get; private set; }
+
+    /// <summary>
     /// Gets the identifier of the identity account the trainer is attached to.
     /// </summary>
     public UserId UserId { get; private set; } = null!;
@@ -114,6 +123,42 @@ public sealed class Trainer : AggregateRoot<TrainerId>
         ContactEmail = contactEmail;
         Bio = bio;
     }
+
+    /// <summary>
+    /// Attaches a photo to the trainer, replacing any it already had.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The photo displaced by this call still has bytes in a store somewhere, and the caller is
+    /// the one who has to delete them — after the new profile is committed, which is the ordering
+    /// that keeps a row from ever naming an object that is not there. The caller reads
+    /// <see cref="Photo"/> beforehand to know what it will have to clean up; this method hands
+    /// nothing back, because an aggregate answers whether a change was allowed and does not double
+    /// as a way of reading through it.
+    /// </para>
+    /// <para>
+    /// No domain event is raised. One would have to be handled, and handlers here run inside the
+    /// transaction the aggregate is being saved in — which is the worst possible place to delete a
+    /// blob that a rollback would want back.
+    /// </para>
+    /// </remarks>
+    /// <param name="photo">The photo to publish.</param>
+    public void AttachPhoto(TrainerPhoto photo)
+    {
+        ArgumentNullException.ThrowIfNull(photo);
+
+        Photo = photo;
+    }
+
+    /// <summary>
+    /// Removes the trainer's photo, if there is one.
+    /// </summary>
+    /// <remarks>
+    /// Calling this on a trainer without a photo changes nothing and is not an error — whether
+    /// there was one to remove is a question the caller answers by reading <see cref="Photo"/>
+    /// first, which is also how it learns which bytes it will need to delete afterwards.
+    /// </remarks>
+    public void RemovePhoto() => Photo = null;
 
     /// <summary>
     /// Marks the trainer for deletion, announcing the fact so that what depends on the trainer —

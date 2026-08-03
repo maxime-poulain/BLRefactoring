@@ -1,5 +1,4 @@
 using AwesomeAssertions;
-using BLRefactoring.Shared.Api.Extensions;
 using Xunit;
 
 namespace BLRefactoring.Shared.Api.Tests.Extensions;

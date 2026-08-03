@@ -175,3 +175,9 @@ jobs:
           # verdict is not lost: SonarQube Cloud carries it on the branch, its badge and its
           # dashboard. See ADR 0018.
           dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+
+      # This job runs both suites, so a failing test kills the step above before the scanner ever
+      # publishes its verdict — and the page then blames the analysis for something a test did.
+      - name: Report failing tests
+        if: failure()
+        run: python3 scripts/report-test-failures.py TestResults

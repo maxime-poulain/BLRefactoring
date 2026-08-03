@@ -1,12 +1,18 @@
+using System.Collections.Concurrent;
 using System.Data.Common;
+using System.Net;
+using System.Text;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Interceptors;
 using BLRefactoring.Shared.Infrastructure.ThirdParty.Identity;
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Respawn;
 using Respawn.Graph;
 using Testcontainers.MsSql;
@@ -22,11 +28,107 @@ namespace BLRefactoring.Api.TestKit;
 /// </summary>
 public abstract class ApiFactory<TEntryPoint>
     : WebApplicationFactory<TEntryPoint>, IAsyncLifetime, IResettableDatabase, IServiceScopeSource,
-      IHttpClientSource
+      IHttpClientSource, IServerErrorSource
     where TEntryPoint : class
 {
     private readonly MsSqlContainer _msSqlContainer = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest")
         .Build();
+
+    /// <summary>
+    /// The object store the suite runs against.
+    /// </summary>
+    /// <remarks>
+    /// A real S3 server rather than a fake, because what the photo endpoints are worth proving is
+    /// exactly what a fake would assume: that bytes written under one key come back under it, that
+    /// a missing key answers rather than throws, and that a replaced photo really does stop being
+    /// there. SeaweedFS ships no Testcontainers module, so the image is driven directly.
+    /// </remarks>
+    private readonly IContainer _objectStoreContainer = new ContainerBuilder("chrislusf/seaweedfs:4.40")
+        .WithCommand("server", "-s3", "-dir=/data", "-s3.config=" + S3ConfigPath)
+        // Without an identity file SeaweedFS is not permissive, which is exactly the trap: it
+        // allows anonymous requests and refuses signed ones outright — "Signed request requires
+        // setting up SeaweedFS S3 authentication". Every AWS SDK signs every request, so the store
+        // answers 500 to all of them while looking entirely healthy from the outside, and the
+        // message never reaches the client because a 500 is published without its cause.
+        //
+        // Declaring an identity also moves this closer to production rather than further from it:
+        // requests are signed and the signature is verified, as a hosted bucket would.
+        .WithResourceMapping(Encoding.UTF8.GetBytes(S3Config), S3ConfigPath)
+        .WithPortBinding(SeaweedS3Port, assignRandomHostPort: true)
+        .WithPortBinding(SeaweedMasterPort, assignRandomHostPort: true)
+        // Two probes, because "the store is up" and "the store can accept a write" are different
+        // facts and only the second one matters.
+        //
+        // The S3 port answering HTTP says the gateway is listening. It says nothing about whether
+        // the volume server behind it has registered with the master — and until it has, the
+        // master cannot allocate anywhere to put bytes. Creating a bucket still works, because
+        // that is metadata; the first PutObject answers 500. So the second probe asks the master
+        // to assign a file id, which is precisely what a write needs and the only question whose
+        // answer is the readiness being waited for. The assigned id is thrown away.
+        //
+        // The status matcher on the first is not laziness either: an unsigned request to an S3
+        // root is answered 403, so a strategy demanding 2xx would wait forever on a healthy
+        // container.
+        .WithWaitStrategy(Wait.ForUnixContainer()
+            .UntilHttpRequestIsSucceeded(request => request
+                .ForPath("/")
+                .ForPort(SeaweedS3Port)
+                .ForStatusCodeMatching(status => (int)status < 500))
+            .UntilHttpRequestIsSucceeded(request => request
+                .ForPath("/dir/assign")
+                .ForPort(SeaweedMasterPort)
+                .ForStatusCode(HttpStatusCode.OK)))
+        .Build();
+
+    private const ushort SeaweedS3Port = 8333;
+
+    private const ushort SeaweedMasterPort = 9333;
+
+    private const string S3ConfigPath = "/etc/seaweedfs/s3.json";
+
+    /// <summary>
+    /// The identity this run uses, minted rather than written down.
+    /// </summary>
+    /// <remarks>
+    /// Generated for two reasons, and only one of them is that a literal secret in a repository is
+    /// a finding waiting to happen. The other is that it cannot drift: the value the container will
+    /// accept and the value the host is told to send come from the same expression, so there is no
+    /// way to change one and leave the other. A pair of constants was one edit away from a failure
+    /// that would have read as a broken adapter.
+    /// </remarks>
+    private static readonly string ObjectStoreAccessKey = "key-" + Guid.NewGuid().ToString("N");
+
+    private static readonly string ObjectStoreSecretKey = "secret-" + Guid.NewGuid().ToString("N");
+
+    /// <summary>
+    /// The identity file the container is started with, built from the credentials above.
+    /// </summary>
+    /// <remarks>
+    /// Not read from <c>docker/seaweedfs-s3.json</c>, which serves the compose stack: that file has
+    /// its own credentials and its own lifetime, and a suite quietly depending on it would break
+    /// the day somebody rotated them for a reason that had nothing to do with tests.
+    /// </remarks>
+    private static readonly string S3Config = $$"""
+        {
+          "identities": [
+            {
+              "name": "integration-tests",
+              "credentials": [{ "accessKey": "{{ObjectStoreAccessKey}}", "secretKey": "{{ObjectStoreSecretKey}}" }],
+              "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+            }
+          ]
+        }
+        """;
+
+    /// <summary>
+    /// The bucket the suite writes to.
+    /// </summary>
+    protected const string BucketName = "blrefactoring-tests";
+
+    private readonly ConcurrentQueue<string> _serverErrors = new();
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> ServerErrors => [.. _serverErrors];
 
     private Respawner _respawner = null!;
 
@@ -53,6 +155,22 @@ public abstract class ApiFactory<TEntryPoint>
 
             ReplaceDbContext<TrainingIdentityDbContext>(services);
         });
+
+        // Pointed at the container rather than the address in appsettings, and left otherwise
+        // untouched: the S3 adapter, the bucket bootstrapper and the key layout are all the
+        // production ones, which is the only way this suite proves anything about them.
+        builder.UseSetting(
+            "ObjectStorage:ServiceUrl",
+            $"http://{_objectStoreContainer.Hostname}:{_objectStoreContainer.GetMappedPublicPort(SeaweedS3Port)}");
+        builder.UseSetting("ObjectStorage:BucketName", BucketName);
+        builder.UseSetting("ObjectStorage:AccessKey", ObjectStoreAccessKey);
+        builder.UseSetting("ObjectStorage:SecretKey", ObjectStoreSecretKey);
+        builder.UseSetting("ObjectStorage:CreateBucketOnStartup", "true");
+
+        // The host runs in this process, so what it logs while failing is readable from a test —
+        // and a 500 says nothing on purpose. Without this an assertion reports the status and the
+        // cause stays in a stream nobody reads.
+        builder.ConfigureLogging(logging => logging.AddProvider(new RecordingLoggerProvider(_serverErrors)));
 
         builder.UseEnvironment("Development");
     }
@@ -82,7 +200,9 @@ public abstract class ApiFactory<TEntryPoint>
     /// </summary>
     public async Task InitializeAsync()
     {
-        await _msSqlContainer.StartAsync();
+        // Both in parallel: neither knows about the other, and starting a database and an object
+        // store one after the other doubles the wait every suite pays before its first assertion.
+        await Task.WhenAll(_msSqlContainer.StartAsync(), _objectStoreContainer.StartAsync());
 
         // Everything after the container has started is wrapped, because xUnit does not call
         // DisposeAsync on a fixture whose initialisation threw. A failed migration would then
@@ -116,6 +236,7 @@ public abstract class ApiFactory<TEntryPoint>
         catch
         {
             await _msSqlContainer.DisposeAsync();
+            await _objectStoreContainer.DisposeAsync();
             throw;
         }
     }
@@ -143,6 +264,7 @@ public abstract class ApiFactory<TEntryPoint>
         }
 
         await _msSqlContainer.DisposeAsync();
+        await _objectStoreContainer.DisposeAsync();
         await base.DisposeAsync();
     }
 }

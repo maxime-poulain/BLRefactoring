@@ -59,7 +59,9 @@ public sealed class TrainingTitle : ValueObject
     /// </summary>
     protected override IEnumerable<object?> GetEqualityComponents()
     {
-        yield return Value.ToLowerInvariant();
+        // Upper rather than lower: a handful of characters lowercase to the same letter without
+        // uppercasing to the same one, so folding down can make two distinct titles compare equal.
+        yield return Value.ToUpperInvariant();
     }
 
     /// <summary>

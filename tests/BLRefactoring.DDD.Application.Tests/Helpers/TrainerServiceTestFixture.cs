@@ -49,10 +49,22 @@ public sealed class TrainerServiceTestFixture
     }
 
     /// <summary>
+    /// Where the bytes of a photo would go.
+    /// </summary>
+    /// <remarks>
+    /// A mock rather than a fake with storage behind it: the tests here are about the order the
+    /// service does things in — bytes written before the row is committed, displaced bytes deleted
+    /// only after — and that order is stated by verifying calls on this, not by looking in a
+    /// bucket. The round trip is the integration suite's job.
+    /// </remarks>
+    public Mock<ITrainerPhotoStore> PhotoStore { get; } = new();
+
+    /// <summary>
     /// Create sut.
     /// </summary>
     public TrainerApplicationService CreateSut() => new(
         TrainerRepository.Object,
+        PhotoStore.Object,
         CurrentUserService.Object,
         UnitOfWork.Object);
 }

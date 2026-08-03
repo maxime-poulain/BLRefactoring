@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using BLRefactoring.Shared.Application.Queries;
@@ -60,7 +60,8 @@ public sealed class TokenService(
 
         if (trainer is null)
         {
-            throw new ApplicationException("Invalid trainer id");
+            throw new InvalidOperationException(
+                $"No trainer is attached to identity account {user.Id}, so no token can name one.");
         }
 
         // Define the claims for the token, including user information and roles.

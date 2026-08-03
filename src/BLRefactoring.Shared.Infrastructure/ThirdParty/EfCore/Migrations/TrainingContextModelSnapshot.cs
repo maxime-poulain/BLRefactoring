@@ -166,6 +166,33 @@ namespace BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Migrations
                                 .HasForeignKey("TrainerId");
                         });
 
+                    b.OwnsOne("BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects.TrainerPhoto", "Photo", b1 =>
+                        {
+                            b1.Property<Guid>("TrainerId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<int>("ByteSize")
+                                .HasColumnType("int")
+                                .HasColumnName("PhotoByteSize");
+
+                            b1.Property<string>("ContentType")
+                                .IsRequired()
+                                .HasMaxLength(64)
+                                .HasColumnType("nvarchar(64)")
+                                .HasColumnName("PhotoContentType");
+
+                            b1.Property<Guid>("PhotoId")
+                                .HasColumnType("uniqueidentifier")
+                                .HasColumnName("PhotoId");
+
+                            b1.HasKey("TrainerId");
+
+                            b1.ToTable("Trainer");
+
+                            b1.WithOwner()
+                                .HasForeignKey("TrainerId");
+                        });
+
                     b.Navigation("Bio");
 
                     b.Navigation("ContactEmail")
@@ -173,6 +200,8 @@ namespace BLRefactoring.Shared.Infrastructure.ThirdParty.EfCore.Migrations
 
                     b.Navigation("Name")
                         .IsRequired();
+
+                    b.Navigation("Photo");
                 });
 
             modelBuilder.Entity("BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate.Training", b =>

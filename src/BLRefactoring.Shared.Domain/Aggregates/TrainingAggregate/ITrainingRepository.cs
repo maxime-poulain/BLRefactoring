@@ -16,7 +16,7 @@ public interface ITrainingRepository : IRepository<Training>
     /// <summary>
     /// Get by id this i training repository.
     /// </summary>
-    public Task<Training?> GetByIdAsync(TrainingId id, CancellationToken cancellationToken = default);
+    Task<Training?> GetByIdAsync(TrainingId id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Stages a new <see cref="Training"/> entity for insertion.

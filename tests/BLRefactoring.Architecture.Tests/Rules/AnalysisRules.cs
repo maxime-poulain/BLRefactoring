@@ -87,6 +87,109 @@ public sealed class AnalysisRules
             .ShouldHold();
     }
 
+    /// <summary>
+    /// Every demoted rule, says why it was demoted.
+    /// </summary>
+    /// <remarks>
+    /// ADR 0019 wrote the principle — <em>every rule is enforced or demoted with its reason, there
+    /// is no third category</em> — and named the two rules then in the second category. It did not
+    /// notice that two others had been sitting in the third one all along: <c>CA1725</c> and
+    /// <c>IDE0055</c> were suggestions with nothing beside them but their own title. The second of
+    /// those is the diagnostic through which every formatting decision in that file is reported, so
+    /// the brace style, the newline settings and the sorted <c>System</c> directives were preferences
+    /// no build had ever checked. Neither was visible in a diff, and neither made anything red.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0020",
+        "a rule set below warning carries the argument for lowering it, because a demotion nobody " +
+        "wrote down is indistinguishable from one nobody made")]
+    public void EveryDemotedRule_SaysWhyItWasDemoted()
+    {
+        var lines = SourceTree.ReadLines(EditorConfig);
+
+        lines
+            .Select((line, index) => (Line: line.Trim(), Number: index + 1))
+            .Select(entry => (entry.Number, Match: Demotion.Match(entry.Line)))
+            .Where(entry => entry.Match.Success)
+            .Select(entry => (entry.Number, Rule: entry.Match.Groups["rule"].Value))
+            .Selected("rule set below warning in .editorconfig")
+            .Where(entry => ArgumentLinesAbove(lines, entry.Number - 1) < 2)
+            .Select(entry =>
+                $"'.editorconfig' lowers {entry.Rule} on line {entry.Number} without saying why. " +
+                "A comment naming the rule is not a reason — the argument for turning a declared " +
+                "rule off is the only thing that distinguishes a decision from an oversight, and " +
+                "it is what ADR 0019 requires")
+            .ShouldHold();
+    }
+
+    /// <summary>
+    /// No setting, carries a trailing comment.
+    /// </summary>
+    /// <remarks>
+    /// EditorConfig recognises a comment only at the start of a line. Written after a value, the
+    /// <c>#</c> and everything after it become part of the value, the parser fails to read it, and
+    /// the setting silently falls back to its default — which is how <c>csharp_prefer_braces</c>
+    /// went unread here for as long as it existed, and read correctly only because the default
+    /// happened to agree with it. The header of that file warns about the same trap in its other
+    /// form, where a <c>:severity</c> suffix on an option that takes none makes the line vanish.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0020",
+        "a setting carries no trailing comment, because EditorConfig would read the comment as part " +
+        "of the value and silently fall back to the default")]
+    public void NoSetting_CarriesATrailingComment()
+    {
+        SourceTree.ReadLines(EditorConfig)
+            .Select((line, index) => (Line: line.Trim(), Number: index + 1))
+            .Where(entry => !entry.Line.StartsWith('#') && !entry.Line.StartsWith(';'))
+            .Select(entry => (entry.Number, Match: Setting.Match(entry.Line)))
+            .Where(entry => entry.Match.Success)
+            .Selected("setting in .editorconfig")
+            .Where(entry => entry.Match.Groups["value"].Value.IndexOfAny(['#', ';']) >= 0)
+            .Select(entry =>
+                $"'.editorconfig' line {entry.Number} ends in a comment. EditorConfig reads it as " +
+                "part of the value, fails to parse the result and falls back to the default, so " +
+                "the line goes on describing a setting that is not in force")
+            .ShouldHold();
+    }
+
+    /// <summary>
+    /// Counts the comment lines above a declaration, beyond the one that merely names the rule.
+    /// </summary>
+    /// <remarks>
+    /// The walk steps over sibling declarations first: a family demoted together — the
+    /// expression-bodied rules, the collection-expression ones — shares one comment block, and the
+    /// line directly above the second of them is the first of them rather than any comment.
+    /// </remarks>
+    private static int ArgumentLinesAbove(IReadOnlyList<string> lines, int index)
+    {
+        var cursor = index - 1;
+
+        while (cursor >= 0 && lines[cursor].Trim().Length > 0 && !IsComment(lines[cursor]))
+        {
+            cursor--;
+        }
+
+        var comments = 0;
+        while (cursor >= 0 && IsComment(lines[cursor]))
+        {
+            comments++;
+            cursor--;
+        }
+
+        return comments;
+    }
+
+    private static bool IsComment(string line) =>
+        line.TrimStart().StartsWith('#') || line.TrimStart().StartsWith(';');
+
     private static readonly Regex Severity =
         new(@"^dotnet_diagnostic\.(?<rule>[A-Za-z]+[0-9]+)\.severity\s*=", RegexOptions.Compiled);
+
+    private static readonly Regex Demotion =
+        new(@"^dotnet_diagnostic\.(?<rule>[A-Za-z]+[0-9]+)\.severity\s*=\s*(suggestion|silent|none)\s*$",
+            RegexOptions.Compiled);
+
+    private static readonly Regex Setting =
+        new(@"^[A-Za-z_][\w.]*\s*=\s*(?<value>.*)$", RegexOptions.Compiled);
 }

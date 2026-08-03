@@ -1,0 +1,32 @@
+{
+  "//": [
+    "S3 identities for the local SeaweedFS container.",
+    "",
+    "Without this file SeaweedFS starts with no identity at all, and that is not the permissive",
+    "mode it sounds like: anonymous requests are allowed, and *signed* ones are refused outright",
+    "with 'Signed request requires setting up SeaweedFS S3 authentication'. Every AWS SDK signs",
+    "every request, so the store answers 500 to all of them while looking perfectly healthy.",
+    "",
+    "The keys are the ones docker-compose passes to the API. They are development credentials for",
+    "a container that holds nothing, and they are in the repository for the same reason the SQL",
+    "Server password is: a stack that needs a secret to start is a stack nobody starts."
+  ],
+  "identities": [
+    {
+      "name": "blrefactoring",
+      "credentials": [
+        {
+          "accessKey": "blrefactoring",
+          "secretKey": "blrefactoring"
+        }
+      ],
+      "actions": [
+        "Admin",
+        "Read",
+        "Write",
+        "List",
+        "Tagging"
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace BLRefactoring.Shared.Api.Extensions;
+namespace BLRefactoring.Shared;
 
 /// <summary>
 /// Tells whether this process exists only to produce the OpenAPI document, rather than to serve

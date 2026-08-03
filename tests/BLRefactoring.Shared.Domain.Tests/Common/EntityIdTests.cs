@@ -1,5 +1,4 @@
 using AwesomeAssertions;
-using BLRefactoring.Shared.Common;
 using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
 using Xunit;
 
@@ -103,7 +102,7 @@ public sealed class EntityIdTests
     {
         var id = TrainerId.Create(Guid.NewGuid());
 
-        id.CompareTo((EntityId<TrainerId>?)null).Should().Be(1);
+        id.CompareTo(null).Should().Be(1);
     }
 
     /// <summary>

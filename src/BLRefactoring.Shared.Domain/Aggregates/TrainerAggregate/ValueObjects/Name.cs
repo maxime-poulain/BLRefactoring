@@ -19,7 +19,9 @@ public sealed class Name : ValueObject
     /// </summary>
     public string Lastname { get; } = null!;
 
-    private Name() {}
+    private Name()
+    {
+    }
 
     private Name(string firstname, string lastname)
     {
