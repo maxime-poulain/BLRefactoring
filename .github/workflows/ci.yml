@@ -100,17 +100,17 @@ jobs:
           github.event_name == 'push' ||
           github.event.pull_request.head.repo.full_name == github.repository
         run: |
-          if git diff --quiet -- src/BLRefactoring.GeneratedClients/; then
+          if git diff --quiet -- src/TrainingHub.GeneratedClients/; then
             echo "The client already matches the API."
             exit 0
           fi
 
           echo "::notice::The API changed; committing the regenerated client."
-          git diff --stat -- src/BLRefactoring.GeneratedClients/
+          git diff --stat -- src/TrainingHub.GeneratedClients/
 
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/BLRefactoring.GeneratedClients/
+          git add src/TrainingHub.GeneratedClients/
           git commit -m "Regenerate the HTTP client from the API" \
                      -m "Written by CI: a controller of the layered stack changed, so the client it implies changed with it."
           git push origin "HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}"
@@ -122,10 +122,10 @@ jobs:
           github.event_name == 'pull_request' &&
           github.event.pull_request.head.repo.full_name != github.repository
         run: |
-          if ! git diff --quiet -- src/BLRefactoring.GeneratedClients/; then
+          if ! git diff --quiet -- src/TrainingHub.GeneratedClients/; then
             echo "::error::The committed HTTP client no longer matches the API." \
                  "Run ./scripts/generate-clients.sh and commit the result."
-            git diff -- src/BLRefactoring.GeneratedClients/
+            git diff -- src/TrainingHub.GeneratedClients/
             exit 1
           fi
 

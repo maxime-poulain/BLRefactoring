@@ -1,7 +1,7 @@
-using BLRefactoring.Shared.Application.Dtos.Trainer;
-using BLRefactoring.Shared.CQS;
+using TrainingHub.Shared.Application.Dtos.Trainer;
+using TrainingHub.Shared.CQS;
 
-namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetPhoto;
+namespace TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetPhoto;
 
 /// <summary>
 /// Asks for a trainer's photo by the trainer's identifier.

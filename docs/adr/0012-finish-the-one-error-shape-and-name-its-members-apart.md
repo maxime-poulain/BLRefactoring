@@ -95,7 +95,7 @@ Against that:
 ## Known trade-off, recorded rather than fixed
 
 `IDomainEvent` inherits `Mediator.INotification`, and `ICommand<T>` / `IQuery<T>` inherit
-`IRequest<T>`, so `BLRefactoring.Shared` — the kernel that `Shared.Domain` depends on — carries
+`IRequest<T>`, so `TrainingHub.Shared` — the kernel that `Shared.Domain` depends on — carries
 `Mediator.Abstractions`. Every domain event in this solution therefore implements a third-party
 messaging contract, which is the one place "the domain knows nothing about messaging" is not true.
 

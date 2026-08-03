@@ -1,0 +1,323 @@
+@page "/trainings/create"
+@page "/trainings/edit/{Id:guid}"
+@attribute [Authorize]
+@using TrainingHub.Blazor.Client.Models
+@using TrainingHub.GeneratedClients
+@inject ITrainingClient TrainingClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="my-4">
+    <MudPaper Elevation="4" Class="pa-8">
+        @if (_isLoadingData)
+        {
+            <MudStack AlignItems="AlignItems.Center" Class="my-8">
+                <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+                <MudText Typo="Typo.body1" Class="mt-4">Loading training...</MudText>
+            </MudStack>
+        }
+        else
+        {
+            <MudStack Spacing="4">
+                <MudText Typo="Typo.h4">@(IsEditMode ? "Edit Training" : "Create Training")</MudText>
+
+                <MudForm @ref="_form" @bind-IsValid="_isValid">
+                    <MudTextField @bind-Value="_title"
+                                  Label="Title"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  RequiredError="Title is required"
+                                  Validation="@(new Func<string, string?>(ValidateTitle))"
+                                  Immediate="true"
+                                  Counter="TitleMaxLength"
+                                  MaxLength="TitleMaxLength"
+                                  Disabled="_isLoading"
+                                  HelperText="@($"Between {TitleMinLength} and {TitleMaxLength} characters")" />
+
+                    <MudText Typo="Typo.subtitle1" Class="mt-6 mb-2">Topics</MudText>
+                    <MudChipSet T="string"
+                                SelectionMode="SelectionMode.MultiSelection"
+                                @bind-SelectedValues="_selectedTopics"
+                                Variant="Variant.Outlined"
+                                Color="Color.Primary"
+                                CheckMark="true">
+                        @foreach (var topic in Topic.All)
+                        {
+                            <MudChip Text="@topic"
+                                     Value="@topic"
+                                     Disabled="_isLoading" />
+                        }
+                    </MudChipSet>
+                    @if (_topicsError is not null)
+                    {
+                        <MudText Color="Color.Error" Typo="Typo.caption" Class="mt-1">@_topicsError</MudText>
+                    }
+
+                    <MudTextField @bind-Value="_description"
+                                  Label="Description"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  RequiredError="Description is required"
+                                  Validation="@(new Func<string, string?>(ValidateDescription))"
+                                  Immediate="true"
+                                  Lines="4"
+                                  Counter="DescriptionMaxLength"
+                                  MaxLength="DescriptionMaxLength"
+                                  Disabled="_isLoading"
+                                  Class="mt-4" />
+
+                    <MudTextField @bind-Value="_prerequisites"
+                                  Label="Prerequisites"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  RequiredError="Prerequisites is required"
+                                  Validation="@(new Func<string, string?>(ValidatePrerequisites))"
+                                  Immediate="true"
+                                  Lines="4"
+                                  Counter="PrerequisitesMaxLength"
+                                  MaxLength="PrerequisitesMaxLength"
+                                  Disabled="_isLoading"
+                                  Class="mt-4" />
+
+                    <MudTextField @bind-Value="_acquiredSkills"
+                                  Label="Acquired Skills"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  RequiredError="Acquired skills is required"
+                                  Validation="@(new Func<string, string?>(ValidateAcquiredSkills))"
+                                  Immediate="true"
+                                  Lines="4"
+                                  Counter="AcquiredSkillsMaxLength"
+                                  MaxLength="AcquiredSkillsMaxLength"
+                                  Disabled="_isLoading"
+                                  Class="mt-4" />
+                </MudForm>
+
+                <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-4">
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Default"
+                               Href="/trainings"
+                               Disabled="_isLoading">
+                        Cancel
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Disabled="@(!_isValid || !HasSelectedTopics || _isLoading)"
+                               OnClick="HandleSubmit">
+                        @if (_isLoading)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>@(IsEditMode ? "Saving..." : "Creating...")</span>
+                        }
+                        else
+                        {
+                            <span>@(IsEditMode ? "Save Changes" : "Create Training")</span>
+                        }
+                    </MudButton>
+                </MudStack>
+            </MudStack>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    /// <summary>412, as the API answers an edit based on a version that is no longer current.</summary>
+    private const int StatusPreconditionFailed = 412;
+
+    private const int TitleMinLength = 5;
+    private const int TitleMaxLength = 30;
+    private const int DescriptionMaxLength = 500;
+    private const int PrerequisitesMaxLength = 500;
+    private const int AcquiredSkillsMaxLength = 500;
+
+    [Parameter] public Guid Id { get; set; }
+
+    private bool IsEditMode => Id != Guid.Empty;
+
+    private MudForm _form = null!;
+    private bool _isValid;
+    private bool _isLoading;
+    private bool _isLoadingData;
+
+    private string _title = string.Empty;
+    private string _description = string.Empty;
+    private string _prerequisites = string.Empty;
+    private string _acquiredSkills = string.Empty;
+    private IReadOnlyCollection<string> _selectedTopics = [];
+    private string? _topicsError;
+
+    /// <summary>
+    /// The version this page read, to be sent back when saving.
+    /// </summary>
+    /// <remarks>
+    /// Without it the API answers 428 and refuses the edit — an unconditional write would let this
+    /// page overwrite changes it never saw. It is held from the moment the training is loaded and
+    /// never refreshed behind the user's back: fetching a newer version to retry with is exactly
+    /// the overwrite this mechanism exists to prevent. See ADR 0010.
+    /// </remarks>
+    private string? _version;
+
+    private bool HasSelectedTopics => _selectedTopics.Count > 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!IsEditMode) return;
+
+        _isLoadingData = true;
+        try
+        {
+            var read = await TrainingClient.GetTrainingByIdAsync(Id);
+
+            _version = read.Headers.TryGetValue("ETag", out var etag) ? etag.FirstOrDefault() : null;
+
+            var training = read.Result;
+            _title = training.Title;
+            _description = training.Description;
+            _prerequisites = training.Prerequisites;
+            _acquiredSkills = training.AcquiredSkills;
+            _selectedTopics = training.Topics.ToList();
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add($"Failed to load training: {ex.Message}", Severity.Error);
+            NavigationManager.NavigateTo("/trainings");
+        }
+        finally
+        {
+            _isLoadingData = false;
+        }
+    }
+
+    private string? ValidateTitle(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "Title is required";
+
+        var trimmed = value.Trim();
+        if (trimmed.Length < TitleMinLength)
+            return $"Title must be at least {TitleMinLength} characters";
+
+        if (trimmed.Length > TitleMaxLength)
+            return $"Title cannot exceed {TitleMaxLength} characters";
+
+        return null;
+    }
+
+    private string? ValidateDescription(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "Description is required";
+
+        if (value.Length > DescriptionMaxLength)
+            return $"Description cannot exceed {DescriptionMaxLength} characters";
+
+        return null;
+    }
+
+    private string? ValidatePrerequisites(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "Prerequisites is required";
+
+        if (value.Length > PrerequisitesMaxLength)
+            return $"Prerequisites cannot exceed {PrerequisitesMaxLength} characters";
+
+        return null;
+    }
+
+    private string? ValidateAcquiredSkills(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "Acquired skills is required";
+
+        if (value.Length > AcquiredSkillsMaxLength)
+            return $"Acquired skills cannot exceed {AcquiredSkillsMaxLength} characters";
+
+        return null;
+    }
+
+    private void ValidateTopics()
+    {
+        _topicsError = _selectedTopics.Count == 0 ? "Please select at least one topic" : null;
+    }
+
+    private async Task HandleSubmit()
+    {
+        await _form.ValidateAsync();
+        ValidateTopics();
+
+        if (!_isValid || !HasSelectedTopics) return;
+
+        _isLoading = true;
+        try
+        {
+            if (IsEditMode)
+            {
+                // The identifier travels in the route now, not in the body: the request contract
+                // carries only what a caller actually sends.
+                var request = new EditTrainingRequestHttp
+                {
+                    Title = _title.Trim(),
+                    Topics = _selectedTopics.ToList(),
+                    Description = _description,
+                    Prerequisites = _prerequisites,
+                    AcquiredSkills = _acquiredSkills
+                };
+
+                // The version read when the page loaded. The API refuses an edit that does not
+                // state which version it replaces — see ADR 0010.
+                await TrainingClient.UpdateTrainingAsync(Id, _version, request);
+                Snackbar.Add("Training updated successfully!", Severity.Success);
+            }
+            else
+            {
+                var request = new CreateTrainingRequestHttp
+                {
+                    Title = _title.Trim(),
+                    Topics = _selectedTopics.ToList(),
+                    Description = _description,
+                    Prerequisites = _prerequisites,
+                    AcquiredSkills = _acquiredSkills
+                };
+
+                await TrainingClient.CreateTrainingAsync(request);
+                Snackbar.Add("Training created successfully!", Severity.Success);
+            }
+
+            NavigationManager.NavigateTo("/trainings");
+        }
+        catch (ApiException<ProblemDetails> ex) when (ex.StatusCode == StatusPreconditionFailed)
+        {
+            // Someone saved this training between the moment this page read it and now. Saying so
+            // plainly matters more than the API's own wording, which describes a version mismatch
+            // rather than what happened.
+            //
+            // Nothing is cleared and nothing is retried. Re-reading to obtain a fresh version and
+            // sending the same body would overwrite the other edit without anyone seeing it, which
+            // is the precise thing this refusal is protecting. The text stays on screen so it can
+            // be copied out; reloading the page is the way back to a current version.
+            Snackbar.Add(
+                "Someone else changed this training since you opened it. Your changes were not "
+                + "saved — copy them, then reload the page to see the current version.",
+                Severity.Warning);
+        }
+        catch (ApiException<ProblemDetails> ex)
+        {
+            // One RFC 7807 document rather than a bare array of errors: the detail carries the
+            // message, and the domain codes travel in the `domainErrors` extension. See ADR 0004.
+            Snackbar.Add(ex.Result.Detail ?? ex.Result.Title ?? "The request was rejected.", Severity.Error);
+        }
+        catch (ApiException ex)
+        {
+            Snackbar.Add($"Failed to {(IsEditMode ? "update" : "create")} training: {ex.Message}", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"An unexpected error occurred: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

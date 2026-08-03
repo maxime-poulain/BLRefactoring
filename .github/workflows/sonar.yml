@@ -139,7 +139,7 @@ jobs:
             /d:sonar.token="$SONAR_TOKEN" \
             /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
             /d:sonar.cs.vstest.reportsPaths="TestResults/*.trx" \
-            /d:sonar.exclusions="src/BLRefactoring.GeneratedClients/**,**/Migrations/**" \
+            /d:sonar.exclusions="src/TrainingHub.GeneratedClients/**,**/Migrations/**" \
             /d:sonar.qualitygate.wait=${{ github.event_name == 'pull_request' }}
 
           # --no-incremental, because the scanner works by hooking the compilation: a project MSBuild

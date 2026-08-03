@@ -1,7 +1,7 @@
-using BLRefactoring.Shared.CQS;
+using TrainingHub.Shared.CQS;
 using Mediator;
 
-namespace BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator;
+namespace TrainingHub.DDDWithCqrs.Infrastructure.ThirdParty.Mediator;
 
 /// <summary>
 /// Implements <see cref="IQueryDispatcher"/> using MediatR.

@@ -1,6 +1,6 @@
-# BLRefactoring
+# TrainingHub
 
-[![CI](https://github.com/maxime-poulain/BLRefactoring/actions/workflows/ci.yml/badge.svg)](https://github.com/maxime-poulain/BLRefactoring/actions/workflows/ci.yml)
+[![CI](https://github.com/maxime-poulain/TrainingHub/actions/workflows/ci.yml/badge.svg)](https://github.com/maxime-poulain/TrainingHub/actions/workflows/ci.yml)
 [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=maxime-poulain_BLRefactoring&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=maxime-poulain_BLRefactoring)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=maxime-poulain_BLRefactoring&metric=coverage)](https://sonarcloud.io/component_measures?id=maxime-poulain_BLRefactoring&metric=coverage)
 
@@ -35,7 +35,7 @@ two different problems.
 The domain is deliberately small — trainers publish trainings — so that the architecture stays
 the subject. What the repository actually demonstrates:
 
-- **One domain, two application styles.** `BLRefactoring.Shared.Domain` is consumed unchanged by
+- **One domain, two application styles.** `TrainingHub.Shared.Domain` is consumed unchanged by
   an application-service stack (`src/DDD`) and a command/query stack (`src/DDDWithCqrs`). Every
   use case exists in both, which makes the trade-offs of each style directly observable.
 - **A domain that speaks only in business concepts.** Aggregates accept value objects and typed
@@ -76,15 +76,15 @@ flowchart TB
     A -. composition root only .-> E
 ```
 
-`BLRefactoring.Shared.Domain` references exactly one project — the shared kernel — and nothing
+`TrainingHub.Shared.Domain` references exactly one project — the shared kernel — and nothing
 else.
 
 The two API hosts are thin. What they have in common — controller bases, the `TrainingOwner`
 policy, CORS, Identity and JWT wiring, the HTTP side of optimistic concurrency — lives in
-`BLRefactoring.Shared.Api`, so a rule can only be written once. Duplicating it across two
+`TrainingHub.Shared.Api`, so a rule can only be written once. Duplicating it across two
 `Program.cs` is how the CQRS host ended up with no CORS policy at all while the layered one had
 one, and how it kept relying on an `IHttpContextAccessor` it never registered. Persistence stayed
-in `BLRefactoring.Shared.Infrastructure`, which carries no ASP.NET Core framework reference.
+in `TrainingHub.Shared.Infrastructure`, which carries no ASP.NET Core framework reference.
 
 **HTTP is a boundary, not a window.** The contracts the API publishes — `*RequestHttp` and
 `*ResponseHttp`, under `Shared.Api/Contracts/` — belong to the API and to nothing else. Commands,
@@ -136,26 +136,26 @@ Twenty-six projects: sixteen under `src/`, ten under `tests/`. The backend and a
 
 | Project | Responsibility |
 |---|---|
-| `BLRefactoring.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, and the cross-cutting ports `IUnitOfWork`, `ICurrentUserService`, `IEmailSender`, `ITrainingSearchIndexer`, plus the CQS marker interfaces |
-| `BLRefactoring.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, `IUniquenessTitleChecker` |
-| `BLRefactoring.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections and the six domain event handlers — all shared by both stacks |
-| `BLRefactoring.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the identity store |
-| `BLRefactoring.Shared.Api` | The HTTP boundary: the `*RequestHttp` and `*ResponseHttp` contracts both hosts publish, their mappings to the application layer, the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, concurrency helpers |
+| `TrainingHub.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, and the cross-cutting ports `IUnitOfWork`, `ICurrentUserService`, `IEmailSender`, `ITrainingSearchIndexer`, plus the CQS marker interfaces |
+| `TrainingHub.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, `IUniquenessTitleChecker` |
+| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections and the six domain event handlers — all shared by both stacks |
+| `TrainingHub.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the identity store |
+| `TrainingHub.Shared.Api` | The HTTP boundary: the `*RequestHttp` and `*ResponseHttp` contracts both hosts publish, their mappings to the application layer, the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, concurrency helpers |
 | `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService` |
 | `DDD.Api` | REST host for the layered stack — controllers, composition root |
 | `DDDWithCqrs.Application` | Commands, command handlers, FluentValidation validators |
 | `DDDWithCqrs.Infrastructure` | **Query handlers**, Mediator dispatchers, pipeline behaviours |
 | `DDDWithCqrs.Api` | REST host for the CQRS stack — controllers, composition root |
-| `DDD.Domain`, `DDD.Infrastructure`, `DDDWithCqrs.Domain` | Routing projects with no source files; the domain and infrastructure they stand for live in the `BLRefactoring.Shared.*` projects |
-| `BLRefactoring.GeneratedClients` | NSwag-generated typed HTTP clients, checked in as source |
-| `BLRefactoring.Blazor` / `.Client` | Blazor WebAssembly front end built with MudBlazor, and the **backend for frontend** that serves it: cookie authentication, and a YARP proxy that attaches the API's access token server-side |
+| `DDD.Domain`, `DDD.Infrastructure`, `DDDWithCqrs.Domain` | Routing projects with no source files; the domain and infrastructure they stand for live in the `TrainingHub.Shared.*` projects |
+| `TrainingHub.GeneratedClients` | NSwag-generated typed HTTP clients, checked in as source |
+| `TrainingHub.Blazor` / `.Client` | Blazor WebAssembly front end built with MudBlazor, and the **backend for frontend** that serves it: cookie authentication, and a YARP proxy that attaches the API's access token server-side |
 | `tests/*` | Ten test projects — see [Testing](#testing) |
 
 ### Project dependency graph
 
 ```mermaid
 flowchart LR
-    Kernel["BLRefactoring.Shared"]
+    Kernel["TrainingHub.Shared"]
     Domain["Shared.Domain"]
     SharedApp["Shared.Application"]
     SharedInfra["Shared.Infrastructure"]
@@ -316,7 +316,7 @@ Events carry value objects and typed identifiers, not primitives.
 Events carry the facts their consumers need rather than just an identifier, because they are
 dispatched **before** persistence: a handler cannot reload an aggregate that is not saved yet.
 
-Their handlers live in `BLRefactoring.Shared.Application/EventHandlers/` and are shared by both
+Their handlers live in `TrainingHub.Shared.Application/EventHandlers/` and are shared by both
 stacks:
 
 | Handler | Reacts to | Effect |
@@ -387,13 +387,13 @@ declared on a `*ErrorCodes` holder, and no two share a value. See ADR 0015.
 
 Because aggregates only accept value objects, something has to build them. That is the
 application layer's job, done once for both stacks by `TrainerProfileFactory` and
-`TrainingDetailsFactory` in `BLRefactoring.Shared.Application/Factories/`. They validate every
+`TrainingDetailsFactory` in `TrainingHub.Shared.Application/Factories/`. They validate every
 field, accumulate all errors in a single pass, resolve topic names against the closed set, and
 either return the value objects or the complete list of what was wrong.
 
 ### Turning domain concepts back into output
 
-The reverse direction is written once too, in `BLRefactoring.Shared.Application/Projections/`.
+The reverse direction is written once too, in `TrainingHub.Shared.Application/Projections/`.
 Each aggregate has a single `Expression<Func<TAggregate, TDto>>`, consumed two ways: the CQRS
 query handlers hand it to EF Core, which folds it into the `SELECT` list so no aggregate is ever
 materialised, while the layered application services call the same expression compiled once into
@@ -612,7 +612,7 @@ A single authorization policy, `TrainingOwner`, guards the training write endpoi
 ownership only: a training that does not exist lets the policy succeed so the action can answer
 `404` rather than `403`, since the existence of a training is not a secret — the collection is
 readable by any authenticated caller. The policy, its handler and its name are declared once in
-`BLRefactoring.Shared.Api` and registered by both hosts through `AddTrainingOwnerAuthorization`,
+`TrainingHub.Shared.Api` and registered by both hosts through `AddTrainingOwnerAuthorization`,
 so neither can end up guarding an endpoint with a policy the other has since changed.
 
 **The browser never holds that token.** The Blazor host is a backend for frontend: it signs the
@@ -765,7 +765,7 @@ and a schema change that stopping the process cannot undo. See
 The Blazor front end runs with:
 
 ```bash
-dotnet run --project src/Web/BLRefactoring.Blazor/BLRefactoring.Blazor   # https://localhost:7067
+dotnet run --project src/Web/TrainingHub.Blazor/TrainingHub.Blazor   # https://localhost:7067
 ```
 
 It needs the layered API above to be running, since it forwards to it. **HTTPS is not optional
@@ -824,17 +824,17 @@ The two filters are exact inverses, so between them every test runs exactly once
 
 | Project | Scope |
 |---|---|
-| `BLRefactoring.Shared.Domain.Tests` | Aggregates, value objects, typed identifiers, `Result`, specifications |
-| `BLRefactoring.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers |
-| `BLRefactoring.DDDWithCqrs.Tests` | Command handlers, validators, pipeline behaviours |
-| `BLRefactoring.Shared.Api.Tests` | Entity-tag encoding and parsing, the guard that keeps client generation away from a database, what the unhandled-exception handler is allowed to tell a caller, and the transformer that describes an uploaded file inline so a client generator recognises it as one |
-| `BLRefactoring.Shared.Infrastructure.Tests` | The auditable-entities interceptor — that it stamps, and reads the clock once per entity — and the bucket bootstrapper, mostly for when it does nothing |
-| `BLRefactoring.Blazor.Bff.Tests` | The backend for frontend over HTTP: the cookie's flags, the forgery guard, the token attached to a forwarded call, and what signing out revokes |
-| `BLRefactoring.Blazor.Client.Tests` | The profile page, rendered in-process with bUnit: the size ceiling that refuses a file before it is uploaded, the image address that defeats a year-long cache, and the server's refusal shown in its own words |
-| `BLRefactoring.DDD.Api.IntegrationTests` | The layered host, HTTP end to end against a real SQL Server and a real object store |
-| `BLRefactoring.DDDWithCqrs.Api.IntegrationTests` | The CQRS host, same treatment |
-| `BLRefactoring.Architecture.Tests` | The decisions themselves: the dependency rule, the CQRS shape, the modelling conventions, and a rule that fails when a record is defended by nothing — see [ADR 0013](docs/adr/0013-make-every-record-answer-to-a-test.md) |
-| `BLRefactoring.Api.TestKit` | Not a test project: the fixtures both integration suites share |
+| `TrainingHub.Shared.Domain.Tests` | Aggregates, value objects, typed identifiers, `Result`, specifications |
+| `TrainingHub.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers |
+| `TrainingHub.DDDWithCqrs.Tests` | Command handlers, validators, pipeline behaviours |
+| `TrainingHub.Shared.Api.Tests` | Entity-tag encoding and parsing, the guard that keeps client generation away from a database, what the unhandled-exception handler is allowed to tell a caller, and the transformer that describes an uploaded file inline so a client generator recognises it as one |
+| `TrainingHub.Shared.Infrastructure.Tests` | The auditable-entities interceptor — that it stamps, and reads the clock once per entity — and the bucket bootstrapper, mostly for when it does nothing |
+| `TrainingHub.Blazor.Bff.Tests` | The backend for frontend over HTTP: the cookie's flags, the forgery guard, the token attached to a forwarded call, and what signing out revokes |
+| `TrainingHub.Blazor.Client.Tests` | The profile page, rendered in-process with bUnit: the size ceiling that refuses a file before it is uploaded, the image address that defeats a year-long cache, and the server's refusal shown in its own words |
+| `TrainingHub.DDD.Api.IntegrationTests` | The layered host, HTTP end to end against a real SQL Server and a real object store |
+| `TrainingHub.DDDWithCqrs.Api.IntegrationTests` | The CQRS host, same treatment |
+| `TrainingHub.Architecture.Tests` | The decisions themselves: the dependency rule, the CQRS shape, the modelling conventions, and a rule that fails when a record is defended by nothing — see [ADR 0013](docs/adr/0013-make-every-record-answer-to-a-test.md) |
+| `TrainingHub.Api.TestKit` | Not a test project: the fixtures both integration suites share |
 
 No test count is quoted here on purpose: a `[Theory]` expands to as many cases as it has rows, so
 the only honest figure is the one the two commands above print, and a figure written down goes
@@ -858,7 +858,7 @@ CQRS host a FluentValidation validator inside `ValidationPipelineBehavior` catch
 answer the same shape — a `domainErrors` document — since that behaviour returns a failed `Result`
 rather than throwing; what differs is the code inside it, because two different layers judged.
 
-`BLRefactoring.Api.TestKit` holds the shared fixtures — the Testcontainers host, the Respawn
+`TrainingHub.Api.TestKit` holds the shared fixtures — the Testcontainers host, the Respawn
 checkpoint, the registration and conditional-request helpers — generic over the entry point.
 Only the `Program` type differs between the two suites.
 
@@ -954,6 +954,13 @@ Everything below is done by hand, once, outside the repository.
    is the `owner_repo` form — the second is what a GitHub import produces, so the project is bound
    to this repository and pull-request decoration works.
 
+   The project key still spells the name this repository carried before
+   [ADR 0022](docs/adr/0022-name-the-repository-after-the-domain-it-serves.md), and that is
+   deliberate rather than missed. A SonarCloud project key is immutable: the only way to change it
+   is to delete the project and import it again, which discards every measurement taken against the
+   old one — the coverage history and the baseline the new-code condition is compared with. The
+   binding to the repository is by key, not by name, so it survives a repository rename untouched.
+
 3. In the project's **Administration → Analysis Method**, turn **Automatic Analysis off**. It and
    the CI-based analysis are mutually exclusive, and leaving it on makes the workflow fail with a
    message that does not say so.
@@ -996,7 +1003,7 @@ one the analysis of `master` produces.
 - **Central package management.** Every NuGet version lives in `Directory.Packages.props`; no
   project carries a `Version` attribute and no version is a wildcard. One project carries a
   `VersionOverride`, which is the exception that has to be stated rather than discovered:
-  `BLRefactoring.Blazor.Client.Tests` raises the ASP.NET Core Components family to 10.x for itself,
+  `TrainingHub.Blazor.Client.Tests` raises the ASP.NET Core Components family to 10.x for itself,
   because bUnit's net10.0 assets require it while the Blazor projects target net9.0 and the central
   pin follows them. Moving those projects to net10.0 removes the override and this sentence with it.
 - **Shared MSBuild properties.** `Nullable` and `ImplicitUsings` are enabled solution-wide from
@@ -1013,7 +1020,17 @@ one the analysis of `master` produces.
   why not Shouldly — is in [ADR 0007](docs/adr/0007-assert-with-awesomeassertions.md).
 - **Architecture decision records** live in [`docs/adr/`](docs/adr/), one numbered file per
   decision, each recording the alternatives and why they lost. A decision that changes gets a new
-  record superseding the old one; merged records are not rewritten.
+  record superseding the old one; merged records are not rewritten. What that protects is the
+  reasoning — the options that were open and why the loser lost — and not the identifiers the
+  reasoning happens to mention: when the repository was renamed, the project names inside every
+  record were renamed with it, because a record pointing at a project that no longer exists cannot
+  be read at all. See [ADR 0022](docs/adr/0022-name-the-repository-after-the-domain-it-serves.md).
+- **The name this repository used to carry is gone, and a rule keeps it gone.**
+  `NothingInTheRepository_StillCarriesTheFormerName` scans every file — source, workflows, compose,
+  the records, this one — and permits the former name in one position only: immediately after
+  `maxime-poulain_`, which is the SonarCloud project key and cannot be renamed from here. The name
+  itself is written down in exactly two places, and
+  [ADR 0022](docs/adr/0022-name-the-repository-after-the-domain-it-serves.md) is one of them.
 - **The build fails on a warning.** `.editorconfig` sets a hundred and sixty analyzer rules on
   purpose, and `Directory.Build.props` turns a warning into an error, so the severities written
   there are rules rather than preferences — an architecture rule checks that they stay that way.

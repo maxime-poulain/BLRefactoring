@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Delete;
+namespace TrainingHub.DDDWithCqrs.Application.Features.Trainings.Delete;
 
 /// <summary>
 /// Checks <see cref="DeleteTrainingCommand"/> before any handler sees it.

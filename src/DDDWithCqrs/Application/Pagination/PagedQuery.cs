@@ -1,4 +1,4 @@
-namespace BLRefactoring.DDDWithCqrs.Application.Pagination;
+namespace TrainingHub.DDDWithCqrs.Application.Pagination;
 
 /// <summary>
 /// The paging a query carries.

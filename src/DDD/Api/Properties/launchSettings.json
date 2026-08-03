@@ -9,7 +9,7 @@
     }
   },
   "profiles": {
-    "BLRefactoring.DDD.Api": {
+    "TrainingHub.DDD.Api": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,

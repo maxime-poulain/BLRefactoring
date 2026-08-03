@@ -1,10 +1,10 @@
-using BLRefactoring.Shared.Api.Contracts.Trainers;
-using BLRefactoring.Shared.Api.Controllers;
-using BLRefactoring.Shared.Api.Contracts.Trainings;
-using BLRefactoring.Shared.Application.Dtos.Trainer;
-using BLRefactoring.Shared.Application.Dtos.Training;
+using TrainingHub.Shared.Api.Contracts.Trainers;
+using TrainingHub.Shared.Api.Controllers;
+using TrainingHub.Shared.Api.Contracts.Trainings;
+using TrainingHub.Shared.Application.Dtos.Trainer;
+using TrainingHub.Shared.Application.Dtos.Training;
 
-namespace BLRefactoring.DDD.Api.Mappings;
+namespace TrainingHub.DDD.Api.Mappings;
 
 /// <summary>
 /// Turns the API's request contracts into the messages this stack's application services accept.

@@ -1,9 +1,9 @@
-using BLRefactoring.DDD.Application.Services.TrainerServices;
-using BLRefactoring.DDD.Application.Services.TrainingServices;
-using BLRefactoring.Shared.Api.Extensions;
-using BLRefactoring.Shared.Application.EventHandlers;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
-using BLRefactoring.Shared.Infrastructure.Extensions;
+using TrainingHub.DDD.Application.Services.TrainerServices;
+using TrainingHub.DDD.Application.Services.TrainingServices;
+using TrainingHub.Shared.Api.Extensions;
+using TrainingHub.Shared.Application.EventHandlers;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
+using TrainingHub.Shared.Infrastructure.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,7 +34,7 @@ builder.Services.AddMediator(options =>
 });
 
 // Identity, JWT validation and the ownership policy are the same on both hosts, and are declared
-// once in BLRefactoring.Shared.Api so neither can quietly lose a rule the other keeps.
+// once in TrainingHub.Shared.Api so neither can quietly lose a rule the other keeps.
 builder.Services.AddApiIdentity(builder.Configuration);
 builder.Services.AddJwtBearerAuthentication(builder.Configuration);
 builder.Services.AddTrainingOwnerAuthorization();

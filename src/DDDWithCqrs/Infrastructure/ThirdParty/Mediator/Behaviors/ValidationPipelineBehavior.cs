@@ -1,11 +1,11 @@
-using BLRefactoring.Shared.Common.Errors;
-using BLRefactoring.Shared.Common.Results;
-using BLRefactoring.Shared.CQS;
+using TrainingHub.Shared.Common.Errors;
+using TrainingHub.Shared.Common.Results;
+using TrainingHub.Shared.CQS;
 using FluentValidation;
 using FluentValidation.Results;
 using Mediator;
 
-namespace BLRefactoring.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors;
+namespace TrainingHub.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors;
 
 /// <summary>
 /// Performs validation of Mediator's requests before it is handled by the handler.

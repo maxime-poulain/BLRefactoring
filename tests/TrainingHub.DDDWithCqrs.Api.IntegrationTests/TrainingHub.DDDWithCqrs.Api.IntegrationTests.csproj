@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DDDWithCqrs\Api\TrainingHub.DDDWithCqrs.Api.csproj" />
+    <ProjectReference Include="..\TrainingHub.Api.TestKit\TrainingHub.Api.TestKit.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="TrainingHub.Api.TestKit" />
+  </ItemGroup>
+
+</Project>

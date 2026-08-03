@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainers.Edit;
+namespace TrainingHub.DDDWithCqrs.Application.Features.Trainers.Edit;
 
 /// <summary>
 /// Guards what the caller sent. Not who they are: the trainer is no longer a field on this

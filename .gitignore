@@ -746,4 +746,4 @@ cqrsDDD.db-wal
 
 # The OpenAPI document emitted by scripts/generate-clients.sh. An intermediate artefact: the
 # generated client is committed, the document it was produced from is not.
-src/DDD/Api/BLRefactoring.DDD.Api.json
+src/DDD/Api/TrainingHub.DDD.Api.json

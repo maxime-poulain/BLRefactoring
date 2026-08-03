@@ -5,7 +5,7 @@
 
 ## Context
 
-`src/BLRefactoring.GeneratedClients/Clients.Generated.cs` — 1 956 lines, stamped NSwag 14.6.3 —
+`src/TrainingHub.GeneratedClients/Clients.Generated.cs` — 1 956 lines, stamped NSwag 14.6.3 —
 described an API that had stopped existing. It published `TrainingDto`, `TrainerDto`, `Error` and
 `ErrorCode`: the application DTOs and the kernel's smart enum, everything ADR-less PR #43 removed
 from the HTTP boundary in favour of `*RequestHttp` / `*ResponseHttp`. It knew nothing of

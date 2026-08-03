@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DDD\Api\TrainingHub.DDD.Api.csproj" />
+    <ProjectReference Include="..\TrainingHub.Api.TestKit\TrainingHub.Api.TestKit.csproj" />
+  </ItemGroup>
+
+  <!--
+    The test kit is used by every file of this suite; a global using keeps its helpers
+    reachable without repeating the directive, and left the existing tests untouched when
+    the fixtures moved out.
+  -->
+  <ItemGroup>
+    <Using Include="TrainingHub.Api.TestKit" />
+  </ItemGroup>
+
+</Project>

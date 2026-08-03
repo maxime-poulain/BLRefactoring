@@ -1,18 +1,18 @@
-using BLRefactoring.DDDWithCqrs.Api.Mappings;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.GetPhoto;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.RemovePhoto;
-using BLRefactoring.DDDWithCqrs.Application.Features.Trainers.SetPhoto;
-using BLRefactoring.Shared;
-using BLRefactoring.Shared.Api.Contracts.Mappings;
-using BLRefactoring.Shared.Api.Contracts.Trainers;
-using BLRefactoring.Shared.Api.Controllers;
-using BLRefactoring.Shared.Api.Http;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
-using BLRefactoring.Shared.Common.Errors;
-using BLRefactoring.Shared.CQS;
+using TrainingHub.DDDWithCqrs.Api.Mappings;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetPhoto;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainers.RemovePhoto;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainers.SetPhoto;
+using TrainingHub.Shared;
+using TrainingHub.Shared.Api.Contracts.Mappings;
+using TrainingHub.Shared.Api.Contracts.Trainers;
+using TrainingHub.Shared.Api.Controllers;
+using TrainingHub.Shared.Api.Http;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
+using TrainingHub.Shared.Common.Errors;
+using TrainingHub.Shared.CQS;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BLRefactoring.DDDWithCqrs.Api.Controller;
+namespace TrainingHub.DDDWithCqrs.Api.Controller;
 
 /// <summary>
 /// Trainers are only created through the registration flow, which creates

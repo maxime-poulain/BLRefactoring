@@ -1,0 +1,71 @@
+
+using TrainingHub.Shared.Common;
+using TrainingHub.Shared.Common.Results;
+
+namespace TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
+
+/// <summary>
+/// Represents the title of a training.
+/// The title is a unique identifier for the training within a trainer's portfolio
+/// and must be descriptive yet concise.
+/// </summary>
+/// <remarks>
+/// The title must be between 5 and 100 characters to ensure it's both
+/// meaningful and brief enough for display purposes.
+/// </remarks>
+public sealed class TrainingTitle : ValueObject
+{
+    private const int MinLength = 5;
+    private const int MaxLength = 100;
+
+    /// <summary>
+    /// Gets the title text.
+    /// </summary>
+    public string Value { get; private init; } = null!;
+
+    private TrainingTitle() { } // For ORM
+
+    private TrainingTitle(string value)
+    {
+        Value = value;
+    }
+
+    /// <summary>
+    /// Creates a new instance of <see cref="TrainingTitle"/>.
+    /// </summary>
+    /// <param name="title">The title text.</param>
+    /// <returns>A result containing the training title or validation errors.</returns>
+    public static Result<TrainingTitle> Create(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return Result<TrainingTitle>.Failure(TrainingErrorCodes.InvalidTitle, "Training title cannot be empty.");
+        }
+
+        var trimmedTitle = title.Trim();
+
+        if (trimmedTitle.Length is < MinLength or > MaxLength)
+        {
+            return Result<TrainingTitle>.Failure(
+                TrainingErrorCodes.InvalidTitle,
+                $"Training title must be between {MinLength} and {MaxLength} characters.");
+        }
+
+        return Result<TrainingTitle>.Success(new TrainingTitle(trimmedTitle));
+    }
+
+    /// <summary>
+    /// Yields the parts this value is compared by.
+    /// </summary>
+    protected override IEnumerable<object?> GetEqualityComponents()
+    {
+        // Upper rather than lower: a handful of characters lowercase to the same letter without
+        // uppercasing to the same one, so folding down can make two distinct titles compare equal.
+        yield return Value.ToUpperInvariant();
+    }
+
+    /// <summary>
+    /// Returns the value as text.
+    /// </summary>
+    public override string ToString() => Value;
+}

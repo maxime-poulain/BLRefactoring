@@ -1,13 +1,13 @@
-using BLRefactoring.Shared;
-using BLRefactoring.Shared.Common;
-using BLRefactoring.Shared.Common.Errors;
-using BLRefactoring.Shared.Common.Results;
-using BLRefactoring.Shared.CQS;
-using BLRefactoring.Shared.Domain.Aggregates.TrainerAggregate;
-using BLRefactoring.Shared.Application.Factories;
-using BLRefactoring.Shared.Domain.Aggregates.TrainingAggregate;
+using TrainingHub.Shared;
+using TrainingHub.Shared.Common;
+using TrainingHub.Shared.Common.Errors;
+using TrainingHub.Shared.Common.Results;
+using TrainingHub.Shared.CQS;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
+using TrainingHub.Shared.Application.Factories;
+using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
 
-namespace BLRefactoring.DDDWithCqrs.Application.Features.Trainings.Create;
+namespace TrainingHub.DDDWithCqrs.Application.Features.Trainings.Create;
 
 /// <summary>
 /// Asks that a training be created.

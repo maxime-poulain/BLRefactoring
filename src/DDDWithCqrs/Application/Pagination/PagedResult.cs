@@ -1,4 +1,4 @@
-namespace BLRefactoring.DDDWithCqrs.Application.Pagination;
+namespace TrainingHub.DDDWithCqrs.Application.Pagination;
 
 /// <summary>
 /// One page of a read model, with what a caller needs to ask for the next.

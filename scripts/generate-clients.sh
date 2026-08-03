@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Regenerates the typed HTTP client in src/BLRefactoring.GeneratedClients from the API's own
+# Regenerates the typed HTTP client in src/TrainingHub.GeneratedClients from the API's own
 # OpenAPI document.
 #
 # One entry point, used identically on a developer machine and in CI — that is the whole reason
@@ -9,7 +9,7 @@
 #
 # Two steps, in order:
 #   1. Build the layered API host with document emission turned on. The document lands next to the
-#      project as BLRefactoring.DDD.Api.json. OPENAPI_GENERATION stops that build from applying
+#      project as TrainingHub.DDD.Api.json. OPENAPI_GENERATION stops that build from applying
 #      migrations — producing the document loads the host, so everything before app.Run() runs.
 #   2. Run the pinned NSwag CLI over generator.nswag, which reads that document.
 #
@@ -25,9 +25,9 @@ set -euo pipefail
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repository_root"
 
-api_project="src/DDD/Api/BLRefactoring.DDD.Api.csproj"
-document="src/DDD/Api/BLRefactoring.DDD.Api.json"
-client="src/BLRefactoring.GeneratedClients/Clients.Generated.cs"
+api_project="src/DDD/Api/TrainingHub.DDD.Api.csproj"
+document="src/DDD/Api/TrainingHub.DDD.Api.json"
+client="src/TrainingHub.GeneratedClients/Clients.Generated.cs"
 
 echo "==> Restoring the pinned NSwag CLI"
 dotnet tool restore

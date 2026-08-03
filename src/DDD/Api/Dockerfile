@@ -12,22 +12,22 @@ WORKDIR /src
 # fails; Directory.Build.props carries Nullable and ImplicitUsings, which would silently switch off
 # rather than fail. `COPY src/ src/` further down does not reach either — they sit at the root.
 COPY Directory.Build.props Directory.Packages.props ./
-COPY BLRefactoring.slnx .
-COPY src/BLRefactoring.Shared/BLRefactoring.Shared.csproj src/BLRefactoring.Shared/
-COPY src/BLRefactoring.Shared.Domain/BLRefactoring.Shared.Domain.csproj src/BLRefactoring.Shared.Domain/
-COPY src/BLRefactoring.Shared.Application/BLRefactoring.Shared.Application.csproj src/BLRefactoring.Shared.Application/
-COPY src/BLRefactoring.Shared.Infrastructure/BLRefactoring.Shared.Infrastructure.csproj src/BLRefactoring.Shared.Infrastructure/
-COPY src/BLRefactoring.Shared.Api/BLRefactoring.Shared.Api.csproj src/BLRefactoring.Shared.Api/
-COPY src/DDD/Domain/BLRefactoring.DDD.Domain.csproj src/DDD/Domain/
-COPY src/DDD/Application/BLRefactoring.DDD.Application.csproj src/DDD/Application/
-COPY src/DDD/Infrastructure/BLRefactoring.DDD.Infrastructure.csproj src/DDD/Infrastructure/
-COPY src/DDD/Api/BLRefactoring.DDD.Api.csproj src/DDD/Api/
+COPY TrainingHub.slnx .
+COPY src/TrainingHub.Shared/TrainingHub.Shared.csproj src/TrainingHub.Shared/
+COPY src/TrainingHub.Shared.Domain/TrainingHub.Shared.Domain.csproj src/TrainingHub.Shared.Domain/
+COPY src/TrainingHub.Shared.Application/TrainingHub.Shared.Application.csproj src/TrainingHub.Shared.Application/
+COPY src/TrainingHub.Shared.Infrastructure/TrainingHub.Shared.Infrastructure.csproj src/TrainingHub.Shared.Infrastructure/
+COPY src/TrainingHub.Shared.Api/TrainingHub.Shared.Api.csproj src/TrainingHub.Shared.Api/
+COPY src/DDD/Domain/TrainingHub.DDD.Domain.csproj src/DDD/Domain/
+COPY src/DDD/Application/TrainingHub.DDD.Application.csproj src/DDD/Application/
+COPY src/DDD/Infrastructure/TrainingHub.DDD.Infrastructure.csproj src/DDD/Infrastructure/
+COPY src/DDD/Api/TrainingHub.DDD.Api.csproj src/DDD/Api/
 
-RUN dotnet restore src/DDD/Api/BLRefactoring.DDD.Api.csproj
+RUN dotnet restore src/DDD/Api/TrainingHub.DDD.Api.csproj
 
 # Copy source code and publish
 COPY src/ src/
-RUN dotnet publish src/DDD/Api/BLRefactoring.DDD.Api.csproj -c Release -o /app/publish --no-restore
+RUN dotnet publish src/DDD/Api/TrainingHub.DDD.Api.csproj -c Release -o /app/publish --no-restore
 
 FROM base AS final
 WORKDIR /app
@@ -39,4 +39,4 @@ ENV ASPNETCORE_URLS=http://+:8080
 # because changing it would break images that write where they should not.
 USER $APP_UID
 
-ENTRYPOINT ["dotnet", "BLRefactoring.DDD.Api.dll"]
+ENTRYPOINT ["dotnet", "TrainingHub.DDD.Api.dll"]

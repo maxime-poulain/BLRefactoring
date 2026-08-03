@@ -1,11 +1,11 @@
-using BLRefactoring.DDD.Api.Mappings;
-using BLRefactoring.DDD.Application.Services.TrainerServices;
-using BLRefactoring.Shared.Common.Results;
-using BLRefactoring.Shared.Api.Controllers;
-using BLRefactoring.Shared.Api.Identity;
+using TrainingHub.DDD.Api.Mappings;
+using TrainingHub.DDD.Application.Services.TrainerServices;
+using TrainingHub.Shared.Common.Results;
+using TrainingHub.Shared.Api.Controllers;
+using TrainingHub.Shared.Api.Identity;
 using Microsoft.AspNetCore.Identity;
 
-namespace BLRefactoring.DDD.Api.Controller;
+namespace TrainingHub.DDD.Api.Controller;
 
 /// <summary>
 /// Authentication endpoints of the DDD stack. The registration and login flows

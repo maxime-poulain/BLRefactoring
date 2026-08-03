@@ -9,7 +9,7 @@
     }
   },
   "profiles": {
-    "BLRefactoring.DDDWithCqrs.Api": {
+    "TrainingHub.DDDWithCqrs.Api": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,

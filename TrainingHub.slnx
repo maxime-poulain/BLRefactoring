@@ -1,0 +1,37 @@
+<Solution>
+  <Folder Name="/DDD/">
+    <Project Path="src/DDD/Api/TrainingHub.DDD.Api.csproj" />
+    <Project Path="src/DDD/Application/TrainingHub.DDD.Application.csproj" />
+    <Project Path="src/DDD/Domain/TrainingHub.DDD.Domain.csproj" />
+    <Project Path="src/DDD/Infrastructure/TrainingHub.DDD.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/DDDWithCqrs/">
+    <Project Path="src/DDDWithCqrs/Api/TrainingHub.DDDWithCqrs.Api.csproj" />
+    <Project Path="src/DDDWithCqrs/Application/TrainingHub.DDDWithCqrs.Application.csproj" />
+    <Project Path="src/DDDWithCqrs/Domain/TrainingHub.DDDWithCqrs.Domain.csproj" />
+    <Project Path="src/DDDWithCqrs/Infrastructure/TrainingHub.DDDWithCqrs.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Web/">
+    <Project Path="src/Web/TrainingHub.Blazor/TrainingHub.Blazor.Client/TrainingHub.Blazor.Client.csproj" />
+    <Project Path="src/Web/TrainingHub.Blazor/TrainingHub.Blazor/TrainingHub.Blazor.csproj" />
+  </Folder>
+  <Project Path="src/TrainingHub.GeneratedClients/TrainingHub.GeneratedClients.csproj" />
+  <Project Path="src/TrainingHub.Shared.Api/TrainingHub.Shared.Api.csproj" />
+  <Project Path="src/TrainingHub.Shared.Application/TrainingHub.Shared.Application.csproj" />
+  <Project Path="src/TrainingHub.Shared.Domain/TrainingHub.Shared.Domain.csproj" />
+  <Project Path="src/TrainingHub.Shared.Infrastructure/TrainingHub.Shared.Infrastructure.csproj" />
+  <Project Path="src/TrainingHub.Shared/TrainingHub.Shared.csproj" />
+  <Folder Name="/Tests/">
+    <Project Path="tests/TrainingHub.Shared.Domain.Tests/TrainingHub.Shared.Domain.Tests.csproj" />
+    <Project Path="tests/TrainingHub.DDD.Application.Tests/TrainingHub.DDD.Application.Tests.csproj" />
+    <Project Path="tests/TrainingHub.DDD.Api.IntegrationTests/TrainingHub.DDD.Api.IntegrationTests.csproj" />
+    <Project Path="tests/TrainingHub.DDDWithCqrs.Tests/TrainingHub.DDDWithCqrs.Tests.csproj" />
+    <Project Path="tests/TrainingHub.Shared.Api.Tests/TrainingHub.Shared.Api.Tests.csproj" />
+    <Project Path="tests/TrainingHub.Shared.Infrastructure.Tests/TrainingHub.Shared.Infrastructure.Tests.csproj" />
+    <Project Path="tests/TrainingHub.Api.TestKit/TrainingHub.Api.TestKit.csproj" />
+    <Project Path="tests/TrainingHub.DDDWithCqrs.Api.IntegrationTests/TrainingHub.DDDWithCqrs.Api.IntegrationTests.csproj" />
+    <Project Path="tests/TrainingHub.Blazor.Bff.Tests/TrainingHub.Blazor.Bff.Tests.csproj" />
+    <Project Path="tests/TrainingHub.Blazor.Client.Tests/TrainingHub.Blazor.Client.Tests.csproj" />
+    <Project Path="tests/TrainingHub.Architecture.Tests/TrainingHub.Architecture.Tests.csproj" />
+  </Folder>
+</Solution>

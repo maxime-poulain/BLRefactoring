@@ -12,8 +12,8 @@ interface, a framework type, or one of the kernel's abstract classes.
 That is not a repository that chose to be extensible. It is a repository where `sealed` was typed
 when somebody happened to think of it. The evidence is the unevenness. `TrainerCreationRequest` is
 sealed and `TrainingCreationRequest`, in the same folder, is not. `TrainerApplicationService` is
-sealed and its twin `TrainingApplicationService` is not. `BLRefactoring.Shared.Domain`,
-`BLRefactoring.Api.TestKit` and `BLRefactoring.Blazor.Bff.Tests` were already at a hundred per cent —
+sealed and its twin `TrainingApplicationService` is not. `TrainingHub.Shared.Domain`,
+`TrainingHub.Api.TestKit` and `TrainingHub.Blazor.Bff.Tests` were already at a hundred per cent —
 so the convention existed, it just had nothing holding it.
 
 The cost of an open class is not primarily runtime. It is that a reader cannot tell a deliberate
@@ -38,7 +38,7 @@ does not compile. "Nobody inherits this" is a claim about everything and can onl
 something that sees everything.
 
 That includes the test projects. A production class whose only subclass is a test double is
-inherited, and sealing it would break the build. So `BLRefactoring.Architecture.Tests` references
+inherited, and sealing it would break the build. So `TrainingHub.Architecture.Tests` references
 every project in the solution — which, for a suite whose subject is the shape of the whole solution,
 is the right shape to be in.
 
