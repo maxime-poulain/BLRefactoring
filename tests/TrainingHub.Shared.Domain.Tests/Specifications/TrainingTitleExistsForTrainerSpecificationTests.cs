@@ -8,59 +8,65 @@ using Xunit;
 namespace TrainingHub.Shared.Domain.Tests.Specifications;
 
 /// <summary>
-/// Unit tests for <see cref="TrainingTitleExistsForTrainerSpecification"/>.
-/// Validates that the specification correctly matches trainings by title and trainer.
+/// Behaviour covered for <see cref="TrainingTitleExistsForTrainerSpecification"/>: the data half
+/// of the uniqueness invariant, answered in memory.
 /// </summary>
 public sealed class TrainingTitleExistsForTrainerSpecificationTests
 {
     /// <summary>
-    /// Verifies that the specification matches a training with the exact title and trainer.
+    /// The same title for the same trainer, is matched.
     /// </summary>
     [Fact]
-    public async Task Criteria_MatchesTitleAndTrainer()
+    public async Task TheSameTitleForTheSameTrainer_IsMatched()
     {
-        // Arrange
         var trainerId = Guid.NewGuid();
         var training = await new TrainingBuilder()
             .WithTitle("Valid Training Title")
             .WithTrainerId(trainerId)
             .BuildValidAsync();
-
-        var trainings = new[] { training };
 
         var title = TrainingTitle.Create("Valid Training Title").Match(t => t, _ => null!);
         var spec = new TrainingTitleExistsForTrainerSpecification(title, TrainerId.Create(trainerId));
 
-        // Act
-        var result = trainings.AsQueryable().Where(spec.Criteria!.Compile()).ToList();
-
-        // Assert
-        result.Should().HaveCount(1);
+        spec.IsSatisfiedBy(training).Should().BeTrue();
     }
 
     /// <summary>
-    /// Verifies that the specification does not match when the trainer is different.
+    /// The same title for another trainer, is not.
+    /// </summary>
+    /// <remarks>
+    /// The heart of the invariant's scope: uniqueness is per trainer, so two trainers may both
+    /// list "Valid Training Title" and neither is in the other's way.
+    /// </remarks>
+    [Fact]
+    public async Task TheSameTitleForAnotherTrainer_IsNot()
+    {
+        var training = await new TrainingBuilder()
+            .WithTitle("Valid Training Title")
+            .WithTrainerId(Guid.NewGuid())
+            .BuildValidAsync();
+
+        var title = TrainingTitle.Create("Valid Training Title").Match(t => t, _ => null!);
+        var spec = new TrainingTitleExistsForTrainerSpecification(title, TrainerId.Create(Guid.NewGuid()));
+
+        spec.IsSatisfiedBy(training).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Another title for the same trainer, is not.
     /// </summary>
     [Fact]
-    public async Task Criteria_DifferentTrainer_DoesNotMatch()
+    public async Task AnotherTitleForTheSameTrainer_IsNot()
     {
-        // Arrange
         var trainerId = Guid.NewGuid();
-        var otherTrainerId = Guid.NewGuid();
         var training = await new TrainingBuilder()
             .WithTitle("Valid Training Title")
             .WithTrainerId(trainerId)
             .BuildValidAsync();
 
-        var trainings = new[] { training };
+        var title = TrainingTitle.Create("A Different Title Entirely").Match(t => t, _ => null!);
+        var spec = new TrainingTitleExistsForTrainerSpecification(title, TrainerId.Create(trainerId));
 
-        var title = TrainingTitle.Create("Valid Training Title").Match(t => t, _ => null!);
-        var spec = new TrainingTitleExistsForTrainerSpecification(title, TrainerId.Create(otherTrainerId));
-
-        // Act
-        var result = trainings.AsQueryable().Where(spec.Criteria!.Compile()).ToList();
-
-        // Assert
-        result.Should().BeEmpty();
+        spec.IsSatisfiedBy(training).Should().BeFalse();
     }
 }

@@ -1,19 +1,17 @@
-using TrainingHub.Shared.Common;
-
 namespace TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 
 /// <summary>
-/// Represents a repository for the <see cref="Trainer"/> aggregate in a
-/// Domain-Driven Design (DDD) architecture.
-/// This interface inherits from a <see cref="IRepository{TEntity}"/> interface,
-/// which is used to define a generic repository for <see cref="Trainer"/> entities.
+/// Represents a repository for the <see cref="Trainer"/> aggregate.
 /// </summary>
 /// <remarks>
 /// Modification methods (<see cref="Add"/>, <see cref="Update"/>, <see cref="Delete"/>)
 /// only stage changes in the underlying change tracker; nothing is persisted until the
-/// orchestrating use case commits through the unit of work.
+/// orchestrating use case commits through the unit of work. Every read is a named method — the
+/// generic specification-taking members the shared <c>IRepository</c> base used to impose are
+/// gone with the base itself, for the reason recorded on <c>ITrainingRepository</c> and in
+/// ADR 0028.
 /// </remarks>
-public interface ITrainerRepository : IRepository<Trainer>
+public interface ITrainerRepository
 {
     /// <summary>
     /// Gets a <see cref="Trainer"/> entity with a specified <paramref name="id"/>.
