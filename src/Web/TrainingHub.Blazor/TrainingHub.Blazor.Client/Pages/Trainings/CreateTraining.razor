@@ -124,8 +124,13 @@
     /// <summary>412, as the API answers an edit based on a version that is no longer current.</summary>
     private const int StatusPreconditionFailed = 412;
 
+    // The bounds the API publishes, and nothing tighter. They were 5 to 30 here while the contract,
+    // the OpenAPI document and the generated client all said 5 to 100, so this page refused titles
+    // the server would have accepted — a client that contradicts the API it talks to, and the one
+    // direction of that mistake nobody reports, because it never produces an error to read.
+    // TitleBoundsTests holds the two together through the generated contract.
     private const int TitleMinLength = 5;
-    private const int TitleMaxLength = 30;
+    private const int TitleMaxLength = 100;
     private const int DescriptionMaxLength = 500;
     private const int PrerequisitesMaxLength = 500;
     private const int AcquiredSkillsMaxLength = 500;

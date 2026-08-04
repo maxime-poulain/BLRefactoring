@@ -15,6 +15,7 @@ two different problems.
 ## Table of contents
 
 - [What this project is](#what-this-project-is)
+- [Strategic design](#strategic-design)
 - [Architecture](#architecture)
 - [Domain model](#domain-model)
 - [How it works](#how-it-works)
@@ -50,6 +51,20 @@ the subject. What the repository actually demonstrates:
   writes join the same transaction.
 - **End-to-end optimistic concurrency**, from a SQL Server `rowversion` up to HTTP `ETag` /
   `If-Match`, so two users cannot silently overwrite each other.
+
+---
+
+## Strategic design
+
+Everything below this line is the tactical half of Domain-Driven Design — what the model is made of.
+The strategic half is what decides where the lines are, and it lives in
+**[`docs/strategic-design/`](docs/strategic-design/)**: the bounded contexts and their ubiquitous
+language, a context map that names where each seam is visible in the code, and an event storming of
+the two main flows.
+
+Start there if you want the business before the architecture. Three architecture rules keep those
+documents answerable to the model — an aggregate nobody placed in a context fails the build. See
+[ADR 0023](docs/adr/0023-document-the-strategic-design-and-hold-it-to-the-model.md).
 
 ---
 
@@ -830,7 +845,7 @@ The two filters are exact inverses, so between them every test runs exactly once
 | `TrainingHub.Shared.Api.Tests` | Entity-tag encoding and parsing, the guard that keeps client generation away from a database, what the unhandled-exception handler is allowed to tell a caller, and the transformer that describes an uploaded file inline so a client generator recognises it as one |
 | `TrainingHub.Shared.Infrastructure.Tests` | The auditable-entities interceptor — that it stamps, and reads the clock once per entity — and the bucket bootstrapper, mostly for when it does nothing |
 | `TrainingHub.Blazor.Bff.Tests` | The backend for frontend over HTTP: the cookie's flags, the forgery guard, the token attached to a forwarded call, and what signing out revokes |
-| `TrainingHub.Blazor.Client.Tests` | The front end, rendered in-process with bUnit: the sign-in page's refusal to redirect anywhere but a path of its own origin, the deep link a redirect to sign-in preserves, the header that makes a cookie-authenticated call unusable as a forgery, an unreachable BFF read as anonymous rather than as an exception, the per-field messages read out of a problem document, and — on the profile page — the size ceiling that refuses a file before it is uploaded, the image address that defeats a year-long cache, and the server's refusal shown in its own words |
+| `TrainingHub.Blazor.Client.Tests` | The front end, rendered in-process with bUnit: the sign-in page's refusal to redirect anywhere but a path of its own origin, the deep link a redirect to sign-in preserves, the header that makes a cookie-authenticated call unusable as a forgery, an unreachable BFF read as anonymous rather than as an exception, the per-field messages read out of a problem document, the training form's bounds tied to the ones the generated contract publishes, and — on the profile page — the size ceiling that refuses a file before it is uploaded, the image address that defeats a year-long cache, and the server's refusal shown in its own words |
 | `TrainingHub.DDD.Api.IntegrationTests` | The layered host, HTTP end to end against a real SQL Server and a real object store |
 | `TrainingHub.DDDWithCqrs.Api.IntegrationTests` | The CQRS host, same treatment |
 | `TrainingHub.Architecture.Tests` | The decisions themselves: the dependency rule, the CQRS shape, the modelling conventions, and a rule that fails when a record is defended by nothing — see [ADR 0013](docs/adr/0013-make-every-record-answer-to-a-test.md) |
