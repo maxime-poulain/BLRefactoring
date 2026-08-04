@@ -27,13 +27,13 @@ internal sealed record AdrRecord(string Number, string Title, string Status, str
 /// and wrong in the direction that passes, since a record nobody listed is a record nobody checks.
 /// Reading the directory is the only version of this that cannot go quietly stale.
 /// </remarks>
-internal static class AdrCatalog
+internal static partial class AdrCatalog
 {
-    private static readonly Regex Heading =
-        new(@"^#\s+(?<number>\d{4})\s+—\s+(?<title>.+?)\s*$", RegexOptions.Compiled);
+    [GeneratedRegex(@"^#\s+(?<number>\d{4})\s+—\s+(?<title>.+?)\s*$")]
+    private static partial Regex Heading { get; }
 
-    private static readonly Regex Status =
-        new(@"^-\s+\*\*Status:\*\*\s+(?<status>.+?)\s*$", RegexOptions.Compiled);
+    [GeneratedRegex(@"^-\s+\*\*Status:\*\*\s+(?<status>.+?)\s*$")]
+    private static partial Regex Status { get; }
 
     public static IReadOnlyList<AdrRecord> Records { get; } = Read();
 

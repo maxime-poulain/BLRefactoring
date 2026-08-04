@@ -13,12 +13,13 @@ namespace TrainingHub.Architecture.Tests.Rules;
 /// the way drift does: a new shared test copied the file next to it. The record fixed the drift and
 /// wrote down the decision; this is the part that keeps it fixed.
 /// </remarks>
-public sealed class TestConventionRules
+public sealed partial class TestConventionRules
 {
     // A call site, not the word: the capital after the dot is what distinguishes Assert.Equal from
     // an "// Assert." at the end of a comment, and the lookbehind keeps AwesomeAssertions from
     // matching itself.
-    private static readonly Regex AssertCall = new(@"(?<![\w.])Assert\.[A-Z]", RegexOptions.Compiled);
+    [GeneratedRegex(@"(?<![\w.])Assert\.[A-Z]")]
+    private static partial Regex AssertCall { get; }
 
     // Spelled in two halves on purpose. This rule forbids a token, and a rule that spells the token
     // it forbids fails on its own source — which would be funny once and then permanently in the way.

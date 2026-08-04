@@ -13,10 +13,10 @@ namespace TrainingHub.Architecture.Tests.Rules;
 /// and so nothing checks the half that a reader actually navigates by. It is true everywhere today,
 /// which is exactly when a rule is cheap to write and worth writing.
 /// </remarks>
-public sealed class RepositoryConventionRules
+public sealed partial class RepositoryConventionRules
 {
-    private static readonly Regex Declaration =
-        new(@"^\s*namespace\s+(?<name>[\w.]+)\s*[;{]?\s*$", RegexOptions.Compiled);
+    [GeneratedRegex(@"^\s*namespace\s+(?<name>[\w.]+)\s*[;{]?\s*$")]
+    private static partial Regex Declaration { get; }
 
     /// <summary>
     /// Every namespace, agrees with its folder.
@@ -107,8 +107,8 @@ public sealed class RepositoryConventionRules
     /// measurement taken against the old one. It is correct where it stands and it is not this
     /// repository's to rename. The GitHub repository was renamed and needs no such exception.
     /// </remarks>
-    private static readonly Regex FormerNameClaimedByThisRepository =
-        new($"(?<!maxime-poulain_){FormerName}", RegexOptions.Compiled);
+    [GeneratedRegex($"(?<!maxime-poulain_){FormerName}")]
+    private static partial Regex FormerNameClaimedByThisRepository { get; }
 
     /// <summary>
     /// The two files that exist in order to say the former name, and are therefore not leftovers.

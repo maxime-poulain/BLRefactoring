@@ -18,7 +18,7 @@ namespace TrainingHub.Architecture.Tests.Rules;
 /// explained it could do no better because it only ever sees the host it runs against. A project
 /// that references both hosts is not under that constraint.
 /// </remarks>
-public sealed class HttpBoundaryRules
+public sealed partial class HttpBoundaryRules
 {
     private static IReadOnlyList<Type> Controllers { get; } =
     [
@@ -246,8 +246,8 @@ public sealed class HttpBoundaryRules
                 "typo reaches the action rather than the router")
             .ShouldHold();
 
-    private static readonly Regex RouteParameter =
-        new(@"\{(?<name>\w+)(?::(?<constraint>\w+))?\}", RegexOptions.Compiled);
+    [GeneratedRegex(@"\{(?<name>\w+)(?::(?<constraint>\w+))?\}")]
+    private static partial Regex RouteParameter { get; }
 
     /// <summary>The operation identifiers one host publishes.</summary>
     private static IEnumerable<string> Published(Assembly host) =>
