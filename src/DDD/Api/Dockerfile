@@ -35,6 +35,12 @@ COPY --from=build /app/publish .
 
 ENV ASPNETCORE_URLS=http://+:8080
 
+# The file sink writes under /app/logs, and /app belongs to root while the process does not run
+# as root. The directory has to exist and be writable before the user drops, because Serilog
+# reports a sink it cannot open through SelfLog — which nobody reads — and then logs to the
+# console alone, looking healthy.
+RUN mkdir logs && chown $APP_UID logs
+
 # The aspnet images ship a non-root account for exactly this; running as root is the default only
 # because changing it would break images that write where they should not.
 USER $APP_UID

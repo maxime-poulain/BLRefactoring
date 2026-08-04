@@ -31,6 +31,13 @@ using TrainingHub.Architecture.Tests.Framework;
     "type, and the Blazor pair is a net9.0 island this suite does not reference. BffTests asserts it, " +
     "claim by claim.")]
 
+[assembly: UnguardedRecord("0027",
+    "Every log line names its caller. The decision is a runtime behaviour of the logging pipeline — " +
+    "a property enriched at write time and rendered by a template — and no type-level rule can see " +
+    "either. LoggingTest holds it over the wire in both suites, reading the file sink itself: the " +
+    "signed request whose every line carries the username, the anonymous request that inherits " +
+    "nothing from its predecessor, and the line written outside any request that says System.")]
+
 namespace TrainingHub.Architecture.Tests.Traceability;
 
 /// <summary>

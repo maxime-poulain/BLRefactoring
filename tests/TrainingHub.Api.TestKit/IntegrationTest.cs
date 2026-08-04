@@ -36,6 +36,23 @@ public interface IServiceScopeSource
 }
 
 /// <summary>
+/// A fixture that says where the host's file sink writes.
+/// </summary>
+/// <remarks>
+/// For the tests that hold the logging pipeline to its output: what a text sink shows — the
+/// template, the enriched caller — only exists in the rendered line, and the file is the one
+/// rendered output a test can read back. The directory belongs to the fixture, so reading it
+/// races with nobody.
+/// </remarks>
+public interface ILogFileSource
+{
+    /// <summary>
+    /// The directory the host's rolling log files are written to.
+    /// </summary>
+    string LogDirectory { get; }
+}
+
+/// <summary>
 /// A fixture that hands out an <see cref="HttpClient"/> bound to the host under test.
 /// </summary>
 /// <remarks>

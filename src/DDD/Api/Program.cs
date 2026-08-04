@@ -18,6 +18,10 @@ builder.Services.AddApiCors(builder.Configuration);
 // One error format for both hosts: RFC 7807 ProblemDetails, whatever failed.
 builder.Services.AddApiProblemDetails();
 
+// One logging pipeline for both hosts: Serilog, console and rolling files, tuned by the
+// ApiLogging section. Declared in Shared.Api so neither host can quietly log less than the other.
+builder.Services.AddApiLogging(builder.Configuration);
+
 // The framework's OpenAPI generator, shared with the CQRS host — which described the same API with
 // a different library, and without a security scheme at all. See ADR 0006.
 builder.Services.AddApiOpenApi();
@@ -46,6 +50,9 @@ var app = builder.Build();
 // First, so everything downstream is covered: authentication, authorization, routing and the
 // actions alike. Declared once in Shared.Api and shared with the CQRS host.
 app.UseApiExceptionHandling();
+
+// One line per request — the ApiLogging defaults silence the framework's own narration.
+app.UseApiLogging();
 
 if (app.Environment.IsDevelopment())
 {

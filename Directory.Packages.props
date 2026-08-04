@@ -108,6 +108,14 @@
     <PackageVersion Include="Respawn" Version="7.0.0" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.16.16" />
     <!--
+      The logging pipeline of the two API hosts: console and rolling text files, from one typed
+      options class. The framework's own logging has no file sink at all, and this meta-package is
+      the smallest entry that closes the gap — it carries Serilog itself, both sinks, and the
+      hosting integration that swaps the logger factory, so this is the only line needed and the
+      transitive pinning above keeps the rest coherent. See ADR 0026.
+    -->
+    <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
+    <!--
       The reverse proxy the Blazor host uses as a BFF: the browser calls its own origin, and this
       forwards to the API with the access token attached server-side. See ADR 0009.
     -->

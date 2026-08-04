@@ -21,6 +21,10 @@ builder.Services.AddApiCors(builder.Configuration);
 // One error format for both hosts: RFC 7807 ProblemDetails, whatever failed.
 builder.Services.AddApiProblemDetails();
 
+// One logging pipeline for both hosts: Serilog, console and rolling files, tuned by the
+// ApiLogging section. Declared in Shared.Api so neither host can quietly log less than the other.
+builder.Services.AddApiLogging(builder.Configuration);
+
 // The framework's OpenAPI generator, shared with the layered host. This one used to call a bare
 // AddSwaggerGen(), so its document declared no security scheme and no authenticated endpoint could
 // be tried from its UI. See ADR 0006.
@@ -60,6 +64,9 @@ var app = builder.Build();
 // actions alike. The handlers themselves, and the order they are tried in, are declared once in
 // Shared.Api and shared with the layered host — which had no exception handling at all.
 app.UseApiExceptionHandling();
+
+// One line per request — the ApiLogging defaults silence the framework's own narration.
+app.UseApiLogging();
 
 if (app.Environment.IsDevelopment())
 {
