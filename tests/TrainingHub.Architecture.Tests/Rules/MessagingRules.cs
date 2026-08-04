@@ -306,10 +306,10 @@ public sealed class MessagingRules
             .Where(file => file.StartsWith(root, StringComparison.Ordinal))
             .Selected("file in the CQRS application layer")
             .Select(file => SourceTree.Relative(file)["src/DDDWithCqrs/Application/".Length..])
-            .Where(relative => !IsAUseCase(relative) && !relative.StartsWith("Pagination/", StringComparison.Ordinal))
+            .Where(relative => !IsAUseCase(relative))
             .Select(relative =>
-                $"'{relative}' sits outside Features/<Aggregate>/<UseCase>/. Paging is the one thing " +
-                "deliberately beside the features rather than inside one")
+                $"'{relative}' sits outside Features/<Aggregate>/<UseCase>/. The layer used to " +
+                "carry one deliberate exception, Pagination/, until paging became kernel vocabulary")
             .ShouldHold();
     }
 

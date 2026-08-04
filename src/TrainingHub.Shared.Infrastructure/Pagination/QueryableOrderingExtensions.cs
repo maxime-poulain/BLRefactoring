@@ -1,6 +1,6 @@
 using TrainingHub.Shared.Common;
 
-namespace TrainingHub.DDDWithCqrs.Infrastructure.Pagination;
+namespace TrainingHub.Shared.Infrastructure.Pagination;
 
 /// <summary>
 /// The order every paged read uses, defined once for every aggregate.
@@ -23,15 +23,15 @@ namespace TrainingHub.DDDWithCqrs.Infrastructure.Pagination;
 /// index, no extra query.
 /// </para>
 /// <para>
-/// One definition for every aggregate, because a second one is a second thing to keep in step: two
-/// list endpoints ordering differently would page the same data inconsistently, and nothing would
+/// One definition for every aggregate — and, since both hosts page, for both of them: two list
+/// endpoints ordering differently would page the same data inconsistently, and nothing would
 /// report it. It is also the only way to obtain the <see cref="IOrderedQueryable{T}"/> that
-/// <see cref="PagedQueryableExtensions.ToPagedResultAsync{TSource,TResult}"/> demands, so a
-/// handler cannot page without coming through here.
+/// <see cref="PagedQueryableExtensions"/> demands, so neither a query handler nor a repository
+/// can page without coming through here.
 /// </para>
 /// <para>
-/// See <c>docs/adr/0001-paginate-on-the-query-side-over-a-total-order.md</c> for the decision and
-/// the alternatives weighed against it.
+/// See <c>docs/adr/0001-paginate-on-the-query-side-over-a-total-order.md</c> for the order and
+/// <c>docs/adr/0029-answer-a-list-the-same-way-on-both-hosts.md</c> for why both stacks share it.
 /// </para>
 /// </remarks>
 public static class QueryableOrderingExtensions

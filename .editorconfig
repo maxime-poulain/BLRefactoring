@@ -514,8 +514,8 @@ dotnet_diagnostic.IDE0305.severity = suggestion
 dotnet_diagnostic.IDE0039.severity = suggestion
 
 # IDE0032: Use auto property (2)
-# Both are `PagedQuery`, whose backing fields are written by its constructor after validation and
-# never again. An auto property would be a settable one.
+# Both are `PageRequest`, whose backing fields are written by its init accessors after clamping
+# and never again. An auto property would be an unclamped one.
 dotnet_diagnostic.IDE0032.severity = suggestion
 
 # IDE0230: Use UTF-8 string literal (1)

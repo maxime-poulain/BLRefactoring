@@ -1,7 +1,9 @@
+using TrainingHub.Shared.Common.Pagination;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.Specifications;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
+using TrainingHub.Shared.Infrastructure.Pagination;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -92,4 +94,25 @@ public sealed class TrainingRepository(TrainingContext trainingContext) : ITrain
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Reads one page of a trainer's trainings, newest first.
+    /// </summary>
+    /// <remarks>
+    /// The same order every paged read uses — <c>NewestFirst</c> is the only way to obtain the
+    /// <see cref="IOrderedQueryable{T}"/> the paging extension demands, so this read cannot page
+    /// inconsistently with the CQRS host's. What differs is the bill: this one materialises the
+    /// aggregates whole, topics included, because handing back aggregates is what a repository is
+    /// for; the query handlers project the same page into columns. See ADR 0029.
+    /// </remarks>
+    public async Task<PagedResult<Training>> GetPageByTrainerIdAsync(
+        TrainerId trainerId,
+        PageRequest paging,
+        CancellationToken cancellationToken = default)
+    {
+        return await trainingContext.Trainings
+            .Where(training => training.TrainerId == trainerId)
+            .NewestFirst<Training, TrainingId>()
+            .ToPagedResultAsync(paging, cancellationToken)
+            .ConfigureAwait(false);
+    }
 }

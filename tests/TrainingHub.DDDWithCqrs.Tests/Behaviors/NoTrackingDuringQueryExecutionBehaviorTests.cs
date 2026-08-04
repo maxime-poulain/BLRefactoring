@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using TrainingHub.DDDWithCqrs.Application.Pagination;
+using TrainingHub.Shared.Common.Pagination;
 using TrainingHub.Shared.Application.Dtos.Training;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Create;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetMine;

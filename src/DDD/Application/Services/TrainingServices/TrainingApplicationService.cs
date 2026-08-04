@@ -3,6 +3,7 @@ using TrainingHub.Shared.Application.Projections;
 using TrainingHub.Shared.Application.Dtos.Training;
 using TrainingHub.Shared.Common;
 using TrainingHub.Shared.Common.Errors;
+using TrainingHub.Shared.Common.Pagination;
 using TrainingHub.Shared.Common.Results;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
@@ -42,15 +43,19 @@ public interface ITrainingApplicationService
     Task<Result<TrainingDto>> EditAsync(Guid trainingId, TrainingEditionRequest request, byte[] expectedVersion, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Retrieves all trainings belonging to the calling trainer.
+    /// Retrieves one page of the trainings belonging to the calling trainer, newest first.
     /// </summary>
     /// <remarks>
     /// It takes no trainer: it resolves the caller itself, exactly as <see cref="CreateAsync"/> does
     /// for the owner of a new training. There used to be a sibling reading whichever trainer the
     /// caller named; it went with the endpoint in front of it, and having no parameter is what makes
     /// "only your own" true here rather than a convention.
+    /// <para>
+    /// Paged since ADR 0029: it used to answer the whole collection, which is a defect that grows
+    /// with the data — and an asymmetry with the CQRS host that the harmonisation removed.
+    /// </para>
     /// </remarks>
-    Task<List<TrainingDto>> GetMineAsync(CancellationToken cancellationToken = default);
+    Task<PagedResult<TrainingDto>> GetMineAsync(PageRequest paging, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a training by its unique identifier.
@@ -194,15 +199,19 @@ public sealed class TrainingApplicationService(
     }
 
     /// <inheritdoc />
-    public async Task<List<TrainingDto>> GetMineAsync(CancellationToken cancellationToken = default)
+    public async Task<PagedResult<TrainingDto>> GetMineAsync(PageRequest paging, CancellationToken cancellationToken = default)
     {
-        // Resolved here, not received. The same repository call the named-trainer read makes -- two
-        // reads answering "which trainings belong to this trainer" must not be able to disagree --
-        // and the only thing separating them is that this one cannot be pointed anywhere else.
+        ArgumentNullException.ThrowIfNull(paging);
+
+        // Resolved here, not received: this read cannot be pointed at anybody else's trainings,
+        // because there is no parameter to point it with.
         var trainerId = TrainerId.Create(currentUserService.TrainerId);
 
-        var trainings = await trainingRepository.GetByTrainerIdAsync(trainerId, cancellationToken);
-        return trainings.ToDtos();
+        // A page of aggregates, then a page of DTOs. Map carries the counts and the position
+        // across unchanged — the repository decided what the page holds, this layer only decides
+        // what each item looks like to a caller.
+        var page = await trainingRepository.GetPageByTrainerIdAsync(trainerId, paging, cancellationToken);
+        return page.Map(training => training.ToDto());
     }
 
     /// <inheritdoc />

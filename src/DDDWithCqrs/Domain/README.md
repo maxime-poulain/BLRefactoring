@@ -21,8 +21,9 @@ solution tree that matches the architecture it illustrates.
 ## What would belong here
 
 Anything genuinely specific to the CQRS stack's write model. Nothing has qualified so far — and the
-read side is not a candidate: `PagedQuery`, `PagedResult` and the query contracts live in
-`DDDWithCqrs.Application`, and the handlers that translate them to SQL live in
-`DDDWithCqrs.Infrastructure`. Neither is domain.
+read side is not a candidate: the queries and their contracts live in `DDDWithCqrs.Application`,
+the handlers that translate them to SQL live in `DDDWithCqrs.Infrastructure`, and the page
+vocabulary they answer with (`PageRequest`, `PagedResult`) is the kernel's, shared with the
+layered stack since ADR 0029. None of it is domain.
 
 The assembly layout, and what this choice costs, are recorded in [`docs/adr/`](../../../docs/adr).

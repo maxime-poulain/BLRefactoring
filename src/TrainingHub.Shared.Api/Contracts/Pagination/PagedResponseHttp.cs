@@ -1,4 +1,4 @@
-namespace TrainingHub.DDDWithCqrs.Api.Contracts;
+namespace TrainingHub.Shared.Api.Contracts.Pagination;
 
 /// <summary>
 /// One page of a collection, as the API publishes it.
@@ -7,6 +7,8 @@ namespace TrainingHub.DDDWithCqrs.Api.Contracts;
 /// <remarks>
 /// An envelope rather than a bare array, so the metadata a caller needs to build a pager travels
 /// with the page instead of in headers a browser client would have to be granted access to read.
+/// Served by both hosts — the same operation answering the same shape is what lets one generated
+/// client fit either, which ADR 0006 promised and the paging asymmetry used to falsify.
 /// <para>
 /// The counts are recomputed from the query result rather than forwarded blindly, which keeps this
 /// type free of the application's <c>PagedResult</c> and lets either evolve on its own.

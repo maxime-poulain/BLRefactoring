@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 28 architecture decision records.
+2. `docs/adr/README.md` — the index of 29 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/Rules/` — the same decisions as 115 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/Rules/` — the same decisions as 117 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -54,7 +54,9 @@ stacks consume it and every use case exists in both:
 - `src/DDDWithCqrs` — commands and queries, dispatched through `ICommandDispatcher` /
   `IQueryDispatcher`. Controllers name no command or query; `HttpToApplicationMappings` builds them.
 
-Paging exists on the query side only, and deliberately so (ADR 0001).
+Both hosts page their lists with the kernel's `PageRequest`/`PagedResult` over the same total
+order (ADR 0001, ADR 0029): the CQRS handler projects columns, the layered service asks the
+repository a named question and maps the aggregates.
 
 ## Domain
 

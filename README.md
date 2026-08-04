@@ -111,20 +111,22 @@ it, which is why those commands carried `[JsonIgnore]`: a serialisation concern 
 application message. The published API and the internals can now change without each other's
 permission, and the two hosts cannot drift on it, since the contract they serve is one object.
 
-**Paging is the query side's, and only the query side's.** The CQRS host answers its list endpoints
-with a page and its metadata; the layered host still answers a plain array. That asymmetry is
-deliberate and is the clearest thing this repository has to say about the two approaches. Paging
-belongs where reads are shaped for a screen, and the CQRS stack has such a place; the layered one
-reads through repositories, whose job is to hand back aggregates. Teaching them to return pages
-would grow the domain's surface for a need no use case has — no rule in this domain operates on
-aggregates by the page — and being able to add it to one side without touching the write model, the
-aggregates or the repositories is precisely what separating reads from writes buys.
+**A list leaves as one page, on either host.** `PageRequest` and `PagedResult<T>` are kernel
+vocabulary beside `Result`, and both hosts answer their list endpoint with the same envelope and
+its metadata. It was not always so: for a while only the CQRS host paged, deliberately — until the
+asymmetry falsified two of this repository's own promises, that the stacks are compared on
+identical ground and that the client generated from either host fits both. What the parity shows
+instead is the honest difference: the layered service asks the repository a named question
+(`GetPageByTrainerIdAsync`) and gets a page of whole aggregates to map, while the CQRS handler
+projects only the columns its DTO names before the page is fetched. Same contract on the wire,
+different bill underneath.
 
 Pages also need an order no two rows can tie on, or `OFFSET`/`FETCH` lets the server put a row on
 two pages and another on none. `ToPagedResultAsync` therefore takes an `IOrderedQueryable`, which
-only `NewestFirst` produces, so a handler cannot page without ordering first — the mistake is
-unwritable rather than discouraged. The decision, and the alternatives weighed against it, are
-recorded in [ADR 0001](docs/adr/0001-paginate-on-the-query-side-over-a-total-order.md).
+only `NewestFirst` produces, so nobody can page without ordering first — the mistake is
+unwritable rather than discouraged. The order, the bounds and the envelope are recorded in
+[ADR 0001](docs/adr/0001-paginate-on-the-query-side-over-a-total-order.md); the parity, and what
+it displaced, in [ADR 0029](docs/adr/0029-answer-a-list-the-same-way-on-both-hosts.md).
 
 The request contracts declare their constraints as **data annotations**, so `[ApiController]`
 rejects a malformed body at model binding with a `ValidationProblemDetails` keyed by field name,
@@ -151,10 +153,10 @@ Twenty-six projects: sixteen under `src/`, ten under `tests/`. The backend and a
 
 | Project | Responsibility |
 |---|---|
-| `TrainingHub.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, and the cross-cutting ports `IUnitOfWork`, `ICurrentUserService`, `IEmailSender`, `ITrainingSearchIndexer`, plus the CQS marker interfaces |
+| `TrainingHub.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, `PageRequest`/`PagedResult`, and the cross-cutting ports `IUnitOfWork`, `ICurrentUserService`, `IEmailSender`, `ITrainingSearchIndexer`, plus the CQS marker interfaces |
 | `TrainingHub.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, `IUniquenessTitleChecker` |
 | `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the six domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the four post-commit consumers — all shared by both stacks |
-| `TrainingHub.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the identity store, and the transactional outbox — publisher, delivery worker, dispatcher |
+| `TrainingHub.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the paged-read extensions (`NewestFirst`, `ToPagedResultAsync`), the identity store, and the transactional outbox — publisher, delivery worker, dispatcher |
 | `TrainingHub.Shared.Api` | The HTTP boundary: the `*RequestHttp` and `*ResponseHttp` contracts both hosts publish, their mappings to the application layer, the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, concurrency helpers |
 | `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService` |
 | `DDD.Api` | REST host for the layered stack — controllers, composition root |
@@ -703,13 +705,13 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 |---|---|---|
 | `POST` | `/Auth/register` | `201` with the new trainer's identifier and `Location: /Trainer/me`; `409` when the username or email is taken, `400` otherwise, both keyed by field |
 | `POST` | `/Auth/login` | `200` with a JWT, or `401` — the same answer for an unknown username, a wrong password and a locked-out account |
-| `GET` | `/Trainer/me` | The caller's own profile, with an `ETag`. `200`, `400`, `404` |
+| `GET` | `/Trainer/me` | The caller's own profile, with an `ETag`. `200`, `404` |
 | `PUT` | `/Trainer/me` | Requires `If-Match`. `200`, `400`, `404`, `412`, `428` |
 | `GET` | `/Trainer/{id}/photo` | The trainer's portrait, with a strong `ETag` and a year-long immutable cache. `200`, `304`, `404` |
 | `PUT` | `/Trainer/me/photo` | `multipart/form-data`. Publishes **and** replaces. `200` with the updated profile, `400`, `404`, `409` |
 | `DELETE` | `/Trainer/me/photo` | `204`, `404`, `409` |
 | `POST` | `/Training` | `201` with the new identifier, `409` on a duplicate title, `400` otherwise |
-| `GET` | `/Training/my-trainings` | The caller's own trainings. Takes no identifier. On the CQRS host: one page, `?page=` and `?pageSize=` (default 20, maximum 100), answered as `{ items, page, pageSize, totalCount, totalPages, hasNextPage, hasPreviousPage }`. On the layered host: the plain array |
+| `GET` | `/Training/my-trainings` | The caller's own trainings, newest first. Takes no identifier. One page on either host: `?page=` and `?pageSize=` (default 20, maximum 100), answered as `{ items, page, pageSize, totalCount, totalPages, hasNextPage, hasPreviousPage }` |
 | `GET` | `/Training/{id}` | Owner only. `200` with an `ETag`, `400` on a malformed identifier, or `404` — including when the training exists but belongs to somebody else |
 | `PUT` | `/Training/{trainingId}` | Owner only. Requires `If-Match`. `200` with the updated training and its new `ETag`, `400`, `403`, `404`, `409`, `412`, `428` |
 | `DELETE` | `/Training/{trainingId}` | Owner only. `204`, `400`, `403`, `404` |
@@ -887,7 +889,7 @@ The two filters are exact inverses, so between them every test runs exactly once
 
 | Project | Scope |
 |---|---|
-| `TrainingHub.Shared.Domain.Tests` | Aggregates, value objects, typed identifiers, `Result`, specifications |
+| `TrainingHub.Shared.Domain.Tests` | Aggregates, value objects, typed identifiers, `Result`, specifications, the page vocabulary's bounds and arithmetic |
 | `TrainingHub.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers — including the four that translate a domain event into an integration event — and the four post-commit consumers |
 | `TrainingHub.DDDWithCqrs.Tests` | Command handlers, validators, pipeline behaviours |
 | `TrainingHub.Shared.Api.Tests` | Entity-tag encoding and parsing, the guard that keeps client generation away from a database, what the unhandled-exception handler is allowed to tell a caller, and the transformer that describes an uploaded file inline so a client generator recognises it as one |

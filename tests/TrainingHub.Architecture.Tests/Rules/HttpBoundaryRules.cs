@@ -209,6 +209,54 @@ public sealed partial class HttpBoundaryRules
     }
 
     /// <summary>
+    /// Both hosts, answer each operation with the same shape.
+    /// </summary>
+    /// <remarks>
+    /// The rule above proves the two hosts publish the same operation names; this one proves the
+    /// names mean the same thing. The distinction is not hypothetical: for as long as only the
+    /// CQRS host paged, both hosts published <c>Training_GetMine</c> while one answered a bare
+    /// array and the other a page envelope — and the client generated from the layered document
+    /// could not deserialise the CQRS host's answer. Same names over different bodies is a parity
+    /// no client can use.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0029",
+        "both hosts answer the same list the same way — one operation, one shape, whichever host serves it")]
+    public void BothHosts_AnswerEachOperationWithTheSameShape()
+    {
+        var layered = Answers(Solution.LayeredApi);
+        var cqrs = Answers(Solution.CqrsApi);
+
+        layered.Keys.Intersect(cqrs.Keys, StringComparer.Ordinal)
+            .Selected("operation published by both hosts")
+            .Where(operation => !layered[operation].SequenceEqual(cqrs[operation], StringComparer.Ordinal))
+            .Select(operation =>
+                $"'{operation}' answers [{string.Join(", ", layered[operation])}] on the layered host " +
+                $"and [{string.Join(", ", cqrs[operation])}] on the CQRS one — one generated client " +
+                "cannot serve both")
+            .ShouldHold();
+    }
+
+    /// <summary>
+    /// No action, answers a bare collection.
+    /// </summary>
+    [Fact]
+    [ArchitectureRule("0029",
+        "a collection leaves as one page of a total order, on either host — a bare array is an unbounded read")]
+    public void NoAction_AnswersABareCollection() =>
+        Actions
+            .Selected("action")
+            .SelectMany(pair => pair.Action
+                .GetCustomAttributes<ProducesResponseTypeAttribute>(inherit: true)
+                .Where(produces => produces.StatusCode is >= 200 and < 300 && IsBareCollection(produces.Type))
+                .Select(produces => (pair.Controller, pair.Action, produces)))
+            .Select(hit =>
+                $"{hit.Controller.Assembly.GetName().Name}: {hit.Controller.Name}.{hit.Action.Name} " +
+                $"declares {hit.produces.Type.Name} for its {hit.produces.StatusCode} — a collection " +
+                "leaves as a page envelope, or the read is unbounded and grows with the data")
+            .ShouldHold();
+
+    /// <summary>
     /// Every action, declares what it can answer.
     /// </summary>
     [Fact]
@@ -248,6 +296,49 @@ public sealed partial class HttpBoundaryRules
 
     [GeneratedRegex(@"\{(?<name>\w+)(?::(?<constraint>\w+))?\}")]
     private static partial Regex RouteParameter { get; }
+
+    /// <summary>
+    /// What a host declares each of its operations answers: every
+    /// <c>[ProducesResponseType]</c>, as "status → type", sorted so two hosts can be compared.
+    /// </summary>
+    /// <remarks>
+    /// Read from the attributes rather than from the emitted documents, for the same reason
+    /// <see cref="Published"/> is: this project references both hosts, so the comparison is a
+    /// dictionary lookup instead of two host processes. The attributes are what the document
+    /// generator reads, and <c>EveryAction_DeclaresWhatItCanAnswer</c> guarantees no action
+    /// answers something they do not say.
+    /// </remarks>
+    private static Dictionary<string, string[]> Answers(Assembly host) =>
+        Controllers
+            .Where(controller => controller.Assembly == host)
+            .SelectMany(controller => controller
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Where(action => action.GetCustomAttributes<HttpMethodAttribute>(inherit: true).Any())
+                .Select(action => (Operation: OperationId(controller, action), Action: action)))
+            .ToDictionary(
+                pair => pair.Operation,
+                pair => pair.Action
+                    .GetCustomAttributes<ProducesResponseTypeAttribute>(inherit: true)
+                    .Select(produces => $"{produces.StatusCode} → {produces.Type}")
+                    .OrderBy(answer => answer, StringComparer.Ordinal)
+                    .ToArray(),
+                StringComparer.Ordinal);
+
+    /// <summary>
+    /// Whether a declared answer is a collection with no envelope around it.
+    /// </summary>
+    /// <remarks>
+    /// <c>byte[]</c> is exempt: an array of bytes is one resource's body — the photo — not a list
+    /// of resources that grows with the data, and no page envelope could serve it.
+    /// </remarks>
+    private static bool IsBareCollection(Type type) =>
+        (type.IsArray && type != typeof(byte[]))
+        || (type.IsGenericType && type.GetGenericTypeDefinition() is var definition
+            && (definition == typeof(List<>)
+                || definition == typeof(IEnumerable<>)
+                || definition == typeof(ICollection<>)
+                || definition == typeof(IReadOnlyCollection<>)
+                || definition == typeof(IReadOnlyList<>)));
 
     /// <summary>The operation identifiers one host publishes.</summary>
     private static IEnumerable<string> Published(Assembly host) =>

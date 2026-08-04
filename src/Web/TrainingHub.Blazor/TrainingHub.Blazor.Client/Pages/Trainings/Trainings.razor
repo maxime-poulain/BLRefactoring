@@ -24,7 +24,7 @@
             <MudText Typo="Typo.body1" Class="mt-4">Loading trainings...</MudText>
         </MudStack>
     }
-    else if (_trainings is null || _trainings.Count == 0)
+    else if (_page is null || _page.Items.Count == 0)
     {
         <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center">
             <MudIcon Icon="@Icons.Material.Filled.School"
@@ -46,7 +46,7 @@
     else
     {
         <MudGrid>
-            @foreach (var training in _trainings)
+            @foreach (var training in _page.Items)
             {
                 <MudItem xs="12" sm="6" md="4">
                     <MudCard Elevation="3" Class="h-100">
@@ -82,6 +82,15 @@
                 </MudItem>
             }
         </MudGrid>
+
+        @if (_page.TotalPages > 1)
+        {
+            <MudStack AlignItems="AlignItems.Center" Class="mt-6">
+                <MudPagination Count="@_page.TotalPages"
+                               Selected="@_currentPage"
+                               SelectedChanged="OnPageSelectedAsync" />
+            </MudStack>
+        }
     }
 </MudContainer>
 
@@ -89,13 +98,20 @@
     private const int StatusForbidden = 403;
     private const int StatusNotFound = 404;
 
-    private List<TrainingResponseHttp>? _trainings;
+    private PagedResponseHttpOfTrainingResponseHttp? _page;
+    private int _currentPage = 1;
     private bool _isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadTrainings();
         StateHasChanged();
+    }
+
+    private async Task OnPageSelectedAsync(int page)
+    {
+        _currentPage = page;
+        await LoadTrainings();
     }
 
     private async Task LoadTrainings()
@@ -108,7 +124,18 @@
             // rows were already in the browser, and anyone could read them from the network tab.
             // The trainer is no longer read separately either — the page had to know who it was
             // only in order to do that comparison.
-            _trainings = await TrainingClient.GetMineAsync();
+            //
+            // One page at a time since ADR 0029; the size stays unset so the server's default
+            // rules, and the cap is the server's to hold.
+            _page = await TrainingClient.GetMineAsync(_currentPage, null);
+
+            // Deleting the last training of the last page leaves the caller on a page past the
+            // end; the pager cannot show it, so step back onto the last one there is.
+            if (_currentPage > _page.TotalPages)
+            {
+                _currentPage = _page.TotalPages;
+                _page = await TrainingClient.GetMineAsync(_currentPage, null);
+            }
         }
         catch (ApiException<ProblemDetails> ex)
         {

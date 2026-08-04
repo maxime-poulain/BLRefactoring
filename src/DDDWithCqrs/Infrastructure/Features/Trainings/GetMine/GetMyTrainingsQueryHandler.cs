@@ -1,12 +1,12 @@
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetMine;
-using TrainingHub.DDDWithCqrs.Application.Pagination;
-using TrainingHub.DDDWithCqrs.Infrastructure.Pagination;
 using TrainingHub.Shared;
 using TrainingHub.Shared.Application.Dtos.Training;
 using TrainingHub.Shared.Application.Projections;
+using TrainingHub.Shared.Common.Pagination;
 using TrainingHub.Shared.CQS;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
+using TrainingHub.Shared.Infrastructure.Pagination;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 
 namespace TrainingHub.DDDWithCqrs.Infrastructure.Features.Trainings.GetMine;
@@ -42,6 +42,6 @@ public sealed class GetMyTrainingsQueryHandler(
         return await trainingContext.Trainings
             .Where(training => training.TrainerId == trainerId)
             .NewestFirst<Training, TrainingId>()
-            .ToPagedResultAsync(TrainingProjections.ToDtoExpression, request, cancellationToken);
+            .ToPagedResultAsync(TrainingProjections.ToDtoExpression, request.Paging, cancellationToken);
     }
 }

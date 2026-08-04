@@ -15,8 +15,9 @@ namespace TrainingHub.Blazor.Client.Tests.Pages;
 /// <remarks>
 /// The page used to load every training in the system and hide the buttons on the ones belonging to
 /// somebody else, which is not filtering: the rows had already reached the browser and anyone could
-/// read them from the network tab. It now asks the server for its own, and that is the assertion
-/// worth keeping — the rest is what a person sees when the answer is empty, or a refusal.
+/// read them from the network tab. It now asks the server for its own — one page at a time since
+/// ADR 0029, so the pager is part of the behaviour: without it, everything past the first page
+/// would be unreachable, which is the old unbounded read's defect wearing the new contract.
 /// </remarks>
 public sealed class TrainingsTests : ComponentTest
 {
@@ -29,7 +30,9 @@ public sealed class TrainingsTests : ComponentTest
     {
         Services.AddSingleton(_trainings.Object);
 
-        _trainings.Setup(client => client.GetMineAsync()).ReturnsAsync([]);
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 0));
     }
 
     /// <summary>
@@ -52,11 +55,11 @@ public sealed class TrainingsTests : ComponentTest
     public void Renders_TrainingsPublished_ShowsEachWithItsTopics()
     {
         // Arrange
-        _trainings.Setup(client => client.GetMineAsync()).ReturnsAsync(
-        [
-            Training("Domain-Driven Design", "Programming", "Business"),
-            Training("Public speaking", "Leadership")
-        ]);
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 2,
+                Training("Domain-Driven Design", "Programming", "Business"),
+                Training("Public speaking", "Leadership")));
 
         // Act
         var page = Render<Trainings>();
@@ -74,7 +77,8 @@ public sealed class TrainingsTests : ComponentTest
     /// <remarks>
     /// The whole reason this page changed. Reading the trainer separately and comparing owners in
     /// the markup is what it replaced, and nothing about the rendered page would look different if
-    /// it came back.
+    /// it came back. The size travels unset on purpose: the default is the server's to choose and
+    /// the cap the server's to hold, so the page names only the coordinate it owns.
     /// </remarks>
     [Fact]
     public void Renders_AsksTheServerForItsOwnTrainings()
@@ -83,7 +87,74 @@ public sealed class TrainingsTests : ComponentTest
         Render<Trainings>();
 
         // Assert
-        _trainings.Verify(client => client.GetMineAsync(), Times.Once);
+        _trainings.Verify(client => client.GetMineAsync(1, null), Times.Once);
+    }
+
+    /// <summary>
+    /// Renders, one page of trainings, shows no pager.
+    /// </summary>
+    [Fact]
+    public void Renders_OnePageOfTrainings_ShowsNoPager()
+    {
+        // Arrange
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 1, Training("Domain-Driven Design")));
+
+        // Act
+        var page = Render<Trainings>();
+
+        // Assert
+        page.Markup.Should().NotContain("mud-pagination");
+    }
+
+    /// <summary>
+    /// Walking to another page, asks the server for that page.
+    /// </summary>
+    [Fact]
+    public void WalkingToAnotherPage_AsksTheServerForThatPage()
+    {
+        // Arrange
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync((int? requested, int? _) =>
+                Page(page: requested ?? 1, totalPages: 2, totalCount: 21, Training("Domain-Driven Design")));
+
+        var page = Render<Trainings>();
+
+        // Act
+        page.FindAll("button").Single(button => button.TextContent.Trim() == "2").Click();
+
+        // Assert
+        page.WaitForAssertion(() => _trainings.Verify(client => client.GetMineAsync(2, null), Times.Once));
+    }
+
+    /// <summary>
+    /// Standing past the last page, steps back onto the page that still exists.
+    /// </summary>
+    /// <remarks>
+    /// Deleting the only training of the last page answers a page past the end — empty, with a
+    /// total that no longer reaches it. Staying there would show the empty state to a trainer who
+    /// still has trainings.
+    /// </remarks>
+    [Fact]
+    public void StandingPastTheLastPage_StepsBackOntoThePageThatStillExists()
+    {
+        // Arrange
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync((int? requested, int? _) => requested > 1
+                ? Page(page: requested ?? 1, totalPages: 1, totalCount: 1)
+                : Page(page: 1, totalPages: 2, totalCount: 21, Training("Domain-Driven Design")));
+
+        var page = Render<Trainings>();
+
+        // Act — the server answers page 2 empty, claiming one page in total.
+        page.FindAll("button").Single(button => button.TextContent.Trim() == "2").Click();
+
+        // Assert — the page notices and asks for the last page there is.
+        page.WaitForAssertion(() => _trainings.Verify(client => client.GetMineAsync(1, null), Times.Exactly(2)));
+        page.WaitForAssertion(() => page.Markup.Should().Contain("Domain-Driven Design"));
     }
 
     /// <summary>
@@ -94,7 +165,7 @@ public sealed class TrainingsTests : ComponentTest
     {
         // Arrange
         _trainings
-            .Setup(client => client.GetMineAsync())
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
             .ThrowsAsync(new ApiException<ProblemDetails>(
                 "Bad Request",
                 400,
@@ -119,7 +190,7 @@ public sealed class TrainingsTests : ComponentTest
     {
         // Arrange
         _trainings
-            .Setup(client => client.GetMineAsync())
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
             .ThrowsAsync(new ApiException(
                 "The HTTP status code of the response was not expected (503).",
                 503,
@@ -145,7 +216,7 @@ public sealed class TrainingsTests : ComponentTest
     {
         // Arrange
         _trainings
-            .Setup(client => client.GetMineAsync())
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
             .ThrowsAsync(new InvalidOperationException("Object reference not set to an instance of an object."));
 
         // Act
@@ -155,6 +226,22 @@ public sealed class TrainingsTests : ComponentTest
         page.WaitForAssertion(() => Shown().Should().ContainSingle()
             .Which.Message.Should().Be("Something went wrong loading the trainings."));
     }
+
+    private static PagedResponseHttpOfTrainingResponseHttp Page(
+        int page,
+        int totalPages,
+        int totalCount,
+        params TrainingResponseHttp[] trainings) =>
+        new()
+        {
+            Items = [.. trainings],
+            Page = page,
+            PageSize = 20,
+            TotalCount = totalCount,
+            TotalPages = totalPages,
+            HasNextPage = page < totalPages,
+            HasPreviousPage = page > 1
+        };
 
     private static TrainingResponseHttp Training(string title, params string[] topics) =>
         new()

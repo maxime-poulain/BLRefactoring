@@ -3,6 +3,7 @@ using TrainingHub.Shared.Common;
 using TrainingHub.DDD.Application.Tests.Helpers;
 using TrainingHub.Shared.Application.Dtos.Training;
 using TrainingHub.Shared.Common.Errors;
+using TrainingHub.Shared.Common.Pagination;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
@@ -389,61 +390,73 @@ public sealed class TrainingApplicationServiceTests
     // -- GetMineAsync --
 
     /// <summary>
-    /// Get mine async, returns training dtos.
+    /// Get mine async, returns the repository's page, items mapped and counts untouched.
     /// </summary>
     [Fact]
-    public async Task GetMineAsync_ReturnsTrainingDtos()
+    public async Task GetMineAsync_ReturnsThePage_ItemsMappedAndCountsUntouched()
     {
         SetupCurrentUser();
         var training = await new TrainingBuilder().WithTrainerId(_trainerId).BuildValidAsync();
         _fixture.TrainingRepository
-            .Setup(r => r.GetByTrainerIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Training> { training });
+            .Setup(r => r.GetPageByTrainerIdAsync(
+                It.IsAny<TrainerId>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PagedResult<Training>([training], Page: 2, PageSize: 1, TotalCount: 5));
         var sut = _fixture.CreateSut();
 
-        var trainings = await sut.GetMineAsync();
+        var page = await sut.GetMineAsync(new PageRequest { Page = 2, PageSize = 1 });
 
-        trainings.Should().HaveCount(1);
+        // The repository decided what the page holds; this layer only reshapes each item. The
+        // metadata crossing the mapping unchanged is what keeps the pager honest.
+        page.Items.Should().HaveCount(1);
+        page.Page.Should().Be(2);
+        page.PageSize.Should().Be(1);
+        page.TotalCount.Should().Be(5);
     }
 
     /// <summary>
-    /// Get mine async, asks the repository for the callers own trainer id.
+    /// Get mine async, asks the repository for the callers own trainer id and the callers page.
     /// </summary>
     [Fact]
-    public async Task GetMineAsync_AsksTheRepositoryForTheCallersOwnTrainerId()
+    public async Task GetMineAsync_AsksTheRepositoryForTheCallersOwnTrainerId_AndTheCallersPage()
     {
         SetupCurrentUser();
         _fixture.TrainingRepository
-            .Setup(r => r.GetByTrainerIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Training>());
+            .Setup(r => r.GetPageByTrainerIdAsync(
+                It.IsAny<TrainerId>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PagedResult<Training>([], Page: 3, PageSize: 10, TotalCount: 0));
         var sut = _fixture.CreateSut();
 
-        await sut.GetMineAsync();
+        var paging = new PageRequest { Page = 3, PageSize = 10 };
+        await sut.GetMineAsync(paging);
 
         // The method takes no trainer, so the only thing that can make it read the wrong one is
-        // resolving the caller wrongly. This is where that would show.
+        // resolving the caller wrongly. This is where that would show — and the paging must reach
+        // the repository as given, or the caller walks pages the database never served.
         _fixture.TrainingRepository.Verify(
-            r => r.GetByTrainerIdAsync(TrainerId.Create(_trainerId), It.IsAny<CancellationToken>()),
+            r => r.GetPageByTrainerIdAsync(
+                TrainerId.Create(_trainerId), paging, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     /// <summary>
-    /// Get mine async, no trainings, returns an empty list.
+    /// Get mine async, no trainings, returns an empty page.
     /// </summary>
     [Fact]
-    public async Task GetMineAsync_NoTrainings_ReturnsAnEmptyList()
+    public async Task GetMineAsync_NoTrainings_ReturnsAnEmptyPage()
     {
         SetupCurrentUser();
         _fixture.TrainingRepository
-            .Setup(r => r.GetByTrainerIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Training>());
+            .Setup(r => r.GetPageByTrainerIdAsync(
+                It.IsAny<TrainerId>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PagedResult<Training>([], Page: 1, PageSize: PageRequest.DefaultPageSize, TotalCount: 0));
         var sut = _fixture.CreateSut();
 
-        var trainings = await sut.GetMineAsync();
+        var page = await sut.GetMineAsync(new PageRequest());
 
         // Empty rather than a failure: a trainer who has created nothing is not an error, which
         // is why this method stopped answering with a Result it could never fail.
-        trainings.Should().BeEmpty();
+        page.Items.Should().BeEmpty();
+        page.TotalCount.Should().Be(0);
     }
 
     // -- DeleteAsync --
