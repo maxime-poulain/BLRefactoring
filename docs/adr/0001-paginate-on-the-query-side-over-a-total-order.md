@@ -1,6 +1,6 @@
 # 0001 — Paginate on the query side, over a total order
 
-- **Status:** Accepted
+- **Status:** Accepted — amended in part by [0029](0029-answer-a-list-the-same-way-on-both-hosts.md)
 - **Date:** 2026-08-01
 
 ## Context

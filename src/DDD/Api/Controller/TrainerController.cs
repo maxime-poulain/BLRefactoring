@@ -35,7 +35,6 @@ public sealed class TrainerController(
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
     /// <returns>
     /// 200 OK with the profile and the <c>ETag</c> to send back when editing it.
-    /// 400 Bad Request on validation errors.
     /// 404 Not Found if the token refers to a trainer that no longer exists.
     /// </returns>
     /// <remarks>
@@ -46,23 +45,22 @@ public sealed class TrainerController(
     [HttpGet("me")]
     [ProducesEntityTag]
     [ProducesResponseType(typeof(TrainerResponseHttp), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TrainerResponseHttp>> GetCurrentAsync(CancellationToken cancellationToken = default)
     {
         var result = await trainerApplicationService.GetByIdAsync(
             currentUserService.TrainerId, cancellationToken);
 
+        // The only refusal GetByIdAsync can answer is NotFound: the identifier comes from the
+        // caller's own token, never from input that could fail validation. Declaring a 400 here
+        // would promise an answer this action cannot give — and the CQRS host does not.
         return result.Match<ActionResult>(
             trainer =>
             {
                 this.SetETag(trainer.RowVersion);
                 return Ok(trainer.ToHttp());
             },
-            errors =>
-                errors.Any(error => error.ErrorCode == ErrorCodes.NotFound)
-                    ? NotFound()
-                    : this.Problem(StatusCodes.Status400BadRequest, errors));
+            _ => NotFound());
     }
 
     /// <summary>

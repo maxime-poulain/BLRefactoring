@@ -2,6 +2,7 @@ using TrainingHub.DDD.Api.Mappings;
 using TrainingHub.DDD.Application.Services.TrainingServices;
 using TrainingHub.Shared.Api.Authorization;
 using TrainingHub.Shared.Api.Contracts.Mappings;
+using TrainingHub.Shared.Api.Contracts.Pagination;
 using TrainingHub.Shared.Api.Contracts.Trainings;
 using TrainingHub.Shared.Api.Controllers;
 using TrainingHub.Shared.Api.Http;
@@ -170,14 +171,21 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     }
 
     /// <summary>
-    /// Retrieves the caller's own trainings.
+    /// Returns one page of the caller's own trainings, newest first.
     /// </summary>
+    /// <param name="pagination">The page asked for; the defaults apply when absent.</param>
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
-    /// <returns>200 OK with the trainings belonging to the authenticated trainer.</returns>
+    /// <returns>200 OK with one page of the trainings belonging to the authenticated trainer.</returns>
     /// <remarks>
     /// The endpoint a screen listing "my trainings" calls. It takes no identifier — the trainer
     /// comes from the token — so there is no parameter a caller could point at somebody else, and no
     /// filtering left for a client to do after the fact.
+    /// <para>
+    /// It answers the same page envelope as the CQRS host, from the same contract: this host used to
+    /// answer the whole collection as a bare array, and the two documents disagreed on the shape of
+    /// one operation — which no generated client can serve. The page is asked of the repository as a
+    /// named question; what stays different is how each stack fills it. See ADR 0029.
+    /// </para>
     /// <para>
     /// The route says <c>my-trainings</c> rather than <c>me</c>, which it was until the API grew a
     /// second <c>/me</c>: <c>/Trainer/me</c> is a profile and this is a list of trainings, and two
@@ -190,13 +198,16 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     /// </para>
     /// </remarks>
     [HttpGet("my-trainings")]
-    [ProducesResponseType(typeof(List<TrainingResponseHttp>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<TrainingResponseHttp>>> GetMineAsync(
+    [ProducesResponseType(typeof(PagedResponseHttp<TrainingResponseHttp>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResponseHttp<TrainingResponseHttp>>> GetMineAsync(
+        [FromQuery] PaginationRequestHttp pagination,
         CancellationToken cancellationToken = default)
     {
-        var trainings = await trainingApplicationService.GetMineAsync(cancellationToken);
+        var page = await trainingApplicationService.GetMineAsync(
+            pagination.ToPageRequest(), cancellationToken);
 
-        return Ok(trainings.ToHttp());
+        return Ok(page.ToHttp(trainings => trainings.ToHttp()));
     }
 
     /// <summary>

@@ -12,8 +12,10 @@ by both stacks. What is here is what only the CQRS stack has.
 - **`Features/**/…QueryHandler`** — one handler per query. They read through the `DbContext`
   directly and project onto DTOs; no repository is involved, because a repository's job is to hand
   back aggregates and a screen does not need one.
-- **`Pagination/`** — `ToPagedResultAsync` and `NewestFirst`, the two halves of a paged read. See
-  [ADR 0001](../../../docs/adr/0001-paginate-on-the-query-side-over-a-total-order.md).
+  The paged reads ride `NewestFirst` and `ToPagedResultAsync` from
+  `TrainingHub.Shared.Infrastructure/Pagination` — shared with the layered repository since
+  [ADR 0029](../../../docs/adr/0029-answer-a-list-the-same-way-on-both-hosts.md); the order and
+  the envelope are [ADR 0001](../../../docs/adr/0001-paginate-on-the-query-side-over-a-total-order.md)'s.
 - **`ThirdParty/Mediator/`** — the `ICommandDispatcher`/`IQueryDispatcher` implementations, and the
   pipeline behaviors for validation and for disabling change tracking while a query runs.
 

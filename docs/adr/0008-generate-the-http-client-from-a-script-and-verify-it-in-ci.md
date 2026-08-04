@@ -1,6 +1,6 @@
 # 0008 — Regenerate the HTTP client from the API, and commit it automatically
 
-- **Status:** Accepted
+- **Status:** Accepted — the list-shape argument for the source host is dated by [0029](0029-answer-a-list-the-same-way-on-both-hosts.md); the hosts now answer alike, and the layered one remains the source
 - **Date:** 2026-08-01
 
 ## Context

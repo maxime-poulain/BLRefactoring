@@ -1,7 +1,7 @@
-using TrainingHub.DDDWithCqrs.Api.Contracts;
 using TrainingHub.DDDWithCqrs.Api.Mappings;
 using TrainingHub.Shared.Api.Authorization;
 using TrainingHub.Shared.Api.Contracts.Mappings;
+using TrainingHub.Shared.Api.Contracts.Pagination;
 using TrainingHub.Shared.Api.Contracts.Trainings;
 using TrainingHub.Shared.Api.Controllers;
 using TrainingHub.Shared.Api.Http;

@@ -1,4 +1,3 @@
-using TrainingHub.DDDWithCqrs.Api.Contracts;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Create;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Edit;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetById;
@@ -7,10 +6,11 @@ using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Delete;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Edit;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetById;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetMine;
+using TrainingHub.Shared.Api.Contracts.Mappings;
+using TrainingHub.Shared.Api.Contracts.Pagination;
 using TrainingHub.Shared.Api.Contracts.Trainers;
 using TrainingHub.Shared.Api.Controllers;
 using TrainingHub.Shared.Api.Contracts.Trainings;
-using TrainingHub.DDDWithCqrs.Application.Pagination;
 
 namespace TrainingHub.DDDWithCqrs.Api.Mappings;
 
@@ -129,37 +129,9 @@ public static class HttpToApplicationMappings
     /// <remarks>
     /// Paging and nothing else. Whose trainings these are is not the boundary's business: the
     /// handler resolves it from the authenticated caller, so this mapping has no identity to carry
-    /// and no way to carry the wrong one.
+    /// and no way to carry the wrong one. The paging translation itself is the shared
+    /// <c>ToPageRequest</c>, so this host and the layered one cannot disagree on a default.
     /// </remarks>
     public static GetMyTrainingsQuery ToGetMyTrainingsQuery(this PaginationRequestHttp pagination)
-        => new() { Page = Page(pagination), PageSize = PageSize(pagination) };
-
-    // An absent [FromQuery] contract binds to null when the caller passes no parameter at all,
-    // so the defaults live here as well as on the contract.
-    private static int Page(PaginationRequestHttp? pagination) => pagination?.Page ?? 1;
-
-    private static int PageSize(PaginationRequestHttp? pagination)
-        => pagination?.PageSize ?? PagedQuery.DefaultPageSize;
-
-    /// <summary>
-    /// Publishes one page of read models, recomputing the metadata from the query result.
-    /// </summary>
-    public static PagedResponseHttp<TResponse> ToHttp<TItem, TResponse>(
-        this PagedResult<TItem> page,
-        Func<IEnumerable<TItem>, List<TResponse>> mapItems)
-    {
-        ArgumentNullException.ThrowIfNull(page);
-        ArgumentNullException.ThrowIfNull(mapItems);
-
-        return new PagedResponseHttp<TResponse>
-        {
-            Items = mapItems(page.Items),
-            Page = page.Page,
-            PageSize = page.PageSize,
-            TotalCount = page.TotalCount,
-            TotalPages = page.TotalPages,
-            HasNextPage = page.HasNextPage,
-            HasPreviousPage = page.HasPreviousPage
-        };
-    }
+        => new() { Paging = pagination.ToPageRequest() };
 }

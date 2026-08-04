@@ -22,10 +22,11 @@ namespace TrainingHub.Api.TestKit;
 /// </para>
 /// <para>
 /// The assertions are made on the raw body rather than on a deserialised type, and deliberately.
-/// The two hosts answer different shapes — a bare array here, a page envelope there — so a shared
-/// test that bound to either would be testing one host and compiling against the other. What both
-/// must satisfy is stated in the only vocabulary they share: the title of a training is in the
-/// response, or it is not.
+/// They state a claim about leakage, and leakage does not care which property it travels in: a
+/// title anywhere in the response is a leak, and deserialising would narrow the search to the
+/// fields the type happens to declare. Both hosts answer the same page envelope since ADR 0029 —
+/// <c>PaginationTest</c> holds the shared paging assertions — but these stay on the string,
+/// because absence from the whole body is the stronger claim.
 /// </para>
 /// <para>
 /// Isolation is what this proves, so it needs two trainers. <c>AuthHelper</c> registers a fresh one

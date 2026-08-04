@@ -679,16 +679,6 @@ namespace TrainingHub.GeneratedClients
                             return new SwaggerResponse<TrainerResponseHttp>(status_, headers_, objectResponse_.Object);
                         }
                         else
-                        if (status_ == 400)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
                         if (status_ == 401)
                         {
                             string responseText_ = ( response_.Content == null ) ? string.Empty : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
@@ -1358,14 +1348,18 @@ namespace TrainingHub.GeneratedClients
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task DeleteTrainingAsync(System.Guid trainingId, System.Threading.CancellationToken cancellationToken);
 
+        /// <param name="page">The page to return, counted from 1.</param>
+        /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Collections.Generic.List<TrainingResponseHttp>> GetMineAsync();
+        System.Threading.Tasks.Task<PagedResponseHttpOfTrainingResponseHttp> GetMineAsync(int? page, int? pageSize);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <param name="page">The page to return, counted from 1.</param>
+        /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Collections.Generic.List<TrainingResponseHttp>> GetMineAsync(System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<PagedResponseHttpOfTrainingResponseHttp> GetMineAsync(int? page, int? pageSize, System.Threading.CancellationToken cancellationToken);
 
     }
 
@@ -1882,17 +1876,21 @@ namespace TrainingHub.GeneratedClients
             }
         }
 
+        /// <param name="page">The page to return, counted from 1.</param>
+        /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<System.Collections.Generic.List<TrainingResponseHttp>> GetMineAsync()
+        public virtual System.Threading.Tasks.Task<PagedResponseHttpOfTrainingResponseHttp> GetMineAsync(int? page, int? pageSize)
         {
-            return GetMineAsync(System.Threading.CancellationToken.None);
+            return GetMineAsync(page, pageSize, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <param name="page">The page to return, counted from 1.</param>
+        /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.List<TrainingResponseHttp>> GetMineAsync(System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<PagedResponseHttpOfTrainingResponseHttp> GetMineAsync(int? page, int? pageSize, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -1907,6 +1905,16 @@ namespace TrainingHub.GeneratedClients
                 
                     // Operation Path: "Training/my-trainings"
                     urlBuilder_.Append("Training/my-trainings");
+                    urlBuilder_.Append('?');
+                    if (page != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("Page")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(page, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (pageSize != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("PageSize")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(pageSize, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    urlBuilder_.Length--;
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -1933,12 +1941,22 @@ namespace TrainingHub.GeneratedClients
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.List<TrainingResponseHttp>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<PagedResponseHttpOfTrainingResponseHttp>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 401)
@@ -2309,6 +2327,75 @@ namespace TrainingHub.GeneratedClients
         [System.Text.Json.Serialization.JsonPropertyName("token")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Token { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// One page of a collection, as the API publishes it.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PagedResponseHttpOfTrainingResponseHttp
+    {
+
+        /// <summary>
+        /// The page itself.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("items")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.List<TrainingResponseHttp> Items { get; set; } = new System.Collections.Generic.List<TrainingResponseHttp>();
+
+        /// <summary>
+        /// The page returned, counted from 1.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("page")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
+        public int Page { get; set; } = default!;
+
+        /// <summary>
+        /// How many items a full page holds.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("pageSize")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
+        public int PageSize { get; set; } = default!;
+
+        /// <summary>
+        /// How many items match, all pages together.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("totalCount")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
+        public int TotalCount { get; set; } = default!;
+
+        /// <summary>
+        /// How many pages the result spans, at least one.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("totalPages")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
+        public int TotalPages { get; set; } = default!;
+
+        /// <summary>
+        /// Whether another page follows this one.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("hasNextPage")]
+        public bool HasNextPage { get; set; } = default!;
+
+        /// <summary>
+        /// Whether a page precedes this one.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("hasPreviousPage")]
+        public bool HasPreviousPage { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
