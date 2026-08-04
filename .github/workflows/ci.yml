@@ -30,20 +30,30 @@ jobs:
     timeout-minutes: 20
 
     # The whole point of the two triggers above, in one condition: build a pull request only when
-    # its branch is not one this repository already built on push. A branch here fires both events
-    # for the same commit — the runs land in different concurrency groups, so neither cancels the
-    # other, and the same eighty seconds were being spent twice for one answer.
+    # its branch is one this repository already builds on push. A `claude/**` branch here fires
+    # both events for the same commit — the runs land in different concurrency groups, so neither
+    # cancels the other, and the same eighty seconds were being spent twice for one answer.
     #
-    # A fork has no such push run, so it is the case this keeps. Expressed as "the head repository
-    # is not this one" rather than as a fork flag, because that is the fact that decides it: what
-    # matters is whether a push to that branch reaches this repository's Actions.
+    # The skip must mirror the `push` trigger's branch list exactly, and the first version of this
+    # condition did not: it skipped every same-repo pull request, assuming a push run had built the
+    # branch — but `push` only listens to master and `claude/**`. A `feature/*` branch fired no
+    # push run, its pull-request run was skipped, and the pull request reached review built and
+    # tested by nobody, wearing a skipped check GitHub counts as passing. Measured, not assumed:
+    # #62 merged exactly that way.
+    #
+    # So three cases run and one is skipped. A push run: that is the primary build. A fork's pull
+    # request: no push to somebody else's clone reaches this repository's Actions, so the
+    # pull-request run is the only build it will ever get. A same-repo pull request from any branch
+    # the `push` trigger does not name: same reasoning, same conclusion. Only a same-repo
+    # `claude/**` pull request is skipped — its commit was already built when it was pushed.
     #
     # The job is skipped rather than the workflow, so the check still appears on the pull request —
     # as skipped, which GitHub counts as passing for a required check, beside the successful one the
     # push run posted on the same commit.
     if: >-
       github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name != github.repository
+      github.event.pull_request.head.repo.full_name != github.repository ||
+      !startsWith(github.event.pull_request.head.ref, 'claude/')
 
     # `contents: write` is for one step: the workflow regenerates the HTTP client and commits it
     # when the API has changed. Nothing else here writes. Declared on the job rather than on the
