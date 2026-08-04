@@ -163,6 +163,13 @@ public sealed class KernelPurityRules
     /// <summary>
     /// Only the composition root, registers services.
     /// </summary>
+    /// <remarks>
+    /// One name is excused, and it is a pinned decision like the kernel's eight: a hosted service
+    /// is a singleton by the framework's own fiat, so the outbox worker cannot inject the scoped
+    /// processor it drives — opening a scope per batch is the documented pattern for exactly this
+    /// shape, and it is resolution inside a boundary the host already composed, not registration
+    /// (ADR 0025). Anything else in these layers reaching for the container is still a finding.
+    /// </remarks>
     [Fact]
     [ArchitectureRule("README#the-dependency-rule",
         "outside the inner layers, only the extension methods a host calls may register services")]
@@ -173,6 +180,8 @@ public sealed class KernelPurityRules
             Types.InAssembly(layer)
                 .That()
                 .DoNotResideInNamespaceEndingWith(".Extensions")
+                .And()
+                .DoNotHaveName("OutboxDeliveryWorker")
                 .Should()
                 .NotHaveDependencyOnAny("Microsoft.Extensions.DependencyInjection")
                 .GetResult()

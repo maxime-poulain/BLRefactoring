@@ -44,6 +44,12 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
 
         builder.Property(message => message.Error);
 
+        builder.Property(message => message.ClaimedBy)
+            .HasMaxLength(128);
+
+        builder.Property(message => message.ClaimedUntil)
+            .HasPrecision(7);
+
         // Full precision, declared explicitly rather than left to the default — the same decision
         // the audit columns carry. See ADR 0005.
         builder.Property(message => message.OccurredOnUtc)

@@ -153,8 +153,8 @@ Twenty-six projects: sixteen under `src/`, ten under `tests/`. The backend and a
 |---|---|
 | `TrainingHub.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, and the cross-cutting ports `IUnitOfWork`, `ICurrentUserService`, `IEmailSender`, `ITrainingSearchIndexer`, plus the CQS marker interfaces |
 | `TrainingHub.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, `IUniquenessTitleChecker` |
-| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the six domain event handlers, and the integration events with their stable-name registry and publisher port — all shared by both stacks |
-| `TrainingHub.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the identity store, and the transactional outbox behind `IIntegrationEventPublisher` |
+| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the six domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the four post-commit consumers — all shared by both stacks |
+| `TrainingHub.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the identity store, and the transactional outbox — publisher, delivery worker, dispatcher |
 | `TrainingHub.Shared.Api` | The HTTP boundary: the `*RequestHttp` and `*ResponseHttp` contracts both hosts publish, their mappings to the application layer, the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, concurrency helpers |
 | `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService` |
 | `DDD.Api` | REST host for the layered stack — controllers, composition root |
@@ -352,9 +352,11 @@ drives it through the host's own services.
 Two of the six handlers act inside the transaction — ADR 0002's *domain reactions* — and four
 translate the domain event into an integration event and commit it to the transactional outbox
 (see [ADR 0024](docs/adr/0024-publish-facts-not-intents-and-version-them-in-the-envelope.md) and
-[the outbox section](#domain-events-and-the-unit-of-work)). `IEmailSender` and
-`ITrainingSearchIndexer` are ports declared in the shared kernel, each with a fake implementation
-that only writes to the log; nothing calls them until the delivery worker exists, so the project
+[the outbox section](#domain-events-and-the-unit-of-work)). After the commit, the outbox delivery
+worker hands each fact to its consumers — `IIntegrationEventHandler<TEvent>` implementations in
+the same application layer — which is where the welcome email, the address warning and the index
+updates now happen (ADR 0025). `IEmailSender` and `ITrainingSearchIndexer` are ports declared in
+the shared kernel, each with a fake implementation that only writes to the log, so the project
 still depends on no SMTP server or search engine.
 
 ### Use cases
@@ -477,11 +479,15 @@ The write side is proven from the change tracker up to a lost optimistic-concurr
 registry, a version-7 GUID as the consumer's deduplication key, and the `Attempts`/`Error` columns
 the retry policy will use.
 
-**What is deliberately missing:** the delivery worker. Until it lands, the facts accumulate
-unprocessed — no email is composed, nothing is indexed — and `ProcessedOnUtc` stays `NULL` on
-every row. That replaces the old defect (a welcome email sent for a commit that could still fail)
-with a record of what is owed, which is the right direction: at-least-once delivery starts from a
-durable fact, not from hope.
+**Delivery** is the other half (ADR 0025). Each host runs `OutboxDeliveryWorker`, a hosted
+service that polls the table, claims the oldest unprocessed rows in a single
+`UPDATE … OUTPUT` under `READPAST` and a database lease — two hosts over one table are competing
+consumers, safely — and hands each fact to its consumers through an explicit dispatcher. Success
+stamps `ProcessedOnUtc`; a consumer that throws has its reason recorded on the envelope, the
+attempt counted, and the message retried until the budget in `OutboxOptions.MaxAttempts` is spent —
+after which the row is poison: kept, no longer claimed, its last error beside it. Delivery is
+at-least-once and eventual by a few seconds; consumers deduplicate by the envelope's id or, like
+the index upsert, converge naturally.
 
 ### A write, end to end
 
@@ -867,10 +873,10 @@ The two filters are exact inverses, so between them every test runs exactly once
 | Project | Scope |
 |---|---|
 | `TrainingHub.Shared.Domain.Tests` | Aggregates, value objects, typed identifiers, `Result`, specifications |
-| `TrainingHub.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers — including the four that translate a domain event into an integration event |
+| `TrainingHub.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers — including the four that translate a domain event into an integration event — and the four post-commit consumers |
 | `TrainingHub.DDDWithCqrs.Tests` | Command handlers, validators, pipeline behaviours |
 | `TrainingHub.Shared.Api.Tests` | Entity-tag encoding and parsing, the guard that keeps client generation away from a database, what the unhandled-exception handler is allowed to tell a caller, and the transformer that describes an uploaded file inline so a client generator recognises it as one |
-| `TrainingHub.Shared.Infrastructure.Tests` | The auditable-entities interceptor — that it stamps, and reads the clock once per entity —, the outbox publisher observed through the change tracker, the serializer's round trip for every registered event, and the bucket bootstrapper, mostly for when it does nothing |
+| `TrainingHub.Shared.Infrastructure.Tests` | The auditable-entities interceptor — that it stamps, and reads the clock once per entity —, the outbox publisher observed through the change tracker, the serializer's round trip for every registered event, the dispatcher held to its routing table, the envelope's state transitions, and the bucket bootstrapper, mostly for when it does nothing |
 | `TrainingHub.Blazor.Bff.Tests` | The backend for frontend over HTTP: the cookie's flags, the forgery guard, the token attached to a forwarded call, and what signing out revokes |
 | `TrainingHub.Blazor.Client.Tests` | The front end, rendered in-process with bUnit: the sign-in page's refusal to redirect anywhere but a path of its own origin, the deep link a redirect to sign-in preserves, the header that makes a cookie-authenticated call unusable as a forgery, an unreachable BFF read as anonymous rather than as an exception, the per-field messages read out of a problem document, the training form's bounds tied to the ones the generated contract publishes, and — on the profile page — the size ceiling that refuses a file before it is uploaded, the image address that defeats a year-long cache, and the server's refusal shown in its own words |
 | `TrainingHub.DDD.Api.IntegrationTests` | The layered host, HTTP end to end against a real SQL Server and a real object store |
@@ -897,7 +903,9 @@ deletion left the API and a pipeline nothing exercises is a pipeline nobody noti
 column kept, which no response can show; and `OutboxTests` drives a lost optimistic-concurrency
 race through two service scopes, because the atomicity it proves — a failed save taking its staged
 outbox row down with it — cannot be shown over HTTP: the stale-`If-Match` path is refused before
-any event is raised. Validation is where the two suites still differ, though far
+any event is raised. The same suite watches the delivery worker do its actual job against the real
+database: a committed fact gets processed and stamped, and a message nobody can read spends its
+attempt budget, keeps its error, and stops the line for no one. Validation is where the two suites still differ, though far
 less than they did: an invalid field on the layered host is caught by the value objects, while on the
 CQRS host a FluentValidation validator inside `ValidationPipelineBehavior` catches it first. Both now
 answer the same shape — a `domainErrors` document — since that behaviour returns a failed `Result`

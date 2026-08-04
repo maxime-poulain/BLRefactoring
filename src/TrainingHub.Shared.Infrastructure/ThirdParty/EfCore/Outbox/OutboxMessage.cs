@@ -11,12 +11,12 @@ namespace TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Outbox;
 /// <see cref="Name"/>/<see cref="Version"/> say what the payload deserializes into without trusting
 /// a CLR type name that a refactoring could change.
 /// <para>
-/// <see cref="ProcessedOnUtc"/>, <see cref="Attempts"/> and <see cref="Error"/> are written by
-/// nobody in this codebase yet: they are the delivery worker's contract, declared with the schema
-/// so the table is one migration rather than two (ADR 0024). The worker marks a delivered message
-/// by stamping <see cref="ProcessedOnUtc"/>, counts each try in <see cref="Attempts"/>, and parks
-/// the last failure in <see cref="Error"/> — a poison message is one whose attempts exhausted the
-/// policy, still unprocessed, with the reason sitting beside it.
+/// The delivery columns tell one message's story. A worker claims the row by writing
+/// <see cref="ClaimedBy"/> and <see cref="ClaimedUntil"/> — the lease ADR 0002 promised, taken in
+/// the database so a claimant that dies simply lets its lease lapse. A delivery that succeeds
+/// stamps <see cref="ProcessedOnUtc"/>; one that fails counts itself in <see cref="Attempts"/> and
+/// parks the reason in <see cref="Error"/>. A poison message is the row whose attempts exhausted
+/// the budget, still unprocessed, with the last failure sitting beside it (ADR 0024, ADR 0025).
 /// </para>
 /// </remarks>
 public sealed class OutboxMessage
@@ -61,11 +61,39 @@ public sealed class OutboxMessage
     public DateTime OccurredOnUtc { get; }
 
     /// <summary>When the worker delivered the message; <see langword="null"/> while it is owed.</summary>
-    public DateTime? ProcessedOnUtc { get; }
+    public DateTime? ProcessedOnUtc { get; private set; }
 
-    /// <summary>How many deliveries have been tried — the retry policy's counter.</summary>
-    public int Attempts { get; }
+    /// <summary>How many deliveries have failed — what the retry budget is spent against.</summary>
+    public int Attempts { get; private set; }
 
     /// <summary>The last delivery failure, kept beside the message it poisoned.</summary>
-    public string? Error { get; }
+    public string? Error { get; private set; }
+
+    /// <summary>Which worker holds the current lease — kept after delivery, as provenance.</summary>
+    public string? ClaimedBy { get; private set; }
+
+    /// <summary>When the current lease lapses; a lapsed lease makes the row claimable again.</summary>
+    public DateTime? ClaimedUntil { get; private set; }
+
+    /// <summary>
+    /// Records a successful delivery: the message is done, and no lease needs to outlive it.
+    /// </summary>
+    /// <param name="processedOnUtc">When the delivery completed, in UTC.</param>
+    public void MarkProcessed(DateTime processedOnUtc)
+    {
+        ProcessedOnUtc = processedOnUtc;
+        ClaimedUntil = null;
+    }
+
+    /// <summary>
+    /// Records a failed delivery attempt and releases the lease, so the next poll — from this
+    /// worker or any other — retries the message while the attempt budget lasts.
+    /// </summary>
+    /// <param name="error">What the failed attempt reported.</param>
+    public void RecordFailure(string error)
+    {
+        Attempts++;
+        Error = error;
+        ClaimedUntil = null;
+    }
 }

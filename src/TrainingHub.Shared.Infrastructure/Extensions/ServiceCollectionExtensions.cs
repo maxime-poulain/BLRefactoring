@@ -1,3 +1,4 @@
+using TrainingHub.Shared.Application.IntegrationEventHandlers;
 using TrainingHub.Shared.Application.IntegrationEvents;
 using TrainingHub.Shared.Application.Queries;
 using TrainingHub.Shared.Common;
@@ -44,6 +45,22 @@ public static class ServiceCollectionExtensions
             // Scoped like the DbContext it stages rows into: the publisher must share the unit of
             // work of the save that is dispatching the domain events (ADR 0002).
             .AddScoped<IIntegrationEventPublisher, OutboxIntegrationEventPublisher>()
+            // The outbox's read side (ADR 0025): the worker each host runs, the processor it
+            // scopes per batch, the dispatcher that routes a fact to its consumers, and the four
+            // consumers themselves — the policies that used to run inside the transaction,
+            // reattached after the commit.
+            .Configure<OutboxOptions>(configuration.GetSection("Outbox"))
+            .AddScoped<OutboxProcessor>()
+            .AddScoped<IntegrationEventDispatcher>()
+            .AddScoped<IIntegrationEventHandler<TrainerCreatedIntegrationEvent>,
+                SendWelcomeEmailWhenTrainerCreatedIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<TrainerContactEmailChangedIntegrationEvent>,
+                NotifyPreviousAddressWhenTrainerContactEmailChangedIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<TrainingCreatedIntegrationEvent>,
+                IndexTrainingWhenTrainingCreatedIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<TrainingEditedIntegrationEvent>,
+                ReindexTrainingWhenTrainingEditedIntegrationEventHandler>()
+            .AddHostedService<OutboxDeliveryWorker>()
             .AddDbContext<TrainingContext>((serviceProvider, options) =>
             {
                 options.UseSqlServer(configuration.GetConnectionString("TrainingContext"))
@@ -63,10 +80,9 @@ public static class ServiceCollectionExtensions
             // The system clock, injected so the audit stamps can be driven by a test.
             .AddSingleton(TimeProvider.System)
             .AddSingleton<AuditableEntitiesInterceptor>()
-            // Nothing calls these two ports since the outbox landed: the handlers that used them
-            // now record facts instead of acting (ADR 0002). They stay registered because the
-            // delivery worker — the outbox's read side, still owed — is what will call them, after
-            // the commit this time.
+            // Called by the outbox's consumers, after the commit — the worker delivers the facts,
+            // and these ports act on them (ADR 0002, ADR 0025). Still fakes that write to the log:
+            // choosing a provider stays a one-line change here.
             .AddSingleton<IEmailSender, FakeEmailSender>()
             .AddSingleton<ITrainingSearchIndexer, FakeTrainingSearchIndexer>();
     }

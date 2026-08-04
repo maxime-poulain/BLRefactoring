@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 
@@ -11,9 +12,11 @@ using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 namespace TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Migrations
 {
     [DbContext(typeof(TrainingContext))]
-    partial class TrainingContextModelSnapshot : ModelSnapshot
+    [Migration("20260804162244_AddOutboxLease")]
+    partial class AddOutboxLease
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -164,7 +167,7 @@ namespace TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Migrations
 
                             b1.HasKey("TrainerId");
 
-                            b1.ToTable("Trainer", (string)null);
+                            b1.ToTable("Trainer");
 
                             b1.WithOwner()
                                 .HasForeignKey("TrainerId");
@@ -183,7 +186,7 @@ namespace TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Migrations
 
                             b1.HasKey("TrainerId");
 
-                            b1.ToTable("Trainer", (string)null);
+                            b1.ToTable("Trainer");
 
                             b1.WithOwner()
                                 .HasForeignKey("TrainerId");
@@ -208,7 +211,7 @@ namespace TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Migrations
 
                             b1.HasKey("TrainerId");
 
-                            b1.ToTable("Trainer", (string)null);
+                            b1.ToTable("Trainer");
 
                             b1.WithOwner()
                                 .HasForeignKey("TrainerId");
@@ -235,7 +238,7 @@ namespace TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Migrations
 
                             b1.HasKey("TrainerId");
 
-                            b1.ToTable("Trainer", (string)null);
+                            b1.ToTable("Trainer");
 
                             b1.WithOwner()
                                 .HasForeignKey("TrainerId");

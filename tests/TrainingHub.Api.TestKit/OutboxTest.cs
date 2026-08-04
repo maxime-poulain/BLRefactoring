@@ -54,18 +54,76 @@ public abstract class OutboxTest<TFactory>(TFactory factory) : IntegrationTest<T
         using var scope = Factory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<TrainingContext>();
 
+        // Nothing here asserts on the delivery columns: the worker polls while this test runs, and
+        // whether the row is still owed or already delivered is its business — the envelope and the
+        // payload are what committing the fact promised.
         var message = (await context.Set<OutboxMessage>().ToListAsync())
             .Should().ContainSingle(m => m.Name == "TrainerCreated").Subject;
 
         message.Version.Should().Be(1);
-        message.ProcessedOnUtc.Should().BeNull("nothing delivers messages yet — that is the worker's job");
-        message.Attempts.Should().Be(0);
 
         var fact = IntegrationEventSerializer.Deserialize(message.Name, message.Version, message.Payload)
             .Should().BeOfType<TrainerCreatedIntegrationEvent>().Subject;
         fact.ContactEmail.Should().Be(request.Email);
         fact.Firstname.Should().Be(request.Firstname);
         fact.Lastname.Should().Be(request.Lastname);
+    }
+
+    /// <summary>
+    /// The worker, delivers the committed fact, and stamps the envelope.
+    /// </summary>
+    [Fact]
+    public async Task TheWorker_DeliversTheCommittedFact_AndStampsTheEnvelope()
+    {
+        var request = AuthHelper.CreateUniqueRegisterRequest();
+
+        var response = await AuthHelper.RegisterAsync(Factory.CreateClient(), request);
+        response.EnsureSuccessStatusCode();
+
+        var delivered = await WaitForMessageAsync(
+            "TrainerCreated",
+            message => message.ProcessedOnUtc is not null);
+
+        delivered.ClaimedBy.Should().NotBeNull("a delivery starts with a claim, and the claim leaves provenance");
+        delivered.Attempts.Should().Be(0, "a delivery that succeeds first time never spent the retry budget");
+        delivered.Error.Should().BeNull();
+    }
+
+    /// <summary>
+    /// A message nobody can read, spends its budget, and is left poisoned.
+    /// </summary>
+    /// <remarks>
+    /// The row is planted with a wire name the registry does not know, so every delivery attempt
+    /// fails at deserialization. The suite runs with an attempt budget of two: the worker must try
+    /// twice, record why, then leave the row alone — and keep delivering everyone else, which the
+    /// second half of the test proves with an ordinary registration.
+    /// </remarks>
+    [Fact]
+    public async Task AMessageNobodyCanRead_SpendsItsBudget_AndIsLeftPoisoned()
+    {
+        using (var scope = Factory.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<TrainingContext>();
+            context.Set<OutboxMessage>().Add(new OutboxMessage(
+                Guid.CreateVersion7(),
+                "NobodyKnowsThisName",
+                1,
+                "{}",
+                DateTime.UtcNow));
+            await context.SaveChangesAsync();
+        }
+
+        var poisoned = await WaitForMessageAsync(
+            "NobodyKnowsThisName",
+            message => message.Attempts >= 2);
+
+        poisoned.ProcessedOnUtc.Should().BeNull("a message that cannot be read is never marked delivered");
+        poisoned.Error.Should().Contain("No integration event is registered");
+
+        // The poison did not stop the line: a fact committed afterwards still gets delivered.
+        var request = AuthHelper.CreateUniqueRegisterRequest();
+        (await AuthHelper.RegisterAsync(Factory.CreateClient(), request)).EnsureSuccessStatusCode();
+        await WaitForMessageAsync("TrainerCreated", message => message.ProcessedOnUtc is not null);
     }
 
     /// <summary>
@@ -133,6 +191,50 @@ public abstract class OutboxTest<TFactory>(TFactory factory) : IntegrationTest<T
 
         await unitOfWork.SaveChangesAsync();
         return trainerId;
+    }
+
+    /// <summary>
+    /// Polls the outbox until the single message with <paramref name="name"/> satisfies
+    /// <paramref name="condition"/>, and answers it. Fails with the message's actual state when
+    /// the worker does not get there in time.
+    /// </summary>
+    /// <remarks>
+    /// Polling is the honest shape here: the worker is a real background loop on a real timer, and
+    /// the alternative — hooking its internals to signal the test — would prove a different
+    /// pipeline than the one production runs. Each probe uses a fresh scope so the answer comes
+    /// from the database, never from a change tracker.
+    /// </remarks>
+    private async Task<OutboxMessage> WaitForMessageAsync(
+        string name,
+        Func<OutboxMessage, bool> condition)
+    {
+        var timeout = TimeSpan.FromSeconds(15);
+        var started = DateTime.UtcNow;
+        OutboxMessage? lastSeen = null;
+
+        while (DateTime.UtcNow - started < timeout)
+        {
+            using (var scope = Factory.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<TrainingContext>();
+                lastSeen = (await context.Set<OutboxMessage>().ToListAsync())
+                    .SingleOrDefault(message => message.Name == name);
+
+                if (lastSeen is not null && condition(lastSeen))
+                {
+                    return lastSeen;
+                }
+            }
+
+            await Task.Delay(100);
+        }
+
+        throw new InvalidOperationException(
+            $"The worker did not bring '{name}' to the expected state within {timeout.TotalSeconds}s. " +
+            (lastSeen is null
+                ? "No such message exists."
+                : $"Last seen: ProcessedOnUtc={lastSeen.ProcessedOnUtc?.ToString("O") ?? "null"}, " +
+                  $"Attempts={lastSeen.Attempts}, Error={lastSeen.Error ?? "null"}."));
     }
 
     /// <summary>
