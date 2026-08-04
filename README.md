@@ -95,8 +95,8 @@ flowchart TB
 else.
 
 The two API hosts are thin. What they have in common — controller bases, the `TrainingOwner`
-policy, CORS, Identity and JWT wiring, the HTTP side of optimistic concurrency — lives in
-`TrainingHub.Shared.Api`, so a rule can only be written once. Duplicating it across two
+policy, CORS, Identity and JWT wiring, the logging pipeline, the HTTP side of optimistic
+concurrency — lives in `TrainingHub.Shared.Api`, so a rule can only be written once. Duplicating it across two
 `Program.cs` is how the CQRS host ended up with no CORS policy at all while the layered one had
 one, and how it kept relying on an `IHttpContextAccessor` it never registered. Persistence stayed
 in `TrainingHub.Shared.Infrastructure`, which carries no ASP.NET Core framework reference.
@@ -758,6 +758,7 @@ what made the first of them ambiguous.
 | `Microsoft.AspNetCore.Authentication.JwtBearer` | Bearer token authentication |
 | `Microsoft.AspNetCore.OpenApi`, `Scalar.AspNetCore` | The OpenAPI document and its reference UI |
 | `MudBlazor` | Component library of the Blazor WebAssembly front end |
+| `Serilog.AspNetCore` | The API hosts' logging — console and rolling text files, tuned by the typed `ApiLogging` options ([ADR 0026](docs/adr/0026-log-with-serilog-to-console-and-files-through-typed-options.md)) |
 | `Yarp.ReverseProxy` | The BFF's proxy — forwards `/api` to the REST API and attaches the access token from the session cookie |
 | `bunit` | Renders a Blazor component in-process, so the profile page's client-side decisions are tested rather than only clicked |
 | `xunit`, `AwesomeAssertions`, `Moq` | Testing — `AwesomeAssertions` is the Apache 2.0 community fork of FluentAssertions, whose 8.x line moved to a commercial licence |
@@ -836,6 +837,7 @@ Each API expects:
 | `ObjectStorage:BucketName` | The bucket they go in. Also required at startup |
 | `ObjectStorage:AccessKey`, `ObjectStorage:SecretKey` | Credentials. They must match an identity in `docker/seaweedfs-s3.json`: started without that file SeaweedFS accepts anonymous requests and **refuses signed ones**, so an SDK — which signs everything — gets a 500 per upload from a container that reports itself healthy |
 | `ObjectStorage:CreateBucketOnStartup` | Creates the bucket when absent. On for the local container, which comes up empty; off elsewhere, where a bucket is provisioned once by whoever owns the account |
+| `ApiLogging:*` | The Serilog pipeline both hosts share: `Path`, `RollingInterval`, `RetainedFileCountLimit`, `MinimumLevel`, `LevelOverrides`, `WriteToFile`. Every key has a working default — a host with no section logs to the console and to daily files under `logs/` ([ADR 0026](docs/adr/0026-log-with-serilog-to-console-and-files-through-typed-options.md)) |
 
 Supply them through `appsettings.Development.json`, user secrets, or environment variables — the
 `docker compose` service passes them as `ConnectionStrings__TrainingContext`, `Jwt__Key` and so

@@ -29,6 +29,9 @@
       <!-- Referenced explicitly rather than through the JwtBearer package: TokenService writes
            tokens with JwtSecurityTokenHandler, which is a different concern from validating them. -->
       <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+      <!-- The logging pipeline both hosts share: LoggingExtensions configures the sinks, and
+           ApiLoggingOptions is the whole surface a deployment tunes. See ADR 0026. -->
+      <PackageReference Include="Serilog.AspNetCore" />
     </ItemGroup>
 
     <!--

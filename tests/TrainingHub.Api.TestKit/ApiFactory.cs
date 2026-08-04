@@ -28,9 +28,18 @@ namespace TrainingHub.Api.TestKit;
 /// </summary>
 public abstract class ApiFactory<TEntryPoint>
     : WebApplicationFactory<TEntryPoint>, IAsyncLifetime, IResettableDatabase, IServiceScopeSource,
-      IHttpClientSource, IServerErrorSource
+      IHttpClientSource, IServerErrorSource, ILogFileSource
     where TEntryPoint : class
 {
+    /// <inheritdoc />
+    /// <remarks>
+    /// Owned by this fixture and deleted with it, which is what makes pointing the file sink at a
+    /// real directory acceptable: two fixtures can never race for one relative path, and the
+    /// sensitive data Development logging writes does not outlive the run.
+    /// </remarks>
+    public string LogDirectory { get; } =
+        Path.Combine(Path.GetTempPath(), "traininghub-tests", Guid.NewGuid().ToString("N"));
+
     private readonly MsSqlContainer _msSqlContainer = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest")
         .Build();
 
@@ -173,6 +182,13 @@ public abstract class ApiFactory<TEntryPoint>
         builder.UseSetting("Outbox:PollInterval", "00:00:00.250");
         builder.UseSetting("Outbox:MaxAttempts", "2");
 
+        // The file sink stays on, pointed at a directory this fixture owns — see LogDirectory for
+        // why that is safe. Kept real rather than disabled because the file is the one place a
+        // test can read what the pipeline actually wrote, properties and template included: the
+        // recording provider only keeps formatted error messages, so LoggingTest's enrichment
+        // proofs read the sink itself.
+        builder.UseSetting("ApiLogging:Path", Path.Combine(LogDirectory, "traininghub-.log"));
+
         // The host runs in this process, so what it logs while failing is readable from a test —
         // and a 500 says nothing on purpose. Without this an assertion reports the status and the
         // cause stays in a stream nobody reads.
@@ -272,5 +288,18 @@ public abstract class ApiFactory<TEntryPoint>
         await _msSqlContainer.DisposeAsync();
         await _objectStoreContainer.DisposeAsync();
         await base.DisposeAsync();
+
+        // After the host is gone, so the file sink has released its handle. Best-effort on
+        // purpose: a leftover temp directory is not worth failing a green run over.
+        try
+        {
+            if (Directory.Exists(LogDirectory))
+            {
+                Directory.Delete(LogDirectory, recursive: true);
+            }
+        }
+        catch (IOException)
+        {
+        }
     }
 }
