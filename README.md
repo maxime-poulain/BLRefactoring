@@ -153,8 +153,8 @@ Twenty-six projects: sixteen under `src/`, ten under `tests/`. The backend and a
 |---|---|
 | `TrainingHub.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, and the cross-cutting ports `IUnitOfWork`, `ICurrentUserService`, `IEmailSender`, `ITrainingSearchIndexer`, plus the CQS marker interfaces |
 | `TrainingHub.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, `IUniquenessTitleChecker` |
-| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections and the six domain event handlers — all shared by both stacks |
-| `TrainingHub.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the identity store |
+| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the six domain event handlers, and the integration events with their stable-name registry and publisher port — all shared by both stacks |
+| `TrainingHub.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the identity store, and the transactional outbox behind `IIntegrationEventPublisher` |
 | `TrainingHub.Shared.Api` | The HTTP boundary: the `*RequestHttp` and `*ResponseHttp` contracts both hosts publish, their mappings to the application layer, the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, concurrency helpers |
 | `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService` |
 | `DDD.Api` | REST host for the layered stack — controllers, composition root |
@@ -336,12 +336,12 @@ stacks:
 
 | Handler | Reacts to | Effect |
 |---|---|---|
-| `SendWelcomeEmailWhenTrainerCreatedEventHandler` | `TrainerCreatedDomainEvent` | Welcome email through `IEmailSender` |
-| `NotifyPreviousAddressWhenTrainerContactEmailChangedEventHandler` | `TrainerContactEmailChangedDomainEvent` | Warns the **previous** address — possible only because the event carries both values |
+| `PublishIntegrationEventWhenTrainerCreatedEventHandler` | `TrainerCreatedDomainEvent` | Commits `TrainerCreatedIntegrationEvent` to the outbox — the welcome email becomes the delivery worker's reaction |
+| `PublishIntegrationEventWhenTrainerContactEmailChangedEventHandler` | `TrainerContactEmailChangedDomainEvent` | Commits both addresses as `TrainerContactEmailChangedIntegrationEvent` — warning the **previous** address becomes the worker's reaction |
 | `AuditWhenTrainerNameChangedEventHandler` | `TrainerNameChangedDomainEvent` | Structured audit trail |
 | `DeleteTrainingWhenTrainerDeletedEventHandler` | `TrainerDeletedDomainEvent` | Deletes the trainer's trainings — cross-aggregate consistency without a database cascade |
-| `IndexTrainingWhenTrainingCreatedEventHandler` | `TrainingCreatedDomainEvent` | Search-index upsert through `ITrainingSearchIndexer` |
-| `ReindexTrainingWhenTrainingEditedEventHandler` | `TrainingEditedDomainEvent` | Same upsert, kept separate so the two reactions can evolve independently |
+| `PublishIntegrationEventWhenTrainingCreatedEventHandler` | `TrainingCreatedDomainEvent` | Commits `TrainingCreatedIntegrationEvent` to the outbox — indexing becomes the worker's reaction |
+| `PublishIntegrationEventWhenTrainingEditedEventHandler` | `TrainingEditedDomainEvent` | Commits `TrainingEditedIntegrationEvent`, kept apart from the created fact so consumers can tell them apart |
 
 `Trainer.MarkForDeletion` and the trainer-deletion handler above have no caller in production,
 deliberately: the API exposes no way to delete a trainer (see [Security](#security)). What the
@@ -349,8 +349,13 @@ aggregate states is the rule — a trainer does not disappear without their trai
 holds whoever ends up triggering it. The behaviour is covered by `DomainEventPipelineTests`, which
 drives it through the host's own services.
 
-`IEmailSender` and `ITrainingSearchIndexer` are ports declared in the shared kernel; their
-implementations only write to the log, so the project depends on no SMTP server or search engine.
+Two of the six handlers act inside the transaction — ADR 0002's *domain reactions* — and four
+translate the domain event into an integration event and commit it to the transactional outbox
+(see [ADR 0024](docs/adr/0024-publish-facts-not-intents-and-version-them-in-the-envelope.md) and
+[the outbox section](#domain-events-and-the-unit-of-work)). `IEmailSender` and
+`ITrainingSearchIndexer` are ports declared in the shared kernel, each with a fake implementation
+that only writes to the log; nothing calls them until the delivery worker exists, so the project
+still depends on no SMTP server or search engine.
 
 ### Use cases
 
@@ -446,23 +451,37 @@ sequenceDiagram
         Int->>Int: collect and clear events from tracked aggregates
         Int->>Med: publish each event
         Med->>H: handle
-        H-->>Int: may stage further changes
+        H-->>Int: may stage further changes,<br/>including outbox rows
     end
     Int-->>UoW: continue
-    UoW->>DB: single transaction, one commit
+    UoW->>DB: single transaction, one commit:<br/>state change + outbox rows
 ```
 
 The loop matters: a handler may itself change an aggregate that raises new events, and draining
 continues until none is left.
 
 That transaction is exactly right for a handler that only stages further changes, and wrong for one
-that leaves the process. A welcome email is sent before the commit that would justify it, so a save
-failing afterwards leaves the email sent and the trainer non-existent; and since domain events are
-never persisted, a process dying mid-dispatch loses whatever had not run. The decision — domain
-reactions stay in the transaction, integration events move to a transactional outbox — is recorded
-in [ADR 0002](docs/adr/0002-keep-domain-reactions-in-the-transaction-and-deliver-integration-events-through-an-outbox.md),
-which is accepted but **not yet implemented**: the four handlers that send mail or index still run
-inside the transaction today.
+that leaves the process — which is why no handler leaves the process anymore. The split is recorded
+in [ADR 0002](docs/adr/0002-keep-domain-reactions-in-the-transaction-and-deliver-integration-events-through-an-outbox.md):
+**domain reactions** (the cascade delete, the audit line) stay in the transaction, and
+**integration events** go through a transactional outbox, whose message design is recorded in
+[ADR 0024](docs/adr/0024-publish-facts-not-intents-and-version-them-in-the-envelope.md).
+
+A handler crossing the boundary now translates the domain event into a primitives-only fact —
+`TrainerCreatedIntegrationEvent`, not `WelcomeEmailRequested` — and hands it to
+`IIntegrationEventPublisher`. The outbox implementation serializes it into an `OutboxMessage` row
+staged in the **same `TrainingContext`** the save is flowing through, so the diagram above already
+tells the whole story: the fact commits with the state change that justified it, or dies with it.
+The write side is proven from the change tracker up to a lost optimistic-concurrency race
+(`OutboxTests`), and each envelope carries a stable name and version resolved through an explicit
+registry, a version-7 GUID as the consumer's deduplication key, and the `Attempts`/`Error` columns
+the retry policy will use.
+
+**What is deliberately missing:** the delivery worker. Until it lands, the facts accumulate
+unprocessed — no email is composed, nothing is indexed — and `ProcessedOnUtc` stays `NULL` on
+every row. That replaces the old defect (a welcome email sent for a commit that could still fail)
+with a record of what is owed, which is the right direction: at-least-once delivery starts from a
+durable fact, not from hope.
 
 ### A write, end to end
 
@@ -848,10 +867,10 @@ The two filters are exact inverses, so between them every test runs exactly once
 | Project | Scope |
 |---|---|
 | `TrainingHub.Shared.Domain.Tests` | Aggregates, value objects, typed identifiers, `Result`, specifications |
-| `TrainingHub.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers |
+| `TrainingHub.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers — including the four that translate a domain event into an integration event |
 | `TrainingHub.DDDWithCqrs.Tests` | Command handlers, validators, pipeline behaviours |
 | `TrainingHub.Shared.Api.Tests` | Entity-tag encoding and parsing, the guard that keeps client generation away from a database, what the unhandled-exception handler is allowed to tell a caller, and the transformer that describes an uploaded file inline so a client generator recognises it as one |
-| `TrainingHub.Shared.Infrastructure.Tests` | The auditable-entities interceptor — that it stamps, and reads the clock once per entity — and the bucket bootstrapper, mostly for when it does nothing |
+| `TrainingHub.Shared.Infrastructure.Tests` | The auditable-entities interceptor — that it stamps, and reads the clock once per entity —, the outbox publisher observed through the change tracker, the serializer's round trip for every registered event, and the bucket bootstrapper, mostly for when it does nothing |
 | `TrainingHub.Blazor.Bff.Tests` | The backend for frontend over HTTP: the cookie's flags, the forgery guard, the token attached to a forwarded call, and what signing out revokes |
 | `TrainingHub.Blazor.Client.Tests` | The front end, rendered in-process with bUnit: the sign-in page's refusal to redirect anywhere but a path of its own origin, the deep link a redirect to sign-in preserves, the header that makes a cookie-authenticated call unusable as a forgery, an unreachable BFF read as anonymous rather than as an exception, the per-field messages read out of a problem document, the training form's bounds tied to the ones the generated contract publishes, and — on the profile page — the size ceiling that refuses a file before it is uploaded, the image address that defeats a year-long cache, and the server's refusal shown in its own words |
 | `TrainingHub.DDD.Api.IntegrationTests` | The layered host, HTTP end to end against a real SQL Server and a real object store |
@@ -871,11 +890,14 @@ events really are dispatched: the trainer-deletion cascade is asserted on both h
 
 **Both stacks are covered, and almost entirely over HTTP** — nearly every assertion crosses
 routing, model binding, JWT authentication, the `TrainingOwner` policy and the shared exception
-handlers. Two go further down: `DomainEventPipelineTests` resolves the repositories and the unit of
+handlers. Three go further down: `DomainEventPipelineTests` resolves the repositories and the unit of
 work from the host's container, because the cascade it proves lost its endpoint when trainer
-deletion left the API and a pipeline nothing exercises is a pipeline nobody notices breaking; and
+deletion left the API and a pipeline nothing exercises is a pipeline nobody notices breaking;
 `TimestampPrecisionTests` reads the stored rows directly, because what it is about is what the
-column kept, which no response can show. Validation is where the two suites still differ, though far
+column kept, which no response can show; and `OutboxTests` drives a lost optimistic-concurrency
+race through two service scopes, because the atomicity it proves — a failed save taking its staged
+outbox row down with it — cannot be shown over HTTP: the stale-`If-Match` path is refused before
+any event is raised. Validation is where the two suites still differ, though far
 less than they did: an invalid field on the layered host is caught by the value objects, while on the
 CQRS host a FluentValidation validator inside `ValidationPipelineBehavior` catches it first. Both now
 answer the same shape — a `domainErrors` document — since that behaviour returns a failed `Result`

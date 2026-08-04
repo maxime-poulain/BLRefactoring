@@ -24,11 +24,11 @@ flowchart TB
     end
 
     IA -- "upstream · ACL: UserId + ICurrentUserService" --> TC
-    TC -- "published language: EmailMessage" --> NT
-    TC -- "published language: Guid, Guid" --> SI
+    TC -- "outbox facts · worker owed · then EmailMessage" --> NT
+    TC -- "outbox facts · worker owed · then Guid, Guid" --> SI
     TC -- "port: IObjectStore, no Replace" --> MS
     SI -. "feeds the read model" .-> CD
-    TC -. "domain events" .-> CD
+    TC -. "outbox facts" .-> CD
 ```
 
 ## Contexts on this map
@@ -100,11 +100,14 @@ The catalogue publishes facts; the notifier consumes them. The contract is `Emai
 Subject, Body)` — three strings, no domain type. The notifier cannot develop an opinion about
 trainers because it is never shown one.
 
-**The seam:** `Shared/IEmailSender.cs`, consumed by two policies in
-`Shared.Application/EventHandlers/`.
+**The seam:** `Shared/IEmailSender.cs` — and, since the outbox landed, the facts that will feed it:
+`TrainerCreatedIntegrationEvent` and `TrainerContactEmailChangedIntegrationEvent`, committed to the
+outbox by two policies in `Shared.Application/EventHandlers/` (ADR 0002, ADR 0024).
 
-**State:** one fake implementation. Nothing is sent anywhere, and the port exists so that the day a
-provider is chosen, the choice is a registration in the composition root.
+**State:** one fake implementation, currently called by nothing. The two facts land durably in the
+outbox, atomically with the changes that justify them; the delivery worker that will turn them into
+`EmailMessage`s and call this port is owed. Nothing is sent anywhere, and the port exists so that
+the day a provider is chosen, the choice is a registration in the composition root.
 
 ---
 
@@ -117,9 +120,12 @@ the decision: *"the search engine sitting behind it knows nothing about the doma
 identifiers."* Passing `TrainingId` would have made the index a downstream *conformist* of the
 domain model; passing `Guid` keeps the contract translatable.
 
-**The seam:** `Shared/ITrainingSearchIndexer.cs`, consumed by two policies.
+**The seam:** `Shared/ITrainingSearchIndexer.cs` — and the facts that will feed it:
+`TrainingCreatedIntegrationEvent` and `TrainingEditedIntegrationEvent`, committed to the outbox by
+two policies (ADR 0002, ADR 0024).
 
-**State:** one fake implementation, maintaining an index nothing reads yet. Its consumer is
+**State:** one fake implementation, currently called by nothing. The facts accumulate in the
+outbox; the delivery worker that will replay them into this port is owed. The index's consumer is
 Catalogue Discovery, which does not exist.
 
 ---
@@ -164,7 +170,9 @@ it, and a reader who does not know that will read them as over-engineering.
 | A CQRS query side that projects into DTOs without loading aggregates | A read model that does not pay for the write model |
 
 **What is not decided:** whether discovery gets its own store, or reads a projection of the same
-database. The events it would subscribe to exist; the subscriber does not.
+database. The facts it would subscribe to are now durable — `TrainingCreatedIntegrationEvent` and
+`TrainingEditedIntegrationEvent` land in the transactional outbox with every commit (ADR 0024) —
+but the subscriber still does not exist.
 
 ---
 
