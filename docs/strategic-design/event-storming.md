@@ -7,8 +7,8 @@ Event storming earns its keep in two ways: **discovering** a domain nobody has m
 nothing left to discover — so this document makes no pretence of being a workshop record. It is here
 for the second reason, and one property of this codebase makes it unusually effective:
 
-> **The reactions are already named as policies.** `SendWelcomeEmailWhenTrainerCreated`,
-> `ReindexTrainingWhenTrainingEdited`, `NotifyPreviousAddressWhenTrainerContactEmailChanged`.
+> **The reactions are already named as policies.** `DeleteTrainingWhenTrainerDeleted`,
+> `AuditWhenTrainerNameChanged`, `PublishIntegrationEventWhenTrainerCreated`.
 
 Those are file names in `Shared.Application/EventHandlers/`. The *when X then Y* notation of an
 event storming does not have to be invented for this repository — it maps one-to-one onto files that
@@ -38,16 +38,17 @@ flowchart LR
     A1(["👤 Visitor"]) --> C1["🔵 Register"]
     C1 --> AG1["🟡 Trainer"]
     AG1 --> E1["🟠 TrainerCreatedDomainEvent"]
-    E1 --> P1["🟣 Send a welcome email"]
-    P1 --> X1["Notification context"]
+    E1 --> P1["🟣 Publish TrainerCreatedIntegrationEvent"]
+    P1 --> OB["Transactional outbox"]
+    OB -.->|"delivery worker — owed"| X1["Notification context"]
 
     A2(["👤 Trainer"]) --> C2["🔵 Edit own profile"]
     C2 --> AG1
     AG1 --> E2["🟠 TrainerNameChangedDomainEvent"]
     AG1 --> E3["🟠 TrainerContactEmailChangedDomainEvent"]
     E2 --> P2["🟣 Write an audit entry"]
-    E3 --> P3["🟣 Warn the address being left behind"]
-    P3 --> X1
+    E3 --> P3["🟣 Publish TrainerContactEmailChangedIntegrationEvent"]
+    P3 --> OB
 
     A2 --> C3["🔵 Publish a portrait"]
     C3 --> AG1
@@ -65,7 +66,7 @@ flowchart LR
     class AG1 aggregate
     class P1,P2,P3 policy
     class A1,A2 actor
-    class X1,X2 external
+    class X1,X2,OB external
 ```
 
 ### What the board is really saying
@@ -83,6 +84,9 @@ aggregate has already forgotten.
 **Warning the previous address is a security policy, not a courtesy.** If the change was not the
 trainer's doing, the message reaches the person who still controls the old mailbox. It exists
 because the event carries the old value — a design decision on the event, paying off in a policy.
+Since the outbox landed, the policy's job is to commit the fact — both addresses, flattened into
+`TrainerContactEmailChangedIntegrationEvent` — atomically with the change itself; composing and
+sending the warning is the delivery worker's reaction to a change that is guaranteed real.
 
 **Publishing a portrait raises nothing at all**, and that is deliberate. A domain event would need a
 handler; handlers here run *inside* the transaction the aggregate is being saved in; and deleting
@@ -91,9 +95,13 @@ cleanup stays in the use case, after the commit.
 
 ### 🔴 Hotspots
 
-- **A welcome email is sent inside the transaction.** If the commit then fails, the email is already
-  gone. The repository knows: [ADR 0002](../adr/0002-keep-domain-reactions-in-the-transaction-and-deliver-integration-events-through-an-outbox.md)
-  records an outbox as the answer, and records that it is not implemented.
+- **Nothing delivers the outbox yet.** The old hotspot — a welcome email sent inside the
+  transaction, gone even when the commit then failed — is closed on the write side:
+  [ADR 0002](../adr/0002-keep-domain-reactions-in-the-transaction-and-deliver-integration-events-through-an-outbox.md)'s
+  outbox exists, and the fact commits with the trainer or not at all. What replaces it is smaller
+  and honest: the facts accumulate unprocessed until the delivery worker
+  ([ADR 0024](../adr/0024-publish-facts-not-intents-and-version-them-in-the-envelope.md)) exists,
+  so no welcome email is composed by anything today.
 - **Nothing removes a trainer.** The rule exists (`Trainer.MarkForDeletion`), the event exists
   (`TrainerDeletedDomainEvent`), the policy exists — and no actor can trigger any of it.
 
@@ -115,10 +123,11 @@ flowchart LR
     INV --> E1["🟠 TrainingCreatedDomainEvent"]
     INV --> E2["🟠 TrainingEditedDomainEvent"]
 
-    E1 --> P1["🟣 Index the training"]
-    E2 --> P2["🟣 Reindex the training"]
-    P1 --> SI["Search Indexing context"]
-    P2 --> SI
+    E1 --> P1["🟣 Publish TrainingCreatedIntegrationEvent"]
+    E2 --> P2["🟣 Publish TrainingEditedIntegrationEvent"]
+    P1 --> OB["Transactional outbox"]
+    P2 --> OB
+    OB -.->|"delivery worker — owed"| SI["Search Indexing context"]
 
     SI -.-> RM["🟢 Future public catalogue"]
 
@@ -140,7 +149,7 @@ flowchart LR
     class P1,P2,P3 policy
     class A actor
     class RM readmodel
-    class SI external
+    class SI,OB external
     class INV invariant
 ```
 
@@ -151,10 +160,11 @@ checks the same thing: a trainer may not list the same title twice. Creation is 
 an empty draft — which is why `Training.CreateAsync` is asynchronous while `Trainer.Create` is not.
 The trainer aggregate has no rule it cannot answer alone; the training aggregate has exactly one.
 
-**Two events, two policies, one port.** `Created` and `Edited` both end up calling `IndexAsync`,
-because the indexer upserts. They are kept as separate policies anyway, so the reactions can diverge
-— an edit might one day also invalidate a cache or notify subscribed students, and a create never
-would.
+**Two events, two facts, one future consumer.** `Created` and `Edited` publish two distinct
+integration events even though the indexer that will consume them upserts and could treat them
+alike. They are kept apart on the wire so the reactions can diverge — an edit might one day also
+invalidate a cache or notify subscribed students, and a create never would — and a consumer that
+cares about the difference must not have to guess it back out of a merged message.
 
 **Deleting a trainer reaches into another aggregate.** `TrainerDeletedDomainEvent` is handled by a
 policy that deletes trainings *inside the same unit of work*. This is the strongest evidence that
@@ -175,18 +185,20 @@ integration event and an eventual, compensable deletion.
 
 | Command | Aggregate | Rule it must satisfy | Event raised | Policy | Handler |
 |---|---|---|---|---|---|
-| Register | `Trainer` | Username and account email unique *(Identity)* | `TrainerCreatedDomainEvent` | Welcome the trainer | `SendWelcomeEmailWhenTrainerCreatedEventHandler` |
+| Register | `Trainer` | Username and account email unique *(Identity)* | `TrainerCreatedDomainEvent` | Commit `TrainerCreatedIntegrationEvent` to the outbox; welcoming the trainer becomes the worker's reaction | `PublishIntegrationEventWhenTrainerCreatedEventHandler` |
 | Edit own profile | `Trainer` | Name and address valid by construction | `TrainerNameChangedDomainEvent` | Record the change | `AuditWhenTrainerNameChangedEventHandler` |
-| Edit own profile | `Trainer` | — | `TrainerContactEmailChangedDomainEvent` | Warn the old address | `NotifyPreviousAddressWhenTrainerContactEmailChangedEventHandler` |
+| Edit own profile | `Trainer` | — | `TrainerContactEmailChangedDomainEvent` | Commit `TrainerContactEmailChangedIntegrationEvent` to the outbox; warning the old address becomes the worker's reaction | `PublishIntegrationEventWhenTrainerContactEmailChangedEventHandler` |
 | *(no command yet)* | `Trainer` | A trainer does not leave alone | `TrainerDeletedDomainEvent` | Delete their trainings | `DeleteTrainingWhenTrainerDeletedEventHandler` |
-| Create a training | `Training` | Title unique per trainer | `TrainingCreatedDomainEvent` | Add to the index | `IndexTrainingWhenTrainingCreatedEventHandler` |
-| Edit a training | `Training` | Title unique per trainer | `TrainingEditedDomainEvent` | Refresh the index | `ReindexTrainingWhenTrainingEditedEventHandler` |
+| Create a training | `Training` | Title unique per trainer | `TrainingCreatedDomainEvent` | Commit `TrainingCreatedIntegrationEvent` to the outbox; indexing becomes the worker's reaction | `PublishIntegrationEventWhenTrainingCreatedEventHandler` |
+| Edit a training | `Training` | Title unique per trainer | `TrainingEditedDomainEvent` | Commit `TrainingEditedIntegrationEvent` to the outbox; reindexing becomes the worker's reaction | `PublishIntegrationEventWhenTrainingEditedEventHandler` |
 | Publish a portrait | `Trainer` | ≤ 5 MiB, PNG/JPEG/WebP, content matches the declared type | *(none, deliberately)* | — | — |
 | Remove a portrait | `Trainer` | — | *(none, deliberately)* | — | — |
 | Delete a training | `Training` | Caller owns it | *(none — a hotspot)* | — | — |
 
 Six events, six handlers, and three commands that deliberately raise nothing. The two the model
-refuses are as informative as the six it raises.
+refuses are as informative as the six it raises. Of the six reactions, two act inside the
+transaction — the cascade and the audit line, ADR 0002's *domain* side — and four commit an
+integration event into the outbox, to be acted on after the commit.
 
 ## What the boards show that the code does not
 
@@ -195,7 +207,8 @@ never states in one place:
 
 1. **Registration is the system's only cross-context write.** You would have to open five files to
    notice.
-2. **Every reaction is a side effect the domain must not know about.** Emails, audit entries, index
-   updates — none of them is a business rule, and none of them lives in an aggregate.
+2. **Every reaction is a side effect the domain must not know about.** Outbox rows, audit entries,
+   the emails and index updates the worker will owe — none of them is a business rule, and none of
+   them lives in an aggregate.
 3. **The events were designed for their policies.** Carrying the old *and* the new value looks like
    redundancy until you see the two policies that would be impossible without it.

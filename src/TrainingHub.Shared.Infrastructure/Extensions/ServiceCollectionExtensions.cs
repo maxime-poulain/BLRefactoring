@@ -1,7 +1,9 @@
+using TrainingHub.Shared.Application.IntegrationEvents;
 using TrainingHub.Shared.Application.Queries;
 using TrainingHub.Shared.Common;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
+using TrainingHub.Shared.Infrastructure.Outbox;
 using TrainingHub.Shared.Infrastructure.Queries;
 using TrainingHub.Shared.Infrastructure.Repositories;
 using TrainingHub.Shared.Infrastructure.Services;
@@ -39,6 +41,9 @@ public static class ServiceCollectionExtensions
             // of columns; both used to cost a whole aggregate.
             .AddScoped<ITrainingOwnerQuery, TrainingOwnerQuery>()
             .AddScoped<ITrainerIdentityQuery, TrainerIdentityQuery>()
+            // Scoped like the DbContext it stages rows into: the publisher must share the unit of
+            // work of the save that is dispatching the domain events (ADR 0002).
+            .AddScoped<IIntegrationEventPublisher, OutboxIntegrationEventPublisher>()
             .AddDbContext<TrainingContext>((serviceProvider, options) =>
             {
                 options.UseSqlServer(configuration.GetConnectionString("TrainingContext"))
@@ -58,6 +63,10 @@ public static class ServiceCollectionExtensions
             // The system clock, injected so the audit stamps can be driven by a test.
             .AddSingleton(TimeProvider.System)
             .AddSingleton<AuditableEntitiesInterceptor>()
+            // Nothing calls these two ports since the outbox landed: the handlers that used them
+            // now record facts instead of acting (ADR 0002). They stay registered because the
+            // delivery worker — the outbox's read side, still owed — is what will call them, after
+            // the commit this time.
             .AddSingleton<IEmailSender, FakeEmailSender>()
             .AddSingleton<ITrainingSearchIndexer, FakeTrainingSearchIndexer>();
     }

@@ -202,9 +202,13 @@ Registration, authentication, token issuance, lockout.
 - **Language:** `EmailMessage` — a recipient, a subject, a body. Deliberately primitive: the port
   carries no domain type, so the notifier can never grow an opinion about trainers.
 - **Aggregates:** none.
-- **Status:** port only. `IEmailSender` has one fake implementation; no provider is chosen.
-- **Consumed by:** two policies — welcoming a new trainer, and warning the address a trainer just
-  moved away from.
+- **Status:** port only. `IEmailSender` has one fake implementation, currently called by nothing;
+  no provider is chosen.
+- **Fed by:** the transactional outbox. The two policies that used to call this port inside the
+  transaction — welcoming a new trainer, warning the address a trainer just moved away from — now
+  commit `TrainerCreatedIntegrationEvent` and `TrainerContactEmailChangedIntegrationEvent` instead
+  (ADR 0002, ADR 0024); the delivery worker that will turn those facts into `EmailMessage`s is
+  owed.
 
 ---
 
@@ -216,9 +220,11 @@ Registration, authentication, token issuance, lockout.
   `Guid`, never `TrainingId`. Its own remark says so — *"the search engine sitting behind it knows
   nothing about the domain's typed identifiers."* That is a published language in miniature.
 - **Aggregates:** none.
-- **Status:** port only, one fake implementation. It is nonetheless the seed of the public catalogue:
-  the index this port maintains is what a search page would read.
-- **Consumed by:** two policies — indexing a created training, reindexing an edited one.
+- **Status:** port only, one fake implementation, currently called by nothing. It is nonetheless
+  the seed of the public catalogue: the index this port maintains is what a search page would read.
+- **Fed by:** the transactional outbox. Creating or editing a training commits
+  `TrainingCreatedIntegrationEvent` or `TrainingEditedIntegrationEvent` with it (ADR 0002,
+  ADR 0024); the delivery worker that will replay those facts into this port is owed.
 
 ---
 
@@ -244,15 +250,18 @@ trainer's profile.
 This context does not exist yet. It is documented here because three things in the model were built
 for it, and a reader should know that they are not accidents:
 
-- **`ITrainingSearchIndexer`** maintains, today, an index nothing reads.
+- **`ITrainingSearchIndexer`** is the port a public search would read through, and the facts that
+  will maintain its index — `TrainingCreatedIntegrationEvent`, `TrainingEditedIntegrationEvent` —
+  already land durably in the outbox on every commit.
 - **`GET /Trainer/{id}/photo`** is the one read addressed by identifier rather than by `me`, with a
   year-long immutable cache and an `ETag` cut from the photo's identity. Making it public is
   `[AllowAnonymous]` and nothing else.
 - **The CQRS query side** already projects straight into DTOs without loading aggregates, which is
   the shape a public read model wants.
 
-**Expected relationship:** downstream of Training Catalogue, fed by domain events, with its own read
-model. It would own no aggregate — a discovery context reads, it does not decide.
+**Expected relationship:** downstream of Training Catalogue, fed by the integration events the
+outbox already stores, with its own read model. It would own no aggregate — a discovery context
+reads, it does not decide.
 
 **Expected language:** *catalogue*, *search result*, *facet*, *listing* — deliberately different
 words from the write side, because a search result is not a `Training`.
