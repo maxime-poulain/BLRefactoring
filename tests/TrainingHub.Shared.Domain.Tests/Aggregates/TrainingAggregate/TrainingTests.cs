@@ -12,9 +12,11 @@ namespace TrainingHub.Shared.Domain.Tests.Aggregates.TrainingAggregate;
 /// <summary>
 /// The aggregate only accepts value objects, so malformed input cannot reach it:
 /// those rules belong to the value objects and are covered by their own tests, and
-/// resolving topic names is the application layer's job. The only rule left for the
-/// aggregate is the one it cannot settle alone — a title must be unique among the
-/// trainings of the same trainer.
+/// resolving topic names is the application layer's job. The rules left for the
+/// aggregate are the ones it cannot settle alone — a title must be unique among the
+/// trainings of the same trainer, and a trainer publishes at most
+/// <see cref="Training.MaximumPerTrainer"/> trainings — each answered through the
+/// port that brings it the fact it decides on.
 /// </summary>
 public sealed class TrainingTests
 {
@@ -105,7 +107,7 @@ public sealed class TrainingTests
         // Act
         var act = () => Training.CreateAsync(
             TrainingId.Generate(), TrainerId.Generate(),
-            null!, Description(), Prerequisites(), Skills(), Topics(), checker);
+            null!, Description(), Prerequisites(), Skills(), Topics(), checker, EmptyCatalogueCounter().Object);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -120,7 +122,25 @@ public sealed class TrainingTests
         // Act
         var act = () => Training.CreateAsync(
             TrainingId.Generate(), TrainerId.Generate(),
-            Title(), Description(), Prerequisites(), Skills(), Topics(), null!);
+            Title(), Description(), Prerequisites(), Skills(), Topics(), null!, EmptyCatalogueCounter().Object);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentNullException>();
+    }
+
+    /// <summary>
+    /// Create async, null training counter, throws argument null exception.
+    /// </summary>
+    [Fact]
+    public async Task CreateAsync_NullTrainingCounter_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var checker = new Mock<IUniquenessTitleChecker>().Object;
+
+        // Act
+        var act = () => Training.CreateAsync(
+            TrainingId.Generate(), TrainerId.Generate(),
+            Title(), Description(), Prerequisites(), Skills(), Topics(), checker, null!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -139,6 +159,60 @@ public sealed class TrainingTests
 
         // Assert
         result.ShouldBeFailure();
+    }
+
+    /// <summary>
+    /// Create async, the trainer publishes fewer trainings than the maximum, returns success.
+    /// </summary>
+    [Fact]
+    public async Task CreateAsync_TrainerBelowTheMaximum_ReturnsSuccess()
+    {
+        // Act — one seat left: nine published, the tenth is the last one allowed.
+        var result = await new TrainingBuilder()
+            .WithTrainingsAlreadyPublished(Training.MaximumPerTrainer - 1)
+            .BuildAsync();
+
+        // Assert
+        result.ShouldBeSuccess();
+    }
+
+    /// <summary>
+    /// Create async, the trainer already publishes the maximum, returns failure.
+    /// </summary>
+    [Fact]
+    public async Task CreateAsync_TrainerAtTheMaximum_ReturnsFailure()
+    {
+        // Act
+        var result = await new TrainingBuilder()
+            .WithTrainingsAlreadyPublished(Training.MaximumPerTrainer)
+            .BuildAsync();
+
+        // Assert — the code names the aggregate that owns the rule (ADR 0015), and the message
+        // carries the limit so the caller learns the rule, not just the refusal.
+        var error = result.ShouldBeFailure().Should().ContainSingle().Which;
+        error.ErrorCode.Should().Be(TrainingErrorCodes.CatalogueFull);
+        error.ErrorMessage.Should().Be(
+            $"A trainer cannot publish more than {Training.MaximumPerTrainer} trainings.");
+    }
+
+    /// <summary>
+    /// Create async, a full catalogue, refuses before looking at the content.
+    /// </summary>
+    [Fact]
+    public async Task CreateAsync_FullCatalogue_RefusesBeforeLookingAtTheContent()
+    {
+        // Arrange — the title is a duplicate too, but no title makes an eleventh training
+        // acceptable, so the refusal is the catalogue's alone.
+        var builder = new TrainingBuilder()
+            .WithTrainingsAlreadyPublished(Training.MaximumPerTrainer)
+            .WithTitleAlreadyExists();
+
+        // Act
+        var result = await builder.BuildAsync();
+
+        // Assert
+        var errors = result.ShouldBeFailure();
+        errors.Should().ContainSingle().Which.ErrorCode.Should().Be(TrainingErrorCodes.CatalogueFull);
     }
 
     /// <summary>
@@ -309,6 +383,16 @@ public sealed class TrainingTests
 
         // Assert
         training.Topics.Should().HaveCount(2);
+    }
+
+    private static Mock<ITrainingCounter> EmptyCatalogueCounter()
+    {
+        var counter = new Mock<ITrainingCounter>();
+        counter.Setup(c => c.CountForTrainerAsync(
+                It.IsAny<TrainerId>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0);
+        return counter;
     }
 
     private static Mock<IUniquenessTitleChecker> AvailableTitleChecker()

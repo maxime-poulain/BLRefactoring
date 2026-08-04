@@ -18,6 +18,9 @@ public static class TrainingErrorCodes
     /// <summary>This trainer already has a training under that title.</summary>
     public static readonly ErrorCode DuplicateTitle = new("Training.DuplicateTitle");
 
+    /// <summary>This trainer already publishes as many trainings as the catalogue allows.</summary>
+    public static readonly ErrorCode CatalogueFull = new("Training.CatalogueFull");
+
     /// <summary>The description is empty, or longer than the aggregate allows.</summary>
     public static readonly ErrorCode InvalidDescription = new("Training.InvalidDescription");
 

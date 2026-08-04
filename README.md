@@ -154,7 +154,7 @@ Twenty-six projects: sixteen under `src/`, ten under `tests/`. The backend and a
 | Project | Responsibility |
 |---|---|
 | `TrainingHub.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, `PageRequest`/`PagedResult`, and the cross-cutting ports `IUnitOfWork`, `ICurrentUserService`, `IEmailSender`, `ITrainingSearchIndexer`, plus the CQS marker interfaces |
-| `TrainingHub.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, `IUniquenessTitleChecker` |
+| `TrainingHub.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, and the fact ports `IUniquenessTitleChecker` and `ITrainingCounter` |
 | `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the six domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the four post-commit consumers — all shared by both stacks |
 | `TrainingHub.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the paged-read extensions (`NewestFirst`, `ToPagedResultAsync`), the identity store, and the transactional outbox — publisher, delivery worker, dispatcher |
 | `TrainingHub.Shared.Api` | The HTTP boundary: the `*RequestHttp` and `*ResponseHttp` contracts both hosts publish, their mappings to the application layer, the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, concurrency helpers |
@@ -268,17 +268,22 @@ public static Task<Result<Training>> CreateAsync(
     TrainingTitle title, TrainingDescription description,
     TrainingPrerequisites prerequisites, AcquiredSkills acquiredSkills,
     IReadOnlyCollection<Topic> topics,
-    IUniquenessTitleChecker titleChecker, CancellationToken cancellationToken = default);
+    IUniquenessTitleChecker titleChecker, ITrainingCounter trainingCounter,
+    CancellationToken cancellationToken = default);
 
-public Task<Result> EditAsync(/* the same, without the identifiers */);
+public Task<Result> EditAsync(/* the same, without the identifiers and the counter */);
 ```
 
-Here the result **is** a `Result`, for the one rule the aggregate cannot settle on its own: a
-title must be unique among the trainings of the same trainer, which requires an out-of-aggregate
-lookup through `IUniquenessTitleChecker`. Creation and edition share a private `ApplyEditionAsync`
-that checks that rule first and **mutates nothing when it fails** — so a rejected edition never
-leaves the aggregate half-changed. The uniqueness lookup only runs when the title actually
-changed. Topics are de-duplicated and fully replaced on each edition.
+Here the result **is** a `Result`, for the rules the aggregate cannot settle on its own — each
+one a fact in rows it cannot see, brought to the factory through a port named after its question
+(ADR 0030). A title must be unique among the trainings of the same trainer, asked through
+`IUniquenessTitleChecker`; and a trainer publishes at most `Training.MaximumPerTrainer` (ten)
+trainings, asked through `ITrainingCounter` at creation only — editing changes a training, never
+how many there are — answering `Training.CatalogueFull` when the catalogue is full. Creation and
+edition share a private `ApplyEditionAsync` that checks the title rule first and **mutates
+nothing when it fails** — so a rejected edition never leaves the aggregate half-changed. The
+uniqueness lookup only runs when the title actually changed. Topics are de-duplicated and fully
+replaced on each edition.
 
 Neither creation nor edition raises its event from that shared path: each public entry point
 raises the event matching its own intent, and only on success.
@@ -710,7 +715,7 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 | `GET` | `/Trainer/{id}/photo` | The trainer's portrait, with a strong `ETag` and a year-long immutable cache. `200`, `304`, `404` |
 | `PUT` | `/Trainer/me/photo` | `multipart/form-data`. Publishes **and** replaces. `200` with the updated profile, `400`, `404`, `409` |
 | `DELETE` | `/Trainer/me/photo` | `204`, `404`, `409` |
-| `POST` | `/Training` | `201` with the new identifier, `409` on a duplicate title, `400` otherwise |
+| `POST` | `/Training` | `201` with the new identifier, `409` on a duplicate title, `400` when the catalogue is full (`Training.CatalogueFull`, at ten trainings) or the content is invalid |
 | `GET` | `/Training/my-trainings` | The caller's own trainings, newest first. Takes no identifier. One page on either host: `?page=` and `?pageSize=` (default 20, maximum 100), answered as `{ items, page, pageSize, totalCount, totalPages, hasNextPage, hasPreviousPage }` |
 | `GET` | `/Training/{id}` | Owner only. `200` with an `ETag`, `400` on a malformed identifier, or `404` — including when the training exists but belongs to somebody else |
 | `PUT` | `/Training/{trainingId}` | Owner only. Requires `If-Match`. `200` with the updated training and its new `ETag`, `400`, `403`, `404`, `409`, `412`, `428` |

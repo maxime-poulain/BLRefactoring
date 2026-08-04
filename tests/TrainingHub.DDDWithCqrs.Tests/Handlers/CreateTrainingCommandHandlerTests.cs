@@ -35,8 +35,12 @@ public sealed class CreateTrainingCommandHandlerTests
 
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
+    // Answers zero unless a test raises it: an empty catalogue is the default, so only the
+    // test about the capacity rule mentions the counter.
+    private readonly Mock<ITrainingCounter> _trainingCounter = new();
+
     private CreateTrainingCommandHandler CreateSut() =>
-        new(_trainingRepository.Object, _trainerRepository.Object, _titleChecker.Object, _currentUserService.Object, _unitOfWork.Object);
+        new(_trainingRepository.Object, _trainerRepository.Object, _titleChecker.Object, _trainingCounter.Object, _currentUserService.Object, _unitOfWork.Object);
 
     /// <summary>
     /// Handle, valid command, returns success and calls save.
@@ -97,6 +101,45 @@ public sealed class CreateTrainingCommandHandlerTests
 
         result.ShouldContainError(ErrorCodes.NotFound);
         _trainingRepository.Verify(r => r.Add(It.IsAny<Training>()), Times.Never);
+    }
+
+    /// <summary>
+    /// Handle, the catalogue is full, surfaces the domain's refusal and does not save.
+    /// </summary>
+    /// <remarks>
+    /// The rule and its message are the aggregate's, proven in the domain suite; what this
+    /// stack owes is to hand the factory the counter and to let the refusal through untouched.
+    /// </remarks>
+    [Fact]
+    public async Task Handle_CatalogueFull_SurfacesTheRefusalAndDoesNotSave()
+    {
+        var trainer = new TrainerBuilder().Build();
+        _trainerRepository
+            .Setup(r => r.ExistsAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _currentUserService.Setup(s => s.TrainerId).Returns(trainer.Id.Value);
+        _currentUserService.Setup(s => s.UserId).Returns(Guid.NewGuid());
+        _trainingCounter
+            .Setup(c => c.CountForTrainerAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Training.MaximumPerTrainer);
+        var sut = CreateSut();
+
+        var command = new CreateTrainingCommand
+        {
+            Title = "An Eleventh Training",
+            Description = "A perfectly valid description",
+            Prerequisites = "Perfectly valid prerequisites",
+            AcquiredSkills = "Perfectly valid skills",
+            Topics = ["Programming"]
+        };
+
+        var result = await sut.Handle(command, CancellationToken.None);
+
+        result.ShouldContainError(TrainingErrorCodes.CatalogueFull);
+        _trainingRepository.Verify(r => r.Add(It.IsAny<Training>()), Times.Never);
+        _unitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     /// <summary>

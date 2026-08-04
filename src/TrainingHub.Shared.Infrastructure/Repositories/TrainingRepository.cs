@@ -10,10 +10,12 @@ using Microsoft.EntityFrameworkCore;
 namespace TrainingHub.Shared.Infrastructure.Repositories;
 
 /// <summary>
-/// Entity Framework Core implementation of <see cref="ITrainingRepository"/> and <see cref="IUniquenessTitleChecker"/>.
+/// Entity Framework Core implementation of <see cref="ITrainingRepository"/>,
+/// <see cref="IUniquenessTitleChecker"/> and <see cref="ITrainingCounter"/>.
 /// Provides data access for the Training aggregate using the Specification pattern.
 /// </summary>
-public sealed class TrainingRepository(TrainingContext trainingContext) : ITrainingRepository, IUniquenessTitleChecker
+public sealed class TrainingRepository(TrainingContext trainingContext)
+    : ITrainingRepository, IUniquenessTitleChecker, ITrainingCounter
 {
     /// <summary>
     /// Finds a training by identifier, or <see langword="null"/> when there is none.
@@ -40,6 +42,17 @@ public sealed class TrainingRepository(TrainingContext trainingContext) : ITrain
             .AnyAsync(spec.Criteria, cancellationToken)
             .ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Counts the trainings the given trainer currently publishes — the data half of the
+    /// catalogue-capacity rule, whose decision stays in <see cref="Training.CreateAsync"/>.
+    /// </summary>
+    public async Task<int> CountForTrainerAsync(
+        TrainerId trainerId,
+        CancellationToken cancellationToken = default) =>
+        await trainingContext.Trainings
+            .CountAsync(training => training.TrainerId == trainerId, cancellationToken)
+            .ConfigureAwait(false);
 
     /// <summary>
     /// Registers a new training to be written when the unit of work commits.

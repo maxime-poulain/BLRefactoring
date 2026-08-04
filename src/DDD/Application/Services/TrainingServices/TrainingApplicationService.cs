@@ -70,6 +70,7 @@ public interface ITrainingApplicationService
 public sealed class TrainingApplicationService(
     ITrainerRepository trainerRepository,
     IUniquenessTitleChecker uniquenessTitleChecker,
+    ITrainingCounter trainingCounter,
     ITrainingRepository trainingRepository,
     ICurrentUserService currentUserService,
     IUnitOfWork unitOfWork)
@@ -100,6 +101,7 @@ public sealed class TrainingApplicationService(
                 details.AcquiredSkills,
                 details.Topics,
                 uniquenessTitleChecker,
+                trainingCounter,
                 cancellationToken),
             Result<Training>.FailureAsync);
 

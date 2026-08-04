@@ -110,6 +110,33 @@ public sealed class TrainingApplicationServiceTests
     }
 
     /// <summary>
+    /// Create async, the catalogue is full, surfaces the domain's refusal and does not save.
+    /// </summary>
+    /// <remarks>
+    /// The rule and its message are the aggregate's, proven in the domain suite; what this
+    /// stack owes is to hand the factory the counter and to let the refusal through untouched.
+    /// </remarks>
+    [Fact]
+    public async Task CreateAsync_CatalogueFull_SurfacesTheRefusalAndDoesNotSave()
+    {
+        SetupCurrentUser();
+        SetupTrainerExists();
+        SetupTitleUnique();
+        _fixture.TrainingCounter
+            .Setup(c => c.CountForTrainerAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Training.MaximumPerTrainer);
+        var sut = _fixture.CreateSut();
+
+        var result = await sut.CreateAsync(ValidCreationRequest());
+
+        result.ShouldContainError(TrainingErrorCodes.CatalogueFull);
+        _fixture.TrainingRepository.Verify(r => r.Add(It.IsAny<Training>()), Times.Never);
+        _fixture.UnitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    /// <summary>
     /// Create async, invalid training data, returns failure.
     /// </summary>
     [Fact]

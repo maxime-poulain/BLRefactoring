@@ -55,6 +55,7 @@ public sealed class CreateTrainingCommandHandler(
     ITrainingRepository trainingRepository,
     ITrainerRepository trainerRepository,
     IUniquenessTitleChecker titleChecker,
+    ITrainingCounter trainingCounter,
     ICurrentUserService currentUserService,
     IUnitOfWork unitOfWork)
     : ICommandHandler<CreateTrainingCommand, Result>
@@ -87,6 +88,7 @@ public sealed class CreateTrainingCommandHandler(
                 details.AcquiredSkills,
                 details.Topics,
                 titleChecker,
+                trainingCounter,
                 cancellationToken),
             Result<Training>.FailureAsync);
 

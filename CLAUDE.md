@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 29 architecture decision records.
+2. `docs/adr/README.md` — the index of 30 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/Rules/` — the same decisions as 117 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/Rules/` — the same decisions as 118 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -71,6 +71,9 @@ repository a named question and maps the aggregates.
 - A specification names a business rule, or it does not exist: declared in the domain beside its
   aggregate, one expression answering both in memory and as a query criteria, never a query DSL —
   repositories expose named questions, and the CQRS readers never touch one (ADR 0028).
+- A rule the aggregate cannot settle alone comes to it through a port declared beside it
+  (`IUniquenessTitleChecker`, `ITrainingCounter`): the port answers the fact, the factory makes
+  the decision, and the domain names no service (ADR 0030).
 - Each aggregate owns the error codes it raises, prefixed with its own name — `Trainer.PhotoTooLarge`
   (ADR 0015). `ErrorCodes.Validation` belongs to the FluentValidation pipeline alone (ADR 0016).
 

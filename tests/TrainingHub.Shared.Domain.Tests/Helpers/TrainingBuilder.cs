@@ -20,6 +20,7 @@ public sealed class TrainingBuilder
     private Guid _trainerId = Guid.NewGuid();
     private List<string> _topics = ["Programming"];
     private bool _titleExistsResult;
+    private int _publishedCount;
 
     /// <summary>
     /// With title.
@@ -57,6 +58,11 @@ public sealed class TrainingBuilder
     public TrainingBuilder WithTitleAlreadyExists() { _titleExistsResult = true; return this; }
 
     /// <summary>
+    /// With this many trainings already published by the trainer.
+    /// </summary>
+    public TrainingBuilder WithTrainingsAlreadyPublished(int count) { _publishedCount = count; return this; }
+
+    /// <summary>
     /// Create title checker mock.
     /// </summary>
     public Mock<IUniquenessTitleChecker> CreateTitleCheckerMock()
@@ -67,6 +73,19 @@ public sealed class TrainingBuilder
                 It.IsAny<TrainerId>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(_titleExistsResult);
+        return mock;
+    }
+
+    /// <summary>
+    /// Create training counter mock.
+    /// </summary>
+    public Mock<ITrainingCounter> CreateTrainingCounterMock()
+    {
+        var mock = new Mock<ITrainingCounter>();
+        mock.Setup(c => c.CountForTrainerAsync(
+                It.IsAny<TrainerId>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_publishedCount);
         return mock;
     }
 
@@ -85,6 +104,7 @@ public sealed class TrainingBuilder
     public async Task<Result<Training>> BuildAsync()
     {
         var mockChecker = CreateTitleCheckerMock();
+        var mockCounter = CreateTrainingCounterMock();
 
         return await Training.CreateAsync(
             TrainingId.Generate(),
@@ -94,7 +114,8 @@ public sealed class TrainingBuilder
             TrainingPrerequisites.Create(_prerequisites).ShouldBeSuccess(),
             AcquiredSkills.Create(_acquiredSkills).ShouldBeSuccess(),
             BuildTopics(),
-            mockChecker.Object);
+            mockChecker.Object,
+            mockCounter.Object);
     }
 
     /// <summary>

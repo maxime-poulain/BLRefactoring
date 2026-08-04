@@ -149,6 +149,29 @@ public sealed class DomainModellingRules
                 "reflection sees an ordinary set method wearing a required modifier")
             .ShouldHold();
 
+    /// <summary>
+    /// The domain, names no service.
+    /// </summary>
+    /// <remarks>
+    /// The drift this stops has a shape: a rule needs a fact the aggregate cannot see, somebody
+    /// reaches for a <c>TrainingCreationService</c>, and from that day creation rules have two
+    /// homes — the ones in the factory, and the ones a caller must remember to invoke. Both rules
+    /// of that kind today (title uniqueness, catalogue capacity) come to the factory through a
+    /// port instead, so the factory's signature is the complete list of what creation asks.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0030",
+        "a rule the aggregate cannot settle alone comes to it through a port — the domain declares no service to decide in its place")]
+    public void TheDomain_NamesNoService() =>
+        DomainTypes
+            .Selected("domain type")
+            .Where(type => type.Name.EndsWith("Service", StringComparison.Ordinal))
+            .Select(type =>
+                $"{type.Name} is a service declared in the domain. Bring the fact to the aggregate " +
+                "through a port, as IUniquenessTitleChecker and ITrainingCounter do — a service " +
+                "deciding beside the aggregate is a rule a caller can forget to apply")
+            .ShouldHold();
+
     // ------------------------------------------------------------------ value objects
 
     /// <summary>
