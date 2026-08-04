@@ -13,7 +13,8 @@ namespace TrainingHub.Architecture.Tests.Rules;
 /// and read back later, possibly by another process, possibly by a version of this code that no
 /// longer exists. Everything these rules pin — sealedness, primitive payloads, freedom from the
 /// in-process messaging library, a registered wire name — is a property a stored message depends on
-/// long after the commit that wrote it. See ADR 0024.
+/// long after the commit that wrote it — and each is consumed by the worker's contract, never the
+/// in-process bus. See ADR 0024 and ADR 0025.
 /// </remarks>
 public sealed class IntegrationEventRules
 {
@@ -140,6 +141,56 @@ public sealed class IntegrationEventRules
                 "docs/strategic-design/event-storming.md. A published fact belongs on the board")
             .ShouldHold();
     }
+
+    /// <summary>
+    /// Every integration event, is consumed.
+    /// </summary>
+    /// <remarks>
+    /// The mirror of <c>EveryDomainEvent_HasAHandler</c>, one boundary further out: the worker
+    /// delivers whatever the registry names, and a fact with no consumer would be claimed,
+    /// dispatched to nobody, and marked processed — silently, forever.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0025",
+        "a fact nobody consumes is a decision that was never finished")]
+    public void EveryIntegrationEvent_IsConsumed()
+    {
+        var consumed = Solution.Application.DeclaredTypes()
+            .SelectMany(consumer => consumer.GetInterfaces())
+            .Where(contract => contract.IsGenericType
+                               && contract.GetGenericTypeDefinition().Name.StartsWith("IIntegrationEventHandler", StringComparison.Ordinal))
+            .Select(contract => contract.GetGenericArguments()[0])
+            .ToHashSet();
+
+        IntegrationEvents
+            .Selected("integration event")
+            .Where(integrationEvent => !consumed.Contains(integrationEvent))
+            .Select(integrationEvent =>
+                $"nothing consumes {integrationEvent.Name}. The worker would deliver it to nobody and " +
+                "mark it processed anyway")
+            .ShouldHold();
+    }
+
+    /// <summary>
+    /// No integration event handler, commits.
+    /// </summary>
+    [Fact]
+    [ArchitectureRule("0025",
+        "a consumer runs after the commit it reacts to, so one that writes through the unit of work " +
+        "opens a transaction nobody scoped")]
+    public void NoIntegrationEventHandler_Commits() =>
+        Solution.Application.DeclaredTypes()
+            .Where(consumer => consumer.GetInterfaces().Any(contract =>
+                contract.IsGenericType
+                && contract.GetGenericTypeDefinition().Name.StartsWith("IIntegrationEventHandler", StringComparison.Ordinal)))
+            .Selected("integration event handler")
+            .SelectMany(consumer => consumer.GetConstructors()
+                .SelectMany(constructor => constructor.GetParameters())
+                .Where(parameter => parameter.ParameterType.Name is "IUnitOfWork" or "TrainingContext")
+                .Select(parameter =>
+                    $"{consumer.Name} takes {parameter.ParameterType.Name}. It runs after the commit; " +
+                    "what it needs to change belongs to a command, not a consumer"))
+            .ShouldHold();
 
     /// <summary>The primitives an integration event may speak: what any consumer can deserialize.</summary>
     private static bool IsPrimitiveEnough(Type type)

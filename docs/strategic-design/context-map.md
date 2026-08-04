@@ -24,8 +24,8 @@ flowchart TB
     end
 
     IA -- "upstream · ACL: UserId + ICurrentUserService" --> TC
-    TC -- "outbox facts · worker owed · then EmailMessage" --> NT
-    TC -- "outbox facts · worker owed · then Guid, Guid" --> SI
+    TC -- "outbox facts · delivery worker · EmailMessage" --> NT
+    TC -- "outbox facts · delivery worker · Guid, Guid" --> SI
     TC -- "port: IObjectStore, no Replace" --> MS
     SI -. "feeds the read model" .-> CD
     TC -. "outbox facts" .-> CD
@@ -104,10 +104,10 @@ trainers because it is never shown one.
 `TrainerCreatedIntegrationEvent` and `TrainerContactEmailChangedIntegrationEvent`, committed to the
 outbox by two policies in `Shared.Application/EventHandlers/` (ADR 0002, ADR 0024).
 
-**State:** one fake implementation, currently called by nothing. The two facts land durably in the
-outbox, atomically with the changes that justify them; the delivery worker that will turn them into
-`EmailMessage`s and call this port is owed. Nothing is sent anywhere, and the port exists so that
-the day a provider is chosen, the choice is a registration in the composition root.
+**State:** one fake implementation, called by the outbox's consumers after each commit: the two
+facts land durably with the changes that justify them, and the delivery worker (ADR 0025) hands
+them to the policies that compose the `EmailMessage`s. Nothing is sent anywhere yet — the fake
+logs — and the day a provider is chosen, the choice is a registration in the composition root.
 
 ---
 
@@ -124,9 +124,10 @@ domain model; passing `Guid` keeps the contract translatable.
 `TrainingCreatedIntegrationEvent` and `TrainingEditedIntegrationEvent`, committed to the outbox by
 two policies (ADR 0002, ADR 0024).
 
-**State:** one fake implementation, currently called by nothing. The facts accumulate in the
-outbox; the delivery worker that will replay them into this port is owed. The index's consumer is
-Catalogue Discovery, which does not exist.
+**State:** one fake implementation, fed by the outbox's consumers after each commit: the delivery
+worker (ADR 0025) replays the committed facts into this port, so the index only ever learns of
+trainings the database accepted. The index's consumer is Catalogue Discovery, which does not
+exist.
 
 ---
 

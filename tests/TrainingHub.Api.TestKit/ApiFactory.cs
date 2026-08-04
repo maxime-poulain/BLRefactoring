@@ -167,6 +167,12 @@ public abstract class ApiFactory<TEntryPoint>
         builder.UseSetting("ObjectStorage:SecretKey", ObjectStoreSecretKey);
         builder.UseSetting("ObjectStorage:CreateBucketOnStartup", "true");
 
+        // The outbox worker's cadence, shrunk for the suite: the delivery proofs wait on real
+        // polling, and five seconds per assertion is a tax every test would pay. The attempt
+        // budget shrinks with it, so the poison proof can spend it within a test's patience.
+        builder.UseSetting("Outbox:PollInterval", "00:00:00.250");
+        builder.UseSetting("Outbox:MaxAttempts", "2");
+
         // The host runs in this process, so what it logs while failing is readable from a test —
         // and a 500 says nothing on purpose. Without this an assertion reports the status and the
         // cause stays in a stream nobody reads.

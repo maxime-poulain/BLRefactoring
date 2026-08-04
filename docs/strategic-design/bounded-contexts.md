@@ -202,13 +202,12 @@ Registration, authentication, token issuance, lockout.
 - **Language:** `EmailMessage` — a recipient, a subject, a body. Deliberately primitive: the port
   carries no domain type, so the notifier can never grow an opinion about trainers.
 - **Aggregates:** none.
-- **Status:** port only. `IEmailSender` has one fake implementation, currently called by nothing;
-  no provider is chosen.
-- **Fed by:** the transactional outbox. The two policies that used to call this port inside the
-  transaction — welcoming a new trainer, warning the address a trainer just moved away from — now
-  commit `TrainerCreatedIntegrationEvent` and `TrainerContactEmailChangedIntegrationEvent` instead
-  (ADR 0002, ADR 0024); the delivery worker that will turn those facts into `EmailMessage`s is
-  owed.
+- **Status:** port only. `IEmailSender` has one fake implementation that logs; no provider is
+  chosen.
+- **Fed by:** the transactional outbox, end to end. Registration and address changes commit
+  `TrainerCreatedIntegrationEvent` and `TrainerContactEmailChangedIntegrationEvent` with the
+  change itself (ADR 0002, ADR 0024), and the delivery worker hands each fact to the consumer
+  that composes its `EmailMessage` — after the commit, at-least-once (ADR 0025).
 
 ---
 
@@ -220,11 +219,12 @@ Registration, authentication, token issuance, lockout.
   `Guid`, never `TrainingId`. Its own remark says so — *"the search engine sitting behind it knows
   nothing about the domain's typed identifiers."* That is a published language in miniature.
 - **Aggregates:** none.
-- **Status:** port only, one fake implementation, currently called by nothing. It is nonetheless
-  the seed of the public catalogue: the index this port maintains is what a search page would read.
-- **Fed by:** the transactional outbox. Creating or editing a training commits
+- **Status:** port only, one fake implementation that logs. It is nonetheless the seed of the
+  public catalogue: the index this port maintains is what a search page would read.
+- **Fed by:** the transactional outbox, end to end. Creating or editing a training commits
   `TrainingCreatedIntegrationEvent` or `TrainingEditedIntegrationEvent` with it (ADR 0002,
-  ADR 0024); the delivery worker that will replay those facts into this port is owed.
+  ADR 0024), and the delivery worker replays each fact into this port after the commit
+  (ADR 0025) — the index only ever learns of trainings the database accepted.
 
 ---
 

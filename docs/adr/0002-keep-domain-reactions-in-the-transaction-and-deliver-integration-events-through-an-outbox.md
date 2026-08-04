@@ -1,6 +1,6 @@
 # 0002 — Keep domain reactions in the transaction, deliver integration events through an outbox
 
-- **Status:** Accepted — write side implemented, delivery worker owed; the message design is recorded in 0024
+- **Status:** Accepted — implemented; the message design is recorded in 0024, the delivery worker in 0025
 - **Date:** 2026-08-01
 
 ## Context
