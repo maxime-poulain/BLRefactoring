@@ -13,9 +13,10 @@ namespace TrainingHub.Architecture.Tests.Traceability;
 /// rule, no failure, and nothing to say it is unguarded — which is the state this repository was in
 /// before, one level up.
 /// </remarks>
-public sealed class AdrCoverageRules
+public sealed partial class AdrCoverageRules
 {
-    private static readonly Regex IndexRow = new(@"\[(?<number>\d{4})\]\((?<file>[^)]+)\)", RegexOptions.Compiled);
+    [GeneratedRegex(@"\[(?<number>\d{4})\]\((?<file>[^)]+)\)")]
+    private static partial Regex IndexRow { get; }
 
     private static IReadOnlySet<string> Excused { get; } =
         UnguardedRecords.All.Select(excuse => excuse.Record).ToHashSet(StringComparer.Ordinal);

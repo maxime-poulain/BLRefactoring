@@ -21,7 +21,7 @@ namespace TrainingHub.Architecture.Tests.Rules;
 /// of work here — was silently a suggestion.
 /// </para>
 /// </remarks>
-public sealed class AnalysisRules
+public sealed partial class AnalysisRules
 {
     private static string BuildProperties { get; } =
         Path.Combine(SourceTree.RepositoryRoot, "Directory.Build.props");
@@ -183,13 +183,12 @@ public sealed class AnalysisRules
     private static bool IsComment(string line) =>
         line.TrimStart().StartsWith('#') || line.TrimStart().StartsWith(';');
 
-    private static readonly Regex Severity =
-        new(@"^dotnet_diagnostic\.(?<rule>[A-Za-z]+[0-9]+)\.severity\s*=", RegexOptions.Compiled);
+    [GeneratedRegex(@"^dotnet_diagnostic\.(?<rule>[A-Za-z]+[0-9]+)\.severity\s*=")]
+    private static partial Regex Severity { get; }
 
-    private static readonly Regex Demotion =
-        new(@"^dotnet_diagnostic\.(?<rule>[A-Za-z]+[0-9]+)\.severity\s*=\s*(suggestion|silent|none)\s*$",
-            RegexOptions.Compiled);
+    [GeneratedRegex(@"^dotnet_diagnostic\.(?<rule>[A-Za-z]+[0-9]+)\.severity\s*=\s*(suggestion|silent|none)\s*$")]
+    private static partial Regex Demotion { get; }
 
-    private static readonly Regex Setting =
-        new(@"^[A-Za-z_][\w.]*\s*=\s*(?<value>.*)$", RegexOptions.Compiled);
+    [GeneratedRegex(@"^[A-Za-z_][\w.]*\s*=\s*(?<value>.*)$")]
+    private static partial Regex Setting { get; }
 }

@@ -82,6 +82,22 @@ charset = utf-8-bom
 
 [*.{cs,vb}]
 
+# SYSLIB1045: Use 'GeneratedRegexAttribute' to generate the regular expression implementation at compile-time (14)
+# Enabled after converting all fourteen, which is the only order that makes sense: a severity nobody
+# can satisfy is a severity somebody suppresses. Every one of them lived in the architecture suite,
+# every one was a constant pattern behind RegexOptions.Compiled, and that option asks the runtime to
+# emit IL on first use — later than the source generator, and for the same result.
+#
+# The suite gains milliseconds it did not need. What it gains that is worth the entry is that
+# `new Regex(…, RegexOptions.Compiled)` is the .NET 6 idiom, and this repository is read as an
+# example. Its sibling SYSLIB1054 has been declared here since the ruleset was enforced; leaving
+# this one at its default was an asymmetry with no argument behind it.
+#
+# The one construction left alone builds its pattern at run time from a StringBuilder
+# (SourceTree.GlobToRegex), and the analyzer does not fire on it — verified by the absence of a
+# suppression rather than assumed.
+dotnet_diagnostic.SYSLIB1045.severity = warning
+
 # SYSLIB1054: Use 'LibraryImportAttribute' instead of 'DllImportAttribute' to generate P/Invoke marshalling code at compile time
 dotnet_diagnostic.SYSLIB1054.severity = warning
 
