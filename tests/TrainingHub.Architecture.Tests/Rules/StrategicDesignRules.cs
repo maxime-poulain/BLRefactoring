@@ -20,11 +20,11 @@ namespace TrainingHub.Architecture.Tests.Rules;
 /// anywhere else. See ADR 0023.
 /// </para>
 /// </remarks>
-public sealed class StrategicDesignRules
+public sealed partial class StrategicDesignRules
 {
     /// <summary>A bounded-context section, written <c>## Context — Name</c>.</summary>
-    private static readonly Regex ContextHeading =
-        new(@"^##\s+Context\s+—\s+(?<name>.+?)\s*$", RegexOptions.Compiled);
+    [GeneratedRegex(@"^##\s+Context\s+—\s+(?<name>.+?)\s*$")]
+    private static partial Regex ContextHeading { get; }
 
     /// <summary>
     /// An aggregate declared under a <c>### Aggregates</c> heading: a bullet opening on its name.
@@ -36,8 +36,8 @@ public sealed class StrategicDesignRules
     /// had been deleted. Measured, not assumed: the first version of this rule passed against a
     /// document with the bullet removed.
     /// </remarks>
-    private static readonly Regex Declaration =
-        new(@"^\s*-\s+`(?<name>[^`]+)`", RegexOptions.Compiled);
+    [GeneratedRegex(@"^\s*-\s+`(?<name>[^`]+)`")]
+    private static partial Regex Declaration { get; }
 
     private static IReadOnlyList<Type> DomainTypes { get; } = [.. Solution.Domain.DeclaredTypes()];
 

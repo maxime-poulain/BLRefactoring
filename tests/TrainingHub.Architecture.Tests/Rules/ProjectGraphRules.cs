@@ -237,11 +237,13 @@ public sealed class ProjectGraphRules
 /// labels are written short — <c>Shared.Domain</c>, not <c>TrainingHub.Shared.Domain</c> — so the
 /// prefix every project name carries is put back before comparing.
 /// </remarks>
-internal static class MermaidGraph
+internal static partial class MermaidGraph
 {
-    private static readonly Regex Node = new(@"^\s*(?<alias>\w+)\[""(?<label>[^""]+)""\]", RegexOptions.Compiled);
+    [GeneratedRegex(@"^\s*(?<alias>\w+)\[""(?<label>[^""]+)""\]")]
+    private static partial Regex Node { get; }
 
-    private static readonly Regex Edge = new(@"^\s*(?<from>\w+)\s*-->\s*(?<to>\w+)\s*$", RegexOptions.Compiled);
+    [GeneratedRegex(@"^\s*(?<from>\w+)\s*-->\s*(?<to>\w+)\s*$")]
+    private static partial Regex Edge { get; }
 
     /// <summary>The drawn edges, as "&lt;project&gt; -&gt; &lt;project&gt;".</summary>
     public static IReadOnlySet<string> Edges { get; } = Read();
