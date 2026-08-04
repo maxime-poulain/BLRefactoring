@@ -711,6 +711,14 @@ so nothing is exposed rather than something exposed to the wrong caller. The two
 on a trainer's own profile are addressed as `me` rather than by identifier, which is also where
 registration's `Location` now points: the address of what was created, from its creator's side.
 
+**The word changes where the thing changes.** `me` names an identity, and in this domain the
+identity *is* a trainer — `/Trainer/me` reads as the trainer who is calling. Under `/Training` it
+named nothing, a caller not being a training, and the route said `me` regardless until a second one
+appeared: two endpoints ending in the same word rewarded a careless reading with the wrong one.
+Hence `GET /Training/my-trainings`. The asymmetry is the result and not an oversight — one addresses
+a resource by who it is, the other selects a collection by whose it is, and one word for both is
+what made the first of them ambiguous.
+
 ---
 
 ## Tech stack
