@@ -17,6 +17,18 @@ namespace TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
 /// </summary>
 public sealed class Training : AggregateRoot<TrainingId>
 {
+    /// <summary>
+    /// How many trainings one trainer may publish: no trainer's catalogue holds more than ten.
+    /// </summary>
+    /// <remarks>
+    /// A business rule, not a technical bound — the number is the domain expert's, and it lives
+    /// here because the rule is about trainings even though it is counted per trainer, exactly
+    /// as title uniqueness is. <see cref="CreateAsync"/> enforces it; nothing else reads it as
+    /// permission to exist, so a catalogue that was over the limit before the rule existed keeps
+    /// its trainings and merely cannot grow.
+    /// </remarks>
+    public const int MaximumPerTrainer = 10;
+
     private readonly List<Topic> _topics = [];
 
     /// <summary>
@@ -88,8 +100,22 @@ public sealed class Training : AggregateRoot<TrainingId>
         AcquiredSkills acquiredSkills,
         IReadOnlyCollection<Topic> topics,
         IUniquenessTitleChecker titleChecker,
+        ITrainingCounter trainingCounter,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(trainerId);
+        ArgumentNullException.ThrowIfNull(trainingCounter);
+
+        // Asked before the content is even looked at: no title makes an eleventh training
+        // acceptable, so a full catalogue refuses the creation whole rather than per field.
+        // Creation-only on purpose — editing changes a training, never how many there are.
+        var published = await trainingCounter.CountForTrainerAsync(trainerId, cancellationToken);
+        if (published >= MaximumPerTrainer)
+        {
+            return Result<Training>.Failure(TrainingErrorCodes.CatalogueFull,
+                $"A trainer cannot publish more than {MaximumPerTrainer} trainings.");
+        }
+
         var training = CreateDraft(trainingId, trainerId);
 
         var applyResult = await training.ApplyEditionAsync(

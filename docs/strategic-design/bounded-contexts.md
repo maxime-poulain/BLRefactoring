@@ -95,6 +95,8 @@ holds a `Trainer` instance.
 ### Invariants
 
 - A training's title is unique among the trainings of the same trainer.
+- A trainer publishes at most ten trainings (`Training.MaximumPerTrainer`); the eleventh is
+  refused at creation.
 - A training always belongs to a trainer; there is no orphan training.
 - Every value object is valid by construction — an aggregate never holds a malformed field, because
   it never accepts a raw `string`.

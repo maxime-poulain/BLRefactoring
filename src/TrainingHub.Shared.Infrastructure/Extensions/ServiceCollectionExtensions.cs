@@ -37,6 +37,8 @@ public static class ServiceCollectionExtensions
             // only reason that was harmless is that both happened to share the DbContext.
             .AddScoped<IUniquenessTitleChecker>(serviceProvider =>
                 (TrainingRepository)serviceProvider.GetRequiredService<ITrainingRepository>())
+            .AddScoped<ITrainingCounter>(serviceProvider =>
+                (TrainingRepository)serviceProvider.GetRequiredService<ITrainingRepository>())
             // The read side of two questions the API used to ask a repository: who owns this
             // training, and which trainer is behind this Identity user. Both answers are a handful
             // of columns; both used to cost a whole aggregate.
