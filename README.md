@@ -281,6 +281,12 @@ changed. Topics are de-duplicated and fully replaced on each edition.
 Neither creation nor edition raises its event from that shared path: each public entry point
 raises the event matching its own intent, and only on success.
 
+`IsOwnedBy` is the one question the aggregate answers, and the exception that proves the
+no-reading-through-aggregates rule rather than eroding it: it wears
+`TrainingOwnedBySpecification` — a named domain rule, not a state read — and the rule that bans
+data-returning methods pins it by name, so the next question has to arrive with a record of its
+own. See ADR 0028.
+
 ### Value objects
 
 Every value object has a private constructor and a static `Create` returning `Result<T>`, so an
@@ -591,9 +597,16 @@ translates SQL Server's duplicate-key errors into `UniqueConstraintViolationExce
 the application turn a lost uniqueness race into an ordinary business failure without depending
 on the provider.
 
-Query criteria that belong to the domain are expressed as specifications — such as
-`TrainingsByTrainerSpecification`, which takes a `TrainerId` rather than a `Guid` — and translated
-to `IQueryable` by `SpecificationEvaluator`.
+**A specification names a business rule, or it does not exist** (ADR 0028). Each one lives in the
+domain, beside the aggregate it speaks about, and answers two ways from a single statement:
+`IsSatisfiedBy` in memory for a decision, `Criteria` as an expression for the repository
+implementation that has to ask the database. `TrainingOwnedBySpecification` says who a training
+answers to — worn by the aggregate as `Training.IsOwnedBy` — and
+`TrainingTitleExistsForTrainerSpecification` is the data half of the uniqueness invariant the
+`Training` aggregate enforces. What specifications are **not** here is a query DSL: they carry no
+ordering and no paging (ADR 0001), repository contracts expose named questions rather than
+specification-taking members, and the CQRS readers never touch one — their queries are SQL shaped
+for a screen, and three architecture rules hold each of those lines.
 
 ---
 

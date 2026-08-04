@@ -1,4 +1,3 @@
-using TrainingHub.Shared.Common;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 
 namespace TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
@@ -10,8 +9,15 @@ namespace TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
 /// Modification methods (<see cref="Add"/>, <see cref="Update"/>, <see cref="Delete(Training)"/>)
 /// only stage changes in the underlying change tracker; nothing is persisted until the
 /// orchestrating use case commits through the unit of work.
+/// <para>
+/// Every read is a named method, deliberately: the repository used to inherit generic
+/// <c>GetAsync(ISpecification)</c> members, which let any caller compose arbitrary criteria — a
+/// query DSL wearing a domain word. A repository's surface is the list of questions the use cases
+/// actually ask; specifications state rules, and are consumed by the implementation, not passed
+/// through it. See ADR 0028.
+/// </para>
 /// </remarks>
-public interface ITrainingRepository : IRepository<Training>
+public interface ITrainingRepository
 {
     /// <summary>
     /// Get by id this i training repository.

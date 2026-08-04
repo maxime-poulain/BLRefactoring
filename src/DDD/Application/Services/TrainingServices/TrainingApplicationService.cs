@@ -124,8 +124,10 @@ public sealed class TrainingApplicationService(
 
         // A training belonging to somebody else is reported as not found, not as forbidden: a 403
         // would confirm that the identifier names something real. Both cases produce the same
-        // sentence for the same reason.
-        if (training is null || training.TrainerId != TrainerId.Create(currentUserService.TrainerId))
+        // sentence for the same reason. The ownership question itself is the domain's
+        // (TrainingOwnedBySpecification, worn by the aggregate) — this layer only decides what
+        // refusing it means over HTTP.
+        if (training is null || !training.IsOwnedBy(TrainerId.Create(currentUserService.TrainerId)))
         {
             return Result<TrainingDto>.Failure(ErrorCodes.NotFound, $"Training with id `{id}` not found.");
         }

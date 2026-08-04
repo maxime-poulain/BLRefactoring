@@ -61,6 +61,22 @@ public sealed class DomainModellingRules
             .ShouldHold();
 
     /// <summary>
+    /// The questions an aggregate is allowed to answer: each wears a domain specification.
+    /// </summary>
+    /// <remarks>
+    /// A pinned list, like the kernel's eight (ADR 0012) and the worker's carve-out: ADR 0028
+    /// lets an aggregate wear a specification as a boolean question about itself —
+    /// <c>Training.IsOwnedBy</c> delegates to <c>TrainingOwnedBySpecification</c> and reads
+    /// nothing out. Pinned by name rather than by shape ("any bool method") on purpose, because
+    /// the shape is exactly how reading state through methods would creep back in; a new
+    /// question is a new decision, and it arrives here with its record.
+    /// </remarks>
+    private static readonly (string Aggregate, string Method)[] SpecificationQuestions =
+    [
+        ("Training", "IsOwnedBy"),
+    ];
+
+    /// <summary>
     /// No aggregate, returns data.
     /// </summary>
     [Fact]
@@ -73,7 +89,8 @@ public sealed class DomainModellingRules
                 .Where(method => !method.IsSpecialName)
                 .Select(method => (aggregate, method)))
             .Selected("public method declared on an aggregate")
-            .Where(pair => !AnswersOnlyWhetherItWorked(pair.method.ReturnType))
+            .Where(pair => !AnswersOnlyWhetherItWorked(pair.method.ReturnType)
+                && !SpecificationQuestions.Contains((pair.aggregate.Name, pair.method.Name)))
             .Select(pair =>
                 $"{pair.aggregate.Name}.{pair.method.Name} returns {pair.method.ReturnType.Name}. An " +
                 "aggregate that hands data back invites callers to read through it rather than " +

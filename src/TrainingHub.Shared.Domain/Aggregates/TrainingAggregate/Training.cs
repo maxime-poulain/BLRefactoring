@@ -105,6 +105,24 @@ public sealed class Training : AggregateRoot<TrainingId>
     }
 
     /// <summary>
+    /// Whether this training answers to the given trainer.
+    /// </summary>
+    /// <remarks>
+    /// The rule itself lives in <see cref="Specifications.TrainingOwnedBySpecification"/>; this
+    /// method is the aggregate wearing it, so a use case asks the object it holds rather than
+    /// instantiating machinery. Kept a question on purpose — the decision of what refusing means
+    /// (a 404 rather than a 403, here) belongs to the caller, not to the aggregate.
+    /// </remarks>
+    /// <param name="trainerId">The trainer asking.</param>
+    /// <returns><see langword="true"/> when that trainer published this training.</returns>
+    public bool IsOwnedBy(TrainerId trainerId)
+    {
+        ArgumentNullException.ThrowIfNull(trainerId);
+
+        return new Specifications.TrainingOwnedBySpecification(trainerId).IsSatisfiedBy(this);
+    }
+
+    /// <summary>
     /// Edit this training.
     /// </summary>
     public async Task<Result> EditAsync(

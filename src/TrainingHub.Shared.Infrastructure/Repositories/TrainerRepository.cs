@@ -1,7 +1,5 @@
-using TrainingHub.Shared.Common.Specifications;
 using TrainingHub.Shared.Domain;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
-using TrainingHub.Shared.Infrastructure.Specifications;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -68,19 +66,5 @@ public sealed class TrainerRepository(TrainingContext trainingContext) : ITraine
     public void Delete(Trainer trainer)
     {
         trainingContext.Trainers.Remove(trainer);
-    }
-
-    /// <inheritdoc />
-    public async Task<List<Trainer>> GetAsync(ISpecification<Trainer> spec, CancellationToken cancellationToken = default)
-    {
-        return await SpecificationEvaluator.GetQuery(trainingContext.Trainers, spec)
-            .ToListAsync(cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public async Task<bool> AnyAsync(ISpecification<Trainer> spec, CancellationToken cancellationToken = default)
-    {
-        return await SpecificationEvaluator.GetQuery(trainingContext.Trainers, spec)
-            .AnyAsync(cancellationToken);
     }
 }

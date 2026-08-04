@@ -1,9 +1,7 @@
-using TrainingHub.Shared.Common.Specifications;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.Specifications;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
-using TrainingHub.Shared.Infrastructure.Specifications;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,8 +30,13 @@ public sealed class TrainingRepository(TrainingContext trainingContext) : ITrain
         TrainerId trainerId,
         CancellationToken cancellationToken = default)
     {
+        // The specification travels as its Criteria: the repository is where a rule's expression
+        // meets the database, and no evaluator is needed to hand a predicate to a Where.
         var spec = new TrainingTitleExistsForTrainerSpecification(title, trainerId);
-        return await AnyAsync(spec, cancellationToken);
+
+        return await trainingContext.Trainings
+            .AnyAsync(spec.Criteria, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -74,26 +77,19 @@ public sealed class TrainingRepository(TrainingContext trainingContext) : ITrain
     }
 
     /// <summary>
-    /// Retrieves all trainings belonging to the specified trainer,
-    /// using the <see cref="TrainingsByTrainerSpecification"/>.
+    /// Retrieves all trainings belonging to the specified trainer.
     /// </summary>
+    /// <remarks>
+    /// A plain <c>Where</c>, and it used to be a specification. "The trainings of X" states no
+    /// rule — it is data scoping, and dressing it as a domain concept was the first step of the
+    /// drift ADR 0028 closes: a specification names a business rule, or it does not exist.
+    /// </remarks>
     public async Task<ICollection<Training>> GetByTrainerIdAsync(TrainerId trainerId, CancellationToken cancellationToken = default)
     {
-        var spec = new TrainingsByTrainerSpecification(trainerId);
-        return await GetAsync(spec, cancellationToken);
+        return await trainingContext.Trainings
+            .Where(training => training.TrainerId == trainerId)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
     }
 
-    /// <inheritdoc />
-    public async Task<List<Training>> GetAsync(ISpecification<Training> spec, CancellationToken cancellationToken = default)
-    {
-        return await SpecificationEvaluator.GetQuery(trainingContext.Trainings, spec)
-            .ToListAsync(cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public async Task<bool> AnyAsync(ISpecification<Training> spec, CancellationToken cancellationToken = default)
-    {
-        return await SpecificationEvaluator.GetQuery(trainingContext.Trainings, spec)
-            .AnyAsync(cancellationToken);
-    }
 }
