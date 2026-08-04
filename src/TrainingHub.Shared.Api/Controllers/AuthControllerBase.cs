@@ -111,7 +111,7 @@ public abstract class AuthControllerBase(
         // The transaction is only completed when the whole registration succeeded.
         // If the trainer creation fails, disposing the scope without Complete()
         // rolls back the identity user as well, so no orphan account survives.
-        return creationResult.Match<ActionResult>(
+        return creationResult.Match(
             trainerId =>
             {
                 transactionScope.Complete();
