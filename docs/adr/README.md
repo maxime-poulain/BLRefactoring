@@ -46,8 +46,8 @@ simpler from the outside.
 | [0021](0021-store-a-photo-beside-the-row-that-names-it.md) | Store a photo beside the row that names it, and never overwrite in place | Accepted |
 | [0022](0022-name-the-repository-after-the-domain-it-serves.md) | Name the repository after the domain it serves | Accepted |
 | [0023](0023-document-the-strategic-design-and-hold-it-to-the-model.md) | Document the strategic design, and hold it to the model | Accepted |
-| [0024](0024-publish-facts-not-intents-and-version-them-in-the-envelope.md) | Publish facts, not intents, and version them in the envelope | Accepted — the email half's "still a fake" dated by 0031; the retry contract gains its schedule in 0033 |
-| [0025](0025-deliver-the-outbox-with-a-hosted-service-in-each-host.md) | Deliver the outbox with a hosted service in each host | Accepted — the email half's "still a fake" dated by 0031; the retry cadence, the poison's silence and the table's growth are hardened by 0033 |
+| [0024](0024-publish-facts-not-intents-and-version-them-in-the-envelope.md) | Publish facts, not intents, and version them in the envelope | Accepted — the email half's "still a fake" dated by 0031; the retry contract gains its schedule in 0033; the per-consumer half of its at-least-once promise is made true by 0034 |
+| [0025](0025-deliver-the-outbox-with-a-hosted-service-in-each-host.md) | Deliver the outbox with a hosted service in each host | Accepted — the email half's "still a fake" dated by 0031; the retry cadence, the poison's silence and the table's growth are hardened by 0033; delivery is settled per consumer by 0034 |
 | [0026](0026-log-with-serilog-to-console-and-files-through-typed-options.md) | Log with Serilog to console and files, through typed options | Accepted |
 | [0027](0027-stamp-the-callers-identity-on-every-log-line.md) | Stamp the caller's identity on every log line | Accepted |
 | [0028](0028-a-specification-names-a-business-rule-or-it-does-not-exist.md) | A specification names a business rule, or it does not exist | Accepted |
@@ -55,4 +55,5 @@ simpler from the outside.
 | [0030](0030-bring-the-fact-to-the-aggregate-not-the-decision-to-a-service.md) | Bring the fact to the aggregate, not the decision to a service | Accepted |
 | [0031](0031-send-email-over-smtp-and-prove-it-against-a-real-server.md) | Send email over SMTP, and prove it against a real server | Accepted |
 | [0032](0032-flatten-a-value-object-as-a-complex-property-not-an-owned-entity.md) | Flatten a value object as a complex property, not an owned entity | Accepted |
-| [0033](0033-back-off-between-retries-log-the-poison-and-sweep-the-delivered-history.md) | Back off between retries, log the poison, and sweep the delivered history | Accepted |
+| [0033](0033-back-off-between-retries-log-the-poison-and-sweep-the-delivered-history.md) | Back off between retries, log the poison, and sweep the delivered history | Accepted — the per-consumer isolation it left out arrives in 0034 |
+| [0034](0034-deliver-once-per-consumer-not-once-per-message.md) | Deliver once per consumer, not once per message | Accepted |

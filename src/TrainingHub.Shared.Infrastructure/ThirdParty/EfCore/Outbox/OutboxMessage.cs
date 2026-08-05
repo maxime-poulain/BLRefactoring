@@ -7,7 +7,7 @@ namespace TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Outbox;
 /// A persistence shape, not a domain one — deliberately neither an aggregate nor auditable nor a
 /// holder of domain events, so neither interceptor looks at it twice. The identity of the message
 /// is the envelope, not the payload: <see cref="Id"/> is minted once at publish time and doubles as
-/// the deduplication key consumers use to make at-least-once delivery safe, and
+/// the key the delivery ledger settles consumers under, making at-least-once delivery safe, and
 /// <see cref="Name"/>/<see cref="Version"/> say what the payload deserializes into without trusting
 /// a CLR type name that a refactoring could change.
 /// <para>
@@ -26,7 +26,7 @@ public sealed class OutboxMessage
     /// <summary>
     /// Stores an integration event under its envelope.
     /// </summary>
-    /// <param name="id">The message identifier — also the consumer-side deduplication key.</param>
+    /// <param name="id">The message identifier — also the delivery ledger's deduplication key.</param>
     /// <param name="name">The stable wire name of the event, from the registry.</param>
     /// <param name="version">The version of that wire name.</param>
     /// <param name="payload">The event, serialized as JSON.</param>
@@ -47,7 +47,7 @@ public sealed class OutboxMessage
         Payload = string.Empty;
     }
 
-    /// <summary>The message identifier — minted once at publish time, the deduplication key.</summary>
+    /// <summary>The message identifier — minted once at publish time, the ledger's deduplication key.</summary>
     public Guid Id { get; }
 
     /// <summary>The stable wire name of the event, as registered — never a CLR type name.</summary>

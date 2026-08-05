@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.RegularExpressions;
 using TrainingHub.Architecture.Tests.Framework;
 using TrainingHub.Shared.Application.IntegrationEvents;
 using Xunit;
@@ -16,7 +17,7 @@ namespace TrainingHub.Architecture.Tests.Rules;
 /// long after the commit that wrote it — and each is consumed by the worker's contract, never the
 /// in-process bus. See ADR 0024 and ADR 0025.
 /// </remarks>
-public sealed class IntegrationEventRules
+public sealed partial class IntegrationEventRules
 {
     private static IEnumerable<Type> IntegrationEvents =>
         Solution.Application.DeclaredTypes()
@@ -191,6 +192,94 @@ public sealed class IntegrationEventRules
                     $"{consumer.Name} takes {parameter.ParameterType.Name}. It runs after the commit; " +
                     "what it needs to change belongs to a command, not a consumer"))
             .ShouldHold();
+
+    /// <summary>
+    /// Every integration event consumer, owns a stable name.
+    /// </summary>
+    /// <remarks>
+    /// Two halves. The source half scans every implementation in the repository — test doubles
+    /// included — for a <c>ConsumerName</c> written as a string literal: <c>nameof</c> or
+    /// <c>GetType()</c> would tie the delivery ledger to a type name a refactoring could change,
+    /// the exact mistake the wire-name registry exists to prevent (ADR 0024). The reflection half
+    /// reads the production names and holds them usable: non-empty, within the 128 the column
+    /// stores, and unique among the consumers of one event — two consumers sharing a name would
+    /// share one ledger row and one of them would never run.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0034",
+        "a consumer's ledger identity is a hand-written stable name, never a type name a refactoring could change")]
+    public void EveryIntegrationEventConsumer_OwnsAStableName()
+    {
+        var named = Solution.Application.DeclaredTypes()
+            .SelectMany(consumer => consumer.GetInterfaces()
+                .Where(contract => contract.IsGenericType
+                                   && contract.GetGenericTypeDefinition().Name.StartsWith("IIntegrationEventHandler", StringComparison.Ordinal))
+                .Select(contract => (Consumer: consumer, Event: contract.GetGenericArguments()[0])))
+            .Select(pair => (pair.Consumer, pair.Event, Name: ConsumerNameOf(pair.Consumer)))
+            .ToArray();
+
+        SourceTree.SourceFiles
+            .Where(path => !SourceTree.IsGenerated(path))
+            .Select(path => (Path: SourceTree.Relative(path), Text: SourceTree.ReadText(path)))
+            .Where(file => ConsumerImplementation.IsMatch(file.Text))
+            .Selected("integration event consumer implementation")
+            .Where(file => !LiteralConsumerName.IsMatch(file.Text)
+                           || DerivedConsumerName.IsMatch(file.Text))
+            .Select(file =>
+                $"'{file.Path}' implements a consumer whose ConsumerName is not a hand-written string " +
+                "literal. A name derived from the type changes the day the type is renamed, and the " +
+                "ledger would forget every delivery recorded under the old one")
+            .Concat(named
+                .Where(pair => pair.Name is null)
+                .Select(pair =>
+                    $"{pair.Consumer.Name} declares no ConsumerName, so the ledger cannot record its deliveries"))
+            .Concat(named
+                .Where(pair => pair.Name is not null && (pair.Name.Length == 0 || pair.Name.Length > 128))
+                .Select(pair =>
+                    $"{pair.Consumer.Name} declares '{pair.Name}', which does not fit the ledger's " +
+                    "128-character ConsumerName column"))
+            .Concat(named
+                .Where(pair => pair.Name is not null)
+                .GroupBy(pair => (pair.Event, pair.Name))
+                .Where(group => group.Count() > 1)
+                .Select(group =>
+                    $"{string.Join(" and ", group.Select(pair => pair.Consumer.Name))} both consume " +
+                    $"{group.Key.Event.Name} under the name '{group.Key.Name}'. They would share one " +
+                    "ledger row, and one of them would never run"))
+            .ShouldHold();
+    }
+
+    /// <summary>
+    /// The declared consumer name, read off an instance built with null dependencies — safe
+    /// because the rule above requires the getter to be a literal, which touches nothing.
+    /// Answers <see langword="null"/> when the consumer declares no such property.
+    /// </summary>
+    private static string? ConsumerNameOf(Type consumer)
+    {
+        var property = consumer.GetProperty("ConsumerName");
+
+        if (property is null)
+        {
+            return null;
+        }
+
+        var constructor = consumer.GetConstructors().Single();
+        var instance = constructor.Invoke(new object?[constructor.GetParameters().Length]);
+
+        return (string?)property.GetValue(instance);
+    }
+
+    /// <summary>A file declaring an implementation of the consumer contract.</summary>
+    [GeneratedRegex(@":\s*IIntegrationEventHandler<")]
+    private static partial Regex ConsumerImplementation { get; }
+
+    /// <summary>The shape the ledger identity must take: an expression-bodied string literal.</summary>
+    [GeneratedRegex("ConsumerName\\s*=>\\s*\"[^\"]+\"\\s*;")]
+    private static partial Regex LiteralConsumerName { get; }
+
+    /// <summary>A ledger identity derived from the type — the unstable shapes.</summary>
+    [GeneratedRegex(@"ConsumerName\s*=>[^;]*(?:nameof\s*\(|GetType\s*\()")]
+    private static partial Regex DerivedConsumerName { get; }
 
     /// <summary>The primitives an integration event may speak: what any consumer can deserialize.</summary>
     private static bool IsPrimitiveEnough(Type type)

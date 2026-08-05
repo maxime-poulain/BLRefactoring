@@ -492,20 +492,25 @@ staged in the **same `TrainingContext`** the save is flowing through, so the dia
 tells the whole story: the fact commits with the state change that justified it, or dies with it.
 The write side is proven from the change tracker up to a lost optimistic-concurrency race
 (`OutboxTests`), and each envelope carries a stable name and version resolved through an explicit
-registry, a version-7 GUID as the consumer's deduplication key, and the `Attempts`/`Error` columns
+registry, a version-7 GUID the delivery ledger dedups on, and the `Attempts`/`Error` columns
 the retry policy will use.
 
 **Delivery** is the other half (ADR 0025). Each host runs `OutboxDeliveryWorker`, a hosted
 service that polls the table, claims the oldest unprocessed rows in a single
 `UPDATE … OUTPUT` under `READPAST` and a database lease — two hosts over one table are competing
-consumers, safely — and hands each fact to its consumers through an explicit dispatcher. Success
-stamps `ProcessedOnUtc`; a consumer that throws has its reason recorded on the envelope, the
-attempt counted, and the next try booked one doubling further out — 30 s, then 60, then 120 — so a
-downstream outage is ridden out rather than burned through (ADR 0033). A message whose budget in
-`OutboxOptions.MaxAttempts` is spent is poison: kept, no longer claimed, its last error beside it,
-and announced once at Error in the log. Delivered rows older than `OutboxOptions.RetentionPeriod`
-are swept after each drain — poison never is. Delivery is at-least-once and eventual by a few
-seconds; consumers deduplicate by the envelope's id or, like the index upsert, converge naturally.
+consumers, safely — and hands each fact to each of its consumers independently, through an
+explicit dispatcher that isolates every consumer from its neighbours' failures. Each success lands
+in a per-consumer delivery ledger (`OutboxMessageConsumer`), so a retry re-runs only the consumers
+still owed — a failing neighbour cannot replay a delivered welcome email (ADR 0034). The message
+is stamped `ProcessedOnUtc` when every consumer has settled; a failed pass records its reasons on
+the envelope, counts one attempt, and books the next try one doubling further out — 30 s, then 60,
+then 120 — so a downstream outage is ridden out rather than burned through (ADR 0033). A message
+whose budget in `OutboxOptions.MaxAttempts` is spent is poison: kept, no longer claimed, its last
+error beside it, announced once at Error in the log — and its ledger shows the operator exactly
+which consumers are owed. Delivered rows older than `OutboxOptions.RetentionPeriod` are swept
+after each drain, their ledger rows cascading with them — poison never is. Delivery is
+at-least-once and eventual by a few seconds; the ledger dedups by the envelope's id, and the
+residual lapsed-lease window is narrowed to the consumers not yet settled.
 
 ### A write, end to end
 
@@ -650,6 +655,7 @@ EF Core maps the model without letting persistence concerns leak into it:
 | `AddOutbox` | The `OutboxMessage` table the integration events travel through |
 | `AddOutboxLease` | Lease columns on `OutboxMessage`, so one worker delivers at a time |
 | `AddOutboxBackoffAndRetention` | `NextAttemptOnUtc` and the delivered-rows index: the retry schedule, and the sweep's seek |
+| `AddOutboxConsumerLedger` | The per-consumer delivery ledger: which consumers a message has reached, riding the envelope's lifecycle by cascade |
 
 ASP.NET Identity lives in its own `DbContext` with its own migration.
 

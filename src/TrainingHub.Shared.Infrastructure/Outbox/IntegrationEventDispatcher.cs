@@ -25,31 +25,60 @@ public sealed class IntegrationEventDispatcher(
     IEnumerable<IIntegrationEventHandler<TrainingEditedIntegrationEvent>> trainingEditedConsumers)
 {
     /// <summary>
-    /// Hands the fact to each of its registered consumers, in registration order.
+    /// Hands the fact to each of its registered consumers, in registration order, skipping the
+    /// ones already delivered and isolating each from its neighbours' failures. Answers who
+    /// delivered this pass and who failed (ADR 0034).
     /// </summary>
     /// <param name="integrationEvent">The fact, deserialized from its envelope.</param>
+    /// <param name="alreadyDelivered">The ledger's answer: consumers this message already reached.</param>
     /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-    public Task DispatchAsync(IIntegrationEvent integrationEvent, CancellationToken cancellationToken) =>
+    public Task<DispatchOutcome> DispatchAsync(
+        IIntegrationEvent integrationEvent,
+        IReadOnlySet<string> alreadyDelivered,
+        CancellationToken cancellationToken) =>
         integrationEvent switch
         {
-            TrainerCreatedIntegrationEvent fact => HandleAllAsync(trainerCreatedConsumers, fact, cancellationToken),
-            TrainerContactEmailChangedIntegrationEvent fact => HandleAllAsync(contactEmailChangedConsumers, fact, cancellationToken),
-            TrainingCreatedIntegrationEvent fact => HandleAllAsync(trainingCreatedConsumers, fact, cancellationToken),
-            TrainingEditedIntegrationEvent fact => HandleAllAsync(trainingEditedConsumers, fact, cancellationToken),
+            TrainerCreatedIntegrationEvent fact => HandleAllAsync(trainerCreatedConsumers, fact, alreadyDelivered, cancellationToken),
+            TrainerContactEmailChangedIntegrationEvent fact => HandleAllAsync(contactEmailChangedConsumers, fact, alreadyDelivered, cancellationToken),
+            TrainingCreatedIntegrationEvent fact => HandleAllAsync(trainingCreatedConsumers, fact, alreadyDelivered, cancellationToken),
+            TrainingEditedIntegrationEvent fact => HandleAllAsync(trainingEditedConsumers, fact, alreadyDelivered, cancellationToken),
             _ => throw new InvalidOperationException(
                 $"{integrationEvent.GetType().Name} has no route in {nameof(IntegrationEventDispatcher)}. " +
                 "A new integration event is registered, serialized, consumed — and routed here."),
         };
 
-    private static async Task HandleAllAsync<TEvent>(
+    private static async Task<DispatchOutcome> HandleAllAsync<TEvent>(
         IEnumerable<IIntegrationEventHandler<TEvent>> consumers,
         TEvent integrationEvent,
+        IReadOnlySet<string> alreadyDelivered,
         CancellationToken cancellationToken)
         where TEvent : IIntegrationEvent
     {
+        var delivered = new List<string>();
+        var failures = new List<ConsumerFailure>();
+
         foreach (var consumer in consumers)
         {
-            await consumer.HandleAsync(integrationEvent, cancellationToken);
+            if (alreadyDelivered.Contains(consumer.ConsumerName))
+            {
+                continue;
+            }
+
+            try
+            {
+                await consumer.HandleAsync(integrationEvent, cancellationToken);
+                delivered.Add(consumer.ConsumerName);
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                // The isolation itself: a consumer's failure is its own outcome, and its
+                // neighbours still get the fact. Cancellation stays a shutdown, not an outcome —
+                // it propagates whole, and the pass it aborts re-runs, which is the at-least-once
+                // window the lease already implies.
+                failures.Add(new ConsumerFailure(consumer.ConsumerName, exception));
+            }
         }
+
+        return new DispatchOutcome(delivered, failures);
     }
 }
