@@ -21,7 +21,7 @@ public sealed class TrainerConfiguration : AggregateRootTypeConfiguration<Traine
         // business attribute of the profile, not a credential. Two trainers of the
         // same organisation may legitimately publish the same address. Uniqueness
         // is enforced by Identity on the account email, which is a different value.
-        builder.OwnsOne(e => e.ContactEmail, b =>
+        builder.ComplexProperty(e => e.ContactEmail, b =>
         {
             b.Property(e => e.FullAddress)
                 .HasColumnName("ContactEmail")
@@ -29,7 +29,7 @@ public sealed class TrainerConfiguration : AggregateRootTypeConfiguration<Traine
                 .HasMaxLength(320);
         });
 
-        builder.OwnsOne(e => e.Name, b =>
+        builder.ComplexProperty(e => e.Name, b =>
         {
             b.Property(e => e.Firstname)
                 .HasColumnName("Firstname")
@@ -41,23 +41,26 @@ public sealed class TrainerConfiguration : AggregateRootTypeConfiguration<Traine
                 .HasMaxLength(50);
         });
 
-        // The Bio navigation is optional: the column must be nullable even though
-        // the value object's Value is non-nullable, so a null column round-trips
-        // as a null Bio instead of an empty value object.
-        builder.OwnsOne(e => e.Bio, bioBuilder =>
+        // The Bio itself is optional, its Value is not: the complex property carries
+        // the nullability, so the column is nullable and a null column round-trips as
+        // a null Bio, while the value object keeps its promise of a non-empty Value.
+        builder.ComplexProperty(e => e.Bio, bioBuilder =>
         {
+            bioBuilder.IsRequired(false);
             bioBuilder.Property(e => e.Value)
                 .HasColumnName("Bio")
-                .HasMaxLength(500)
-                .IsRequired(false);
+                .HasMaxLength(500);
         });
 
-        // Owned, like every other value object on this aggregate, and optional: a trainer without
-        // a photo has nulls in these three columns rather than a row somewhere else. What is
-        // stored is the photo's identity — never a bucket, a key or a URL — so moving the bytes to
-        // a different store changes configuration and leaves this table alone. See ADR 0021.
-        builder.OwnsOne(e => e.Photo, photoBuilder =>
+        // Flattened into this table like every other value object on this aggregate, and
+        // optional: a trainer without a photo has nulls in these three columns rather than a
+        // row somewhere else. What is stored is the photo's identity — never a bucket, a key
+        // or a URL — so moving the bytes to a different store changes configuration and
+        // leaves this table alone. See ADR 0021.
+        builder.ComplexProperty(e => e.Photo, photoBuilder =>
         {
+            photoBuilder.IsRequired(false);
+
             photoBuilder.Property(p => p.PhotoId)
                 .HasColumnName("PhotoId");
 
