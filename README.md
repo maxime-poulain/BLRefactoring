@@ -882,9 +882,20 @@ Each API expects:
 | `ApiLogging:*` | The Serilog pipeline both hosts share: `Path`, `RollingInterval`, `RetainedFileCountLimit`, `MinimumLevel`, `LevelOverrides`, `WriteToFile`. Every key has a working default — a host with no section logs to the console and to daily files under `logs/` ([ADR 0026](docs/adr/0026-log-with-serilog-to-console-and-files-through-typed-options.md)) |
 | `Outbox:*` | How eagerly each host's delivery worker drains the outbox, and how patiently it retries: `PollInterval`, `BatchSize`, `MaxAttempts`, `LeaseDuration`, `RetryDelay` — the base of the doubling schedule a failed attempt books its next try on — and `RetentionPeriod`, past which delivered rows are swept while poison stays for the operator. Every knob has a working default (5 s, 20, 5 attempts, 30 s, 30 s, 14 days) and all fail fast at startup when non-positive ([ADR 0025](docs/adr/0025-deliver-the-outbox-with-a-hosted-service-in-each-host.md), [ADR 0033](docs/adr/0033-back-off-between-retries-log-the-poison-and-sweep-the-delivered-history.md)) |
 
-Supply them through `appsettings.Development.json`, user secrets, or environment variables — the
-`docker compose` service passes them as `ConnectionStrings__TrainingContext`, `Jwt__Key` and so
-on.
+#### Local overrides
+
+Every host — both APIs and the Blazor BFF — loads an optional `appsettings.Local.json` from its
+project directory **after every other source**, environment variables included, so whatever it
+says wins ([ADR 0035](docs/adr/0035-give-every-developer-a-git-ignored-local-overrides-file.md)).
+The file is git-ignored and excluded from the Docker build context: it is the preferred place for
+anything per-developer — a local connection string, real SMTP credentials, different CORS
+origins — and the only local channel that reaches `dotnet ef` at design time, which runs with no
+environment set and therefore never reads `appsettings.Development.json`. The integration suites
+deliberately ignore it, so a local override never changes what the tests prove.
+
+Supply keys through `appsettings.Local.json` (preferred), user secrets, or environment
+variables — the `docker compose` service passes them as `ConnectionStrings__TrainingContext`,
+`Jwt__Key` and so on.
 
 #### Sending real email
 
@@ -896,22 +907,35 @@ point the `Smtp` section at a transactional relay instead. With [Brevo](https://
 free tier as the worked example (sign up, verify a sender address, generate an SMTP key — no
 domain, no DNS):
 
+```jsonc
+// src/DDD/Api/appsettings.Local.json — git-ignored, so the key never leaves the machine
+{
+  "Smtp": {
+    "Host": "smtp-relay.brevo.com",
+    "Port": 587,
+    "UseStartTls": true,
+    "SenderAddress": "the-address-you-verified",
+    "Username": "your-brevo-login",
+    "Password": "<the SMTP key>"
+  }
+}
+```
+
+Or, for secrets kept outside the working tree, the user-secrets alternative:
+
 ```bash
 cd src/DDD/Api
 dotnet user-secrets init
 dotnet user-secrets set "Smtp:Host" "smtp-relay.brevo.com"
-dotnet user-secrets set "Smtp:Port" "587"
-dotnet user-secrets set "Smtp:UseStartTls" "true"
-dotnet user-secrets set "Smtp:SenderAddress" "the-address-you-verified"
-dotnet user-secrets set "Smtp:Username" "your-brevo-login"
 dotnet user-secrets set "Smtp:Password" "<the SMTP key>"
+# …and the remaining Smtp keys the same way.
 ```
 
-User secrets rather than `appsettings.Development.json`, because this repository is public and an
-SMTP key committed to a public repository is harvested within minutes. Run the host, register a
-trainer, and the welcome email arrives for real — check the junk folder, where an unknown
-sender's first message often lands. Any relay speaking SMTP works the same way; Brevo is only
-the example because its free tier asks for nothing beyond a verified sender address.
+Either way, never `appsettings.Development.json`: this repository is public and an SMTP key
+committed to a public repository is harvested within minutes. Run the host, register a trainer,
+and the welcome email arrives for real — check the junk folder, where an unknown sender's first
+message often lands. Any relay speaking SMTP works the same way; Brevo is only the example
+because its free tier asks for nothing beyond a verified sender address.
 
 The Blazor **host** expects one key of its own:
 
@@ -924,9 +948,10 @@ WebAssembly application has no API address at all: it calls the origin that serv
 decides what sits behind `/api`. That is the visible half of
 [ADR 0009](docs/adr/0009-hold-the-access-token-in-the-bff-instead-of-the-browser.md) — the front end
 cannot be pointed at the wrong backend, because it is not pointed at one. Like the API settings
-above, the value sits in the environment-specific file: a `localhost` address is a development fact,
-and the host fails fast with an explicit message when the key is missing rather than falling back to
-a default that would be wrong in production.
+above, the value sits in the environment-specific file — or in the host's own
+`appsettings.Local.json` when a developer's backend lives elsewhere: a `localhost` address is a
+development fact, and the host fails fast with an explicit message when the key is missing rather
+than falling back to a default that would be wrong in production.
 
 ---
 

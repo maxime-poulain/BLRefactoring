@@ -10,6 +10,12 @@ using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// The developer's own overrides, appended after every committed source, the user secrets and the
+// environment, so they always win. Optional, git-ignored and excluded from the Docker build
+// context: in a public repository this file is where a local connection string or a real SMTP
+// key is allowed to exist. See ADR 0035.
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+
 // Add services to the container.
 
 builder.Services.AddControllers();

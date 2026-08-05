@@ -17,3 +17,4 @@
 **/*.db-wal
 **/docker-compose*.yaml
 **/.dockerignore
+**/appsettings.Local.json

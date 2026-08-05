@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Yarp.ReverseProxy.Forwarder;
 
@@ -18,7 +19,8 @@ namespace TrainingHub.Blazor.Bff.Tests;
 /// <para>
 /// The environment is <c>Development</c>, so the host's own <c>appsettings.Development.json</c>
 /// supplies <c>Api:BaseAddress</c>. Its value is never dialled: both the login client and the proxy
-/// are pointed at the handlers below.
+/// are pointed at the handlers below. A developer's <c>appsettings.Local.json</c> is removed from
+/// the configuration for the same hermetic reason the API factory removes it (ADR 0035).
 /// </para>
 /// </remarks>
 public sealed class BffFactory : WebApplicationFactory<Program>
@@ -35,6 +37,19 @@ public sealed class BffFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
+
+        // The suite must behave the same on every machine: a developer's local overrides file,
+        // loaded last by the host, is removed rather than out-shouted. See ADR 0035.
+        builder.ConfigureAppConfiguration((_, configuration) =>
+        {
+            foreach (var localSource in configuration.Sources
+                .OfType<JsonConfigurationSource>()
+                .Where(source => string.Equals(source.Path, "appsettings.Local.json", StringComparison.Ordinal))
+                .ToList())
+            {
+                configuration.Sources.Remove(localSource);
+            }
+        });
 
         builder.ConfigureServices(services =>
         {
