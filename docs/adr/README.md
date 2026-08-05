@@ -68,3 +68,4 @@ simpler from the outside.
 | [0038](0038-derive-every-counted-claim-from-the-code.md) | Derive every counted claim from the code | Accepted |
 | [0039](0039-hold-the-record-and-its-index-to-the-same-status.md) | Hold the record and its index to the same status | Accepted |
 | [0040](0040-register-the-trainer-and-the-account-in-one-transaction.md) | Register the trainer and the account in one transaction | Accepted |
+| [0041](0041-derive-every-named-list-from-the-code.md) | Derive every named list from the code | Accepted |

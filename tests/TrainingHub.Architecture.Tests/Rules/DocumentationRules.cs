@@ -115,9 +115,57 @@ public sealed partial class DocumentationRules
             "domain events", DomainEvents),
         (StrategicDesign + "event-storming.md", @"events, (?<count>[\w-]+) handlers, and",
             "domain event handlers", () => DomainEventHandlers().Count),
+
+        // A policy commits exactly one fact — the publishing handlers are named after the domain
+        // event they translate — so the facts feeding a port also count the policies that commit
+        // them. Two sentences say it that way, and both went stale on the same merge.
+        (StrategicDesign + "context-map.md", @"committed to the outbox by (?<count>[\w-]+) policies in",
+            "policies feeding Notification", () => FactsFeeding(EmailPort).Count),
+        (StrategicDesign + "context-map.md", @"committed to the outbox by (?<count>[\w-]+) policies \(ADR",
+            "policies feeding Search Indexing", () => FactsFeeding(IndexerPort).Count),
+        (StrategicDesign + "event-storming.md", @"\*\*(?<count>[\w-]+) events, [\w-]+ facts, one future consumer",
+            "facts feeding Search Indexing", () => FactsFeeding(IndexerPort).Count),
+        (StrategicDesign + "event-storming.md", @"events, (?<count>[\w-]+) facts, one future consumer",
+            "facts feeding Search Indexing", () => FactsFeeding(IndexerPort).Count),
+    ];
+
+    /// <summary>
+    /// The named lists the living documents state, each with the anchor that locates the
+    /// enumeration and the function that computes what it should hold.
+    /// </summary>
+    /// <remarks>
+    /// The anchor captures the enumeration as a <c>list</c> group, and the members are read out of
+    /// it as the backticked names the prose already writes. Each row names the port in its own
+    /// anchor rather than relying on the sentence alone: the two seams in <c>context-map.md</c> are
+    /// worded alike, and a shared anchor would check one context's facts against the other's.
+    /// </remarks>
+    private static readonly (string Document, string Anchor, string Subject, Func<IReadOnlySet<string>> Truth)[] NamedLists =
+    [
+        (StrategicDesign + "bounded-contexts.md",
+            @"Registration and address changes commit (?<list>.+?) with the change itself",
+            "the facts that feed Notification", () => FactsFeeding(EmailPort)),
+        (StrategicDesign + "bounded-contexts.md",
+            @"a training commits (?<list>.+?) with it",
+            "the facts that feed Search Indexing", () => FactsFeeding(IndexerPort)),
+        (StrategicDesign + "bounded-contexts.md",
+            @"the facts that will maintain its index — (?<list>.+?) — already land durably",
+            "the facts that feed Search Indexing", () => FactsFeeding(IndexerPort)),
+        (StrategicDesign + "context-map.md",
+            @"`Shared\.Application/Notifications/IEmailSender\.cs`.+?the facts that feed it: (?<list>.+?), committed",
+            "the facts that feed Notification", () => FactsFeeding(EmailPort)),
+        (StrategicDesign + "context-map.md",
+            @"`Shared/ITrainingSearchIndexer\.cs`.+?the facts that feed it: (?<list>.+?), committed",
+            "the facts that feed Search Indexing", () => FactsFeeding(IndexerPort)),
+        (StrategicDesign + "context-map.md",
+            @"The facts it would subscribe to are now durable — (?<list>.+?) land in the transactional outbox",
+            "the facts that feed Search Indexing", () => FactsFeeding(IndexerPort)),
     ];
 
     private const string StrategicDesign = "docs/strategic-design/";
+
+    private const string IndexerPort = "ITrainingSearchIndexer";
+
+    private const string EmailPort = "IEmailSender";
 
     /// <summary>
     /// Every counted claim, agrees with the code.
@@ -137,15 +185,7 @@ public sealed partial class DocumentationRules
             .Selected("counted claim")
             .SelectMany(claim =>
             {
-                // Read as one line: a sentence that wraps in the source is still one sentence, and
-                // an anchor should not have to know where the paragraph was folded.
-                var document = Whitespace.Replace(
-                    SourceTree.ReadText(Path.Combine(
-                        SourceTree.RepositoryRoot,
-                        claim.Document.Replace('/', Path.DirectorySeparatorChar))),
-                    " ");
-
-                var matches = Regex.Matches(document, claim.Anchor).ToArray();
+                var matches = Regex.Matches(AsOneLine(claim.Document), claim.Anchor).ToArray();
 
                 if (matches.Length == 0)
                 {
@@ -165,6 +205,62 @@ public sealed partial class DocumentationRules
                     .Where(stated => Number(stated) != truth)
                     .Select(stated =>
                         $"{claim.Document} says '{stated}' where the code has {truth} {claim.Subject}");
+            })
+            .ShouldHold();
+
+    /// <summary>
+    /// Every named list, agrees with the code.
+    /// </summary>
+    /// <remarks>
+    /// The sibling of the rule above, for the claims that enumerate rather than count. A number
+    /// going stale is visible to a reader who recounts; a list going stale is invisible even to one
+    /// who does, because a list short by one still reads as complete — which is how the search
+    /// index came to be described as fed by two facts in six sentences while three consumers
+    /// depended on its port. Checked in both directions, and the second one matters: a member the
+    /// prose adds is a name a reader would grep for and never find. See ADR 0041.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0041",
+        "a list of code the documentation states is derived from the code, or it is not stated")]
+    public void EveryNamedList_AgreesWithTheCode() =>
+        NamedLists
+            .Selected("named list")
+            .SelectMany(claim =>
+            {
+                var matches = Regex.Matches(AsOneLine(claim.Document), claim.Anchor).ToArray();
+
+                if (matches.Length == 0)
+                {
+                    return
+                    [
+                        $"the sentence this claim anchors on is gone from {claim.Document} " +
+                        $"(/{claim.Anchor}/, about {claim.Subject}). Re-anchor the claim on the " +
+                        "sentence as it now reads, or drop the row — an anchor that matches nothing " +
+                        "checks nothing"
+                    ];
+                }
+
+                var truth = claim.Truth();
+
+                return matches.SelectMany(match =>
+                {
+                    var stated = BacktickedCode
+                        .Matches(match.Groups["list"].Value)
+                        .Select(name => name.Groups["code"].Value)
+                        .ToHashSet(StringComparer.Ordinal);
+
+                    return truth
+                        .Where(member => !stated.Contains(member))
+                        .Select(member =>
+                            $"{claim.Document} lists {claim.Subject} without naming '{member}'. A " +
+                            "list short by one reads as complete, which is why this is a rule and " +
+                            "not a review")
+                        .Concat(stated
+                            .Where(member => !truth.Contains(member))
+                            .Select(member =>
+                                $"{claim.Document} names '{member}' among {claim.Subject}, and the " +
+                                "code has nothing of that name feeding it"));
+                });
             })
             .ShouldHold();
 
@@ -228,6 +324,17 @@ public sealed partial class DocumentationRules
     }
 
     // ------------------------------------------------------------------ what the documents say
+
+    /// <summary>
+    /// A document, read as one line: a sentence that wraps in the source is still one sentence, and
+    /// an anchor should not have to know where the paragraph was folded.
+    /// </summary>
+    private static string AsOneLine(string document) =>
+        Whitespace.Replace(
+            SourceTree.ReadText(Path.Combine(
+                SourceTree.RepositoryRoot,
+                document.Replace('/', Path.DirectorySeparatorChar))),
+            " ");
 
     /// <summary>The codes the README's error-code table lists, by their published value.</summary>
     private static IReadOnlySet<string> ErrorCodeTable()
@@ -320,6 +427,44 @@ public sealed partial class DocumentationRules
                 contract.IsGenericType
                 && contract.GetGenericTypeDefinition() == typeof(IIntegrationEventHandler<>)))
     ];
+
+    /// <summary>
+    /// The integration events a context is fed, named by the port its consumers speak through.
+    /// </summary>
+    /// <remarks>
+    /// Nothing is pinned: the answer is the consumers themselves, grouped by the port their
+    /// constructor takes. A fourth consumer therefore changes the answer without anybody editing
+    /// the ledger, which is the whole point — a consumer arriving is the merge that made six
+    /// sentences wrong.
+    /// </remarks>
+    private static IReadOnlySet<string> FactsFeeding(string port)
+    {
+        var facts = IntegrationEventHandlers()
+            .Where(consumer => consumer
+                .GetConstructors()
+                .SelectMany(constructor => constructor.GetParameters())
+                .Any(parameter => parameter.ParameterType.Name == port))
+            .Select(consumer => consumer
+                .GetInterfaces()
+                .Single(contract => contract.IsGenericType
+                    && contract.GetGenericTypeDefinition() == typeof(IIntegrationEventHandler<>))
+                .GetGenericArguments()[0]
+                .Name)
+            .ToHashSet(StringComparer.Ordinal);
+
+        if (facts.Count == 0)
+        {
+            // Vacuity, and the only way a named list could pass while checking nothing: a port
+            // renamed, no consumer matched, and "the document names every fact" made true by there
+            // being no fact to name.
+            throw new InvalidOperationException(
+                $"No integration-event consumer takes a '{port}'. The named-list ledger reads that " +
+                "population to compute what the documents should enumerate; with none found, the " +
+                "rows citing this port assert nothing.");
+        }
+
+        return facts;
+    }
 
     /// <summary>The handlers whose reaction is to publish an integration event.</summary>
     private static int Publishers() =>

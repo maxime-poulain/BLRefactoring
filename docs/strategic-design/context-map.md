@@ -122,14 +122,21 @@ the decision: *"the search engine sitting behind it knows nothing about the doma
 identifiers."* Passing `TrainingId` would have made the index a downstream *conformist* of the
 domain model; passing `Guid` keeps the contract translatable.
 
-**The seam:** `Shared/ITrainingSearchIndexer.cs` — and the facts that will feed it:
-`TrainingCreatedIntegrationEvent` and `TrainingEditedIntegrationEvent`, committed to the outbox by
-two policies (ADR 0002, ADR 0024).
+**The seam:** `Shared/ITrainingSearchIndexer.cs` — and the facts that feed it:
+`TrainingCreatedIntegrationEvent`, `TrainingEditedIntegrationEvent` and
+`TrainingTransferredIntegrationEvent`, committed to the outbox by three policies (ADR 0002,
+ADR 0024).
 
 **State:** one fake implementation, fed by the outbox's consumers after each commit: the delivery
 worker (ADR 0025) replays the committed facts into this port, so the index only ever learns of
 trainings the database accepted. The index's consumer is Catalogue Discovery, which does not
 exist.
+
+**Why a transfer is one of the three.** Nothing about the training's content changes when it
+changes hands, which is why it looks like an ownership detail and is not: the index is what a
+public catalogue would read, and the trainer a training is filed under is part of what that page
+shows. A seam described as fed by *create and edit* is a seam that would serve the wrong author
+([ADR 0036](../adr/0036-model-the-decision-that-has-no-home-as-a-domain-service.md)).
 
 ---
 
@@ -168,14 +175,14 @@ it, and a reader who does not know that will read them as over-engineering.
 
 | Already there | For |
 |---|---|
-| `ITrainingSearchIndexer`, maintained on every create and edit | The search index a public page would read |
+| `ITrainingSearchIndexer`, maintained on every create, edit and transfer | The search index a public page would read |
 | `GET /Trainer/{id}/photo`, addressed by identifier, immutable cache, `ETag` from the photo's identity | A portrait served publicly, behind a CDN |
 | A CQRS query side that projects into DTOs without loading aggregates | A read model that does not pay for the write model |
 
 **What is not decided:** whether discovery gets its own store, or reads a projection of the same
-database. The facts it would subscribe to are now durable — `TrainingCreatedIntegrationEvent` and
-`TrainingEditedIntegrationEvent` land in the transactional outbox with every commit (ADR 0024) —
-but the subscriber still does not exist.
+database. The facts it would subscribe to are now durable — `TrainingCreatedIntegrationEvent`,
+`TrainingEditedIntegrationEvent` and `TrainingTransferredIntegrationEvent` land in the transactional
+outbox with every commit (ADR 0024) — but the subscriber still does not exist.
 
 ---
 
