@@ -139,5 +139,8 @@ The build enforces the style, so match what is there rather than normalising it:
 - No dead code, no comment describing something that is no longer true.
 - Documentation and implementation agree.
 
-Commits are imperative one-liners, squash-merged from a pull request. If you see a better design that
-no accepted record forbids, propose it before implementing it.
+Commits are imperative one-liners, squash-merged from a pull request. An AI-assisted commit keeps
+its `Co-Authored-By` trailer — always — but never carries a Claude session reference: no
+`Claude-Session` trailer, no session URL, not in the message and not in anything committed. Check
+the message and the staged diff for one before every commit. If you see a better design that no
+accepted record forbids, propose it before implementing it.
