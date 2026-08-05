@@ -61,6 +61,29 @@ services:
       retries: 5
       start_period: 10s
 
+  # The mail server the outbox consumers deliver through. Mailpit rather than MailHog: same idea —
+  # an SMTP sink for development that keeps every message it accepts — but maintained, and with an
+  # HTTP API the integration tests read delivered messages back through. The API talks to it over
+  # plain SMTP via MailKit, so pointing at a hosted relay later is a change of environment
+  # variables and no code. See ADR 0031.
+  mailpit:
+    image: axllent/mailpit:v1.30.6
+    container_name: mailpit
+    ports:
+      # SMTP submission. 8025 is the web UI and the HTTP API — the only way to see what was sent
+      # without a mail client.
+      - "1025:1025"
+      - "8025:8025"
+    # No volume on purpose: a mail sink that forgets on restart is a feature, not a gap.
+    healthcheck:
+      # The binary carries its own readiness probe precisely so images without wget or curl can
+      # healthcheck; guessing at busybox tooling is how the SeaweedFS check above went wrong once.
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
   ddd-api:
     build:
       context: .
@@ -83,10 +106,19 @@ services:
       - ObjectStorage__AccessKey=blrefactoring
       - ObjectStorage__SecretKey=blrefactoring
       - ObjectStorage__CreateBucketOnStartup=true
+      - Smtp__Host=mailpit
+      - Smtp__Port=1025
+      - Smtp__SenderAddress=no-reply@traininghub.local
+      - Smtp__SenderName=TrainingHub
     depends_on:
       sqlserver:
         condition: service_healthy
       seaweedfs:
+        condition: service_healthy
+      # Uniformity rather than necessity: the host starts fine while the mail server is down — an
+      # undeliverable email is what the outbox's retry budget exists for — but Mailpit is ready in
+      # milliseconds, so waiting for it costs nothing and keeps the three dependencies alike.
+      mailpit:
         condition: service_healthy
 
 volumes:

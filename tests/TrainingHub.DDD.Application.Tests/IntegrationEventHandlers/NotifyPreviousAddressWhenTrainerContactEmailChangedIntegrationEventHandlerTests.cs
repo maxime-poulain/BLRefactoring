@@ -1,6 +1,6 @@
-using TrainingHub.Shared;
 using TrainingHub.Shared.Application.IntegrationEventHandlers;
 using TrainingHub.Shared.Application.IntegrationEvents;
+using TrainingHub.Shared.Application.Notifications;
 using Moq;
 using Xunit;
 

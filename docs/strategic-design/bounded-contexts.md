@@ -13,7 +13,7 @@ because it decides where effort goes.
 |---|---|---|---|
 | Training Catalogue | **Core** | The reason the system exists: a trainer describes what they teach. Every rule that is specific to this business is here. | `src/TrainingHub.Shared.Domain/` |
 | Identity & Access | Supporting | Necessary, not distinctive. Bought rather than modelled — ASP.NET Core Identity, unmodified. | `Shared.Infrastructure/ThirdParty/Identity/` |
-| Notification | Generic | Sending an email is the same problem for everybody. | `IEmailSender`, one fake implementation |
+| Notification | Generic | Sending an email is the same problem for everybody. | `IEmailSender` in `Shared.Application/Notifications/`, a MailKit adapter behind it — see [ADR 0031](../adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md) |
 | Search Indexing | Generic | Keeping a read model in step with writes. | `ITrainingSearchIndexer`, one fake implementation |
 | Media Storage | Generic | Bytes under a key. Solved by an industry protocol. | `IObjectStore`, S3 adapter — see [ADR 0021](../adr/0021-store-a-photo-beside-the-row-that-names-it.md) |
 
@@ -204,8 +204,11 @@ Registration, authentication, token issuance, lockout.
 - **Language:** `EmailMessage` — a recipient, a subject, a body. Deliberately primitive: the port
   carries no domain type, so the notifier can never grow an opinion about trainers.
 - **Aggregates:** none.
-- **Status:** port only. `IEmailSender` has one fake implementation that logs; no provider is
-  chosen.
+- **Status:** real. `IEmailSender` is declared in the application layer beside its two consumers
+  and implemented by `SmtpEmailSender` over MailKit — Mailpit locally, any relay by configuration
+  ([ADR 0031](../adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md)). The
+  protocol is the boundary: only the infrastructure names the mail client, and a rule holds that
+  line.
 - **Fed by:** the transactional outbox, end to end. Registration and address changes commit
   `TrainerCreatedIntegrationEvent` and `TrainerContactEmailChangedIntegrationEvent` with the
   change itself (ADR 0002, ADR 0024), and the delivery worker hands each fact to the consumer

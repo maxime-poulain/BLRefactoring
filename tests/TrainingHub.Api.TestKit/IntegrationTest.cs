@@ -70,6 +70,22 @@ public interface IHttpClientSource
 }
 
 /// <summary>
+/// A fixture that says where the mail server's HTTP API answers.
+/// </summary>
+/// <remarks>
+/// For the tests that hold email delivery to its output: a message only proves it left the host
+/// by arriving somewhere, and the mailbox's own API is the one place a test can read it back.
+/// The container belongs to the fixture, so reading it races with nobody.
+/// </remarks>
+public interface IMailboxSource
+{
+    /// <summary>
+    /// The base address of the mail server's HTTP API.
+    /// </summary>
+    Uri MailboxApiBaseAddress { get; }
+}
+
+/// <summary>
 /// Base class for the integration tests: empties the database before each test.
 /// </summary>
 /// <remarks>

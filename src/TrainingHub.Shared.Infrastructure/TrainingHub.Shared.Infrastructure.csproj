@@ -22,6 +22,12 @@
       -->
       <PackageReference Include="AWSSDK.S3" />
       <!--
+        The SMTP client, for SmtpEmailSender. Same containment as AWSSDK.S3 above: this is the only
+        project that references it, and an architecture rule holds that line — nothing above the
+        infrastructure knows which mail protocol is in use. See ADR 0031.
+      -->
+      <PackageReference Include="MailKit" />
+      <!--
         AddInfrastructure asks IHostEnvironment whether it is running in Development before
         enabling EF Core's sensitive-data logging. That abstraction used to arrive through the
         ASP.NET Core framework reference; now that persistence no longer carries the whole web

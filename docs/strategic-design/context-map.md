@@ -100,14 +100,16 @@ The catalogue publishes facts; the notifier consumes them. The contract is `Emai
 Subject, Body)` — three strings, no domain type. The notifier cannot develop an opinion about
 trainers because it is never shown one.
 
-**The seam:** `Shared/IEmailSender.cs` — and, since the outbox landed, the facts that will feed it:
+**The seam:** `Shared.Application/Notifications/IEmailSender.cs` — and, since the outbox landed, the facts that feed it:
 `TrainerCreatedIntegrationEvent` and `TrainerContactEmailChangedIntegrationEvent`, committed to the
 outbox by two policies in `Shared.Application/EventHandlers/` (ADR 0002, ADR 0024).
 
-**State:** one fake implementation, called by the outbox's consumers after each commit: the two
-facts land durably with the changes that justify them, and the delivery worker (ADR 0025) hands
-them to the policies that compose the `EmailMessage`s. Nothing is sent anywhere yet — the fake
-logs — and the day a provider is chosen, the choice is a registration in the composition root.
+**State:** real, since [ADR 0031](../adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md):
+the two facts land durably with the changes that justify them, the delivery worker (ADR 0025)
+hands them to the policies that compose the `EmailMessage`s, and a MailKit adapter sends each one
+over SMTP — to a Mailpit container locally, to whatever relay the `Smtp` section names elsewhere.
+Choosing a provider was, as promised, a registration in the composition root; the integration
+suites read the delivered messages back out of the real server.
 
 ---
 

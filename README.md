@@ -153,7 +153,7 @@ Twenty-six projects: sixteen under `src/`, ten under `tests/`. The backend and a
 
 | Project | Responsibility |
 |---|---|
-| `TrainingHub.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, `PageRequest`/`PagedResult`, and the cross-cutting ports `IUnitOfWork`, `ICurrentUserService`, `IEmailSender`, `ITrainingSearchIndexer`, plus the CQS marker interfaces |
+| `TrainingHub.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, `PageRequest`/`PagedResult`, and the cross-cutting ports `IUnitOfWork`, `ICurrentUserService`, `ITrainingSearchIndexer`, plus the CQS marker interfaces |
 | `TrainingHub.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, and the fact ports `IUniquenessTitleChecker` and `ITrainingCounter` |
 | `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the six domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the four post-commit consumers — all shared by both stacks |
 | `TrainingHub.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the paged-read extensions (`NewestFirst`, `ToPagedResultAsync`), the identity store, and the transactional outbox — publisher, delivery worker, dispatcher |
@@ -368,9 +368,12 @@ translate the domain event into an integration event and commit it to the transa
 [the outbox section](#domain-events-and-the-unit-of-work)). After the commit, the outbox delivery
 worker hands each fact to its consumers — `IIntegrationEventHandler<TEvent>` implementations in
 the same application layer — which is where the welcome email, the address warning and the index
-updates now happen (ADR 0025). `IEmailSender` and `ITrainingSearchIndexer` are ports declared in
-the shared kernel, each with a fake implementation that only writes to the log, so the project
-still depends on no SMTP server or search engine.
+updates now happen (ADR 0025). The two messages leave over real SMTP: `IEmailSender` is declared
+beside its consumers in `Shared.Application/Notifications/` and implemented by a MailKit adapter
+pointed at whatever relay the `Smtp` section names — a Mailpit container locally (see
+[ADR 0031](docs/adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md)).
+`ITrainingSearchIndexer` remains a kernel port with a fake implementation that only writes to the
+log, so the project still depends on no search engine.
 
 ### Use cases
 
@@ -783,7 +786,8 @@ what made the first of them ambiguous.
 | `bunit` | Renders a Blazor component in-process, so the profile page's client-side decisions are tested rather than only clicked |
 | `xunit`, `AwesomeAssertions`, `Moq` | Testing — `AwesomeAssertions` is the Apache 2.0 community fork of FluentAssertions, whose 8.x line moved to a commercial licence |
 | `AWSSDK.S3` | The object store photos live in — pointed at a SeaweedFS container locally, and at any S3-compatible provider by configuration |
-| `Testcontainers`, `Testcontainers.MsSql` | A real SQL Server and a real object store per integration test run |
+| `MailKit` | The SMTP client the emails leave through — pointed at a Mailpit container locally, and at any relay by configuration ([ADR 0031](docs/adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md)) |
+| `Testcontainers`, `Testcontainers.MsSql` | A real SQL Server, a real object store and a real mail server per integration test run |
 | `Respawn` | Database reset between integration tests |
 
 Versions are managed centrally in `Directory.Packages.props` — projects reference packages
@@ -796,16 +800,17 @@ without a version attribute, every version is exact, and transitive pinning is e
 ### Prerequisites
 
 - **.NET SDK 10**
-- **Docker** — for SQL Server and the object store, and required by the integration tests
+- **Docker** — for SQL Server, the object store and the mail server, and required by the integration tests
 
 ### Run the dependencies
 
 ```bash
-docker compose up -d sqlserver seaweedfs
+docker compose up -d sqlserver seaweedfs mailpit
 ```
 
-This starts SQL Server 2022 on port `1433` and SeaweedFS on `8333` (its S3 endpoint) and `9333`
-(the master's own UI), each with a named volume. SeaweedFS rather than MinIO, whose community
+This starts SQL Server 2022 on port `1433`, SeaweedFS on `8333` (its S3 endpoint) and `9333`
+(the master's own UI), each with a named volume, and Mailpit on `1025` (SMTP) and `8025` — every
+email the hosts send is readable at <http://localhost:8025>. SeaweedFS rather than MinIO, whose community
 repository was archived in April 2026 and publishes no binaries; both speak S3, and the API talks to
 whichever through `AWSSDK.S3`, so the provider is four configuration values rather than a rewrite.
 The bucket is created at startup in `Development`, in the same spirit as the migrations below. See
@@ -857,11 +862,40 @@ Each API expects:
 | `ObjectStorage:BucketName` | The bucket they go in. Also required at startup |
 | `ObjectStorage:AccessKey`, `ObjectStorage:SecretKey` | Credentials. They must match an identity in `docker/seaweedfs-s3.json`: started without that file SeaweedFS accepts anonymous requests and **refuses signed ones**, so an SDK — which signs everything — gets a 500 per upload from a container that reports itself healthy |
 | `ObjectStorage:CreateBucketOnStartup` | Creates the bucket when absent. On for the local container, which comes up empty; off elsewhere, where a bucket is provisioned once by whoever owns the account |
+| `Smtp:Host`, `Smtp:Port`, `Smtp:SenderAddress` | The mail server the outbox consumers deliver through, and the identity messages are sent as. All three **fail fast at startup** when missing ([ADR 0031](docs/adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md)) |
+| `Smtp:SenderName`, `Smtp:Username`, `Smtp:Password`, `Smtp:UseStartTls` | Optional: a display name, credentials for a relay that wants them (they travel as a pair or not at all), and STARTTLS for one reached across a real network. The local Mailpit container needs none of them |
 | `ApiLogging:*` | The Serilog pipeline both hosts share: `Path`, `RollingInterval`, `RetainedFileCountLimit`, `MinimumLevel`, `LevelOverrides`, `WriteToFile`. Every key has a working default — a host with no section logs to the console and to daily files under `logs/` ([ADR 0026](docs/adr/0026-log-with-serilog-to-console-and-files-through-typed-options.md)) |
 
 Supply them through `appsettings.Development.json`, user secrets, or environment variables — the
 `docker compose` service passes them as `ConnectionStrings__TrainingContext`, `Jwt__Key` and so
 on.
+
+#### Sending real email
+
+Locally every message ends in **Mailpit**, and Mailpit is a sink: it accepts anything and relays
+nothing, which is what makes registering trainers safe on a development machine. Delivery to a
+real inbox is a relay choice, not a code change — that is the claim
+[ADR 0031](docs/adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md) makes — so
+point the `Smtp` section at a transactional relay instead. With [Brevo](https://www.brevo.com)'s
+free tier as the worked example (sign up, verify a sender address, generate an SMTP key — no
+domain, no DNS):
+
+```bash
+cd src/DDD/Api
+dotnet user-secrets init
+dotnet user-secrets set "Smtp:Host" "smtp-relay.brevo.com"
+dotnet user-secrets set "Smtp:Port" "587"
+dotnet user-secrets set "Smtp:UseStartTls" "true"
+dotnet user-secrets set "Smtp:SenderAddress" "the-address-you-verified"
+dotnet user-secrets set "Smtp:Username" "your-brevo-login"
+dotnet user-secrets set "Smtp:Password" "<the SMTP key>"
+```
+
+User secrets rather than `appsettings.Development.json`, because this repository is public and an
+SMTP key committed to a public repository is harvested within minutes. Run the host, register a
+trainer, and the welcome email arrives for real — check the junk folder, where an unknown
+sender's first message often lands. Any relay speaking SMTP works the same way; Brevo is only
+the example because its free tier asks for nothing beyond a verified sender address.
 
 The Blazor **host** expects one key of its own:
 
@@ -910,8 +944,9 @@ No test count is quoted here on purpose: a `[Theory]` expands to as many cases a
 the only honest figure is the one the two commands above print, and a figure written down goes
 stale on the next commit that adds a test.
 
-The integration tests start SQL Server through **Testcontainers** — no manual setup, no shared
-environment — and **Respawn** empties the database before each test, so every one of them starts
+The integration tests start SQL Server — and beside it a real object store and a real mail
+server — through **Testcontainers**: no manual setup, no shared environment. **Respawn** empties
+the database before each test, so every one of them starts
 from a known state. The test host wires the same EF Core interceptors as production, so domain
 events really are dispatched: the trainer-deletion cascade is asserted on both hosts by
 `DomainEventPipelineTests`.
@@ -927,7 +962,10 @@ race through two service scopes, because the atomicity it proves — a failed sa
 outbox row down with it — cannot be shown over HTTP: the stale-`If-Match` path is refused before
 any event is raised. The same suite watches the delivery worker do its actual job against the real
 database: a committed fact gets processed and stamped, and a message nobody can read spends its
-attempt budget, keeps its error, and stops the line for no one. Validation is where the two suites still differ, though far
+attempt budget, keeps its error, and stops the line for no one. `EmailTests` follows two of those
+facts one hop further: the welcome message and the address-change warning are read back out of a
+real Mailpit container through its HTTP API, subject, recipient and wording intact — the proof
+that the SMTP adapter ADR 0031 introduced actually delivers. Validation is where the two suites still differ, though far
 less than they did: an invalid field on the layered host is caught by the value objects, while on the
 CQRS host a FluentValidation validator inside `ValidationPipelineBehavior` catches it first. Both now
 answer the same shape — a `domainErrors` document — since that behaviour returns a failed `Result`
