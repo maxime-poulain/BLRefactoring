@@ -187,6 +187,53 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+    /// <summary>
+    /// Register, when the trainer half is refused, leaves no account behind.
+    /// </summary>
+    /// <remarks>
+    /// The one assertion behind ADR 0040, and the one nothing made until it was written. Six places
+    /// in this repository state that registration is atomic — the README, the context map, the
+    /// event-storming board, both trainer controllers — and ADR 0016 rests on it, since a rejected
+    /// command rolls back by reaching the end of the scope without completing it. All of it was
+    /// held up by a comment.
+    /// <para>
+    /// A single-character firstname is the payload that reaches the right place: the contract
+    /// requires the field and bounds nothing, the CQRS validator asks only that it not be empty, so
+    /// the request passes both gates, the Identity account is created, and <c>Name</c> refuses two
+    /// characters later — which is exactly the window where an orphan account would survive.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task Register_WhenTheTrainerHalfIsRefused_LeavesNoAccountBehind()
+    {
+        var client = Factory.CreateClient();
+        var request = AuthHelper.CreateUniqueRegisterRequest();
+
+        var registration = await AuthHelper.RegisterAsync(client, new RegisterRequest
+        {
+            Username = request.Username,
+            Email = request.Email,
+            Password = request.Password,
+            ConfirmPassword = request.Password,
+            Firstname = "A",
+            Lastname = "User"
+        });
+
+        registration.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var login = await client.PostAsJsonAsync("/Auth/login", new LoginRequest
+        {
+            Username = request.Username,
+            Password = request.Password
+        });
+
+        // Answered exactly as an unknown username is, because that is what it is: the account was
+        // created inside the scope and went down with it. A 401 that said anything else here would
+        // mean an account survived with no trainer behind it.
+        login.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        (await login.Content.ReadAsStringAsync()).Should().Contain("Invalid username or password.");
+    }
+
     // -- Login --
 
     /// <summary>

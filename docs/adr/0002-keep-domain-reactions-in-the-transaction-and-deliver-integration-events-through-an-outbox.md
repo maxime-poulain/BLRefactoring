@@ -1,6 +1,6 @@
 # 0002 — Keep domain reactions in the transaction, deliver integration events through an outbox
 
-- **Status:** Accepted — implemented; the message design is recorded in 0024, the delivery worker in 0025
+- **Status:** Accepted — implemented; the message design is recorded in [0024](0024-publish-facts-not-intents-and-version-them-in-the-envelope.md), the delivery worker in [0025](0025-deliver-the-outbox-with-a-hosted-service-in-each-host.md); its registration consequence is corrected by [0040](0040-register-the-trainer-and-the-account-in-one-transaction.md)
 - **Date:** 2026-08-01
 
 > **Overtaken by events.** The "Status of the implementation" section below records the day this

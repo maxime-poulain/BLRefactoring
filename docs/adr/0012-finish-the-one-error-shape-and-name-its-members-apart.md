@@ -1,6 +1,6 @@
 # 0012 — Finish the one error shape, and name its members apart
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0016](0016-let-a-rejected-command-fail-like-every-other-command.md)
 - **Date:** 2026-08-01
 - **Amends:** [0004](0004-publish-every-error-as-rfc-7807-problem-details.md)
 

@@ -1,6 +1,6 @@
 # 0033 — Back off between retries, log the poison, and sweep the delivered history
 
-- **Status:** Accepted
+- **Status:** Accepted — the per-consumer isolation it left out arrives in [0034](0034-deliver-once-per-consumer-not-once-per-message.md); the poison gains a pollable gauge in [0037](0037-answer-for-the-hosts-health-at-two-endpoints.md)
 - **Date:** 2026-08-05
 
 ## Context

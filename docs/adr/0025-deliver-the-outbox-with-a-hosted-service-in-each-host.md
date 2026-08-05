@@ -1,6 +1,6 @@
 # 0025 — Deliver the outbox with a hosted service in each host
 
-- **Status:** Accepted — the email half of "they remain fakes" is dated by [0031](0031-send-email-over-smtp-and-prove-it-against-a-real-server.md); the search half stays true
+- **Status:** Accepted — the email half of "they remain fakes" is dated by [0031](0031-send-email-over-smtp-and-prove-it-against-a-real-server.md); the search half stays true; the retry cadence, the poison's silence and the table's growth are hardened by [0033](0033-back-off-between-retries-log-the-poison-and-sweep-the-delivered-history.md); delivery is settled per consumer by [0034](0034-deliver-once-per-consumer-not-once-per-message.md)
 - **Date:** 2026-08-04
 
 ## Context
