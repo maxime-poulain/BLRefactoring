@@ -58,11 +58,21 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
         builder.Property(message => message.ProcessedOnUtc)
             .HasPrecision(7);
 
+        builder.Property(message => message.NextAttemptOnUtc)
+            .HasPrecision(7);
+
         // The worker's one question — "what is owed, oldest first" — answered by an index that
         // holds only the owed rows: delivered messages fall out of it, so it stays small no matter
         // how much history the table accumulates.
         builder.HasIndex(message => message.OccurredOnUtc)
             .HasFilter("[ProcessedOnUtc] IS NULL")
             .HasDatabaseName("IX_OutboxMessage_Unprocessed");
+
+        // The sweep's mirror question — "what is delivered, oldest first" — so trimming the
+        // history past its retention is a range seek that finds nothing almost every poll, which
+        // is what makes sweeping on every poll defensible. See ADR 0033.
+        builder.HasIndex(message => message.ProcessedOnUtc)
+            .HasFilter("[ProcessedOnUtc] IS NOT NULL")
+            .HasDatabaseName("IX_OutboxMessage_Delivered");
     }
 }

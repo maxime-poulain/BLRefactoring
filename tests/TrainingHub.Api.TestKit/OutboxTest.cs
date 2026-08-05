@@ -38,7 +38,7 @@ namespace TrainingHub.Api.TestKit;
 /// <typeparam name="TFactory">The suite's fixture — one per host, since the wiring under test is
 /// each host's own.</typeparam>
 public abstract class OutboxTest<TFactory>(TFactory factory) : IntegrationTest<TFactory>(factory)
-    where TFactory : IResettableDatabase, IServiceScopeSource, IHttpClientSource
+    where TFactory : IResettableDatabase, IServiceScopeSource, IHttpClientSource, IServerErrorSource
 {
     /// <summary>
     /// Registering a trainer, commits the trainer-created fact, into the outbox.
@@ -101,11 +101,13 @@ public abstract class OutboxTest<TFactory>(TFactory factory) : IntegrationTest<T
     [Fact]
     public async Task AMessageNobodyCanRead_SpendsItsBudget_AndIsLeftPoisoned()
     {
+        var messageId = Guid.CreateVersion7();
+
         using (var scope = Factory.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<TrainingContext>();
             context.Set<OutboxMessage>().Add(new OutboxMessage(
-                Guid.CreateVersion7(),
+                messageId,
                 "NobodyKnowsThisName",
                 1,
                 "{}",
@@ -119,11 +121,65 @@ public abstract class OutboxTest<TFactory>(TFactory factory) : IntegrationTest<T
 
         poisoned.ProcessedOnUtc.Should().BeNull("a message that cannot be read is never marked delivered");
         poisoned.Error.Should().Contain("No integration event is registered");
+        poisoned.NextAttemptOnUtc.Should().NotBeNull(
+            "every failed attempt books the next one — the schedule was written before the budget ran out");
+
+        // The transition was announced: one Error line, naming the message, reached the host's
+        // sinks — the smallest dead-letter surface ADR 0025 deferred, delivered by ADR 0033.
+        Factory.ServerErrors.Should().Contain(
+            error => error.Contains(messageId.ToString(), StringComparison.Ordinal),
+            "poisoning is the moment the system gives up on a committed fact, and it must say so");
 
         // The poison did not stop the line: a fact committed afterwards still gets delivered.
         var request = AuthHelper.CreateUniqueRegisterRequest();
         (await AuthHelper.RegisterAsync(Factory.CreateClient(), request)).EnsureSuccessStatusCode();
         await WaitForMessageAsync("TrainerCreated", message => message.ProcessedOnUtc is not null);
+    }
+
+    /// <summary>
+    /// A delivered message, outlives its retention, then is swept.
+    /// </summary>
+    /// <remarks>
+    /// Three rows tell the boundary apart: one delivered long before the suite's retention window,
+    /// one delivered just now, one unreadable and never delivered. The sweep must take exactly the
+    /// first — delivered history is trimmed, fresh history is kept, and poison is an operator's
+    /// evidence that nothing may delete (ADR 0033).
+    /// </remarks>
+    [Fact]
+    public async Task ADeliveredMessage_OutlivesItsRetention_ThenIsSwept()
+    {
+        using (var scope = Factory.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<TrainingContext>();
+
+            var stale = new OutboxMessage(
+                Guid.CreateVersion7(), "DeliveredLongAgo", 1, "{}", DateTime.UtcNow.AddMinutes(-11));
+            stale.MarkProcessed(DateTime.UtcNow.AddMinutes(-10));
+
+            var fresh = new OutboxMessage(
+                Guid.CreateVersion7(), "DeliveredJustNow", 1, "{}", DateTime.UtcNow);
+            fresh.MarkProcessed(DateTime.UtcNow);
+
+            context.Set<OutboxMessage>().AddRange(
+                stale,
+                fresh,
+                new OutboxMessage(Guid.CreateVersion7(), "NobodyKnowsThisOneEither", 1, "{}", DateTime.UtcNow));
+
+            await context.SaveChangesAsync();
+        }
+
+        await WaitUntilGoneAsync("DeliveredLongAgo");
+
+        using var assertScope = Factory.CreateScope();
+        var messages = await assertScope.ServiceProvider.GetRequiredService<TrainingContext>()
+            .Set<OutboxMessage>().ToListAsync();
+
+        messages.Should().Contain(
+            message => message.Name == "DeliveredJustNow",
+            "a delivered message inside its retention is history an operator may still want");
+        messages.Should().Contain(
+            message => message.Name == "NobodyKnowsThisOneEither",
+            "an undelivered message is never swept — poison waits for an operator, not for a broom");
     }
 
     /// <summary>
@@ -235,6 +291,39 @@ public abstract class OutboxTest<TFactory>(TFactory factory) : IntegrationTest<T
                 ? "No such message exists."
                 : $"Last seen: ProcessedOnUtc={lastSeen.ProcessedOnUtc?.ToString("O") ?? "null"}, " +
                   $"Attempts={lastSeen.Attempts}, Error={lastSeen.Error ?? "null"}."));
+    }
+
+    /// <summary>
+    /// Polls the outbox until no message with <paramref name="name"/> remains — the sweep's
+    /// mirror of <see cref="WaitForMessageAsync"/>. Fails with the survivor's state when the
+    /// worker does not sweep it in time.
+    /// </summary>
+    private async Task WaitUntilGoneAsync(string name)
+    {
+        var timeout = TimeSpan.FromSeconds(15);
+        var started = DateTime.UtcNow;
+        OutboxMessage? lastSeen = null;
+
+        while (DateTime.UtcNow - started < timeout)
+        {
+            using (var scope = Factory.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<TrainingContext>();
+                lastSeen = (await context.Set<OutboxMessage>().ToListAsync())
+                    .SingleOrDefault(message => message.Name == name);
+
+                if (lastSeen is null)
+                {
+                    return;
+                }
+            }
+
+            await Task.Delay(100);
+        }
+
+        throw new InvalidOperationException(
+            $"The worker did not sweep '{name}' within {timeout.TotalSeconds}s. Last seen: " +
+            $"ProcessedOnUtc={lastSeen!.ProcessedOnUtc?.ToString("O") ?? "null"}, Attempts={lastSeen.Attempts}.");
     }
 
     /// <summary>

@@ -14,9 +14,11 @@ namespace TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Outbox;
 /// The delivery columns tell one message's story. A worker claims the row by writing
 /// <see cref="ClaimedBy"/> and <see cref="ClaimedUntil"/> — the lease ADR 0002 promised, taken in
 /// the database so a claimant that dies simply lets its lease lapse. A delivery that succeeds
-/// stamps <see cref="ProcessedOnUtc"/>; one that fails counts itself in <see cref="Attempts"/> and
-/// parks the reason in <see cref="Error"/>. A poison message is the row whose attempts exhausted
-/// the budget, still unprocessed, with the last failure sitting beside it (ADR 0024, ADR 0025).
+/// stamps <see cref="ProcessedOnUtc"/>; one that fails counts itself in <see cref="Attempts"/>,
+/// parks the reason in <see cref="Error"/>, and books its next try in
+/// <see cref="NextAttemptOnUtc"/> on a doubling schedule, so an ailing dependency is probed, not
+/// hammered. A poison message is the row whose attempts exhausted the budget, still unprocessed,
+/// with the last failure sitting beside it (ADR 0024, ADR 0025, ADR 0033).
 /// </para>
 /// </remarks>
 public sealed class OutboxMessage
@@ -69,6 +71,12 @@ public sealed class OutboxMessage
     /// <summary>The last delivery failure, kept beside the message it poisoned.</summary>
     public string? Error { get; private set; }
 
+    /// <summary>
+    /// When the message may be tried again; <see langword="null"/> until a delivery has failed,
+    /// and again once one has succeeded. The claim refuses rows whose schedule has not come due.
+    /// </summary>
+    public DateTime? NextAttemptOnUtc { get; private set; }
+
     /// <summary>Which worker holds the current lease — kept after delivery, as provenance.</summary>
     public string? ClaimedBy { get; private set; }
 
@@ -76,24 +84,30 @@ public sealed class OutboxMessage
     public DateTime? ClaimedUntil { get; private set; }
 
     /// <summary>
-    /// Records a successful delivery: the message is done, and no lease needs to outlive it.
+    /// Records a successful delivery: the message is done, no lease needs to outlive it, and a
+    /// delivered message schedules nothing.
     /// </summary>
     /// <param name="processedOnUtc">When the delivery completed, in UTC.</param>
     public void MarkProcessed(DateTime processedOnUtc)
     {
         ProcessedOnUtc = processedOnUtc;
         ClaimedUntil = null;
+        NextAttemptOnUtc = null;
     }
 
     /// <summary>
-    /// Records a failed delivery attempt and releases the lease, so the next poll — from this
-    /// worker or any other — retries the message while the attempt budget lasts.
+    /// Records a failed delivery attempt, releases the lease, and books the next try one doubling
+    /// further out — <c>retryDelay × 2^(attempts−1)</c> — so any worker may retry the message
+    /// while the attempt budget lasts, but none before the schedule says so (ADR 0033).
     /// </summary>
     /// <param name="error">What the failed attempt reported.</param>
-    public void RecordFailure(string error)
+    /// <param name="failedOnUtc">When the attempt failed, in UTC — the schedule's anchor.</param>
+    /// <param name="retryDelay">The base delay the doubling starts from.</param>
+    public void RecordFailure(string error, DateTime failedOnUtc, TimeSpan retryDelay)
     {
         Attempts++;
         Error = error;
         ClaimedUntil = null;
+        NextAttemptOnUtc = failedOnUtc + (retryDelay * Math.Pow(2, Attempts - 1));
     }
 }

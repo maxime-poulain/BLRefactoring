@@ -27,6 +27,31 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        // Every outbox knob is checked positive before the host serves anything, in the mould of
+        // SmtpOptions and ObjectStorageOptions: fail at start-up rather than on the first drain.
+        // The defaults all pass, so a host with no section keeps starting (ADR 0033).
+        services.AddOptions<OutboxOptions>()
+            .Bind(configuration.GetSection(OutboxOptions.SectionName))
+            .Validate(
+                outbox => outbox.PollInterval > TimeSpan.Zero,
+                $"'{OutboxOptions.SectionName}:{nameof(OutboxOptions.PollInterval)}' must be positive.")
+            .Validate(
+                outbox => outbox.BatchSize > 0,
+                $"'{OutboxOptions.SectionName}:{nameof(OutboxOptions.BatchSize)}' must be positive.")
+            .Validate(
+                outbox => outbox.MaxAttempts > 0,
+                $"'{OutboxOptions.SectionName}:{nameof(OutboxOptions.MaxAttempts)}' must be positive.")
+            .Validate(
+                outbox => outbox.LeaseDuration > TimeSpan.Zero,
+                $"'{OutboxOptions.SectionName}:{nameof(OutboxOptions.LeaseDuration)}' must be positive.")
+            .Validate(
+                outbox => outbox.RetryDelay > TimeSpan.Zero,
+                $"'{OutboxOptions.SectionName}:{nameof(OutboxOptions.RetryDelay)}' must be positive.")
+            .Validate(
+                outbox => outbox.RetentionPeriod > TimeSpan.Zero,
+                $"'{OutboxOptions.SectionName}:{nameof(OutboxOptions.RetentionPeriod)}' must be positive.")
+            .ValidateOnStart();
+
         return services
             .AddScoped<IDomainEventDispatcher, MediatorDomainEventDispatcher>()
             .AddScoped<IUnitOfWork, UnitOfWork>()
@@ -47,11 +72,10 @@ public static class ServiceCollectionExtensions
             // Scoped like the DbContext it stages rows into: the publisher must share the unit of
             // work of the save that is dispatching the domain events (ADR 0002).
             .AddScoped<IIntegrationEventPublisher, OutboxIntegrationEventPublisher>()
-            // The outbox's read side (ADR 0025): the worker each host runs, the processor it
-            // scopes per batch, the dispatcher that routes a fact to its consumers, and the four
-            // consumers themselves — the policies that used to run inside the transaction,
-            // reattached after the commit.
-            .Configure<OutboxOptions>(configuration.GetSection("Outbox"))
+            // The outbox's read side (ADR 0025, hardened per ADR 0033): the worker each host
+            // runs, the processor it scopes per batch, the dispatcher that routes a fact to its
+            // consumers, and the four consumers themselves — the policies that used to run inside
+            // the transaction, reattached after the commit. The options bind above, validated.
             .AddScoped<OutboxProcessor>()
             .AddScoped<IntegrationEventDispatcher>()
             .AddScoped<IIntegrationEventHandler<TrainerCreatedIntegrationEvent>,

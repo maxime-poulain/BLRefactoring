@@ -1,6 +1,7 @@
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Outbox;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace TrainingHub.Shared.Infrastructure.Outbox;
@@ -23,7 +24,8 @@ public sealed class OutboxProcessor(
     TrainingContext trainingContext,
     IntegrationEventDispatcher dispatcher,
     TimeProvider timeProvider,
-    IOptions<OutboxOptions> options)
+    IOptions<OutboxOptions> options,
+    ILogger<OutboxProcessor> logger)
 {
     /// <summary>
     /// Claims and delivers at most one batch. Answers how many messages were claimed, so the
@@ -48,6 +50,7 @@ WITH claimable AS (
     WHERE ProcessedOnUtc IS NULL
       AND Attempts < {configured.MaxAttempts}
       AND (ClaimedUntil IS NULL OR ClaimedUntil < {now})
+      AND (NextAttemptOnUtc IS NULL OR NextAttemptOnUtc < {now})
     ORDER BY OccurredOnUtc
 )
 UPDATE claimable
@@ -67,8 +70,35 @@ OUTPUT inserted.*")
             {
                 // The broad catch is the retry mechanism, not a shrug: whatever a consumer threw
                 // is recorded on the envelope, the attempt is counted, and the message returns to
-                // the pool until the budget in MaxAttempts is spent.
-                message.RecordFailure(exception.ToString());
+                // the pool — one doubling later — until the budget in MaxAttempts is spent.
+                message.RecordFailure(
+                    exception.ToString(),
+                    timeProvider.GetUtcNow().UtcDateTime,
+                    configured.RetryDelay);
+
+                if (message.Attempts >= configured.MaxAttempts)
+                {
+                    // Error, once, at the transition: this is the moment the system gives up on a
+                    // committed fact, and the smallest dead-letter surface ADR 0025 deferred.
+                    logger.LogError(
+                        exception,
+                        "Outbox message {MessageId} ({Name} v{Version}) is poison after {Attempts} attempts; it stays in the table for an operator.",
+                        message.Id,
+                        message.Name,
+                        message.Version,
+                        message.Attempts);
+                }
+                else
+                {
+                    logger.LogWarning(
+                        "Delivering outbox message {MessageId} ({Name} v{Version}) failed on attempt {Attempts} of {MaxAttempts}; next try after {NextAttemptOnUtc:O}.",
+                        message.Id,
+                        message.Name,
+                        message.Version,
+                        message.Attempts,
+                        configured.MaxAttempts,
+                        message.NextAttemptOnUtc);
+                }
             }
 
             // Saved per message rather than per batch: an outcome, once known, survives whatever
@@ -77,5 +107,34 @@ OUTPUT inserted.*")
         }
 
         return claimed.Count;
+    }
+
+    /// <summary>
+    /// Deletes messages delivered longer ago than the retention period. Answers how many rows
+    /// went, so the caller can say so when the count is worth a sentence.
+    /// </summary>
+    /// <remarks>
+    /// Only delivered rows are ever swept: a poison row is an operator's evidence and deleting it
+    /// would be the mechanism destroying its own crime scene. The filtered index over delivered
+    /// rows makes this a range seek that finds nothing almost every poll (ADR 0033).
+    /// </remarks>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    public async Task<int> SweepDeliveredAsync(CancellationToken cancellationToken)
+    {
+        var boundary = timeProvider.GetUtcNow().UtcDateTime - options.Value.RetentionPeriod;
+
+        var swept = await trainingContext.Set<OutboxMessage>()
+            .Where(message => message.ProcessedOnUtc != null && message.ProcessedOnUtc < boundary)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        if (swept > 0)
+        {
+            logger.LogInformation(
+                "Swept {Count} delivered outbox messages older than {RetentionPeriod}.",
+                swept,
+                options.Value.RetentionPeriod);
+        }
+
+        return swept;
     }
 }
