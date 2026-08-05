@@ -1,4 +1,5 @@
 using TrainingHub.Shared.Application.IntegrationEvents;
+using TrainingHub.Shared.Application.Notifications;
 
 namespace TrainingHub.Shared.Application.IntegrationEventHandlers;
 

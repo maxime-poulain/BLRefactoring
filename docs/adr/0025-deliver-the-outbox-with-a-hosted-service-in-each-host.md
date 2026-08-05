@@ -1,6 +1,6 @@
 # 0025 — Deliver the outbox with a hosted service in each host
 
-- **Status:** Accepted
+- **Status:** Accepted — the email half of "they remain fakes" is dated by [0031](0031-send-email-over-smtp-and-prove-it-against-a-real-server.md); the search half stays true
 - **Date:** 2026-08-04
 
 ## Context

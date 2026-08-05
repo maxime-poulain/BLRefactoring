@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Data.Common;
+using System.Globalization;
 using System.Net;
 using System.Text;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
@@ -28,7 +29,7 @@ namespace TrainingHub.Api.TestKit;
 /// </summary>
 public abstract class ApiFactory<TEntryPoint>
     : WebApplicationFactory<TEntryPoint>, IAsyncLifetime, IResettableDatabase, IServiceScopeSource,
-      IHttpClientSource, IServerErrorSource, ILogFileSource
+      IHttpClientSource, IServerErrorSource, ILogFileSource, IMailboxSource
     where TEntryPoint : class
 {
     /// <inheritdoc />
@@ -88,6 +89,36 @@ public abstract class ApiFactory<TEntryPoint>
                 .ForPort(SeaweedMasterPort)
                 .ForStatusCode(HttpStatusCode.OK)))
         .Build();
+
+    /// <summary>
+    /// The mail server the suite delivers through.
+    /// </summary>
+    /// <remarks>
+    /// A real SMTP server rather than a substituted port, because what the email path is worth
+    /// proving is exactly what a substitute would assume: that a message composed by a handler
+    /// leaves the host over the wire and arrives addressed, titled and worded as intended. Mailpit
+    /// ships no Testcontainers module either, so the image is driven directly — same tag as the
+    /// compose stack, no shared configuration (it needs none).
+    /// </remarks>
+    private readonly IContainer _mailContainer = new ContainerBuilder("axllent/mailpit:v1.30.6")
+        .WithPortBinding(MailpitSmtpPort, assignRandomHostPort: true)
+        .WithPortBinding(MailpitHttpPort, assignRandomHostPort: true)
+        // One probe where SeaweedFS needs two: /readyz answers only once both listeners are up,
+        // and there is no later registration step for a write to trip over.
+        .WithWaitStrategy(Wait.ForUnixContainer()
+            .UntilHttpRequestIsSucceeded(request => request
+                .ForPath("/readyz")
+                .ForPort(MailpitHttpPort)
+                .ForStatusCode(HttpStatusCode.OK)))
+        .Build();
+
+    private const ushort MailpitSmtpPort = 1025;
+
+    private const ushort MailpitHttpPort = 8025;
+
+    /// <inheritdoc />
+    public Uri MailboxApiBaseAddress =>
+        new($"http://{_mailContainer.Hostname}:{_mailContainer.GetMappedPublicPort(MailpitHttpPort)}");
 
     private const ushort SeaweedS3Port = 8333;
 
@@ -176,6 +207,17 @@ public abstract class ApiFactory<TEntryPoint>
         builder.UseSetting("ObjectStorage:SecretKey", ObjectStoreSecretKey);
         builder.UseSetting("ObjectStorage:CreateBucketOnStartup", "true");
 
+        // Pointed at the mail container the same way, and left otherwise untouched: the MailKit
+        // adapter, its options validation and the sender identity are the production ones. The
+        // sender address differs from appsettings so a message that ignored its configuration
+        // would be visible, not coincidentally correct.
+        builder.UseSetting("Smtp:Host", _mailContainer.Hostname);
+        builder.UseSetting(
+            "Smtp:Port",
+            _mailContainer.GetMappedPublicPort(MailpitSmtpPort).ToString(CultureInfo.InvariantCulture));
+        builder.UseSetting("Smtp:SenderAddress", "no-reply@traininghub.test");
+        builder.UseSetting("Smtp:SenderName", "TrainingHub Tests");
+
         // The outbox worker's cadence, shrunk for the suite: the delivery proofs wait on real
         // polling, and five seconds per assertion is a tax every test would pay. The attempt
         // budget shrinks with it, so the poison proof can spend it within a test's patience.
@@ -222,9 +264,13 @@ public abstract class ApiFactory<TEntryPoint>
     /// </summary>
     public async Task InitializeAsync()
     {
-        // Both in parallel: neither knows about the other, and starting a database and an object
-        // store one after the other doubles the wait every suite pays before its first assertion.
-        await Task.WhenAll(_msSqlContainer.StartAsync(), _objectStoreContainer.StartAsync());
+        // All in parallel: none knows about the others, and starting a database, an object store
+        // and a mail server one after the other triples the wait every suite pays before its
+        // first assertion.
+        await Task.WhenAll(
+            _msSqlContainer.StartAsync(),
+            _objectStoreContainer.StartAsync(),
+            _mailContainer.StartAsync());
 
         // Everything after the container has started is wrapped, because xUnit does not call
         // DisposeAsync on a fixture whose initialisation threw. A failed migration would then
@@ -259,6 +305,7 @@ public abstract class ApiFactory<TEntryPoint>
         {
             await _msSqlContainer.DisposeAsync();
             await _objectStoreContainer.DisposeAsync();
+            await _mailContainer.DisposeAsync();
             throw;
         }
     }
@@ -287,6 +334,7 @@ public abstract class ApiFactory<TEntryPoint>
 
         await _msSqlContainer.DisposeAsync();
         await _objectStoreContainer.DisposeAsync();
+        await _mailContainer.DisposeAsync();
         await base.DisposeAsync();
 
         // After the host is gone, so the file sink has released its handle. Best-effort on

@@ -1,6 +1,6 @@
 # 0024 — Publish facts, not intents, and version them in the envelope
 
-- **Status:** Accepted
+- **Status:** Accepted — the email half of "the ports remain fakes" is dated by [0031](0031-send-email-over-smtp-and-prove-it-against-a-real-server.md); the search half stays true
 - **Date:** 2026-08-04
 
 ## Context

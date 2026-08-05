@@ -42,6 +42,15 @@
     <PackageVersion Include="EmailValidation" Version="1.3.0" />
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+    <!--
+      The SMTP and MIME client, under MIT. Microsoft documents System.Net.Mail.SmtpClient as
+      obsolete for new development and names this library as its replacement. SMTP is to mail what
+      S3 is to storage in ADR 0021: the protocol every provider on the shortlist speaks, so the
+      choice of client is what makes the mail server a configuration value rather than a rewrite —
+      locally it is a Mailpit container, in production whatever relay the deployment names. Only the
+      infrastructure references it, and an architecture rule holds that line. See ADR 0031.
+    -->
+    <PackageVersion Include="MailKit" Version="4.17.0" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />

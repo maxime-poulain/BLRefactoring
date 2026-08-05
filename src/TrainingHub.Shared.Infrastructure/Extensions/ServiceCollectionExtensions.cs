@@ -78,14 +78,15 @@ public static class ServiceCollectionExtensions
                 }
             })
             .AddObjectStorage(configuration)
+            // The email port's real adapter (ADR 0031), called by the outbox's consumers after the
+            // commit — the worker delivers the facts, and this port acts on them (ADR 0002, ADR 0025).
+            .AddEmailDelivery(configuration)
             .AddScoped<DomainEventInterceptor>()
             // The system clock, injected so the audit stamps can be driven by a test.
             .AddSingleton(TimeProvider.System)
             .AddSingleton<AuditableEntitiesInterceptor>()
-            // Called by the outbox's consumers, after the commit — the worker delivers the facts,
-            // and these ports act on them (ADR 0002, ADR 0025). Still fakes that write to the log:
-            // choosing a provider stays a one-line change here.
-            .AddSingleton<IEmailSender, FakeEmailSender>()
+            // The search port, consumed the same way, is still a fake that writes to the log:
+            // choosing an indexer stays a one-line change here.
             .AddSingleton<ITrainingSearchIndexer, FakeTrainingSearchIndexer>();
     }
 }

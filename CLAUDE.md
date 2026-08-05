@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 30 architecture decision records.
+2. `docs/adr/README.md` — the index of 31 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/Rules/` — the same decisions as 118 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/Rules/` — the same decisions as 119 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -23,7 +23,7 @@ dotnet build TrainingHub.slnx --configuration Release          # zero warnings, 
 dotnet test  TrainingHub.slnx --filter "FullyQualifiedName!~IntegrationTests"   # no Docker needed
 dotnet test  TrainingHub.slnx                                  # everything; needs Docker
 ./scripts/generate-clients.sh                                  # after any change to the API surface
-docker compose up -d                                           # SQL Server + SeaweedFS
+docker compose up -d                                           # SQL Server + SeaweedFS + Mailpit
 ```
 
 ## Traps that cost a CI round-trip

@@ -1,8 +1,8 @@
-namespace TrainingHub.Shared;
+namespace TrainingHub.Shared.Application.Notifications;
 
 /// <summary>
-/// Outbound port for sending emails, consumed by application-layer code such as
-/// domain event handlers. Implementations live in the infrastructure layer.
+/// Outbound port for sending emails, declared beside its only consumers — the integration
+/// event handlers of this layer. Implementations live in the infrastructure layer.
 /// </summary>
 public interface IEmailSender
 {
