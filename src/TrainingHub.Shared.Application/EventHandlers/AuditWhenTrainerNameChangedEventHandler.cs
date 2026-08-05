@@ -13,14 +13,11 @@ namespace TrainingHub.Shared.Application.EventHandlers;
 /// and the new value, so the audit entry is complete without loading anything.
 /// A real system might append to a dedicated audit store; structured logging is
 /// enough to demonstrate the pattern.
-/// </remarks>
-/// <summary>
-/// Reacts to the event: records that a trainer renamed themselves.
 /// <para>
 /// Dispatched inside the unit of work, before the transaction commits, so anything this handler
 /// writes joins the same transaction as the change that raised the event.
 /// </para>
-/// </summary>
+/// </remarks>
 public sealed class AuditWhenTrainerNameChangedEventHandler(
     ILogger<AuditWhenTrainerNameChangedEventHandler> logger)
     : IDomainEventHandler<TrainerNameChangedDomainEvent>

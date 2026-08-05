@@ -93,8 +93,8 @@ public sealed class TrainerController(
         var result = await commandDispatcher.DispatchAsync(
             request.ToCommand(expectedVersion), cancellationToken);
 
-        // Still needed for the read-back below, and only for it: GetTrainerByIdQuery serves
-        // /Trainer/{id} as well, so it cannot drop its parameter the way the command did.
+        // Still needed for the read-back below, and only for it: GetTrainerByIdQuery is
+        // addressed by identifier, so it cannot drop its parameter the way the command did.
         var trainerId = currentUserService.TrainerId;
 
         return await result.MatchAsync<ActionResult>(

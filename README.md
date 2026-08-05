@@ -62,7 +62,7 @@ The strategic half is what decides where the lines are, and it lives in
 language, a context map that names where each seam is visible in the code, and an event storming of
 the two main flows.
 
-Start there if you want the business before the architecture. Three architecture rules keep those
+Start there if you want the business before the architecture. Four architecture rules keep those
 documents answerable to the model — an aggregate nobody placed in a context fails the build. See
 [ADR 0023](docs/adr/0023-document-the-strategic-design-and-hold-it-to-the-model.md).
 
@@ -155,7 +155,7 @@ Twenty-seven projects: sixteen under `src/`, eleven under `tests/`. The backend 
 |---|---|
 | `TrainingHub.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, `PageRequest`/`PagedResult`, and the cross-cutting ports `IUnitOfWork`, `ICurrentUserService`, `ITrainingSearchIndexer`, plus the CQS marker interfaces |
 | `TrainingHub.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, and the fact ports `IUniquenessTitleChecker` and `ITrainingCounter` |
-| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the six domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the four post-commit consumers — all shared by both stacks |
+| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the seven domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the five post-commit consumers — all shared by both stacks |
 | `TrainingHub.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the paged-read extensions (`NewestFirst`, `ToPagedResultAsync`), the identity store, and the transactional outbox — publisher, delivery worker, dispatcher |
 | `TrainingHub.Shared.Api` | The HTTP boundary: the `*RequestHttp` and `*ResponseHttp` contracts both hosts publish, their mappings to the application layer, the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, concurrency helpers |
 | `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService` |
@@ -309,6 +309,7 @@ invalid instance cannot exist.
 | `TrainingPrerequisites` | Non-empty, at most 500 characters | `InvalidPrerequisites` |
 | `AcquiredSkills` | Non-empty, at most 500 characters | `InvalidAcquiredSkills` |
 | `Topic` | Closed set of six values, resolved by name | `InvalidTopic` |
+| `TrainerPhoto` | Non-empty, at most 5 MiB, PNG/JPEG/WebP — and the bytes must be what the content type declares | `PhotoEmpty`, `PhotoTooLarge`, `PhotoFormatNotSupported`, `PhotoContentMismatch` |
 
 Two behaviours are worth knowing:
 
@@ -393,6 +394,9 @@ at the name alone (`TheLayeredApplication_NamesItsServicesInFull`).
 | Create trainer | `TrainerApplicationService.CreateAsync` | `CreateTrainerCommand` | Application |
 | Edit own profile | `TrainerApplicationService.EditAsync` | `EditTrainerCommand` | Application |
 | Read own profile | `TrainerApplicationService.GetByIdAsync` | `GetTrainerByIdQuery` | Infrastructure |
+| Publish or replace a portrait | `TrainerApplicationService.SetPhotoAsync` | `SetTrainerPhotoCommand` | Application |
+| Remove a portrait | `TrainerApplicationService.RemovePhotoAsync` | `RemoveTrainerPhotoCommand` | Application |
+| View a trainer's portrait | `TrainerApplicationService.GetPhotoAsync` | `GetTrainerPhotoQuery` | Infrastructure |
 | Create training | `TrainingApplicationService.CreateAsync` | `CreateTrainingCommand` | Application |
 | Edit training | `TrainingApplicationService.EditAsync` | `EditTrainingCommand` | Application |
 | Delete training | `TrainingApplicationService.DeleteAsync` | `DeleteTrainingCommand` | Application |
@@ -417,18 +421,23 @@ queries and restores it afterwards.
 than the first one.
 
 Each error carries a code, and a code belongs to whoever raises it. The kernel declares only the
-three that belong to nobody; everything else is declared beside the aggregate whose invariant was
+four that belong to nobody; everything else is declared beside the aggregate whose invariant was
 broken, and carries that aggregate's name.
 
 | Holder | Codes |
 |---|---|
-| `ErrorCodes` (kernel) | `Unspecified`, `NotFound`, `ConcurrencyConflict` |
-| `TrainingErrorCodes` | `Training.InvalidTitle`, `Training.DuplicateTitle`, `Training.InvalidDescription`, `Training.InvalidPrerequisites`, `Training.InvalidAcquiredSkills`, `Training.InvalidTopic` |
-| `TrainerErrorCodes` | `Trainer.InvalidEmail`, `Trainer.BioEmpty`, `Trainer.BioExceeds500Characters` |
+| `ErrorCodes` (kernel) | `Unspecified`, `NotFound`, `ConcurrencyConflict`, `Validation` |
+| `TrainingErrorCodes` | `Training.InvalidTitle`, `Training.DuplicateTitle`, `Training.InvalidDescription`, `Training.InvalidPrerequisites`, `Training.InvalidAcquiredSkills`, `Training.InvalidTopic`, `Training.CatalogueFull`, `Training.TransferToSelf`, `Training.RecipientCatalogueFull`, `Training.UnknownRecipient` |
+| `TrainerErrorCodes` | `Trainer.InvalidEmail`, `Trainer.BioEmpty`, `Trainer.BioExceeds500Characters`, `Trainer.PhotoEmpty`, `Trainer.PhotoTooLarge`, `Trainer.PhotoFormatNotSupported`, `Trainer.PhotoContentMismatch` |
+
+`Validation` is the one the kernel declares for somebody else: the FluentValidation pipeline of the
+CQRS stack answers with it, and nothing in the domain ever does (ADR 0016).
 
 `ErrorCode` is a value object over a string. The set is open — any holder can declare one — so
 `ErrorVocabularyRules` keeps it honest: nothing constructs a code at a call site, every code is
-declared on a `*ErrorCodes` holder, and no two share a value. See ADR 0015.
+declared on a `*ErrorCodes` holder, and no two share a value. The table above is compared with the
+holders on every build, in both directions, since a published vocabulary missing a code is a client
+unable to branch on it (ADR 0015, ADR 0038).
 
 ### Turning input into domain concepts
 
@@ -1012,7 +1021,7 @@ The two filters are exact inverses, so between them every test runs exactly once
 | Project | Scope |
 |---|---|
 | `TrainingHub.Shared.Domain.Tests` | Aggregates, value objects, typed identifiers, `Result`, specifications, the page vocabulary's bounds and arithmetic |
-| `TrainingHub.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers — including the four that translate a domain event into an integration event — and the four post-commit consumers |
+| `TrainingHub.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers — including the five that translate a domain event into an integration event — and the five post-commit consumers |
 | `TrainingHub.DDDWithCqrs.Tests` | Command handlers, validators, pipeline behaviours |
 | `TrainingHub.Shared.Api.Tests` | Entity-tag encoding and parsing, the guard that keeps client generation away from a database, what the unhandled-exception handler is allowed to tell a caller, and the transformer that describes an uploaded file inline so a client generator recognises it as one |
 | `TrainingHub.Shared.Infrastructure.Tests` | The auditable-entities interceptor — that it stamps, and reads the clock once per entity —, the outbox publisher observed through the change tracker, the serializer's round trip for every registered event, the dispatcher held to its routing table, the envelope's state transitions, and the bucket bootstrapper, mostly for when it does nothing |
@@ -1117,8 +1126,9 @@ assertions mostly cross the HTTP boundary. See
 shows a neutral skip instead of a red check about a missing secret.
 
 **What is measured, and what is not.** Two families are excluded, and both because nobody writes
-them: the generated HTTP client (2 400 lines of NSwag output) and the EF Core migrations (2 500
-more, a fifth of everything that would otherwise be counted as production code). Their snapshots are
+them: the generated HTTP client, which NSwag rewrites on every API change, and the EF Core
+migrations — together about a fifth of everything that would otherwise be counted as production
+code. Their snapshots are
 near-identical by construction, so they would decide the duplication figure; nothing hand-written
 covers them, so they would decide the coverage figure; and an issue raised in either is fixed by
 regenerating, never by editing. Test projects need no exclusion — the .NET scanner recognises them
@@ -1205,7 +1215,7 @@ one the analysis of `master` produces.
 - **Shared MSBuild properties.** `Nullable` and `ImplicitUsings` are enabled solution-wide from
   the root `Directory.Build.props`; target frameworks stay per-project.
 - **Code style** is described in `.editorconfig`: file-scoped namespaces, `var`, Allman braces,
-  naming conventions, and a hundred and sixty analyzer severities — all of them enforced at build
+  naming conventions, and a hundred and sixty-one analyzer severities — all of them enforced at build
   time, including the formatting ones.
 - **Line endings** are normalised to LF by `.gitattributes`, in the repository and the working
   tree, whatever the contributor's platform.
@@ -1227,7 +1237,7 @@ one the analysis of `master` produces.
   `maxime-poulain_`, which is the SonarCloud project key and cannot be renamed from here. The name
   itself is written down in exactly two places, and
   [ADR 0022](docs/adr/0022-name-the-repository-after-the-domain-it-serves.md) is one of them.
-- **The build fails on a warning.** `.editorconfig` sets a hundred and sixty analyzer rules on
+- **The build fails on a warning.** `.editorconfig` sets a hundred and sixty-one analyzer rules on
   purpose, and `Directory.Build.props` turns a warning into an error, so the severities written
   there are rules rather than preferences — an architecture rule checks that they stay that way.
   Every rule is either enforced or demoted with the argument for lowering it written beside it;

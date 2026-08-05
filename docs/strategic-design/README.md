@@ -59,7 +59,7 @@ Read them in that order. Each is self-contained; together they take about fiftee
 
 ## An honest note on scale
 
-This is a small domain: two aggregates, six domain events, eleven use cases. A strategic-design
+This is a small domain: two aggregates, seven domain events, twelve use cases. A strategic-design
 document for a system this size risks being longer than the model it describes, and risks inventing
 boundaries to fill the page.
 
@@ -79,13 +79,14 @@ Documentation goes stale silently, which is the one failure mode this repository
 else — the README's project graph is compared edge by edge with the real project references, and
 every architecture decision record is defended by a rule ([ADR 0013](../adr/0013-make-every-record-answer-to-a-test.md)).
 
-The same treatment applies here. `StrategicDesignRules` checks three things on every build:
+The same treatment applies here. `StrategicDesignRules` checks four things on every build:
 
 | Rule | What it prevents |
 |---|---|
 | `EveryAggregate_IsPlacedInExactlyOneBoundedContext` | A third aggregate arriving and belonging, on paper, to nothing |
 | `EveryDomainEvent_AppearsInTheEventStorming` | A new business fact that the boards never mention |
 | `EveryContextOnTheMap_HasItsOwnSection` | The map and the descriptions drifting apart |
+| `EveryContextOnTheMap_AgreesWithItsSectionsStatus` | The map calling a context built while its own section still calls it a port |
 
 The reasoning behind this documentation — why it lives here rather than among the records, and what
 it deliberately leaves open — is in

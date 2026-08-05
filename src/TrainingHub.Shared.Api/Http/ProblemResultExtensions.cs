@@ -18,7 +18,7 @@ namespace TrainingHub.Shared.Api.Http;
 /// so publishing anything else meant disagreeing with the framework inside the same API.
 /// </para>
 /// <para>
-/// The domain codes are not lost to the standard: the <c>errors</c> extension carries the same
+/// The domain codes are not lost to the standard: the <c>domainErrors</c> extension carries the same
 /// <see cref="ErrorResponseHttp"/> array as before, unchanged down to the nested code. A client
 /// branching on <c>DuplicateTitle</c> keeps its logic and changes only where it reads it from.
 /// </para>

@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 37 architecture decision records.
+2. `docs/adr/README.md` — the index of 38 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/Rules/` — the same decisions as 132 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 135 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -108,7 +108,7 @@ The build enforces the style, so match what is there rather than normalising it:
   are errors).
 - **Primary constructors for injected dependencies** — controllers, handlers, adapters. Ordinary
   constructors elsewhere; IDE0290 is a suggestion on purpose, so do not convert the four that remain.
-- File-scoped namespaces, `var`, Allman braces, and a hundred and sixty analyzer severities, all
+- File-scoped namespaces, `var`, Allman braces, and a hundred and sixty-one analyzer severities, all
   enforced at build time.
 - **Where SonarQube and this repository's ruleset disagree, the ruleset wins.** A Sonar finding is
   never on its own a reason to rewrite code `.editorconfig` deliberately allows: the quality profile
