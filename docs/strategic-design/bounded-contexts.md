@@ -136,6 +136,7 @@ Every one of them exists twice — once per application style. See the
 | Create a training | Trainer | `Training` |
 | Edit a training | Trainer | `Training` |
 | Delete a training | Trainer | `Training` |
+| Transfer a training | Trainer | `Training` (and the recipient's catalogue) |
 | Read one own training | Trainer | `Training` |
 | List own trainings | Trainer | `Training` |
 

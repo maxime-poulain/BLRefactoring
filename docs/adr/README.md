@@ -60,3 +60,4 @@ simpler from the outside.
 | [0035](0035-give-every-developer-a-git-ignored-local-overrides-file.md) | Give every developer a git-ignored local overrides file | Accepted |
 | [0036](0036-model-the-decision-that-has-no-home-as-a-domain-service.md) | Model the decision that has no home as a domain service | Accepted |
 | [0037](0037-answer-for-the-hosts-health-at-two-endpoints.md) | Answer for the host's health at two endpoints | Accepted |
+| [0038](0038-derive-every-counted-claim-from-the-code.md) | Derive every counted claim from the code | Accepted |

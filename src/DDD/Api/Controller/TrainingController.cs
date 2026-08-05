@@ -23,9 +23,9 @@ namespace TrainingHub.DDD.Api.Controller;
 /// <see cref="ApplicationToHttpMappings"/>.
 /// <para>
 /// No <c>[Authorize]</c> here or on the actions: <see cref="ApiControllerBase"/> carries it, which
-/// is why it exists. This file used to repeat it six times — once on the class and once on five of
-/// the seven actions — and the repetition is worse than redundant, because it invites the reading
-/// that the two actions without it are anonymous. They are not. The CQRS twin never repeated it.
+/// is why it exists. This file used to repeat it on the class and on all but two of its actions,
+/// and the repetition is worse than redundant, because it invites the reading that the actions
+/// without it are anonymous. They are not. The CQRS twin never repeated it.
 /// </para>
 /// </remarks>
 /// <param name="trainingApplicationService">Application service for training operations.</param>

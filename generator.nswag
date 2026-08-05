@@ -54,8 +54,7 @@
       "wrapResponses": true,
       "wrapResponseMethods": [
         "TrainingClient.GetTrainingById",
-        "TrainerClient.GetCurrent",
-        "TrainerClient.GetById"
+        "TrainerClient.GetCurrent"
       ],
       "generateResponseClasses": true,
       "responseClass": "SwaggerResponse",

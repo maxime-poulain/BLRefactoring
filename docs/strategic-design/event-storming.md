@@ -3,7 +3,7 @@
 ## Is this worth doing here?
 
 Event storming earns its keep in two ways: **discovering** a domain nobody has modelled yet, and
-**explaining** one that is already built. On a domain of two aggregates and six events, there is
+**explaining** one that is already built. On a domain of two aggregates and seven events, there is
 nothing left to discover — so this document makes no pretence of being a workshop record. It is here
 for the second reason, and one property of this codebase makes it unusually effective:
 
@@ -203,8 +203,9 @@ and only it can reach the aggregate's internal reassignment (ADR 0036).
 | Remove a portrait | `Trainer` | — | *(none, deliberately)* | — | — |
 | Delete a training | `Training` | Caller owns it | *(none — a hotspot)* | — | — |
 
-Seven events, seven handlers, and three commands that deliberately raise nothing. The two the
-model refuses are as informative as the seven it raises. Of the seven reactions, two act inside
+Seven events, seven handlers, and three commands that raise nothing — two by decision, and one,
+deleting a training, that the board marks as a hotspot. The two the model refuses deliberately are
+as informative as the seven it raises. Of the seven reactions, two act inside
 the transaction — the cascade and the audit line, ADR 0002's *domain* side — and five commit an
 integration event into the outbox, to be acted on after the commit.
 

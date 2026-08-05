@@ -20,7 +20,7 @@ namespace TrainingHub.Shared.Common.Errors;
 /// </code>
 /// <para>
 /// Prefix each code with the name of its owner, so that no two owners can claim the same code and
-/// so that a code is self-describing wherever it surfaces. The three codes this kernel declares
+/// so that a code is self-describing wherever it surfaces. The four codes this kernel declares
 /// carry no prefix, and that is the point of them: "not found" and "concurrency conflict" are true
 /// of any aggregate, so they belong to none.
 /// </para>
