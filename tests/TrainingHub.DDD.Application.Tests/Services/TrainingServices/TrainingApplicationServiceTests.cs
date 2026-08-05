@@ -540,4 +540,91 @@ public sealed class TrainingApplicationServiceTests
 
         result.ShouldContainError(ErrorCodes.NotFound);
     }
+
+    /// <summary>
+    /// Transfer async, a willing recipient, reassigns and saves.
+    /// </summary>
+    [Fact]
+    public async Task TransferAsync_AWillingRecipient_ReassignsAndSaves()
+    {
+        var training = await new TrainingBuilder().BuildValidAsync();
+        var recipient = Guid.NewGuid();
+        _fixture.TrainingRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainingId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(training);
+        _fixture.TrainerRepository
+            .Setup(r => r.ExistsAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var sut = _fixture.CreateSut();
+
+        var result = await sut.TransferAsync(training.Id.Value, recipient);
+
+        result.ShouldBeSuccess();
+        training.TrainerId.Value.Should().Be(recipient);
+        _fixture.TrainingRepository.Verify(r => r.Update(training), Times.Once);
+        _fixture.UnitOfWork.Verify(uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Transfer async, a non existing training, returns not found.
+    /// </summary>
+    [Fact]
+    public async Task TransferAsync_ANonExistingTraining_ReturnsNotFound()
+    {
+        _fixture.TrainingRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainingId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Training?)null);
+        var sut = _fixture.CreateSut();
+
+        var result = await sut.TransferAsync(Guid.NewGuid(), Guid.NewGuid());
+
+        result.ShouldContainError(ErrorCodes.NotFound);
+    }
+
+    /// <summary>
+    /// Transfer async, a ghost recipient, is refused before the domain service is consulted.
+    /// </summary>
+    [Fact]
+    public async Task TransferAsync_AGhostRecipient_IsRefusedBeforeTheServiceIsConsulted()
+    {
+        var training = await new TrainingBuilder().BuildValidAsync();
+        _fixture.TrainingRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainingId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(training);
+        _fixture.TrainerRepository
+            .Setup(r => r.ExistsAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        var sut = _fixture.CreateSut();
+
+        var result = await sut.TransferAsync(training.Id.Value, Guid.NewGuid());
+
+        result.ShouldContainError(TrainingErrorCodes.UnknownRecipient);
+        _fixture.TrainingCounter.Verify(
+            c => c.CountForTrainerAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _fixture.UnitOfWork.Verify(uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// Transfer async, a lost uniqueness race at save, answers duplicate title.
+    /// </summary>
+    [Fact]
+    public async Task TransferAsync_ALostUniquenessRaceAtSave_AnswersDuplicateTitle()
+    {
+        var training = await new TrainingBuilder().BuildValidAsync();
+        _fixture.TrainingRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainingId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(training);
+        _fixture.TrainerRepository
+            .Setup(r => r.ExistsAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _fixture.UnitOfWork
+            .Setup(uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new UniqueConstraintViolationException("duplicate", new InvalidOperationException()));
+        var sut = _fixture.CreateSut();
+
+        var result = await sut.TransferAsync(training.Id.Value, Guid.NewGuid());
+
+        result.ShouldContainError(TrainingErrorCodes.DuplicateTitle);
+    }
 }

@@ -26,6 +26,7 @@ public static class IntegrationEventTypes
             [typeof(TrainerContactEmailChangedIntegrationEvent)] = ("TrainerContactEmailChanged", 1),
             [typeof(TrainingCreatedIntegrationEvent)] = ("TrainingCreated", 1),
             [typeof(TrainingEditedIntegrationEvent)] = ("TrainingEdited", 1),
+            [typeof(TrainingTransferredIntegrationEvent)] = ("TrainingTransferred", 1),
         };
 
     /// <summary>

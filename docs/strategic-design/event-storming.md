@@ -108,19 +108,27 @@ flowchart LR
     A(["👤 Trainer"]) --> C1["🔵 Create a training"]
     A --> C2["🔵 Edit a training"]
     A --> C3["🔵 Delete a training"]
+    A --> C4["🔵 Transfer a training"]
+    B(["👤 Recipient trainer"]) -.->|"receives"| C4
 
     C1 --> AG["🟡 Training"]
     C2 --> AG
     C3 --> AG
+    C4 --> DS["TrainingTransferDomainService"]
+    DS --> AG
 
     AG --> INV{{"⚠ A title is unique<br/>per trainer"}}
+    DS --> INV2{{"⚠ The recipient has room<br/>and is free of the title"}}
     INV --> E1["🟠 TrainingCreatedDomainEvent"]
     INV --> E2["🟠 TrainingEditedDomainEvent"]
+    INV2 --> E4["🟠 TrainingTransferredDomainEvent"]
 
     E1 --> P1["🟣 Publish TrainingCreatedIntegrationEvent"]
     E2 --> P2["🟣 Publish TrainingEditedIntegrationEvent"]
+    E4 --> P4["🟣 Publish TrainingTransferredIntegrationEvent"]
     P1 --> OB["Transactional outbox"]
     P2 --> OB
+    P4 --> OB
     OB -->|"delivery worker, post-commit"| SI["Search Indexing context"]
 
     SI -.-> RM["🟢 Future public catalogue"]
@@ -137,14 +145,14 @@ flowchart LR
     classDef external fill:#e5e7eb,stroke:#6b7280,color:#000
     classDef invariant fill:#fecaca,stroke:#b91c1c,color:#000
 
-    class E1,E2,TD event
-    class C1,C2,C3 command
-    class AG aggregate
-    class P1,P2,P3 policy
-    class A actor
+    class E1,E2,E4,TD event
+    class C1,C2,C3,C4 command
+    class AG,DS aggregate
+    class P1,P2,P3,P4 policy
+    class A,B actor
     class RM readmodel
     class SI,OB external
-    class INV invariant
+    class INV,INV2 invariant
 ```
 
 ### What the board is really saying
@@ -164,6 +172,11 @@ cares about the difference must not have to guess it back out of a merged messag
 policy that deletes trainings *inside the same unit of work*. This is the strongest evidence that
 `Trainer` and `Training` share a bounded context: across a real boundary this would have to be an
 integration event and an eventual, compensable deletion.
+
+**The transfer is the board's first multi-actor edge — and its one domain service.** Handing a
+training over reads the *recipient's* catalogue to mutate the *giver's* training, a decision no
+aggregate can own: `TrainingTransferDomainService` decides through the same two ports creation uses,
+and only it can reach the aggregate's internal reassignment (ADR 0036).
 
 ### 🔴 Hotspots
 
@@ -185,13 +198,14 @@ integration event and an eventual, compensable deletion.
 | *(no command yet)* | `Trainer` | A trainer does not leave alone | `TrainerDeletedDomainEvent` | Delete their trainings | `DeleteTrainingWhenTrainerDeletedEventHandler` |
 | Create a training | `Training` | Title unique per trainer; the trainer publishes fewer than ten | `TrainingCreatedDomainEvent` | Commit `TrainingCreatedIntegrationEvent` to the outbox; the worker indexes after the commit | `PublishIntegrationEventWhenTrainingCreatedEventHandler` |
 | Edit a training | `Training` | Title unique per trainer | `TrainingEditedDomainEvent` | Commit `TrainingEditedIntegrationEvent` to the outbox; the worker reindexes after the commit | `PublishIntegrationEventWhenTrainingEditedEventHandler` |
+| Transfer a training | `Training`, decided by `TrainingTransferDomainService` | Recipient publishes fewer than ten; recipient free of the title | `TrainingTransferredDomainEvent` | Commit `TrainingTransferredIntegrationEvent` to the outbox; the worker reindexes under the new owner after the commit | `PublishIntegrationEventWhenTrainingTransferredEventHandler` |
 | Publish a portrait | `Trainer` | ≤ 5 MiB, PNG/JPEG/WebP, content matches the declared type | *(none, deliberately)* | — | — |
 | Remove a portrait | `Trainer` | — | *(none, deliberately)* | — | — |
 | Delete a training | `Training` | Caller owns it | *(none — a hotspot)* | — | — |
 
-Six events, six handlers, and three commands that deliberately raise nothing. The two the model
-refuses are as informative as the six it raises. Of the six reactions, two act inside the
-transaction — the cascade and the audit line, ADR 0002's *domain* side — and four commit an
+Seven events, seven handlers, and three commands that deliberately raise nothing. The two the
+model refuses are as informative as the seven it raises. Of the seven reactions, two act inside
+the transaction — the cascade and the audit line, ADR 0002's *domain* side — and five commit an
 integration event into the outbox, to be acted on after the commit.
 
 ## What the boards show that the code does not

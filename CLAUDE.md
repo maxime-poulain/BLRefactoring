@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 35 architecture decision records.
+2. `docs/adr/README.md` — the index of 36 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/Rules/` — the same decisions as 126 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/Rules/` — the same decisions as 128 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -73,7 +73,10 @@ repository a named question and maps the aggregates.
   repositories expose named questions, and the CQRS readers never touch one (ADR 0028).
 - A rule the aggregate cannot settle alone comes to it through a port declared beside it
   (`IUniquenessTitleChecker`, `ITrainingCounter`): the port answers the fact, the factory makes
-  the decision, and the domain names no service (ADR 0030).
+  the decision, and the domain names no service to decide in an aggregate's place (ADR 0030).
+  A decision with **no** home at all is a *recorded* domain service — named `*DomainService` in
+  full, never a bare `*Service`, static, stateless, ports as parameters, pinned by rule
+  (`TrainingTransferDomainService`, ADR 0036).
 - Each aggregate owns the error codes it raises, prefixed with its own name — `Trainer.PhotoTooLarge`
   (ADR 0015). `ErrorCodes.Validation` belongs to the FluentValidation pipeline alone (ADR 0016).
 
@@ -139,7 +142,10 @@ The build enforces the style, so match what is there rather than normalising it:
 - No dead code, no comment describing something that is no longer true.
 - Documentation and implementation agree.
 
-Commits are imperative one-liners, squash-merged from a pull request. An AI-assisted commit keeps
+A commit message is a short imperative title (Conventional Commits where it fits), a blank line,
+then a body: the main changes and their motivation, whenever that adds value. Less detailed than
+the pull request's description, but enough that someone reading only the git history understands
+what was done and why. Squash-merged from a pull request. An AI-assisted commit keeps
 its `Co-Authored-By` trailer — always — but never carries a Claude session reference: no
 `Claude-Session` trailer, no session URL, not in the message and not in anything committed. Check
 the message and the staged diff for one before every commit. If you see a better design that no

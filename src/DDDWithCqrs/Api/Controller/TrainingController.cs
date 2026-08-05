@@ -196,4 +196,45 @@ public sealed class TrainingController(
             NoContent,
             errors => errors.Any(e => e.ErrorCode == ErrorCodes.NotFound) ? NotFound() : this.Problem(StatusCodes.Status400BadRequest, errors));
     }
+
+    /// <summary>
+    /// Hands a training over to another trainer (ADR 0036).
+    /// </summary>
+    /// <remarks>
+    /// No If-Match, mirroring delete rather than edit: a transfer is an action on the resource,
+    /// not an edit of its content, and the contention that matters — the recipient's capacity and
+    /// titles — is checked by the domain service at the moment of the decision.
+    /// </remarks>
+    /// <param name="trainingId">The unique identifier of the training to transfer.</param>
+    /// <param name="request">The transfer request naming the recipient.</param>
+    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
+    /// <returns>
+    /// 204 No Content if the transfer succeeded — nothing is created, and the giver can no longer read the training.
+    /// 400 Bad Request when the recipient is the current owner, unknown, or at capacity.
+    /// 404 Not Found if the training does not exist.
+    /// 409 Conflict when the recipient already has a training under the same title.
+    /// </returns>
+    [Authorize(Policy = TrainingOwnerPolicy.Name)]
+    [HttpPost("{trainingId:guid}/transfer")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult> TransferTrainingAsync(
+        Guid trainingId,
+        [FromBody] TransferTrainingRequestHttp request,
+        CancellationToken cancellationToken = default)
+    {
+        var transferResult = await commandDispatcher.DispatchAsync(
+            request.ToCommand(trainingId), cancellationToken);
+
+        return transferResult.Match<ActionResult>(
+            NoContent,
+            errors => errors.Any(e => e.ErrorCode == ErrorCodes.NotFound)
+                ? NotFound()
+                : errors.Any(e => e.ErrorCode == TrainingErrorCodes.DuplicateTitle)
+                    ? this.Problem(StatusCodes.Status409Conflict, errors)
+                    : this.Problem(StatusCodes.Status400BadRequest, errors));
+    }
 }

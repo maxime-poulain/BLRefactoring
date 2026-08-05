@@ -32,4 +32,17 @@ public static class TrainingErrorCodes
 
     /// <summary>The topic named by the caller is not one of the six the domain knows.</summary>
     public static readonly ErrorCode InvalidTopic = new("Training.InvalidTopic");
+
+    /// <summary>The transfer names the current owner as the recipient (ADR 0036).</summary>
+    public static readonly ErrorCode TransferToSelf = new("Training.TransferToSelf");
+
+    /// <summary>
+    /// The recipient already publishes as many trainings as the catalogue allows. Distinct from
+    /// <see cref="CatalogueFull"/> on purpose: "delete one of yours" and "pick another colleague"
+    /// are different instructions to a caller (ADR 0015, ADR 0036).
+    /// </summary>
+    public static readonly ErrorCode RecipientCatalogueFull = new("Training.RecipientCatalogueFull");
+
+    /// <summary>The transfer names a recipient no trainer answers to (ADR 0036).</summary>
+    public static readonly ErrorCode UnknownRecipient = new("Training.UnknownRecipient");
 }

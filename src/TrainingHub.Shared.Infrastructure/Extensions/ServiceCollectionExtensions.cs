@@ -74,7 +74,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<IIntegrationEventPublisher, OutboxIntegrationEventPublisher>()
             // The outbox's read side (ADR 0025, hardened per ADR 0033): the worker each host
             // runs, the processor it scopes per batch, the dispatcher that routes a fact to its
-            // consumers, and the four consumers themselves — the policies that used to run inside
+            // consumers, and the five consumers themselves — the policies that used to run inside
             // the transaction, reattached after the commit. The options bind above, validated.
             .AddScoped<OutboxProcessor>()
             .AddScoped<IntegrationEventDispatcher>()
@@ -86,6 +86,8 @@ public static class ServiceCollectionExtensions
                 IndexTrainingWhenTrainingCreatedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<TrainingEditedIntegrationEvent>,
                 ReindexTrainingWhenTrainingEditedIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<TrainingTransferredIntegrationEvent>,
+                ReindexTrainingWhenTrainingTransferredIntegrationEventHandler>()
             .AddHostedService<OutboxDeliveryWorker>()
             .AddDbContext<TrainingContext>((serviceProvider, options) =>
             {
