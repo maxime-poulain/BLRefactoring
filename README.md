@@ -624,10 +624,11 @@ for a screen, and three architecture rules hold each of those lines.
 
 EF Core maps the model without letting persistence concerns leak into it:
 
-- **Value objects are owned types or value conversions.** `Name`, `Email` and `Bio` are owned by
-  `Trainer` and share its table; `Topic` is an owned collection stored in `TrainingTopic`;
-  `TrainingTitle`, `TrainingDescription`, `TrainingPrerequisites` and `AcquiredSkills` are value
-  conversions on their columns.
+- **A value object is persisted by its shape** (ADR 0032). One scalar converts on its column
+  (`TrainingTitle`, `TrainingDescription`, `TrainingPrerequisites`, `AcquiredSkills`); several
+  scalars — or an optional value — flatten as a complex property in the owner's table (`Name`,
+  `Email`, `Bio` and `TrainerPhoto` on `Trainer`); a collection owns a relational side table
+  (`Topic` in `TrainingTopic`), never a JSON column.
 - **Typed identifiers convert to `Guid`** through a converter declared once in
   `AggregateRootTypeConfiguration`, alongside the key, the audit columns and the concurrency
   token — so a new aggregate inherits all of it.
@@ -643,6 +644,9 @@ EF Core maps the model without letting persistence concerns leak into it:
 | `RenameTrainerEmailToContactEmail` | Renames the column, preserving data |
 | `AddAggregateRowVersion` | Adds the `rowversion` column to both aggregates |
 | `UseFullTimestampPrecision` | `CreatedOn` / `ModifiedOn` go from `datetime2(2)` to `datetime2(7)` |
+| `AddTrainerPhoto` | `PhotoId`, `PhotoContentType`, `PhotoByteSize` on `Trainer` |
+| `AddOutbox` | The `OutboxMessage` table the integration events travel through |
+| `AddOutboxLease` | Lease columns on `OutboxMessage`, so one worker delivers at a time |
 
 ASP.NET Identity lives in its own `DbContext` with its own migration.
 
@@ -773,7 +777,7 @@ what made the first of them ambiguous.
 
 | Package | Role |
 |---|---|
-| `Microsoft.EntityFrameworkCore.SqlServer` | Persistence, owned types, value conversions, `rowversion` concurrency token |
+| `Microsoft.EntityFrameworkCore.SqlServer` | Persistence, complex properties, owned collections, value conversions, `rowversion` concurrency token |
 | `Mediator` (`Mediator.Abstractions` + source generator) | Source-generated dispatch for domain events, commands and queries — no reflection at runtime |
 | `FluentValidation` | Request validation in the CQRS stack, wired as a pipeline behaviour |
 | `EmailValidation` | Email format checking inside the `Email` value object |

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
+using TrainingHub.Shared.Api.Contracts.Trainers;
 using TrainingHub.Shared.Api.Controllers;
 using Xunit;
 
@@ -89,6 +90,27 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         var response = await client.GetAsync("/Trainer/me");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    /// <summary>
+    /// Register, without a bio, answers a null bio.
+    /// </summary>
+    [Fact]
+    public async Task Register_WithoutABio_AnswersANullBio()
+    {
+        var client = Factory.CreateClient();
+        var request = AuthHelper.CreateUniqueRegisterRequest();
+        (await AuthHelper.RegisterAsync(client, request)).EnsureSuccessStatusCode();
+
+        var token = await AuthHelper.LoginAsync(client, request.Username, request.Password);
+        client.DefaultRequestHeaders.Authorization = new("Bearer", token);
+
+        // Registration carries no bio, so the Bio column is null. This pins the round trip
+        // through the database: an absent bio must come back as null, never as an empty
+        // value object the mapping conjured out of a null column. See ADR 0032.
+        var trainer = await client.GetFromJsonAsync<TrainerResponseHttp>("/Trainer/me");
+
+        trainer!.Bio.Should().BeNull();
     }
 
     /// <summary>
