@@ -33,6 +33,12 @@ builder.Services.AddBff(builder.Configuration);
 // Add services to the container.
 builder.Services.AddRazorComponents().AddInteractiveWebAssemblyComponents();
 
+// Liveness only, and the framework calls inline rather than the shared AddApiHealth pair: this
+// host targets net9.0, so the net10 Shared.Api extension is out of its reach. Readiness is not
+// proxied either — this host's world is the API, and answering for it would be a decision of its
+// own. See ADR 0037.
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -55,6 +61,9 @@ app.UseHttpsRedirection();
 app.UseBff();
 
 app.UseAntiforgery();
+
+// A 200 here means this process is up and routing — all a container restart decision should read.
+app.MapHealthChecks("/health/live");
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()

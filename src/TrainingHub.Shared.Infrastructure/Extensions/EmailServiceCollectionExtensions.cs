@@ -49,6 +49,8 @@ public static class EmailServiceCollectionExtensions
                 $"'{SmtpOptions.SectionName}:Username' and '{SmtpOptions.SectionName}:Password' travel as a pair or not at all.")
             .ValidateOnStart();
 
-        return services.AddSingleton<IEmailSender, SmtpEmailSender>();
+        return services
+            .AddSingleton<IEmailSender, SmtpEmailSender>()
+            .AddSingleton<IEmailTransportReachability, SmtpReachability>();
     }
 }

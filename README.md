@@ -790,6 +790,33 @@ Hence `GET /Training/my-trainings`. The asymmetry is the result and not an overs
 a resource by who it is, the other selects a collection by whose it is, and one word for both is
 what made the first of them ambiguous.
 
+### Health
+
+Beside the thirteen operations, every host answers for its own health at two anonymous endpoints —
+anonymous because their consumers are orchestrators and probes that hold no token, and because the
+body carries nothing worth one:
+
+- `GET /health/live` runs no checks: a `200 Healthy` means the process is up and routing, which is
+  all a container restart decision should ever read.
+- `GET /health/ready` runs four probes — the database, a signed single-key read of the object
+  store, an SMTP connect-and-quit, and the outbox's poison gauge — and answers
+  `{ "status": …, "checks": [{ "name": …, "status": … }] }`. Names and statuses, nothing else: no
+  description, no exception, no duration ever leaves on this route, and a unit test holds the
+  writer to that. `Degraded` means poison messages are waiting for an operator while the host
+  still serves; the failure of any other probe is `Unhealthy`.
+
+The pair is wired once in `Shared.Api` (`AddApiHealth`/`MapApiHealth`), so neither API host can
+answer less than the other; the BFF, whose world is the layered API, answers `/health/live` only.
+The serving surface ships entirely in the ASP.NET Core shared framework and costs no package.
+
+In **Development only** — the same bargain as Scalar's reference UI — each API host also serves a
+dashboard at `/healthchecks-ui` (the Xabaril `AspNetCore.HealthChecks.UI` packages, the one place
+they may be named): a page polling the same four probes every ten seconds through its own
+detailed endpoint, `/health/ui`, whose richer body — descriptions, durations, exceptions — is
+exactly what stays off the anonymous production surface. Its history is in-memory and forgets on
+restart, deliberately. See
+[ADR 0037](docs/adr/0037-answer-for-the-hosts-health-at-two-endpoints.md).
+
 ---
 
 ## Tech stack
@@ -805,11 +832,12 @@ what made the first of them ambiguous.
 | `Microsoft.AspNetCore.OpenApi`, `Scalar.AspNetCore` | The OpenAPI document and its reference UI |
 | `MudBlazor` | Component library of the Blazor WebAssembly front end |
 | `Serilog.AspNetCore` | The API hosts' logging — console and rolling text files, tuned by the typed `ApiLogging` options ([ADR 0026](docs/adr/0026-log-with-serilog-to-console-and-files-through-typed-options.md)) |
+| `AspNetCore.HealthChecks.UI`, `.UI.Client`, `.UI.InMemory.Storage` | The health dashboard at `/healthchecks-ui`, Development only — the probes it watches stay hand-rolled ([ADR 0037](docs/adr/0037-answer-for-the-hosts-health-at-two-endpoints.md)) |
 | `Yarp.ReverseProxy` | The BFF's proxy — forwards `/api` to the REST API and attaches the access token from the session cookie |
 | `bunit` | Renders a Blazor component in-process, so the profile page's client-side decisions are tested rather than only clicked |
 | `xunit`, `AwesomeAssertions`, `Moq` | Testing — `AwesomeAssertions` is the Apache 2.0 community fork of FluentAssertions, whose 8.x line moved to a commercial licence |
 | `NetArchTest.eNhancedEdition` | The engine of the dependency half of the architecture rules — the maintained fork of NetArchTest, which is how the records become the executable rules in `TrainingHub.Architecture.Tests` |
-| `Microsoft.EntityFrameworkCore.InMemory` | A `DbContext` without a server, for the unit-side tests that need EF's change tracker but not SQL Server |
+| `Microsoft.EntityFrameworkCore.InMemory` | A `DbContext` without a server, for the unit-side tests that need EF's change tracker but not SQL Server — and, pinned to the EF 10 build, the provider the health dashboard's store runs on |
 | `AWSSDK.S3` | The object store photos live in — pointed at a SeaweedFS container locally, and at any S3-compatible provider by configuration |
 | `MailKit` | The SMTP client the emails leave through — pointed at a Mailpit container locally, and at any relay by configuration ([ADR 0031](docs/adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md)) |
 | `Testcontainers`, `Testcontainers.MsSql` | A real SQL Server, a real object store and a real mail server per integration test run |
@@ -843,6 +871,9 @@ The bucket is created at startup in `Development`, in the same spirit as the mig
 and runs the layered API on <http://localhost:5085> — but nothing in CI builds that image, so
 treat a `docker build` as the check rather than the guarantee. It went unbuildable once already:
 the restore stage stopped copying two files it needs, and the README said this sentence throughout.
+Since ADR 0037 that container answers for itself the way its three dependencies always have: the
+compose file polls its `/health/live`, so `docker compose ps` shows the API as `healthy` rather
+than merely running.
 
 ### Run an API
 
@@ -853,7 +884,8 @@ dotnet run --project src/DDDWithCqrs/Api    # https://localhost:7048
 
 **In `Development`**, both hosts apply their EF Core migrations at startup, for the business and the
 Identity databases alike, so no manual `dotnet ef database update` is needed — and each host serves
-its OpenAPI document at `/openapi/v1.json` and a Scalar reference UI alongside it.
+its OpenAPI document at `/openapi/v1.json`, a Scalar reference UI alongside it, and the health
+dashboard at `/healthchecks-ui`.
 
 Everywhere else they apply nothing: the schema is brought up to date out of band, as a step of the
 release, and startup only reports whether any migration is pending. Migrating from the process that

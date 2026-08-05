@@ -81,6 +81,7 @@ public static class ObjectStorageServiceCollectionExtensions
                     });
             })
             .AddSingleton<IObjectStore, S3ObjectStore>()
+            .AddSingleton<IObjectStoreReachability, S3Reachability>()
             .AddSingleton<ITrainerPhotoStore, TrainerPhotoStore>()
             .AddHostedService<ObjectStorageBootstrapper>();
     }

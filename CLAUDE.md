@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 36 architecture decision records.
+2. `docs/adr/README.md` — the index of 37 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/Rules/` — the same decisions as 128 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/Rules/` — the same decisions as 132 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -142,11 +142,12 @@ The build enforces the style, so match what is there rather than normalising it:
 - No dead code, no comment describing something that is no longer true.
 - Documentation and implementation agree.
 
-A commit message is a short imperative title (Conventional Commits where it fits), a blank line,
-then a body: the main changes and their motivation, whenever that adds value. Less detailed than
-the pull request's description, but enough that someone reading only the git history understands
-what was done and why. Squash-merged from a pull request. An AI-assisted commit keeps
-its `Co-Authored-By` trailer — always — but never carries a Claude session reference: no
-`Claude-Session` trailer, no session URL, not in the message and not in anything committed. Check
-the message and the staged diff for one before every commit. If you see a better design that no
-accepted record forbids, propose it before implementing it.
+A commit message is a short, descriptive imperative title in the Linux-kernel style — the title
+says the change directly, never through a Conventional Commits prefix (`feat:`, `fix:`, `chore:`…
+are banned) — a blank line, then a body: the main changes and their motivation, whenever that
+adds value. Less detailed than the pull request's description, but enough that someone reading
+only the git history understands what was done and why. Squash-merged from a pull request. An
+AI-assisted commit keeps its `Co-Authored-By` trailer — always — but never carries a Claude
+session reference: no `Claude-Session` trailer, no session URL, not in the message and not in
+anything committed. Check the message and the staged diff for one before every commit. If you see
+a better design that no accepted record forbids, propose it before implementing it.

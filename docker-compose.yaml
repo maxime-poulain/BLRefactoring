@@ -110,6 +110,16 @@ services:
       - Smtp__Port=1025
       - Smtp__SenderAddress=no-reply@traininghub.local
       - Smtp__SenderName=TrainingHub
+    healthcheck:
+      # Liveness, not readiness, on purpose: a container check drives restart decisions, and
+      # restarting this process cannot fix a dependency /health/ready would report on. curl is
+      # installed in the image's final stage for exactly this line. CI never builds this image,
+      # so the check is proven by running the stack, not by a pipeline. See ADR 0037.
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     depends_on:
       sqlserver:
         condition: service_healthy
