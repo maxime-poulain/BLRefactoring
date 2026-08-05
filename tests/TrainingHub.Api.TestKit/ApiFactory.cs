@@ -224,6 +224,13 @@ public abstract class ApiFactory<TEntryPoint>
         builder.UseSetting("Outbox:PollInterval", "00:00:00.250");
         builder.UseSetting("Outbox:MaxAttempts", "2");
 
+        // The retry schedule and the retention shrink with the cadence: a hundred milliseconds of
+        // backoff keeps the poison proof inside a test's patience, and a thirty-second retention
+        // sweeps a planted stale row at once while every freshly delivered row comfortably
+        // outlives its observation window.
+        builder.UseSetting("Outbox:RetryDelay", "00:00:00.100");
+        builder.UseSetting("Outbox:RetentionPeriod", "00:00:30");
+
         // The file sink stays on, pointed at a directory this fixture owns — see LogDirectory for
         // why that is safe. Kept real rather than disabled because the file is the one place a
         // test can read what the pipeline actually wrote, properties and template included: the

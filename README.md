@@ -500,10 +500,12 @@ service that polls the table, claims the oldest unprocessed rows in a single
 `UPDATE … OUTPUT` under `READPAST` and a database lease — two hosts over one table are competing
 consumers, safely — and hands each fact to its consumers through an explicit dispatcher. Success
 stamps `ProcessedOnUtc`; a consumer that throws has its reason recorded on the envelope, the
-attempt counted, and the message retried until the budget in `OutboxOptions.MaxAttempts` is spent —
-after which the row is poison: kept, no longer claimed, its last error beside it. Delivery is
-at-least-once and eventual by a few seconds; consumers deduplicate by the envelope's id or, like
-the index upsert, converge naturally.
+attempt counted, and the next try booked one doubling further out — 30 s, then 60, then 120 — so a
+downstream outage is ridden out rather than burned through (ADR 0033). A message whose budget in
+`OutboxOptions.MaxAttempts` is spent is poison: kept, no longer claimed, its last error beside it,
+and announced once at Error in the log. Delivered rows older than `OutboxOptions.RetentionPeriod`
+are swept after each drain — poison never is. Delivery is at-least-once and eventual by a few
+seconds; consumers deduplicate by the envelope's id or, like the index upsert, converge naturally.
 
 ### A write, end to end
 
@@ -647,6 +649,7 @@ EF Core maps the model without letting persistence concerns leak into it:
 | `AddTrainerPhoto` | `PhotoId`, `PhotoContentType`, `PhotoByteSize` on `Trainer` |
 | `AddOutbox` | The `OutboxMessage` table the integration events travel through |
 | `AddOutboxLease` | Lease columns on `OutboxMessage`, so one worker delivers at a time |
+| `AddOutboxBackoffAndRetention` | `NextAttemptOnUtc` and the delivered-rows index: the retry schedule, and the sweep's seek |
 
 ASP.NET Identity lives in its own `DbContext` with its own migration.
 
@@ -871,7 +874,7 @@ Each API expects:
 | `Smtp:Host`, `Smtp:Port`, `Smtp:SenderAddress` | The mail server the outbox consumers deliver through, and the identity messages are sent as. All three **fail fast at startup** when missing ([ADR 0031](docs/adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md)) |
 | `Smtp:SenderName`, `Smtp:Username`, `Smtp:Password`, `Smtp:UseStartTls` | Optional: a display name, credentials for a relay that wants them (they travel as a pair or not at all), and STARTTLS for one reached across a real network. The local Mailpit container needs none of them |
 | `ApiLogging:*` | The Serilog pipeline both hosts share: `Path`, `RollingInterval`, `RetainedFileCountLimit`, `MinimumLevel`, `LevelOverrides`, `WriteToFile`. Every key has a working default — a host with no section logs to the console and to daily files under `logs/` ([ADR 0026](docs/adr/0026-log-with-serilog-to-console-and-files-through-typed-options.md)) |
-| `Outbox:*` | How eagerly each host's delivery worker drains the outbox: `PollInterval`, `BatchSize`, `MaxAttempts`, `LeaseDuration` — the last two decide when a failing message becomes poison, kept with its last error and never retried. Every knob has a working default (5 s, 20, 5 attempts, 30 s), so a host with no section still delivers ([ADR 0025](docs/adr/0025-deliver-the-outbox-with-a-hosted-service-in-each-host.md)) |
+| `Outbox:*` | How eagerly each host's delivery worker drains the outbox, and how patiently it retries: `PollInterval`, `BatchSize`, `MaxAttempts`, `LeaseDuration`, `RetryDelay` — the base of the doubling schedule a failed attempt books its next try on — and `RetentionPeriod`, past which delivered rows are swept while poison stays for the operator. Every knob has a working default (5 s, 20, 5 attempts, 30 s, 30 s, 14 days) and all fail fast at startup when non-positive ([ADR 0025](docs/adr/0025-deliver-the-outbox-with-a-hosted-service-in-each-host.md), [ADR 0033](docs/adr/0033-back-off-between-retries-log-the-poison-and-sweep-the-delivered-history.md)) |
 
 Supply them through `appsettings.Development.json`, user secrets, or environment variables — the
 `docker compose` service passes them as `ConnectionStrings__TrainingContext`, `Jwt__Key` and so

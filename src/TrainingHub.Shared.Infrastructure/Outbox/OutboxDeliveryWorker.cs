@@ -63,6 +63,16 @@ public sealed class OutboxDeliveryWorker(
                 claimedCount = await processor.ProcessBatchAsync(_claimant, stoppingToken);
             }
             while (claimedCount > 0);
+
+            // Once the table is quiet, trim the delivered history past its retention. In here
+            // rather than a janitor of its own: the worker that writes the history is the right
+            // owner of trimming it, and a failing sweep lands in the same catch below (ADR 0033).
+            using (var scope = scopeFactory.CreateScope())
+            {
+                var processor = scope.ServiceProvider.GetRequiredService<OutboxProcessor>();
+
+                await processor.SweepDeliveredAsync(stoppingToken);
+            }
         }
         catch (OperationCanceledException)
         {
