@@ -148,7 +148,7 @@ them — the layered one had none at all. See
 
 ### Solution layout
 
-Twenty-six projects: sixteen under `src/`, ten under `tests/`. The backend and all tests target
+Twenty-seven projects: sixteen under `src/`, eleven under `tests/`. The backend and all tests target
 **net10.0**; the Blazor pair and the generated clients target **net9.0**.
 
 | Project | Responsibility |
@@ -166,7 +166,7 @@ Twenty-six projects: sixteen under `src/`, ten under `tests/`. The backend and a
 | `DDD.Domain`, `DDD.Infrastructure`, `DDDWithCqrs.Domain` | Routing projects with no source files; the domain and infrastructure they stand for live in the `TrainingHub.Shared.*` projects |
 | `TrainingHub.GeneratedClients` | NSwag-generated typed HTTP clients, checked in as source |
 | `TrainingHub.Blazor` / `.Client` | Blazor WebAssembly front end built with MudBlazor, and the **backend for frontend** that serves it: cookie authentication, and a YARP proxy that attaches the API's access token server-side |
-| `tests/*` | Ten test projects — see [Testing](#testing) |
+| `tests/*` | Eleven projects — ten test suites and the shared kit they draw from — see [Testing](#testing) |
 
 ### Project dependency graph
 
@@ -789,6 +789,8 @@ what made the first of them ambiguous.
 | `Yarp.ReverseProxy` | The BFF's proxy — forwards `/api` to the REST API and attaches the access token from the session cookie |
 | `bunit` | Renders a Blazor component in-process, so the profile page's client-side decisions are tested rather than only clicked |
 | `xunit`, `AwesomeAssertions`, `Moq` | Testing — `AwesomeAssertions` is the Apache 2.0 community fork of FluentAssertions, whose 8.x line moved to a commercial licence |
+| `NetArchTest.eNhancedEdition` | The engine of the dependency half of the architecture rules — the maintained fork of NetArchTest, which is how the records become the executable rules in `TrainingHub.Architecture.Tests` |
+| `Microsoft.EntityFrameworkCore.InMemory` | A `DbContext` without a server, for the unit-side tests that need EF's change tracker but not SQL Server |
 | `AWSSDK.S3` | The object store photos live in — pointed at a SeaweedFS container locally, and at any S3-compatible provider by configuration |
 | `MailKit` | The SMTP client the emails leave through — pointed at a Mailpit container locally, and at any relay by configuration ([ADR 0031](docs/adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md)) |
 | `Testcontainers`, `Testcontainers.MsSql` | A real SQL Server, a real object store and a real mail server per integration test run |
@@ -869,6 +871,7 @@ Each API expects:
 | `Smtp:Host`, `Smtp:Port`, `Smtp:SenderAddress` | The mail server the outbox consumers deliver through, and the identity messages are sent as. All three **fail fast at startup** when missing ([ADR 0031](docs/adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md)) |
 | `Smtp:SenderName`, `Smtp:Username`, `Smtp:Password`, `Smtp:UseStartTls` | Optional: a display name, credentials for a relay that wants them (they travel as a pair or not at all), and STARTTLS for one reached across a real network. The local Mailpit container needs none of them |
 | `ApiLogging:*` | The Serilog pipeline both hosts share: `Path`, `RollingInterval`, `RetainedFileCountLimit`, `MinimumLevel`, `LevelOverrides`, `WriteToFile`. Every key has a working default — a host with no section logs to the console and to daily files under `logs/` ([ADR 0026](docs/adr/0026-log-with-serilog-to-console-and-files-through-typed-options.md)) |
+| `Outbox:*` | How eagerly each host's delivery worker drains the outbox: `PollInterval`, `BatchSize`, `MaxAttempts`, `LeaseDuration` — the last two decide when a failing message becomes poison, kept with its last error and never retried. Every knob has a working default (5 s, 20, 5 attempts, 30 s), so a host with no section still delivers ([ADR 0025](docs/adr/0025-deliver-the-outbox-with-a-hosted-service-in-each-host.md)) |
 
 Supply them through `appsettings.Development.json`, user secrets, or environment variables — the
 `docker compose` service passes them as `ConnectionStrings__TrainingContext`, `Jwt__Key` and so

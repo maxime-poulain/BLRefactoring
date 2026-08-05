@@ -65,12 +65,12 @@
                             </MudStack>
                         </MudCardContent>
                         <MudCardActions>
-                            @* The catalogue is readable by every signed-in trainer, but only its
-                               owner may edit or delete it — the API enforces that with
-                               TrainingOwnerPolicy. This page used to load every training and hide
-                               the buttons on the ones belonging to somebody else, which meant the
-                               browser had already received them. It now asks for its own, so every
-                               row here is editable and there is nothing left to hide. *@
+                            @* Only a training's owner may edit or delete it — the API enforces
+                               that with TrainingOwnerPolicy. This page used to load every training
+                               and hide the buttons on the ones belonging to somebody else, which
+                               meant the browser had already received them. It now asks for its
+                               own, so every row here is editable and there is nothing left to
+                               hide. *@
                             <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                            Color="Color.Primary"
                                            Href="@($"/trainings/edit/{training.Id}")" />
@@ -208,8 +208,8 @@
         }
         catch (ApiException ex) when (ex.StatusCode == StatusForbidden)
         {
-            // Still reachable with the button hidden: the catalogue was read at some point in the
-            // past, and hiding the button is a courtesy rather than the guard. A 403 carries no
+            // Still reachable with every row being the caller's own: this list was read at some
+            // point in the past, and ownership can have moved under it since. A 403 carries no
             // body, so there is nothing to read out of it — hence a sentence of our own.
             Snackbar.Add("That training belongs to another trainer.", Severity.Error);
             await LoadTrainings();

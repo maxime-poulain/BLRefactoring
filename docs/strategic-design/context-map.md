@@ -12,10 +12,10 @@ flowchart TB
         TC["<b>Training Catalogue</b><br/>core domain<br/>Trainer · Training"]
         IA["<b>Identity &amp; Access</b><br/>supporting · off the shelf"]
         MS["<b>Media Storage</b><br/>generic · S3 protocol"]
+        NT["<b>Notification</b><br/>generic · SMTP"]
     end
 
     subgraph ports ["Declared as a port, not implemented"]
-        NT["<b>Notification</b><br/>generic"]
         SI["<b>Search Indexing</b><br/>generic"]
     end
 
@@ -38,7 +38,7 @@ flowchart TB
 | Training Catalogue | Core domain | Built |
 | Identity & Access | Supporting | Built — off the shelf |
 | Media Storage | Generic | Built |
-| Notification | Generic | Port only |
+| Notification | Generic | Built |
 | Search Indexing | Generic | Port only |
 | Catalogue Discovery | Core (read side) | Announced |
 

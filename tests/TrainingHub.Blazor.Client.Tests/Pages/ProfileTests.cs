@@ -32,13 +32,7 @@ public sealed class ProfileTests : ComponentTest
     {
         Services.AddSingleton(_trainerClient.Object);
 
-        GivenProfile(new TrainerResponseHttp
-        {
-            Id = TrainerId,
-            Firstname = "John",
-            Lastname = "Doe",
-            ContactEmail = "john.doe@example.com"
-        });
+        GivenProfile(ProfileWithoutPhoto());
     }
 
     /// <summary>
@@ -149,6 +143,13 @@ public sealed class ProfileTests : ComponentTest
             .ReturnsAsync(ProfileWithPhoto(uploaded));
 
         var page = Render<Profile>();
+
+        // The upload path reloads the profile to refresh the version it holds, so what the server
+        // answers after the write is the profile that now carries the photo. Re-armed after the
+        // first render on purpose: armed before it, the address would be on screen from the start
+        // and the assertion would prove nothing about the upload.
+        GivenProfile(ProfileWithPhoto(uploaded));
+
         var upload = page.FindComponent<MudFileUpload<IBrowserFile>>();
 
         // Act
@@ -219,6 +220,10 @@ public sealed class ProfileTests : ComponentTest
         GivenProfile(ProfileWithPhoto(Guid.NewGuid()));
         var page = Render<Profile>();
 
+        // The removal reloads the profile to refresh the version it holds, so what the server
+        // answers after the delete is a profile without a photo.
+        GivenProfile(ProfileWithoutPhoto());
+
         // Act
         page.FindAll("button").Single(button => button.TextContent.Contains("Remove photo", StringComparison.Ordinal)).Click();
 
@@ -252,6 +257,79 @@ public sealed class ProfileTests : ComponentTest
     }
 
     /// <summary>
+    /// Saving after a photo change, sends the version the reload answered.
+    /// </summary>
+    /// <remarks>
+    /// The defect this pins: the photo write bumps the row's version, and the page used to keep
+    /// the ETag it read at load. The next save then carried a version naming a row that no longer
+    /// existed, and the server refused it with 412 — "someone else changed this profile" — with
+    /// nobody else involved. The upload path now reloads, and this proves the save sends what the
+    /// reload answered rather than what the first load did.
+    /// </remarks>
+    [Fact]
+    public async Task SavingAfterAPhotoChange_SendsTheVersionTheReloadAnswered()
+    {
+        // Arrange
+        var uploaded = Guid.NewGuid();
+
+        _trainerClient
+            .SetupSequence(client => client.GetCurrentAsync())
+            .ReturnsAsync(Answering("\"v1\"", ProfileWithoutPhoto()))
+            .ReturnsAsync(Answering("\"v2\"", ProfileWithPhoto(uploaded)))
+            .ReturnsAsync(Answering("\"v3\"", ProfileWithPhoto(uploaded)));
+
+        _trainerClient
+            .Setup(client => client.SetPhotoAsync(It.IsAny<FileParameter>()))
+            .ReturnsAsync(ProfileWithPhoto(uploaded));
+
+        _trainerClient
+            .Setup(client => client.EditCurrentAsync(It.IsAny<string?>(), It.IsAny<EditTrainerRequestHttp>()))
+            .ReturnsAsync(ProfileWithPhoto(uploaded));
+
+        var page = Render<Profile>();
+        var upload = page.FindComponent<MudFileUpload<IBrowserFile>>();
+
+        await page.InvokeAsync(() =>
+            upload.Instance.FilesChanged.InvokeAsync(
+                new FakeBrowserFile("portrait.png", "image/png", 128)));
+
+        // Act
+        page.FindAll("button")
+            .Single(button => button.TextContent.Contains("Save Changes", StringComparison.Ordinal))
+            .Click();
+
+        // Assert
+        page.WaitForAssertion(() => _trainerClient.Verify(
+            client => client.EditCurrentAsync("\"v2\"", It.IsAny<EditTrainerRequestHttp>()), Times.Once));
+    }
+
+    /// <summary>
+    /// Renders, profile unreadable, shows a sentence of its own.
+    /// </summary>
+    /// <remarks>
+    /// The message on the exception is the generator's — "The HTTP status code of the response was
+    /// not expected (503)." It belongs in the console, not on screen, and this is the test that
+    /// keeps it there.
+    /// </remarks>
+    [Fact]
+    public void Renders_ProfileUnreadable_ShowsASentenceOfItsOwn()
+    {
+        // Arrange
+        _trainerClient
+            .Setup(client => client.GetCurrentAsync())
+            .ThrowsAsync(new ApiException(
+                "The HTTP status code of the response was not expected (503).", 503, "",
+                new Dictionary<string, IEnumerable<string>>(), null));
+
+        // Act
+        Render<Profile>();
+
+        // Assert
+        Shown().Should().ContainSingle()
+            .Which.Message.Should().Be("The profile could not be loaded. Try again in a moment.");
+    }
+
+    /// <summary>
     /// Renders, profile unreadable, does not throw.
     /// </summary>
     /// <remarks>
@@ -279,10 +357,18 @@ public sealed class ProfileTests : ComponentTest
     private void GivenProfile(TrainerResponseHttp trainer) =>
         _trainerClient
             .Setup(client => client.GetCurrentAsync())
-            .ReturnsAsync(new SwaggerResponse<TrainerResponseHttp>(
-                200,
-                new Dictionary<string, IEnumerable<string>> { ["ETag"] = ["\"AAAAAAAAB9E=\""] },
-                trainer));
+            .ReturnsAsync(Answering("\"AAAAAAAAB9E=\"", trainer));
+
+    private static SwaggerResponse<TrainerResponseHttp> Answering(string etag, TrainerResponseHttp trainer) =>
+        new(200, new Dictionary<string, IEnumerable<string>> { ["ETag"] = [etag] }, trainer);
+
+    private static TrainerResponseHttp ProfileWithoutPhoto() => new()
+    {
+        Id = TrainerId,
+        Firstname = "John",
+        Lastname = "Doe",
+        ContactEmail = "john.doe@example.com"
+    };
 
     private static TrainerResponseHttp ProfileWithPhoto(Guid photoId) => new()
     {

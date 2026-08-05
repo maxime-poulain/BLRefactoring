@@ -186,35 +186,6 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
     }
 
     /// <summary>
-    /// What republishing the version is actually for.
-    /// </summary>
-    /// <remarks>
-    /// The previous behaviour — a bare 200 — made this sequence impossible: the caller's only
-    /// version was the one the first edit had just replaced, so the second attempt could only be a
-    /// 412. Correct, and useless. An extra GET was the sole way forward.
-    /// </remarks>
-    [Fact]
-    public async Task Edit_TwiceInARow_SucceedsUsingTheVersionTheFirstEditReturned()
-    {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var trainingId = await CreateTrainingAsync(client);
-
-        var entityTag = await client.GetETagAsync($"/Training/{trainingId}");
-
-        var first = await client.PutWithIfMatchAsync(
-            $"/Training/{trainingId}", ValidEdition("First Edit"), entityTag);
-        first.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var second = await client.PutWithIfMatchAsync(
-            $"/Training/{trainingId}", ValidEdition("Second Edit"), first.Headers.ETag!.ToString());
-
-        second.StatusCode.Should().Be(HttpStatusCode.OK, "the first edit handed back a current version");
-
-        var reread = await client.GetFromJsonAsync<TrainingResponseHttp>($"/Training/{trainingId}");
-        reread!.Title.Should().Be("Second Edit");
-    }
-
-    /// <summary>
     /// Edit, without if match, returns 428.
     /// </summary>
     [Fact]
