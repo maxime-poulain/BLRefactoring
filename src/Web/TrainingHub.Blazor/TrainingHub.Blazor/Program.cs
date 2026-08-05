@@ -4,6 +4,12 @@ using TrainingHub.Blazor.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// The developer's own overrides, appended after every committed source and the environment, so
+// they always win. Optional and git-ignored; the WebAssembly client has no configuration of its
+// own, so this host is the only Blazor-side place an override — the API base address, say — can
+// live. See ADR 0035.
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+
 // Add MudBlazor services
 builder.Services.AddMudServices();
 

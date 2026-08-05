@@ -57,3 +57,4 @@ simpler from the outside.
 | [0032](0032-flatten-a-value-object-as-a-complex-property-not-an-owned-entity.md) | Flatten a value object as a complex property, not an owned entity | Accepted |
 | [0033](0033-back-off-between-retries-log-the-poison-and-sweep-the-delivered-history.md) | Back off between retries, log the poison, and sweep the delivered history | Accepted — the per-consumer isolation it left out arrives in 0034 |
 | [0034](0034-deliver-once-per-consumer-not-once-per-message.md) | Deliver once per consumer, not once per message | Accepted |
+| [0035](0035-give-every-developer-a-git-ignored-local-overrides-file.md) | Give every developer a git-ignored local overrides file | Accepted |

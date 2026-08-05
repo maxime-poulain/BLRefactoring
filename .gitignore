@@ -747,3 +747,7 @@ cqrsDDD.db-wal
 # The OpenAPI document emitted by scripts/generate-clients.sh. An intermediate artefact: the
 # generated client is committed, the document it was produced from is not.
 src/DDD/Api/TrainingHub.DDD.Api.json
+
+# Each developer's private configuration overrides, loaded last by every host (ADR 0035). Never
+# versioned: in a public repository this file is where real credentials are allowed to exist.
+appsettings.Local.json

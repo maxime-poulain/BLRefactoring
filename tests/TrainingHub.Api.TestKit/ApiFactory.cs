@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Respawn;
@@ -202,6 +203,23 @@ public abstract class ApiFactory<TEntryPoint>
             // survives the worker's per-batch scopes; it acts only on marked registrations.
             services.AddSingleton<IIntegrationEventHandler<TrainerCreatedIntegrationEvent>,
                 FailOnceWhenTrainerCreatedIntegrationEventHandler>();
+        });
+
+        // The suites must behave the same on every machine, and a developer's
+        // appsettings.Local.json — which Program.cs loads last and this factory's content root
+        // can see — would quietly reshape them: CorsTest asserts the exact origins the
+        // Development file declares, and Jwt has no override here at all. The source is removed
+        // rather than out-shouted, because out-shouting every key it might carry is a race this
+        // factory cannot win. See ADR 0035.
+        builder.ConfigureAppConfiguration((_, configuration) =>
+        {
+            foreach (var localSource in configuration.Sources
+                .OfType<JsonConfigurationSource>()
+                .Where(source => string.Equals(source.Path, "appsettings.Local.json", StringComparison.Ordinal))
+                .ToList())
+            {
+                configuration.Sources.Remove(localSource);
+            }
         });
 
         // Pointed at the container rather than the address in appsettings, and left otherwise
