@@ -12,10 +12,15 @@ simpler from the outside.
 ## Conventions
 
 - One record per file, numbered in order: `NNNN-a-sentence-in-the-imperative.md`.
-- Numbers are never reused, and a record is never rewritten once merged. A decision that changes
-  gets a new record that supersedes the old one, and the old one is marked as such and left in
-  place — the reasoning that was true at the time is what makes the change legible.
-- Status is one of `Proposed`, `Accepted`, `Superseded by NNNN`.
+- Numbers are never reused, and a record's **body** is never rewritten once merged. A decision that
+  changes gets a new record that supersedes or amends the old one, and the old one is marked as such
+  and left in place — the reasoning that was true at the time is what makes the change legible.
+- The **status line is the exception**, and the only one: it carries the record's standing, not its
+  argument, so a later decision annotates it. A record that amends another declares it in an
+  `- **Amends:** NNNN` field, and the amended record's status names it back (ADR 0039).
+- Status is one of `Proposed`, `Accepted`, `Superseded by NNNN`, optionally followed by ` — ` and
+  what later records did to the decision. It is written in the record; the table below repeats it,
+  and a rule holds the two to each other.
 - Record the alternatives and why they lost. A record without them documents an outcome, not a
   decision, and cannot be revisited.
 
@@ -23,19 +28,19 @@ simpler from the outside.
 
 | # | Decision | Status |
 |---|----------|--------|
-| [0001](0001-paginate-on-the-query-side-over-a-total-order.md) | Paginate on the query side, over a total order | Accepted — amended by 0029 |
-| [0002](0002-keep-domain-reactions-in-the-transaction-and-deliver-integration-events-through-an-outbox.md) | Keep domain reactions in the transaction, deliver integration events through an outbox | Accepted — implemented by 0024 and 0025 |
+| [0001](0001-paginate-on-the-query-side-over-a-total-order.md) | Paginate on the query side, over a total order | Accepted — amended in part by 0029 |
+| [0002](0002-keep-domain-reactions-in-the-transaction-and-deliver-integration-events-through-an-outbox.md) | Keep domain reactions in the transaction, deliver integration events through an outbox | Accepted — implemented; the message design is recorded in 0024, the delivery worker in 0025; its registration consequence is corrected by 0040 |
 | [0003](0003-apply-migrations-on-startup-in-development-only.md) | Apply migrations on startup in Development only | Accepted |
-| [0004](0004-publish-every-error-as-rfc-7807-problem-details.md) | Publish every error as RFC 7807 Problem Details | Accepted — amended by 0012 |
+| [0004](0004-publish-every-error-as-rfc-7807-problem-details.md) | Publish every error as RFC 7807 Problem Details | Accepted — amended in part by 0012 |
 | [0005](0005-store-audit-timestamps-at-full-precision.md) | Store audit timestamps at full precision | Accepted |
 | [0006](0006-describe-the-api-with-the-frameworks-openapi-generator.md) | Describe the API with the framework's OpenAPI generator | Accepted — one paragraph superseded by 0008 |
 | [0007](0007-assert-with-awesomeassertions.md) | Assert with AwesomeAssertions | Accepted |
-| [0008](0008-generate-the-http-client-from-a-script-and-verify-it-in-ci.md) | Regenerate the HTTP client from the API, and commit it automatically | Accepted — one argument dated by 0029 |
+| [0008](0008-generate-the-http-client-from-a-script-and-verify-it-in-ci.md) | Regenerate the HTTP client from the API, and commit it automatically | Accepted — the list-shape argument for the source host is dated by 0029; the hosts now answer alike, and the layered one remains the source |
 | [0009](0009-hold-the-access-token-in-the-bff-instead-of-the-browser.md) | Hold the access token in the BFF instead of the browser | Accepted |
 | [0010](0010-declare-the-conditional-request-contract-in-the-document.md) | Declare the conditional-request contract in the document | Accepted |
-| [0011](0011-answer-a-creation-with-201-and-the-address-of-what-was-created.md) | Answer a creation with 201 and the address of what was created | Accepted |
+| [0011](0011-answer-a-creation-with-201-and-the-address-of-what-was-created.md) | Answer a creation with 201 and the address of what was created | Accepted, amended — see the Amendment section below |
 | [0012](0012-finish-the-one-error-shape-and-name-its-members-apart.md) | Finish the one error shape, and name its members apart | Accepted — amended by 0016 |
-| [0013](0013-make-every-record-answer-to-a-test.md) | Make every record answer to a test | Accepted |
+| [0013](0013-make-every-record-answer-to-a-test.md) | Make every record answer to a test | Accepted — amended by 0039: the ledger of exemptions is what says how many there are |
 | [0014](0014-seal-by-default-and-let-inheritance-be-a-decision.md) | Seal by default, and let inheritance be a decision | Accepted |
 | [0015](0015-let-each-aggregate-own-the-errors-it-raises.md) | Let each aggregate own the errors it raises | Accepted |
 | [0016](0016-let-a-rejected-command-fail-like-every-other-command.md) | Let a rejected command fail like every other command | Accepted |
@@ -46,8 +51,8 @@ simpler from the outside.
 | [0021](0021-store-a-photo-beside-the-row-that-names-it.md) | Store a photo beside the row that names it, and never overwrite in place | Accepted |
 | [0022](0022-name-the-repository-after-the-domain-it-serves.md) | Name the repository after the domain it serves | Accepted |
 | [0023](0023-document-the-strategic-design-and-hold-it-to-the-model.md) | Document the strategic design, and hold it to the model | Accepted |
-| [0024](0024-publish-facts-not-intents-and-version-them-in-the-envelope.md) | Publish facts, not intents, and version them in the envelope | Accepted — the email half's "still a fake" dated by 0031; the retry contract gains its schedule in 0033; the per-consumer half of its at-least-once promise is made true by 0034 |
-| [0025](0025-deliver-the-outbox-with-a-hosted-service-in-each-host.md) | Deliver the outbox with a hosted service in each host | Accepted — the email half's "still a fake" dated by 0031; the retry cadence, the poison's silence and the table's growth are hardened by 0033; delivery is settled per consumer by 0034 |
+| [0024](0024-publish-facts-not-intents-and-version-them-in-the-envelope.md) | Publish facts, not intents, and version them in the envelope | Accepted — the email half of "the ports remain fakes" is dated by 0031; the search half stays true; the retry contract gains its schedule in 0033; the per-consumer half of its at-least-once promise is made true by 0034 |
+| [0025](0025-deliver-the-outbox-with-a-hosted-service-in-each-host.md) | Deliver the outbox with a hosted service in each host | Accepted — the email half of "they remain fakes" is dated by 0031; the search half stays true; the retry cadence, the poison's silence and the table's growth are hardened by 0033; delivery is settled per consumer by 0034 |
 | [0026](0026-log-with-serilog-to-console-and-files-through-typed-options.md) | Log with Serilog to console and files, through typed options | Accepted |
 | [0027](0027-stamp-the-callers-identity-on-every-log-line.md) | Stamp the caller's identity on every log line | Accepted |
 | [0028](0028-a-specification-names-a-business-rule-or-it-does-not-exist.md) | A specification names a business rule, or it does not exist | Accepted |
@@ -61,3 +66,5 @@ simpler from the outside.
 | [0036](0036-model-the-decision-that-has-no-home-as-a-domain-service.md) | Model the decision that has no home as a domain service | Accepted |
 | [0037](0037-answer-for-the-hosts-health-at-two-endpoints.md) | Answer for the host's health at two endpoints | Accepted |
 | [0038](0038-derive-every-counted-claim-from-the-code.md) | Derive every counted claim from the code | Accepted |
+| [0039](0039-hold-the-record-and-its-index-to-the-same-status.md) | Hold the record and its index to the same status | Accepted |
+| [0040](0040-register-the-trainer-and-the-account-in-one-transaction.md) | Register the trainer and the account in one transaction | Accepted |

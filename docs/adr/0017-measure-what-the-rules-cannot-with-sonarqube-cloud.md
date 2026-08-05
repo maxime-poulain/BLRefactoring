@@ -1,6 +1,6 @@
 # 0017 — Measure what the rules cannot, with SonarQube Cloud
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0018](0018-fail-on-the-gate-where-failing-stops-something.md)
 - **Date:** 2026-08-02
 
 ## Context

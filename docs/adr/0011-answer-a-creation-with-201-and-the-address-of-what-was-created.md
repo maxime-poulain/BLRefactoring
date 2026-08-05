@@ -1,6 +1,6 @@
 # 0011 — Answer a creation with 201 and the address of what was created
 
-- **Status:** Accepted, amended (see [Amendment](#amendment--the-address-changed-because-the-old-one-stopped-existing))
+- **Status:** Accepted, amended — see the Amendment section below
 - **Date:** 2026-08-01
 
 ## Context

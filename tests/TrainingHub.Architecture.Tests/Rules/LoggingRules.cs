@@ -61,6 +61,51 @@ public sealed class LoggingRules
             .ShouldHold();
 
     /// <summary>
+    /// Every log line, names its caller.
+    /// </summary>
+    /// <remarks>
+    /// ADR 0027 was excused from having a rule because the decision is a runtime behaviour — a
+    /// property enriched at write time, rendered by a template — and no type-level rule can see
+    /// either. What a rule can see is that the two halves are still wired to each other, which is
+    /// how this breaks: a template edited without the token renders every line without its caller,
+    /// and an enricher left unregistered writes a property no sink asks for. Neither fails a test
+    /// that does not read the rendered output, and <c>LoggingTest</c> — which does — needs a host
+    /// and a file sink. The token is compared against the enricher's own constant rather than
+    /// spelled twice. See ADR 0039.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0027",
+        "every line names its caller: the enricher writes the property and the one output template renders it")]
+    public void EveryLogLine_NamesItsCaller()
+    {
+        var extension = Path.Combine("src", "TrainingHub.Shared.Api", "Extensions", "LoggingExtensions.cs");
+
+        var code = SourceTree.ReadText(Path.Combine(SourceTree.RepositoryRoot, extension))
+            .Split('\n')
+            .Select(line => line.TrimStart())
+            .Where(line => !line.StartsWith("//", StringComparison.Ordinal))
+            .ToArray();
+
+        var property = (string)Solution.SharedApi
+            .DeclaredTypes()
+            .Single(type => type.Name == "UserIdentityEnricher")
+            .GetField("PropertyName")!
+            .GetValue(null)!;
+
+        new[]
+        {
+            ($"{{{property}}}", $"the output template no longer renders {{{property}}}, so no line " +
+                "says who called — a text sink shows a property only when the template names it"),
+            ("new UserIdentityEnricher(", "the enricher is never constructed, so the property it " +
+                "writes exists nowhere for the template to render"),
+        }
+            .Selected("half of the identity stamp")
+            .Where(half => !Array.Exists(code, line => line.Contains(half.Item1, StringComparison.Ordinal)))
+            .Select(half => $"{extension}: {half.Item2}")
+            .ShouldHold();
+    }
+
+    /// <summary>
     /// Only the logging extension, touches serilog.
     /// </summary>
     /// <remarks>

@@ -1,6 +1,6 @@
 # 0019 — Enforce the ruleset this repository already declared
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0020](0020-declare-every-rule-this-codebase-already-satisfies.md)
 - **Date:** 2026-08-02
 
 ## Context

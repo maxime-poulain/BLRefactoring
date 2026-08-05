@@ -1,6 +1,6 @@
 # 0013 — Make every record answer to a test
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0039](0039-hold-the-record-and-its-index-to-the-same-status.md): the ledger of exemptions is what says how many there are
 - **Date:** 2026-08-02
 
 ## Context

@@ -1,6 +1,6 @@
 # 0030 — Bring the fact to the aggregate, not the decision to a service
 
-- **Status:** Accepted
+- **Status:** Accepted — narrowed by [0036](0036-model-the-decision-that-has-no-home-as-a-domain-service.md): a decision with no home is a recorded domain service
 - **Date:** 2026-08-04
 
 ## Context
