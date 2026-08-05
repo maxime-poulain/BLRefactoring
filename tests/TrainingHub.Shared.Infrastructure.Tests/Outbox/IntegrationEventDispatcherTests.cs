@@ -7,15 +7,19 @@ using Xunit;
 namespace TrainingHub.Shared.Infrastructure.Tests.Outbox;
 
 /// <summary>
-/// The dispatcher, held to its routing table.
+/// The dispatcher, held to its routing table and to its isolation contract.
 /// </summary>
 /// <remarks>
-/// The dispatcher's switch restates the registry's closed set where the routing happens, and this
-/// is the test that keeps the two lists from drifting: every registered event must route without
+/// The dispatcher's switch restates the registry's closed set where the routing happens, and the
+/// first facts keep the two lists from drifting: every registered event must route without
 /// refusal, and anything the registry never named must be refused loudly rather than dropped.
+/// The later facts hold ADR 0034's isolation: a consumer's failure is its own outcome, never its
+/// neighbour's, and a delivery the ledger already recorded is never run again.
 /// </remarks>
 public sealed class IntegrationEventDispatcherTests
 {
+    private static readonly IReadOnlySet<string> NothingDeliveredYet = new HashSet<string>();
+
     /// <summary>An event the registry and the dispatcher have never heard of.</summary>
     private sealed record UnroutedIntegrationEvent : IIntegrationEvent;
 
@@ -29,6 +33,13 @@ public sealed class IntegrationEventDispatcherTests
     ];
 
     private static IntegrationEventDispatcher CreateSutWithoutConsumers() => new([], [], [], []);
+
+    private static Mock<IIntegrationEventHandler<TrainerCreatedIntegrationEvent>> CreateConsumer(string name)
+    {
+        var consumer = new Mock<IIntegrationEventHandler<TrainerCreatedIntegrationEvent>>();
+        consumer.SetupGet(handler => handler.ConsumerName).Returns(name);
+        return consumer;
+    }
 
     /// <summary>
     /// Every registered event, has a route.
@@ -46,7 +57,7 @@ public sealed class IntegrationEventDispatcherTests
 
         foreach (var instance in Instances)
         {
-            var act = () => sut.DispatchAsync(instance, CancellationToken.None);
+            var act = () => sut.DispatchAsync(instance, NothingDeliveredYet, CancellationToken.None);
             await act.Should().NotThrowAsync($"{instance.GetType().Name} is registered, so the switch must route it");
         }
 
@@ -61,15 +72,62 @@ public sealed class IntegrationEventDispatcherTests
     [Fact]
     public async Task Dispatch_ReachesEveryRegisteredConsumer_WithTheFactIntact()
     {
-        var first = new Mock<IIntegrationEventHandler<TrainerCreatedIntegrationEvent>>();
-        var second = new Mock<IIntegrationEventHandler<TrainerCreatedIntegrationEvent>>();
+        var first = CreateConsumer("First");
+        var second = CreateConsumer("Second");
         var sut = new IntegrationEventDispatcher([first.Object, second.Object], [], [], []);
 
         var fact = new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "Ada", "Lovelace", "ada@example.com");
-        await sut.DispatchAsync(fact, CancellationToken.None);
+        var outcome = await sut.DispatchAsync(fact, NothingDeliveredYet, CancellationToken.None);
 
         first.Verify(h => h.HandleAsync(fact, It.IsAny<CancellationToken>()), Times.Once);
         second.Verify(h => h.HandleAsync(fact, It.IsAny<CancellationToken>()), Times.Once);
+        outcome.Delivered.Should().Equal("First", "Second");
+        outcome.EveryConsumerSettled.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// A throwing consumer, does not stop its neighbour.
+    /// </summary>
+    [Fact]
+    public async Task AThrowingConsumer_DoesNotStopItsNeighbour()
+    {
+        var first = CreateConsumer("First");
+        var thrown = new InvalidOperationException("the reaction failed");
+        first.Setup(h => h.HandleAsync(It.IsAny<TrainerCreatedIntegrationEvent>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(thrown);
+        var second = CreateConsumer("Second");
+        var sut = new IntegrationEventDispatcher([first.Object, second.Object], [], [], []);
+
+        var fact = new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "Ada", "Lovelace", "ada@example.com");
+        var outcome = await sut.DispatchAsync(fact, NothingDeliveredYet, CancellationToken.None);
+
+        second.Verify(h => h.HandleAsync(fact, It.IsAny<CancellationToken>()), Times.Once,
+            "a neighbour's failure is the neighbour's outcome, not this consumer's");
+        outcome.Delivered.Should().Equal("Second");
+        outcome.Failures.Should().ContainSingle()
+            .Which.Should().Be(new ConsumerFailure("First", thrown));
+        outcome.EveryConsumerSettled.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// An already delivered consumer, is not run again.
+    /// </summary>
+    [Fact]
+    public async Task AnAlreadyDeliveredConsumer_IsNotRunAgain()
+    {
+        var first = CreateConsumer("First");
+        var second = CreateConsumer("Second");
+        var sut = new IntegrationEventDispatcher([first.Object, second.Object], [], [], []);
+
+        var fact = new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "Ada", "Lovelace", "ada@example.com");
+        var outcome = await sut.DispatchAsync(fact, new HashSet<string> { "First" }, CancellationToken.None);
+
+        first.Verify(h => h.HandleAsync(It.IsAny<TrainerCreatedIntegrationEvent>(), It.IsAny<CancellationToken>()),
+            Times.Never, "what the ledger already records must not be delivered twice");
+        second.Verify(h => h.HandleAsync(fact, It.IsAny<CancellationToken>()), Times.Once);
+        outcome.Delivered.Should().Equal(["Second"],
+            "the skipped consumer ran in an earlier pass, and reporting it again would write a duplicate ledger row");
+        outcome.EveryConsumerSettled.Should().BeTrue();
     }
 
     /// <summary>
@@ -80,7 +138,7 @@ public sealed class IntegrationEventDispatcherTests
     {
         var sut = CreateSutWithoutConsumers();
 
-        var act = () => sut.DispatchAsync(new UnroutedIntegrationEvent(), CancellationToken.None);
+        var act = () => sut.DispatchAsync(new UnroutedIntegrationEvent(), NothingDeliveredYet, CancellationToken.None);
 
         (await act.Should().ThrowAsync<InvalidOperationException>())
             .WithMessage($"*{nameof(UnroutedIntegrationEvent)}*no route*");

@@ -16,7 +16,9 @@ public static class AuthHelper
     /// <summary>
     /// Create unique register request.
     /// </summary>
-    public static RegisterRequest CreateUniqueRegisterRequest()
+    /// <param name="firstname">The first name — a marker some test-only consumers key on, such as
+    /// <see cref="FailOnceWhenTrainerCreatedIntegrationEventHandler.Marker"/>.</param>
+    public static RegisterRequest CreateUniqueRegisterRequest(string firstname = "Test")
     {
         var id = Interlocked.Increment(ref _counter);
         return new RegisterRequest
@@ -25,7 +27,7 @@ public static class AuthHelper
             Email = $"testuser{id}@example.com",
             Password = "pass",
             ConfirmPassword = "pass",
-            Firstname = "Test",
+            Firstname = firstname,
             Lastname = $"User{id}"
         };
     }

@@ -16,9 +16,11 @@ namespace TrainingHub.Shared.Infrastructure.Outbox;
 /// <c>READPAST</c> makes competing claimants skip each other's locked rows instead of queueing on
 /// them, and the lease written by the claim (<c>ClaimedUntil</c>) keeps the claim owned across the
 /// batch, so a worker that dies mid-delivery merely lets its lease lapse and the rows return to
-/// the pool. Each message's outcome is saved as it happens, not at the end of the batch: a crash
-/// then re-delivers at most the message in flight, which is the at-least-once contract consumers
-/// already signed up for — their deduplication key is the envelope's id (ADR 0024, ADR 0025).
+/// the pool. Each message's outcome is saved as it happens, not at the end of the batch, and
+/// settled per consumer: every success lands in the delivery ledger in that same save, so a crash
+/// or a failing neighbour re-runs at most the consumers of the message in flight that had not yet
+/// settled — the platform-side half of the deduplication ADR 0024 promised on the envelope's id
+/// (ADR 0025, ADR 0034).
 /// </remarks>
 public sealed class OutboxProcessor(
     TrainingContext trainingContext,
@@ -51,54 +53,53 @@ WITH claimable AS (
       AND Attempts < {configured.MaxAttempts}
       AND (ClaimedUntil IS NULL OR ClaimedUntil < {now})
       AND (NextAttemptOnUtc IS NULL OR NextAttemptOnUtc < {now})
-    ORDER BY OccurredOnUtc
+    ORDER BY OccurredOnUtc, Id
 )
 UPDATE claimable
 SET ClaimedBy = {claimant}, ClaimedUntil = {leaseEnd}
 OUTPUT inserted.*")
             .ToListAsync(cancellationToken);
 
-        foreach (var message in claimed.OrderBy(message => message.OccurredOnUtc))
+        foreach (var message in claimed.OrderBy(message => message.OccurredOnUtc).ThenBy(message => message.Id))
         {
             try
             {
                 var fact = IntegrationEventSerializer.Deserialize(message.Name, message.Version, message.Payload);
-                await dispatcher.DispatchAsync(fact, cancellationToken);
-                message.MarkProcessed(timeProvider.GetUtcNow().UtcDateTime);
-            }
-            catch (Exception exception) when (exception is not OperationCanceledException)
-            {
-                // The broad catch is the retry mechanism, not a shrug: whatever a consumer threw
-                // is recorded on the envelope, the attempt is counted, and the message returns to
-                // the pool — one doubling later — until the budget in MaxAttempts is spent.
-                message.RecordFailure(
-                    exception.ToString(),
-                    timeProvider.GetUtcNow().UtcDateTime,
-                    configured.RetryDelay);
+                var alreadyDelivered = await DeliveredConsumersOfAsync(message, cancellationToken);
+                var outcome = await dispatcher.DispatchAsync(fact, alreadyDelivered, cancellationToken);
 
-                if (message.Attempts >= configured.MaxAttempts)
+                // Each success is written to the ledger in the same save as the message's
+                // outcome, so a retry re-runs only the consumers still owed (ADR 0034).
+                foreach (var consumerName in outcome.Delivered)
                 {
-                    // Error, once, at the transition: this is the moment the system gives up on a
-                    // committed fact, and the smallest dead-letter surface ADR 0025 deferred.
-                    logger.LogError(
-                        exception,
-                        "Outbox message {MessageId} ({Name} v{Version}) is poison after {Attempts} attempts; it stays in the table for an operator.",
+                    trainingContext.Set<OutboxMessageConsumer>().Add(new OutboxMessageConsumer(
                         message.Id,
-                        message.Name,
-                        message.Version,
-                        message.Attempts);
+                        consumerName,
+                        timeProvider.GetUtcNow().UtcDateTime));
+                }
+
+                if (outcome.EveryConsumerSettled)
+                {
+                    message.MarkProcessed(timeProvider.GetUtcNow().UtcDateTime);
                 }
                 else
                 {
-                    logger.LogWarning(
-                        "Delivering outbox message {MessageId} ({Name} v{Version}) failed on attempt {Attempts} of {MaxAttempts}; next try after {NextAttemptOnUtc:O}.",
-                        message.Id,
-                        message.Name,
-                        message.Version,
-                        message.Attempts,
-                        configured.MaxAttempts,
-                        message.NextAttemptOnUtc);
+                    RecordFailure(
+                        message,
+                        string.Join(Environment.NewLine, outcome.Failures
+                            .Select(failure => $"{failure.ConsumerName}: {failure.Exception}")),
+                        outcome.Failures.Count == 1
+                            ? outcome.Failures[0].Exception
+                            : new AggregateException(outcome.Failures.Select(failure => failure.Exception)),
+                        configured);
                 }
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                // What reaches this catch never ran a consumer: a payload nobody can deserialize
+                // or a fact with no route fails before the dispatch loop starts, so there is no
+                // outcome to split and the whole message fails, exactly as before ADR 0034.
+                RecordFailure(message, exception.ToString(), exception, configured);
             }
 
             // Saved per message rather than per batch: an outcome, once known, survives whatever
@@ -107,6 +108,64 @@ OUTPUT inserted.*")
         }
 
         return claimed.Count;
+    }
+
+    /// <summary>
+    /// The ledger's answer for one message: which consumers it already reached. A first attempt
+    /// skips the query — the ledger commits in the same save as the failure that would make a
+    /// second attempt exist, so no attempts means no rows.
+    /// </summary>
+    private async Task<IReadOnlySet<string>> DeliveredConsumersOfAsync(
+        OutboxMessage message,
+        CancellationToken cancellationToken)
+    {
+        if (message.Attempts == 0)
+        {
+            return new HashSet<string>();
+        }
+
+        var delivered = await trainingContext.Set<OutboxMessageConsumer>()
+            .Where(delivery => delivery.MessageId == message.Id)
+            .Select(delivery => delivery.ConsumerName)
+            .ToListAsync(cancellationToken);
+
+        return delivered.ToHashSet();
+    }
+
+    /// <summary>
+    /// Records a failed attempt on the envelope and says so — Warning while the budget lasts,
+    /// one Error at the moment the message poisons (ADR 0033).
+    /// </summary>
+    private void RecordFailure(OutboxMessage message, string error, Exception exception, OutboxOptions configured)
+    {
+        // The broad catches feeding this are the retry mechanism, not a shrug: whatever failed is
+        // recorded on the envelope, the attempt is counted, and the message returns to the pool —
+        // one doubling later — until the budget in MaxAttempts is spent.
+        message.RecordFailure(error, timeProvider.GetUtcNow().UtcDateTime, configured.RetryDelay);
+
+        if (message.Attempts >= configured.MaxAttempts)
+        {
+            // Error, once, at the transition: this is the moment the system gives up on a
+            // committed fact, and the smallest dead-letter surface ADR 0025 deferred.
+            logger.LogError(
+                exception,
+                "Outbox message {MessageId} ({Name} v{Version}) is poison after {Attempts} attempts; it stays in the table for an operator.",
+                message.Id,
+                message.Name,
+                message.Version,
+                message.Attempts);
+        }
+        else
+        {
+            logger.LogWarning(
+                "Delivering outbox message {MessageId} ({Name} v{Version}) failed on attempt {Attempts} of {MaxAttempts}; next try after {NextAttemptOnUtc:O}.",
+                message.Id,
+                message.Name,
+                message.Version,
+                message.Attempts,
+                configured.MaxAttempts,
+                message.NextAttemptOnUtc);
+        }
     }
 
     /// <summary>

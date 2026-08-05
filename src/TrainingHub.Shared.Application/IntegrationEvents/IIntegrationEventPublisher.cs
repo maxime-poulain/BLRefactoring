@@ -6,8 +6,8 @@ namespace TrainingHub.Shared.Application.IntegrationEvents;
 /// <remarks>
 /// "Publish" promises hand-off, not delivery: the implementation stages the event in the
 /// transactional outbox, inside the same unit of work as the state change that justified it, and a
-/// worker delivers it after the commit — at-least-once, so consumers deduplicate by the message
-/// identifier. The port lives in the application layer because translating a domain event into an
+/// worker delivers it after the commit — at-least-once, settled per consumer in a ledger keyed by
+/// the message identifier (ADR 0034). The port lives in the application layer because translating a domain event into an
 /// integration event is an application decision (ADR 0002), and because the application layer may
 /// not touch the persistence machinery that actually writes the row
 /// (<c>TheApplicationLayer_KnowsNeitherPersistenceNorHttp</c>).

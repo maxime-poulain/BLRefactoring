@@ -16,6 +16,9 @@ namespace TrainingHub.Shared.Application.IntegrationEventHandlers;
 public sealed class NotifyPreviousAddressWhenTrainerContactEmailChangedIntegrationEventHandler(IEmailSender emailSender)
     : IIntegrationEventHandler<TrainerContactEmailChangedIntegrationEvent>
 {
+    /// <inheritdoc />
+    public string ConsumerName => "NotifyPreviousAddress";
+
     /// <summary>
     /// Runs the reaction to a delivered fact.
     /// </summary>

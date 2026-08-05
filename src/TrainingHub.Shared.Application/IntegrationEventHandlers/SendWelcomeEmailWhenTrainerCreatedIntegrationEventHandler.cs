@@ -12,13 +12,16 @@ namespace TrainingHub.Shared.Application.IntegrationEventHandlers;
 /// <see cref="TrainerCreatedIntegrationEvent"/>, delivered by the worker, so every welcome message
 /// answers a trainer that exists. Composing the message here — recipient, subject, wording — is
 /// the consumer deciding what the fact means to it, which is what publishing facts instead of
-/// intents bought (ADR 0024). Sending twice for one fact is possible under at-least-once delivery
-/// and harmless: a duplicate welcome is an annoyance, not a corruption, so this handler carries no
-/// deduplication of its own.
+/// intents bought (ADR 0024). The delivery ledger sends this once per fact even when a neighbour
+/// fails (ADR 0034); the residual duplicate a lapsed lease can cause is an annoyance, not a
+/// corruption, so this handler still carries no deduplication of its own.
 /// </remarks>
 public sealed class SendWelcomeEmailWhenTrainerCreatedIntegrationEventHandler(IEmailSender emailSender)
     : IIntegrationEventHandler<TrainerCreatedIntegrationEvent>
 {
+    /// <inheritdoc />
+    public string ConsumerName => "SendWelcomeEmail";
+
     /// <summary>
     /// Runs the reaction to a delivered fact.
     /// </summary>

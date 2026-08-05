@@ -24,7 +24,7 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
         builder.HasKey(message => message.Id);
 
         // Minted by the publisher — a version-7 GUID, so key order follows insertion order —
-        // never by the database: the id is the consumer-side deduplication key, and it has to
+        // never by the database: the id is the delivery ledger's deduplication key, and it has to
         // exist before the row does.
         builder.Property(message => message.Id)
             .ValueGeneratedNever();

@@ -14,6 +14,9 @@ namespace TrainingHub.Shared.Application.IntegrationEventHandlers;
 public sealed class ReindexTrainingWhenTrainingEditedIntegrationEventHandler(ITrainingSearchIndexer searchIndexer)
     : IIntegrationEventHandler<TrainingEditedIntegrationEvent>
 {
+    /// <inheritdoc />
+    public string ConsumerName => "ReindexTraining";
+
     /// <summary>
     /// Runs the reaction to a delivered fact.
     /// </summary>

@@ -29,8 +29,8 @@ public sealed class OutboxIntegrationEventPublisher(TrainingContext trainingCont
     {
         var (name, version) = IntegrationEventTypes.NameOf(integrationEvent.GetType());
 
-        // A version-7 GUID: minted here rather than by the database because it is the consumer's
-        // deduplication key, and time-ordered so the clustered key follows insertion order.
+        // A version-7 GUID: minted here rather than by the database because it is the delivery
+        // ledger's deduplication key, and time-ordered so the clustered key follows insertion order.
         var message = new OutboxMessage(
             Guid.CreateVersion7(),
             name,

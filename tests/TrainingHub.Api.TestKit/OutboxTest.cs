@@ -1,3 +1,4 @@
+using System.Net.Http.Json;
 using AwesomeAssertions;
 using TrainingHub.Shared;
 using TrainingHub.Shared.Application.IntegrationEvents;
@@ -38,7 +39,7 @@ namespace TrainingHub.Api.TestKit;
 /// <typeparam name="TFactory">The suite's fixture — one per host, since the wiring under test is
 /// each host's own.</typeparam>
 public abstract class OutboxTest<TFactory>(TFactory factory) : IntegrationTest<TFactory>(factory)
-    where TFactory : IResettableDatabase, IServiceScopeSource, IHttpClientSource, IServerErrorSource
+    where TFactory : IResettableDatabase, IServiceScopeSource, IHttpClientSource, IServerErrorSource, IMailboxSource
 {
     /// <summary>
     /// Registering a trainer, commits the trainer-created fact, into the outbox.
@@ -137,6 +138,49 @@ public abstract class OutboxTest<TFactory>(TFactory factory) : IntegrationTest<T
     }
 
     /// <summary>
+    /// A failing neighbour, does not replay a delivered consumer.
+    /// </summary>
+    /// <remarks>
+    /// The per-consumer isolation of ADR 0034, end to end. The marked registration routes its
+    /// trainer-created fact to two consumers: the production welcome email, then the test kit's
+    /// <see cref="FailOnceWhenTrainerCreatedIntegrationEventHandler"/>, which throws on its first
+    /// delivery. Attempt one delivers the welcome and records it in the ledger; attempt two must
+    /// skip the welcome and re-run only the failed neighbour. The mailbox count is the assertion
+    /// that matters: before the ledger, a replayed welcome would have passed every suite silently.
+    /// </remarks>
+    [Fact]
+    public async Task AFailingNeighbour_DoesNotReplayADeliveredConsumer()
+    {
+        var request = AuthHelper.CreateUniqueRegisterRequest(
+            FailOnceWhenTrainerCreatedIntegrationEventHandler.Marker);
+
+        var response = await AuthHelper.RegisterAsync(Factory.CreateClient(), request);
+        response.EnsureSuccessStatusCode();
+
+        var delivered = await WaitForMessageAsync(
+            "TrainerCreated",
+            message => message.ProcessedOnUtc is not null);
+
+        delivered.Attempts.Should().Be(1, "the failing neighbour spent exactly one attempt of the message's budget");
+        delivered.Error.Should().Contain("TestKit.FailOnce",
+            "the failed pass's evidence stays on the envelope, naming the consumer that owed it");
+
+        using var scope = Factory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<TrainingContext>();
+
+        var ledger = await context.Set<OutboxMessageConsumer>()
+            .Where(delivery => delivery.MessageId == delivered.Id)
+            .Select(delivery => delivery.ConsumerName)
+            .ToListAsync();
+        ledger.Should().BeEquivalentTo(["SendWelcomeEmail", "TestKit.FailOnce"],
+            "every consumer settled exactly once, across two attempts");
+
+        var welcomes = await CountWelcomeEmailsAsync(request.Email);
+        welcomes.Should().Be(1,
+            "the retry must skip the delivered welcome — a duplicate here is the replay the ledger exists to prevent");
+    }
+
+    /// <summary>
     /// A delivered message, outlives its retention, then is swept.
     /// </summary>
     /// <remarks>
@@ -165,14 +209,19 @@ public abstract class OutboxTest<TFactory>(TFactory factory) : IntegrationTest<T
                 fresh,
                 new OutboxMessage(Guid.CreateVersion7(), "NobodyKnowsThisOneEither", 1, "{}", DateTime.UtcNow));
 
+            // A ledger row on the stale delivery: the sweep's ExecuteDelete only names the
+            // envelope, so this row going with it is the cascade doing its job (ADR 0034).
+            context.Set<OutboxMessageConsumer>().Add(new OutboxMessageConsumer(
+                stale.Id, "SweptWithItsMessage", DateTime.UtcNow.AddMinutes(-10)));
+
             await context.SaveChangesAsync();
         }
 
         await WaitUntilGoneAsync("DeliveredLongAgo");
 
         using var assertScope = Factory.CreateScope();
-        var messages = await assertScope.ServiceProvider.GetRequiredService<TrainingContext>()
-            .Set<OutboxMessage>().ToListAsync();
+        var context2 = assertScope.ServiceProvider.GetRequiredService<TrainingContext>();
+        var messages = await context2.Set<OutboxMessage>().ToListAsync();
 
         messages.Should().Contain(
             message => message.Name == "DeliveredJustNow",
@@ -180,6 +229,12 @@ public abstract class OutboxTest<TFactory>(TFactory factory) : IntegrationTest<T
         messages.Should().Contain(
             message => message.Name == "NobodyKnowsThisOneEither",
             "an undelivered message is never swept — poison waits for an operator, not for a broom");
+
+        var orphanedLedger = await context2.Set<OutboxMessageConsumer>()
+            .Where(delivery => delivery.ConsumerName == "SweptWithItsMessage")
+            .ToListAsync();
+        orphanedLedger.Should().BeEmpty(
+            "the cascade ties the ledger to its envelope: sweeping the message takes its deliveries with it");
     }
 
     /// <summary>
@@ -327,6 +382,21 @@ public abstract class OutboxTest<TFactory>(TFactory factory) : IntegrationTest<T
     }
 
     /// <summary>
+    /// Counts the welcome emails the mailbox holds for one recipient. Read once, after the
+    /// message is processed, because by then the count is final — there is nothing to poll for.
+    /// </summary>
+    private async Task<int> CountWelcomeEmailsAsync(string recipient)
+    {
+        using var client = new HttpClient { BaseAddress = Factory.MailboxApiBaseAddress };
+
+        var mailbox = await client.GetFromJsonAsync<MailpitMessageList>("/api/v1/messages");
+
+        return (mailbox?.Messages ?? []).Count(message =>
+            message.Subject == "Welcome aboard!"
+            && message.To.Any(address => address.Address == recipient));
+    }
+
+    /// <summary>
     /// Unwraps a result the fixture expects to succeed. A failure here is a broken test, not a
     /// failing assertion, so it throws rather than reporting.
     /// </summary>
@@ -334,4 +404,13 @@ public abstract class OutboxTest<TFactory>(TFactory factory) : IntegrationTest<T
         value => value,
         errors => throw new InvalidOperationException(
             $"The fixture built an invalid value: {string.Join("; ", errors)}"));
+
+    // The slices of Mailpit's API this proof reads — the same minimal shape EmailTest carves for
+    // itself. Property names follow the wire; everything not asserted on is left out.
+
+    private sealed record MailpitMessageList(List<MailpitMessageSummary> Messages);
+
+    private sealed record MailpitMessageSummary(string Subject, List<MailpitAddress> To);
+
+    private sealed record MailpitAddress(string Address);
 }

@@ -3,6 +3,7 @@ using System.Data.Common;
 using System.Globalization;
 using System.Net;
 using System.Text;
+using TrainingHub.Shared.Application.IntegrationEvents;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Interceptors;
 using TrainingHub.Shared.Infrastructure.ThirdParty.Identity;
@@ -194,6 +195,13 @@ public abstract class ApiFactory<TEntryPoint>
                     serviceProvider.GetRequiredService<AuditableEntitiesInterceptor>()));
 
             ReplaceDbContext<TrainingIdentityDbContext>(services);
+
+            // The failing neighbour production does not have: appended after AddInfrastructure's
+            // registrations, so it runs after the welcome-email consumer — the interleaving the
+            // per-consumer isolation proof needs (ADR 0034). A singleton, so its once-only memory
+            // survives the worker's per-batch scopes; it acts only on marked registrations.
+            services.AddSingleton<IIntegrationEventHandler<TrainerCreatedIntegrationEvent>,
+                FailOnceWhenTrainerCreatedIntegrationEventHandler>();
         });
 
         // Pointed at the container rather than the address in appsettings, and left otherwise
