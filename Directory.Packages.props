@@ -13,6 +13,25 @@
 
   <ItemGroup>
     <!--
+      The health-checks dashboard the API hosts serve in Development, under Apache 2.0: the UI
+      page and its polling collector, the writer that answers in the format the page reads, and
+      the in-memory store its history forgets on restart — deliberately, like Mailpit's mailbox.
+      The probe packages of the same family stay out: each probe here is a few lines against a
+      client the solution already owns. See ADR 0037.
+    -->
+    <PackageVersion Include="AspNetCore.HealthChecks.UI" Version="9.0.0" />
+    <PackageVersion Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
+    <PackageVersion Include="AspNetCore.HealthChecks.UI.InMemory.Storage" Version="9.0.0" />
+    <!--
+      Pinned, not referenced — the Microsoft.OpenApi mechanism below, for the same reason there:
+      AspNetCore.HealthChecks.UI 9.0.0 pulls KubernetesClient 15.0.1 for a discovery feature this
+      repository never turns on, and that version carries GHSA-w7r3-mgwf-4mqq (CVE-2025-9708,
+      CVSS 6.8) — the client accepts certificates without verifying the trust chain. First patched
+      version is 17.0.14; transitive pinning (enabled above) is what closes it. Remove this line
+      once the UI package references a patched version itself.
+    -->
+    <PackageVersion Include="KubernetesClient" Version="17.0.14" />
+    <!--
       Community fork of FluentAssertions 7, under Apache 2.0. FluentAssertions 8 moved to a
       commercial Xceed licence; this keeps the same fluent API on a permissive one.
     -->
@@ -91,7 +110,9 @@
       transitively, and transitive pinning (enabled above) is what keeps them on the version the
       rest of the EF and Extensions families are on. Said out loud because a version with no
       visible consumer reads as dead weight, and deleting it would let the graph resolve them
-      wherever their dependents happen to point.
+      wherever their dependents happen to point. The InMemory pin earns its keep twice since the
+      health dashboard arrived: its storage package asks for the EF 8 provider, which throws
+      MissingMethodException against an EF 10 runtime — this line is what boots it on 10.
     -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Abstractions" Version="10.0.10" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10" />

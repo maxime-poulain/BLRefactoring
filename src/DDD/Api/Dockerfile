@@ -35,6 +35,13 @@ COPY --from=build /app/publish .
 
 ENV ASPNETCORE_URLS=http://+:8080
 
+# For the compose healthcheck alone: the aspnet image ships neither curl nor wget, and a check
+# that guesses at tooling is how the SeaweedFS one went wrong once. Installed as root, before the
+# user drops. See ADR 0037.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # The file sink writes under /app/logs, and /app belongs to root while the process does not run
 # as root. The directory has to exist and be writable before the user drops, because Serilog
 # reports a sink it cannot open through SelfLog — which nobody reads — and then logs to the

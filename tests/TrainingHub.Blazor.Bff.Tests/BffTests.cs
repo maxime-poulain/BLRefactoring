@@ -67,6 +67,20 @@ public sealed class BffTests : IDisposable
             "of this one, and registering them collided with its own API client");
     }
 
+    /// <summary>
+    /// Liveness answers healthy to an anonymous caller.
+    /// </summary>
+    [Fact]
+    public async Task Liveness_answers_healthy_to_an_anonymous_caller()
+    {
+        var response = await _browser.GetAsync("/health/live");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK,
+            "every host answers for its own health, and the BFF's share is the framework's " +
+            "liveness pair inline (ADR 0037)");
+        (await response.Content.ReadAsStringAsync()).Should().Be("Healthy");
+    }
+
     // ---------------------------------------------------------------- signing in
 
     /// <summary>

@@ -32,6 +32,12 @@
       <!-- The logging pipeline both hosts share: LoggingExtensions configures the sinks, and
            ApiLoggingOptions is the whole surface a deployment tunes. See ADR 0026. -->
       <PackageReference Include="Serilog.AspNetCore" />
+      <!-- The health dashboard both hosts serve in Development: the UI page and its collector,
+           the writer speaking its format, and the in-memory store it forgets on restart. Wired
+           by HealthExtensions alone, and a rule keeps the library there. See ADR 0037. -->
+      <PackageReference Include="AspNetCore.HealthChecks.UI" />
+      <PackageReference Include="AspNetCore.HealthChecks.UI.Client" />
+      <PackageReference Include="AspNetCore.HealthChecks.UI.InMemory.Storage" />
     </ItemGroup>
 
     <!--

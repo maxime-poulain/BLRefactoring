@@ -32,6 +32,14 @@ builder.Services.AddApiLogging(builder.Configuration);
 // a different library, and without a security scheme at all. See ADR 0006.
 builder.Services.AddApiOpenApi();
 
+// The four readiness probes — database, object store, mail relay, outbox poison — shared with the
+// CQRS host so neither can answer less than the other. See ADR 0037.
+builder.Services.AddApiHealth();
+
+// The dashboard over those probes. Self-gating: outside Development this is a no-op, so the call
+// stays unconditional here and production never grows a control room.
+builder.Services.AddApiHealthDashboard(builder.Environment);
+
 builder.Services.AddTransient<ITrainingApplicationService, TrainingApplicationService>();
 builder.Services.AddTransient<ITrainerApplicationService, TrainerApplicationService>();
 
@@ -73,6 +81,14 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// /health/live and /health/ready, both anonymous: an orchestrator holds no token, and the body
+// names statuses and nothing else. See ADR 0037.
+app.MapApiHealth();
+
+// /healthchecks-ui and the detailed endpoint it reads — Development only, like Scalar; the gate
+// lives inside the extension.
+app.MapApiHealthDashboard();
 
 await app.EnsureDatabasesAreUpToDateAsync();
 
