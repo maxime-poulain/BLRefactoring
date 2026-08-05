@@ -184,7 +184,10 @@
         }
         catch (ApiException ex)
         {
-            Snackbar.Add($"Failed to load training: {ex.Message}", Severity.Error);
+            // ex.Message here is the generator's own sentence — "The HTTP status code of the
+            // response was not expected (503)." It belongs in the console, not on screen.
+            Console.Error.WriteLine(ex);
+            Snackbar.Add("The training could not be loaded. Try again in a moment.", Severity.Error);
             NavigationManager.NavigateTo("/trainings");
         }
         finally
@@ -314,11 +317,18 @@
         }
         catch (ApiException ex)
         {
-            Snackbar.Add($"Failed to {(IsEditMode ? "update" : "create")} training: {ex.Message}", Severity.Error);
+            // ex.Message here is the generator's own sentence — "The HTTP status code of the
+            // response was not expected (503)." It belongs in the console, not on screen.
+            Console.Error.WriteLine(ex);
+            Snackbar.Add(
+                $"The training could not be {(IsEditMode ? "updated" : "created")}. Try again in a moment.",
+                Severity.Error);
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"An unexpected error occurred: {ex.Message}", Severity.Error);
+            // Whatever this is, it is ours. A NullReferenceException must not become UI copy.
+            Console.Error.WriteLine(ex);
+            Snackbar.Add("Something went wrong saving the training.", Severity.Error);
         }
         finally
         {

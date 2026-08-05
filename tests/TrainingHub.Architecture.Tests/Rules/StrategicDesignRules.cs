@@ -39,6 +39,18 @@ public sealed partial class StrategicDesignRules
     [GeneratedRegex(@"^\s*-\s+`(?<name>[^`]+)`")]
     private static partial Regex Declaration { get; }
 
+    /// <summary>A section's <c>**Status:**</c> bullet: its claim of how far the context exists.</summary>
+    /// <remarks>
+    /// Anchored on the bullet, which is what keeps the Actors table of the Training Catalogue
+    /// section — whose header also says <c>Status</c> — out of the match.
+    /// </remarks>
+    [GeneratedRegex(@"^\s*-\s+\*\*Status:\*\*\s*(?<status>.+)$")]
+    private static partial Regex StatusBullet { get; }
+
+    /// <summary>A mermaid node label, written <c>X["&lt;b&gt;Name&lt;/b&gt;…"]</c>.</summary>
+    [GeneratedRegex(@"\[""<b>(?<name>[^<]+)</b>")]
+    private static partial Regex NodeLabel { get; }
+
     private static IReadOnlyList<Type> DomainTypes { get; } = [.. Solution.Domain.DeclaredTypes()];
 
     private static IEnumerable<Type> Aggregates =>
@@ -120,17 +132,58 @@ public sealed partial class StrategicDesignRules
         var described = BoundedContexts().Keys.ToHashSet(StringComparer.Ordinal);
         var drawn = ContextsOnTheMap();
 
-        drawn
+        drawn.Keys
             .Selected("context on the map")
             .Where(context => !described.Contains(context))
             .Select(context =>
                 $"context-map.md lists '{context}', and bounded-contexts.md has no " +
                 $"'## Context — {context}' section for it")
             .Concat(described
-                .Where(context => !drawn.Contains(context))
+                .Where(context => !drawn.ContainsKey(context))
                 .Select(context =>
                     $"bounded-contexts.md describes '{context}', and it is missing from the table of " +
                     "contexts in context-map.md"))
+            .ShouldHold();
+    }
+
+    /// <summary>
+    /// Every context on the map, agrees with its section's status.
+    /// </summary>
+    /// <remarks>
+    /// The map claims how far each context exists twice — a State cell in its table, a subgraph in
+    /// its picture — and the section's <c>**Status:**</c> bullet claims the same thing at length.
+    /// Three claims about one fact drift the moment one is edited alone, and the previous rule
+    /// cannot see it: the names still agree when the states no longer do. The comparison is the one
+    /// distinction the record cares about — declared as a port, or built. Measured, not assumed:
+    /// written against the drifted map — Notification still 'Port only', and still drawn under the
+    /// ports subgraph, after ADR 0031 had made it real — and it failed twice before the map was
+    /// corrected.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0023",
+        "a map that does not distinguish what is built from what is intended is worse than no map")]
+    public void EveryContextOnTheMap_AgreesWithItsSectionsStatus()
+    {
+        var statuses = SectionStatuses();
+        var states = ContextsOnTheMap();
+
+        var stated = states
+            .Where(state => statuses.ContainsKey(state.Key))
+            .Select(state => (Context: state.Key, State: state.Value, Status: statuses[state.Key]))
+            .ToArray();
+
+        stated
+            .Selected("context stated in both documents")
+            .Where(context => ClaimsBuilt(context.State) != ClaimsBuilt(context.Status))
+            .Select(context =>
+                $"context-map.md's table says '{context.Context}' is '{context.State}', and its " +
+                $"section in bounded-contexts.md opens its Status with '{Claim(context.Status)}'. " +
+                "One of the two stopped being true")
+            .Concat(ContextsDrawnAsPorts()
+                .Where(context => statuses.TryGetValue(context, out var status) && ClaimsBuilt(status))
+                .Select(context =>
+                    $"the map still draws '{context}' under the ports subgraph, and its section in " +
+                    "bounded-contexts.md says it is built. Move the node into the built subgraph"))
             .ShouldHold();
     }
 
@@ -213,10 +266,12 @@ public sealed partial class StrategicDesignRules
         return declared;
     }
 
-    /// <summary>The first column of the table under <c>## Contexts on this map</c>.</summary>
-    private static IReadOnlySet<string> ContextsOnTheMap()
+    /// <summary>
+    /// The table under <c>## Contexts on this map</c>: each context with its State column.
+    /// </summary>
+    private static IReadOnlyDictionary<string, string> ContextsOnTheMap()
     {
-        var listed = new HashSet<string>(StringComparer.Ordinal);
+        var listed = new Dictionary<string, string>(StringComparer.Ordinal);
         var inside = false;
 
         foreach (var line in Lines("context-map.md"))
@@ -232,7 +287,8 @@ public sealed partial class StrategicDesignRules
                 continue;
             }
 
-            var first = line.Split('|', StringSplitOptions.None)[1].Trim();
+            var cells = line.Split('|', StringSplitOptions.None);
+            var first = cells[1].Trim();
 
             // The header row and the separator under it are part of the table's syntax, not of it.
             if (first.Length == 0 || first == "Context" || first.All(character => character == '-'))
@@ -240,10 +296,84 @@ public sealed partial class StrategicDesignRules
                 continue;
             }
 
-            listed.Add(first);
+            listed[first] = cells.Length > 3 ? cells[3].Trim() : string.Empty;
         }
 
         return listed;
+    }
+
+    /// <summary>The <c>**Status:**</c> bullet of every section that carries one.</summary>
+    /// <remarks>
+    /// Not every section has one — the built core contexts speak through their seams instead — so
+    /// the comparison runs over the contexts that state themselves in both documents.
+    /// </remarks>
+    private static IReadOnlyDictionary<string, string> SectionStatuses()
+    {
+        var statuses = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        foreach (var (context, section) in BoundedContexts())
+        {
+            var bullet = section.Split('\n')
+                .Select(line => StatusBullet.Match(line.TrimEnd('\r')))
+                .FirstOrDefault(match => match.Success);
+
+            if (bullet is not null)
+            {
+                statuses[context] = bullet.Groups["status"].Value;
+            }
+        }
+
+        return statuses;
+    }
+
+    /// <summary>The contexts the map's picture draws inside the <c>ports</c> subgraph.</summary>
+    private static IEnumerable<string> ContextsDrawnAsPorts()
+    {
+        var inside = false;
+
+        foreach (var line in Lines("context-map.md"))
+        {
+            var trimmed = line.Trim();
+
+            if (trimmed.StartsWith("subgraph ", StringComparison.Ordinal))
+            {
+                inside = trimmed.StartsWith("subgraph ports", StringComparison.Ordinal);
+                continue;
+            }
+
+            if (trimmed == "end")
+            {
+                inside = false;
+                continue;
+            }
+
+            var label = inside ? NodeLabel.Match(line) : Match.Empty;
+
+            if (label.Success)
+            {
+                yield return label.Groups["name"].Value.Replace("&amp;", "&", StringComparison.Ordinal);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Whether a claim says the context is built, whatever word it uses for it.
+    /// </summary>
+    /// <remarks>
+    /// The two documents never promised one vocabulary: the map writes 'Built', the sections open
+    /// with 'real' or 'implemented'. What they did promise is one distinction — a port awaiting an
+    /// adapter, or a thing that exists — and that is the only reading this rule takes a side on.
+    /// </remarks>
+    private static bool ClaimsBuilt(string claim) =>
+        !claim.StartsWith("port only", StringComparison.OrdinalIgnoreCase)
+        && !claim.StartsWith("announced", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The opening claim of a Status bullet, without the prose that follows it.</summary>
+    private static string Claim(string status)
+    {
+        var period = status.IndexOf('.', StringComparison.Ordinal);
+
+        return period < 0 ? status : status[..period];
     }
 
     private static void Close(Dictionary<string, string> sections, string? current, StringBuilder body)

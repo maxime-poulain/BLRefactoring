@@ -212,7 +212,10 @@
         }
         catch (ApiException exception)
         {
-            Snackbar.Add($"Failed to load profile: {exception.Message}", Severity.Error);
+            // exception.Message here is the generator's own sentence — "The HTTP status code of
+            // the response was not expected (503)." It belongs in the console, not on screen.
+            Console.Error.WriteLine(exception);
+            Snackbar.Add("The profile could not be loaded. Try again in a moment.", Severity.Error);
         }
         finally
         {
@@ -267,6 +270,14 @@
                 new FileParameter(buffer, file.Name, file.ContentType));
 
             Apply(updated);
+
+            // The photo write bumped the row's version, so the ETag this page holds no longer
+            // names the current row — and the response body cannot carry the new one, because the
+            // ETag is a header, never a field. Reloading is what gets the next edit a version the
+            // server will accept; without it, saving the profile after changing the photo answers
+            // 412 with nobody else involved.
+            await LoadAsync();
+
             Snackbar.Add("Photo updated.", Severity.Success);
         }
         catch (ApiException exception)
@@ -290,8 +301,10 @@
         {
             await TrainerClient.DeletePhotoAsync();
 
-            _hasPhoto = false;
-            _photoUrl = null;
+            // The reload answers both halves at once: the cleared photo, and the fresh ETag the
+            // removal minted — the same staleness the upload path explains above.
+            await LoadAsync();
+
             Snackbar.Add("Photo removed.", Severity.Success);
         }
         catch (ApiException exception)
@@ -351,8 +364,17 @@
         }
     }
 
-    private static string Explain(ApiException exception, string fallback) =>
-        string.IsNullOrWhiteSpace(exception.Response)
-            ? $"{fallback}: {exception.Message}"
-            : exception.Response;
+    private static string Explain(ApiException exception, string fallback)
+    {
+        // The server's refusal is shown as written — it is the authority on what an image is. With
+        // no body to show, the generator's own sentence must not become interface copy: it goes to
+        // the console, and the caller's fallback sentence goes on screen.
+        if (string.IsNullOrWhiteSpace(exception.Response))
+        {
+            Console.Error.WriteLine(exception);
+            return $"{fallback}.";
+        }
+
+        return exception.Response;
+    }
 }

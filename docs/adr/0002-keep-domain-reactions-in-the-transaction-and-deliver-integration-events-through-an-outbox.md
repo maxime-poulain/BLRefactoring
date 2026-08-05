@@ -3,6 +3,12 @@
 - **Status:** Accepted — implemented; the message design is recorded in 0024, the delivery worker in 0025
 - **Date:** 2026-08-01
 
+> **Overtaken by events.** The "Status of the implementation" section below records the day this
+> was accepted: no outbox existed, the four integration handlers still ran inside the transaction,
+> and the two defects it names were live. ADR 0024 has since landed the outbox and ADR 0025 the
+> delivery worker that drains it. The section stands as written because a record keeps its moment;
+> the status line above says where the implementation went.
+
 ## Context
 
 Aggregates raise domain events; `DomainEventInterceptor` collects them from the tracked entities

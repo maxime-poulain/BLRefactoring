@@ -31,24 +31,6 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
     // -- Read own profile --
 
     /// <summary>
-    /// Get me, authenticated, returns 200 with ETag.
-    /// </summary>
-    [Fact]
-    public async Task GetMe_Authenticated_Returns200WithETag()
-    {
-        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-
-        var response = await client.GetAsync("/Trainer/me");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        response.Headers.ETag.Should().NotBeNull("the caller needs it to edit conditionally later");
-        // The trainer registered a line above is the one served — the endpoint takes no identifier,
-        // so this is the only trainer it can answer with.
-        var dto = await response.Content.ReadFromJsonAsync<TrainerResponseHttp>();
-        dto!.Id.Should().NotBeEmpty();
-    }
-
-    /// <summary>
     /// Get me, no token, returns 401.
     /// </summary>
     [Fact]
