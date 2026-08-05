@@ -61,6 +61,12 @@ public interface ITrainingApplicationService
     /// Deletes a training by its unique identifier.
     /// </summary>
     Task<Result> DeleteAsync(Guid trainingId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Hands a training over to another trainer, when the recipient's catalogue allows it
+    /// (ADR 0036).
+    /// </summary>
+    Task<Result> TransferAsync(Guid trainingId, Guid recipientTrainerId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -230,6 +236,51 @@ public sealed class TrainingApplicationService(
         trainingRepository.Delete(training);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> TransferAsync(Guid trainingId, Guid recipientTrainerId, CancellationToken cancellationToken = default)
+    {
+        var training = await trainingRepository.GetByIdAsync(TrainingId.Create(trainingId), cancellationToken);
+        if (training is null)
+        {
+            return Result.Failure(
+                ErrorCodes.NotFound,
+                $"Training with id `{trainingId}` not found.");
+        }
+
+        // Existence is referential integrity, not part of the transfer decision: the domain
+        // service is well-defined for any TrainerId, and this layer refuses a ghost recipient
+        // before consulting it — the same precondition creation treats as orchestration.
+        var recipient = TrainerId.Create(recipientTrainerId);
+        if (!await trainerRepository.ExistsAsync(recipient, cancellationToken))
+        {
+            return Result.Failure(TrainingErrorCodes.UnknownRecipient,
+                $"No trainer with id `{recipientTrainerId}` exists to receive the training.");
+        }
+
+        var result = await TrainingTransferDomainService.TransferAsync(
+            training, recipient, trainingCounter, uniquenessTitleChecker, cancellationToken);
+
+        return await result.MatchAsync(
+            onSuccess: async () =>
+            {
+                trainingRepository.Update(training);
+                try
+                {
+                    await unitOfWork.SaveChangesAsync(cancellationToken);
+                }
+                catch (UniqueConstraintViolationException)
+                {
+                    // A concurrent request slipped past the uniqueness pre-check;
+                    // the unique index is the authoritative guard, so a lost race
+                    // is the same business failure as a detected duplicate.
+                    return Result.Failure(TrainingErrorCodes.DuplicateTitle,
+                        "The recipient already has a training under that title.");
+                }
+                return Result.Success();
+            },
+            onFailure: Result.FailureAsync);
     }
 
     private const string ConcurrencyMessage =

@@ -22,7 +22,8 @@ public sealed class IntegrationEventDispatcher(
     IEnumerable<IIntegrationEventHandler<TrainerCreatedIntegrationEvent>> trainerCreatedConsumers,
     IEnumerable<IIntegrationEventHandler<TrainerContactEmailChangedIntegrationEvent>> contactEmailChangedConsumers,
     IEnumerable<IIntegrationEventHandler<TrainingCreatedIntegrationEvent>> trainingCreatedConsumers,
-    IEnumerable<IIntegrationEventHandler<TrainingEditedIntegrationEvent>> trainingEditedConsumers)
+    IEnumerable<IIntegrationEventHandler<TrainingEditedIntegrationEvent>> trainingEditedConsumers,
+    IEnumerable<IIntegrationEventHandler<TrainingTransferredIntegrationEvent>> trainingTransferredConsumers)
 {
     /// <summary>
     /// Hands the fact to each of its registered consumers, in registration order, skipping the
@@ -42,6 +43,7 @@ public sealed class IntegrationEventDispatcher(
             TrainerContactEmailChangedIntegrationEvent fact => HandleAllAsync(contactEmailChangedConsumers, fact, alreadyDelivered, cancellationToken),
             TrainingCreatedIntegrationEvent fact => HandleAllAsync(trainingCreatedConsumers, fact, alreadyDelivered, cancellationToken),
             TrainingEditedIntegrationEvent fact => HandleAllAsync(trainingEditedConsumers, fact, alreadyDelivered, cancellationToken),
+            TrainingTransferredIntegrationEvent fact => HandleAllAsync(trainingTransferredConsumers, fact, alreadyDelivered, cancellationToken),
             _ => throw new InvalidOperationException(
                 $"{integrationEvent.GetType().Name} has no route in {nameof(IntegrationEventDispatcher)}. " +
                 "A new integration event is registered, serialized, consumed — and routed here."),

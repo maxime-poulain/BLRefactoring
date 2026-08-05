@@ -149,6 +149,26 @@ public sealed class Training : AggregateRoot<TrainingId>
     }
 
     /// <summary>
+    /// Hands this training to a new owner: raises the fact — both owners on it — then reassigns.
+    /// </summary>
+    /// <remarks>
+    /// Internal on purpose (ADR 0036): the only public path to reassignment is
+    /// <see cref="TrainingTransferDomainService"/>, whose signature demands the recipient-side facts,
+    /// so a transfer that skipped the capacity and title questions does not compile outside the
+    /// domain assembly — the same compile-time answer creation gives through its factory.
+    /// </remarks>
+    /// <param name="newOwner">The trainer receiving the training.</param>
+    internal void TransferTo(TrainerId newOwner)
+    {
+        ArgumentNullException.ThrowIfNull(newOwner);
+
+        // Raised before the assignment: the event needs the former owner, and the aggregate is
+        // about to forget them.
+        AddDomainEvent(new TrainingTransferredDomainEvent(Id, TrainerId, newOwner));
+        TrainerId = newOwner;
+    }
+
+    /// <summary>
     /// Edit this training.
     /// </summary>
     public async Task<Result> EditAsync(

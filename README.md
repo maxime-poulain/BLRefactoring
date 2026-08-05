@@ -340,6 +340,7 @@ Events carry value objects and typed identifiers, not primitives.
 | `TrainerDeletedDomainEvent` | `TrainerId` | A trainer is marked for deletion — no use case does so yet, see below |
 | `TrainingCreatedDomainEvent` | `TrainingId`, `TrainerId` | A training is successfully created |
 | `TrainingEditedDomainEvent` | `TrainingId`, `TrainerId` | A training is successfully edited |
+| `TrainingTransferredDomainEvent` | `TrainingId`, former `TrainerId`, new `TrainerId` | A training changes hands — decided by the one recorded domain service (ADR 0036) |
 
 Events carry the facts their consumers need rather than just an identifier, because they are
 dispatched **before** persistence: a handler cannot reload an aggregate that is not saved yet.
@@ -355,6 +356,7 @@ stacks:
 | `DeleteTrainingWhenTrainerDeletedEventHandler` | `TrainerDeletedDomainEvent` | Deletes the trainer's trainings — cross-aggregate consistency without a database cascade |
 | `PublishIntegrationEventWhenTrainingCreatedEventHandler` | `TrainingCreatedDomainEvent` | Commits `TrainingCreatedIntegrationEvent` to the outbox — indexing becomes the worker's reaction |
 | `PublishIntegrationEventWhenTrainingEditedEventHandler` | `TrainingEditedDomainEvent` | Commits `TrainingEditedIntegrationEvent`, kept apart from the created fact so consumers can tell them apart |
+| `PublishIntegrationEventWhenTrainingTransferredEventHandler` | `TrainingTransferredDomainEvent` | Commits `TrainingTransferredIntegrationEvent`, both owners on it — re-indexing under the new owner becomes the worker's reaction |
 
 `Trainer.MarkForDeletion` and the trainer-deletion handler above have no caller in production,
 deliberately: the API exposes no way to delete a trainer (see [Security](#security)). What the
@@ -362,7 +364,7 @@ aggregate states is the rule — a trainer does not disappear without their trai
 holds whoever ends up triggering it. The behaviour is covered by `DomainEventPipelineTests`, which
 drives it through the host's own services.
 
-Two of the six handlers act inside the transaction — ADR 0002's *domain reactions* — and four
+Two of the seven handlers act inside the transaction — ADR 0002's *domain reactions* — and five
 translate the domain event into an integration event and commit it to the transactional outbox
 (see [ADR 0024](docs/adr/0024-publish-facts-not-intents-and-version-them-in-the-envelope.md) and
 [the outbox section](#domain-events-and-the-unit-of-work)). After the commit, the outbox delivery
@@ -380,6 +382,12 @@ log, so the project still depends on no search engine.
 Every use case exists in both stacks. Note where the handler lives: in CQRS, **query handlers sit
 in the infrastructure layer**, next to the persistence they project from.
 
+The names say the layer, by convention and by rule: a layered service carries the
+`ApplicationService` suffix in full — the mirror of the domain's `*DomainService`
+([ADR 0036](docs/adr/0036-model-the-decision-that-has-no-home-as-a-domain-service.md)) — so a
+reader can tell an application service from a domain, infrastructure or any other kind of service
+at the name alone (`TheLayeredApplication_NamesItsServicesInFull`).
+
 | Use case | `src/DDD` | `src/DDDWithCqrs` | Handler project |
 |---|---|---|---|
 | Create trainer | `TrainerApplicationService.CreateAsync` | `CreateTrainerCommand` | Application |
@@ -388,6 +396,7 @@ in the infrastructure layer**, next to the persistence they project from.
 | Create training | `TrainingApplicationService.CreateAsync` | `CreateTrainingCommand` | Application |
 | Edit training | `TrainingApplicationService.EditAsync` | `EditTrainingCommand` | Application |
 | Delete training | `TrainingApplicationService.DeleteAsync` | `DeleteTrainingCommand` | Application |
+| Transfer training | `TrainingApplicationService.TransferAsync` | `TransferTrainingCommand` | Application |
 | Read one own training | `TrainingApplicationService.GetByIdAsync` | `GetTrainingByIdQuery` | Infrastructure |
 | List own trainings | `TrainingApplicationService.GetMineAsync` | `GetMyTrainingsQuery` | Infrastructure |
 
@@ -736,8 +745,9 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 | `GET` | `/Training/{id}` | Owner only. `200` with an `ETag`, `400` on a malformed identifier, or `404` — including when the training exists but belongs to somebody else |
 | `PUT` | `/Training/{trainingId}` | Owner only. Requires `If-Match`. `200` with the updated training and its new `ETag`, `400`, `403`, `404`, `409`, `412`, `428` |
 | `DELETE` | `/Training/{trainingId}` | Owner only. `204`, `400`, `403`, `404` |
+| `POST` | `/Training/{trainingId}/transfer` | Owner only. Hands the training to the recipient the body names when their catalogue allows it (ADR 0036). `204`, `400` (self, unknown or full recipient), `403`, `404`, `409` on the recipient's duplicate title |
 
-Twelve endpoints, and not one of them serves a resource the caller does not own. There used to be
+Thirteen endpoints, and not one of them serves a resource the caller does not own. There used to be
 five more — `/Trainer/all`, `/Trainer/{id}`, `/Training/all`, `/Training/by-trainer/{id}` and
 `/Training/by-topic/{topic}` — and between them they handed out every trainer's name, contact email
 and bio to any authenticated caller, enumerable. Nothing in the application asked for them: the

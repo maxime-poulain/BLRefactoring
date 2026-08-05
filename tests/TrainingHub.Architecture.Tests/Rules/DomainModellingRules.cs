@@ -150,6 +150,15 @@ public sealed class DomainModellingRules
             .ShouldHold();
 
     /// <summary>
+    /// The recorded domain services: each one a decision no aggregate can own, admitted by its
+    /// own record (ADR 0036), never by habit.
+    /// </summary>
+    private static readonly (string Type, string Record)[] RecordedDomainServices =
+    [
+        ("TrainingTransferDomainService", "0036"),
+    ];
+
+    /// <summary>
     /// The domain, names no service.
     /// </summary>
     /// <remarks>
@@ -157,7 +166,9 @@ public sealed class DomainModellingRules
     /// reaches for a <c>TrainingCreationService</c>, and from that day creation rules have two
     /// homes — the ones in the factory, and the ones a caller must remember to invoke. Both rules
     /// of that kind today (title uniqueness, catalogue capacity) come to the factory through a
-    /// port instead, so the factory's signature is the complete list of what creation asks.
+    /// port instead, so the factory's signature is the complete list of what creation asks. The
+    /// one admission is a decision that has no home at all — pinned by name and record, exactly
+    /// as the aggregate-question rule pins <c>IsOwnedBy</c>; anything unpinned still fails here.
     /// </remarks>
     [Fact]
     [ArchitectureRule("0030",
@@ -165,11 +176,73 @@ public sealed class DomainModellingRules
     public void TheDomain_NamesNoService() =>
         DomainTypes
             .Selected("domain type")
-            .Where(type => type.Name.EndsWith("Service", StringComparison.Ordinal))
+            .Where(type => type.Name.EndsWith("Service", StringComparison.Ordinal)
+                           && RecordedDomainServices.All(pin => pin.Type != type.Name))
             .Select(type =>
                 $"{type.Name} is a service declared in the domain. Bring the fact to the aggregate " +
                 "through a port, as IUniquenessTitleChecker and ITrainingCounter do — a service " +
-                "deciding beside the aggregate is a rule a caller can forget to apply")
+                "deciding beside the aggregate is a rule a caller can forget to apply. A decision " +
+                "with no home arrives with a record of its own, as TrainingTransferDomainService did (ADR 0036)")
+            .ShouldHold();
+
+    /// <summary>
+    /// Every domain service, exists by record.
+    /// </summary>
+    /// <remarks>
+    /// The other half of the admission: the ledger above lets a recorded service through, and
+    /// this rule holds every service that got through to ADR 0036's shape — recorded, named a
+    /// <c>DomainService</c> so a reader can tell it from an application or infrastructure service
+    /// without opening the file, static so the domain names no lifetime, stateless, and answering
+    /// only whether the transfer of authority worked. A service that drifts from the shape is on
+    /// its way to the anemic façade 0030 warned about, and fails here before it arrives.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0036",
+        "a domain service exists only for a decision no aggregate can own: recorded, named a DomainService, static, stateless, its ports arriving as parameters")]
+    public void EveryDomainService_ExistsByRecord() =>
+        DomainTypes
+            .Where(type => type.Name.EndsWith("Service", StringComparison.Ordinal))
+            .Selected("domain service")
+            .SelectMany(service =>
+            {
+                var violations = new List<string>();
+
+                if (RecordedDomainServices.All(pin => pin.Type != service.Name))
+                {
+                    violations.Add($"{service.Name} is a domain service no record admits. A decision " +
+                        "with no home is a new decision — write the record, then pin it here");
+                }
+
+                if (!service.Name.EndsWith("DomainService", StringComparison.Ordinal))
+                {
+                    violations.Add($"{service.Name} does not end in DomainService. The suffix is the " +
+                        "convention that tells a reader, at the name alone, that this is a domain " +
+                        "service in the DDD sense — not an application, infrastructure or any other " +
+                        "kind of service (ADR 0036)");
+                }
+
+                if (!(service.IsAbstract && service.IsSealed))
+                {
+                    violations.Add($"{service.Name} is not static. A domain service is a stateless " +
+                        "decision, and the domain names no lifetime (ADR 0036)");
+                }
+
+                if (service.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Length > 0)
+                {
+                    violations.Add($"{service.Name} carries instance state. The ports arrive as " +
+                        "parameters, so the signature is the complete inventory of what the decision asks");
+                }
+
+                violations.AddRange(service
+                    .GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)
+                    .Where(method => method.ReturnType != typeof(Result)
+                                     && method.ReturnType != typeof(Task<Result>))
+                    .Select(method =>
+                        $"{service.Name}.{method.Name} answers {method.ReturnType.Name}. A domain " +
+                        "service decides — it answers whether the operation was allowed, never data"));
+
+                return violations;
+            })
             .ShouldHold();
 
     // ------------------------------------------------------------------ value objects

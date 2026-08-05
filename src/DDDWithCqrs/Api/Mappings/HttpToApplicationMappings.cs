@@ -6,6 +6,7 @@ using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Delete;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Edit;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetById;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetMine;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Transfer;
 using TrainingHub.Shared.Api.Contracts.Mappings;
 using TrainingHub.Shared.Api.Contracts.Pagination;
 using TrainingHub.Shared.Api.Contracts.Trainers;
@@ -118,6 +119,14 @@ public static class HttpToApplicationMappings
 
     /// <summary>Builds the command deleting a training.</summary>
     public static DeleteTrainingCommand ToDeleteTrainingCommand(Guid trainingId) => new(trainingId);
+
+    /// <summary>Builds the command handing a training over to another trainer (ADR 0036).</summary>
+    public static TransferTrainingCommand ToCommand(this TransferTrainingRequestHttp request, Guid trainingId)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        return new TransferTrainingCommand(trainingId, request.RecipientTrainerId);
+    }
 
     /// <summary>Builds the query reading one trainer.</summary>
     public static GetTrainerByIdQuery ToGetTrainerByIdQuery(Guid trainerId) => new(trainerId);
