@@ -62,9 +62,12 @@ The strategic half is what decides where the lines are, and it lives in
 language, a context map that names where each seam is visible in the code, and an event storming of
 the two main flows.
 
-Start there if you want the business before the architecture. Four architecture rules keep those
-documents answerable to the model — an aggregate nobody placed in a context fails the build. See
-[ADR 0023](docs/adr/0023-document-the-strategic-design-and-hold-it-to-the-model.md).
+Start there if you want the business before the architecture. Six architecture rules keep those
+documents answerable to the model — an aggregate nobody placed in a context fails the build, and so
+does a term the document and the code spell differently. See
+[ADR 0023](docs/adr/0023-document-the-strategic-design-and-hold-it-to-the-model.md); what those
+documents *list* is derived from the code as well, by
+[ADR 0041](docs/adr/0041-derive-every-named-list-from-the-code.md).
 
 ---
 

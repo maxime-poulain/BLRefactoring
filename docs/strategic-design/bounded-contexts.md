@@ -69,9 +69,10 @@ name in the code; that is the point of a ubiquitous language.
 | **TrainingPrerequisites** | What a participant needs beforehand | Required, at most 500 characters |
 | **AcquiredSkills** | What a participant leaves with | Required, at most 500 characters |
 | **Topic** | What a training is filed under | A **closed set of six**: Programming, Design, Marketing, Business, Personal Development, Leadership |
+| **TrainingTransferDomainService** | Handing a training to another trainer, who becomes its owner | The recipient must be able to accept it; the giver keeps nothing |
 
-Two entries in that table are worth pausing on, because both encode a business decision rather than
-a technical one.
+Three entries in that table are worth pausing on, because each encodes a business decision rather
+than a technical one.
 
 **A contact address is not a login.** `Trainer.ContactEmail` carries no uniqueness rule, and the
 aggregate says why: a trainer may publish a professional address different from the one their
@@ -83,6 +84,13 @@ have the same shape.
 Domain-Driven Design"; one trainer may not list it twice. The rule is the only one the aggregate
 cannot answer alone, so it asks `IUniquenessTitleChecker` — a port, so the domain states the rule
 without knowing how uniqueness is looked up.
+
+**A transfer belongs to neither aggregate.** Handing a training over reads the *recipient's*
+catalogue in order to mutate the *giver's* training, and neither `Training` — which knows one owner
+— nor `Trainer` — which holds no training — can decide it alone. It is the model's one recorded
+domain service, and the only term in this table that is not a noun of the business:
+`TrainingTransferDomainService`, static and stateless, deciding through the same two ports creation
+uses ([ADR 0036](../adr/0036-model-the-decision-that-has-no-home-as-a-domain-service.md)).
 
 ### Aggregates
 
@@ -98,6 +106,9 @@ holds a `Trainer` instance.
 - A trainer publishes at most ten trainings (`Training.MaximumPerTrainer`); the eleventh is
   refused at creation.
 - A training always belongs to a trainer; there is no orphan training.
+- A training changes hands only to a trainer who could have published it themselves: room under the
+  ten, and no training of theirs already carrying that title. A transfer that would break either
+  rule for the recipient is refused, and the giver keeps the training.
 - Every value object is valid by construction — an aggregate never holds a malformed field, because
   it never accepts a raw `string`.
 - A trainer never disappears silently: deletion takes their trainings with it.
@@ -113,11 +124,18 @@ holds a `Trainer` instance.
 The third row is a strategic statement, not an omission: the *rule* about deleting a trainer is
 modelled and tested, while the *permission* to trigger it is deliberately absent.
 
+The first row's *only to their own data* has one deliberate exception, and it is worth naming
+because it looks like a leak and is not. Transferring a training reads two facts about the
+**recipient's** catalogue — how full it is, and whether a title of that name is already in it. The
+caller never sees either: both come back as a refusal or as nothing at all, so the command decides
+on data it is not shown. That is the whole of what one trainer may learn about another here.
+
 ### Business capabilities
 
 - Maintain a trainer profile (name, contact address, bio).
 - Publish and withdraw a portrait.
 - Author a training: create, edit, delete.
+- Hand a training to another trainer, when their catalogue can take it.
 - Consult one's own catalogue.
 
 ### Use cases
@@ -227,10 +245,12 @@ Registration, authentication, token issuance, lockout.
 - **Aggregates:** none.
 - **Status:** port only, one fake implementation that logs. It is nonetheless the seed of the
   public catalogue: the index this port maintains is what a search page would read.
-- **Fed by:** the transactional outbox, end to end. Creating or editing a training commits
-  `TrainingCreatedIntegrationEvent` or `TrainingEditedIntegrationEvent` with it (ADR 0002,
-  ADR 0024), and the delivery worker replays each fact into this port after the commit
-  (ADR 0025) — the index only ever learns of trainings the database accepted.
+- **Fed by:** the transactional outbox, end to end. Creating, editing or handing over a training
+  commits `TrainingCreatedIntegrationEvent`, `TrainingEditedIntegrationEvent` or
+  `TrainingTransferredIntegrationEvent` with it (ADR 0002, ADR 0024), and the delivery worker
+  replays each fact into this port after the commit (ADR 0025) — the index only ever learns of
+  trainings the database accepted. A transfer is an indexing event like the other two: what a
+  public search would show changes, because the training is filed under a different trainer.
 
 ---
 
@@ -257,8 +277,8 @@ This context does not exist yet. It is documented here because three things in t
 for it, and a reader should know that they are not accidents:
 
 - **`ITrainingSearchIndexer`** is the port a public search would read through, and the facts that
-  will maintain its index — `TrainingCreatedIntegrationEvent`, `TrainingEditedIntegrationEvent` —
-  already land durably in the outbox on every commit.
+  will maintain its index — `TrainingCreatedIntegrationEvent`, `TrainingEditedIntegrationEvent`,
+  `TrainingTransferredIntegrationEvent` — already land durably in the outbox on every commit.
 - **`GET /Trainer/{id}/photo`** is the one read addressed by identifier rather than by `me`, with a
   year-long immutable cache and an `ETag` cut from the photo's identity. Making it public is
   `[AllowAnonymous]` and nothing else.

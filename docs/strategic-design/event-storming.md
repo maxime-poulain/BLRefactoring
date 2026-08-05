@@ -162,11 +162,13 @@ checks the same thing: a trainer may not list the same title twice. Creation is 
 an empty draft — which is why `Training.CreateAsync` is asynchronous while `Trainer.Create` is not.
 The trainer aggregate has no rule it cannot answer alone; the training aggregate has exactly one.
 
-**Two events, two facts, one future consumer.** `Created` and `Edited` publish two distinct
+**Three events, three facts, one future consumer.** `TrainingCreatedIntegrationEvent`,
+`TrainingEditedIntegrationEvent` and `TrainingTransferredIntegrationEvent` are three distinct
 integration events even though the indexer that will consume them upserts and could treat them
 alike. They are kept apart on the wire so the reactions can diverge — an edit might one day also
-invalidate a cache or notify subscribed students, and a create never would — and a consumer that
-cares about the difference must not have to guess it back out of a merged message.
+invalidate a cache or notify subscribed students, a create never would, and a transfer is the only
+one of the three that changes which trainer the entry is filed under — and a consumer that cares
+about the difference must not have to guess it back out of a merged message.
 
 **Deleting a trainer reaches into another aggregate.** `TrainerDeletedDomainEvent` is handled by a
 policy that deletes trainings *inside the same unit of work*. This is the strongest evidence that

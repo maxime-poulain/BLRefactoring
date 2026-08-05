@@ -51,6 +51,10 @@ public sealed partial class StrategicDesignRules
     [GeneratedRegex(@"\[""<b>(?<name>[^<]+)</b>")]
     private static partial Regex NodeLabel { get; }
 
+    /// <summary>A term of a ubiquitous-language table: the bold first cell of a row.</summary>
+    [GeneratedRegex(@"^\|\s*\*\*(?<term>[^*]+)\*\*\s*\|")]
+    private static partial Regex Term { get; }
+
     private static IReadOnlyList<Type> DomainTypes { get; } = [.. Solution.Domain.DeclaredTypes()];
 
     private static IEnumerable<Type> Aggregates =>
@@ -58,6 +62,26 @@ public sealed partial class StrategicDesignRules
 
     private static IEnumerable<Type> DomainEvents =>
         DomainTypes.Where(type => typeof(IDomainEvent).IsAssignableFrom(type) && !type.IsAbstract);
+
+    /// <summary>The recorded domain services — named in full, by ADR 0036.</summary>
+    private static IEnumerable<Type> DomainServices =>
+        DomainTypes.Where(type => type.Name.EndsWith("DomainService", StringComparison.Ordinal));
+
+    /// <summary>
+    /// The types the ubiquitous language is made of: what the model decides with, and what it is
+    /// made of.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately not every type in the domain. Typed identifiers, domain events and the ports an
+    /// aggregate asks are mechanism — a reader learns nothing about the business from
+    /// <c>TrainerId</c>. What the table promises to name is what carries meaning: the two
+    /// aggregates, the value objects that are their vocabulary, and the one decision that belongs
+    /// to neither.
+    /// </remarks>
+    private static IEnumerable<Type> LanguageTypes =>
+        Aggregates
+            .Concat(DomainTypes.Where(type => typeof(ValueObject).IsAssignableFrom(type) && !type.IsAbstract))
+            .Concat(DomainServices);
 
     /// <summary>
     /// Every aggregate, is placed in exactly one bounded context.
@@ -112,6 +136,76 @@ public sealed partial class StrategicDesignRules
             .Select(domainEvent =>
                 $"{domainEvent.Name} is raised by the domain and named nowhere in " +
                 "docs/strategic-design/event-storming.md. Add it to a board, or to the design-level table")
+            .ShouldHold();
+    }
+
+    /// <summary>
+    /// Every domain service, appears in the event storming.
+    /// </summary>
+    /// <remarks>
+    /// The sibling of the rule above, for the other thing the boards claim to account for. ADR 0036
+    /// admits a domain service only where no aggregate can own the decision, which makes each one a
+    /// hole in the aggregate map — precisely the shape a board exists to show. The boards already
+    /// draw the transfer; what was missing is anything obliging the next one to be drawn.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0023",
+        "the boards account for every business fact the domain raises, not for the ones already drawn")]
+    public void EveryDomainService_AppearsInTheEventStorming()
+    {
+        var boards = Document("event-storming.md");
+
+        DomainServices
+            .Selected("domain service")
+            .Where(service => !boards.Contains(service.Name, StringComparison.Ordinal))
+            .Select(service =>
+                $"{service.Name} decides something no aggregate could, and is named nowhere in " +
+                "docs/strategic-design/event-storming.md. A decision with no home is the one a " +
+                "board most needs to show")
+            .ShouldHold();
+    }
+
+    /// <summary>
+    /// Every term in the ubiquitous language, is a type in the domain.
+    /// </summary>
+    /// <remarks>
+    /// The document opens its own table with a promise — <em>"Every term below is a type in
+    /// <c>src/TrainingHub.Shared.Domain/</c>. The name in the document *is* the name in the code;
+    /// that is the point of a ubiquitous language."</em> — and nothing made it answer for it.
+    /// <para>
+    /// That sentence is also the switch. A section carrying it is held in both directions; the
+    /// Identity &amp; Access table, which does not carry it, is held in neither — its terms are
+    /// <em>User</em>, <em>Role</em> and <em>Token</em>, the framework's vocabulary rather than
+    /// types this repository declares, and a rule that swept them up would be demanding we model a
+    /// context whose whole decision was to buy it. See ADR 0023.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0023",
+        "the name in the document is the name in the code; that is the point of a ubiquitous language")]
+    public void EveryTermInTheUbiquitousLanguage_IsATypeInTheDomain()
+    {
+        var sections = BoundedContexts();
+        var named = sections.Values.SelectMany(TermsDeclaredIn).ToHashSet(StringComparer.Ordinal);
+        var declared = LanguageTypes.Select(type => type.Name).ToHashSet(StringComparer.Ordinal);
+
+        LanguageTypes
+            .Selected("type of the ubiquitous language")
+            .Where(type => !named.Contains(type.Name))
+            .Select(type =>
+                $"{type.Name} carries meaning in this business and appears under no " +
+                "'### Ubiquitous language' heading in docs/strategic-design/bounded-contexts.md. " +
+                "A word the model uses and the document does not is where a ubiquitous language " +
+                "stops being one")
+            .Concat(sections
+                .Where(section => section.Value.Contains(
+                    "is a type in", StringComparison.Ordinal))
+                .SelectMany(section => TermsDeclaredIn(section.Value)
+                    .Where(term => !declared.Contains(term))
+                    .Select(term =>
+                        $"the '{section.Key}' table promises every term below it is a type in the " +
+                        $"domain, and '{term}' names none. Rename the row with the type, or drop " +
+                        "the promise")))
             .ShouldHold();
     }
 
@@ -264,6 +358,34 @@ public sealed partial class StrategicDesignRules
         }
 
         return declared;
+    }
+
+    /// <summary>The terms declared under a section's <c>### Ubiquitous language</c> heading.</summary>
+    /// <remarks>
+    /// Scoped to that heading, and that is what makes it a rule rather than a formality: the
+    /// Actors table two headings further down writes its first cell in bold too, so an unscoped
+    /// scan would find <em>Trainer</em> there and go on passing after the language table had lost
+    /// the row.
+    /// </remarks>
+    private static IEnumerable<string> TermsDeclaredIn(string section)
+    {
+        var inside = false;
+
+        foreach (var line in section.Split('\n').Select(line => line.TrimEnd('\r')))
+        {
+            if (line.StartsWith("### ", StringComparison.Ordinal))
+            {
+                inside = line.Trim().Equals("### Ubiquitous language", StringComparison.Ordinal);
+                continue;
+            }
+
+            var term = inside ? Term.Match(line) : Match.Empty;
+
+            if (term.Success)
+            {
+                yield return term.Groups["term"].Value.Trim();
+            }
+        }
     }
 
     /// <summary>

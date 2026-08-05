@@ -79,14 +79,22 @@ Documentation goes stale silently, which is the one failure mode this repository
 else — the README's project graph is compared edge by edge with the real project references, and
 every architecture decision record is defended by a rule ([ADR 0013](../adr/0013-make-every-record-answer-to-a-test.md)).
 
-The same treatment applies here. `StrategicDesignRules` checks four things on every build:
+The same treatment applies here. `StrategicDesignRules` checks six things on every build:
 
 | Rule | What it prevents |
 |---|---|
 | `EveryAggregate_IsPlacedInExactlyOneBoundedContext` | A third aggregate arriving and belonging, on paper, to nothing |
 | `EveryDomainEvent_AppearsInTheEventStorming` | A new business fact that the boards never mention |
+| `EveryDomainService_AppearsInTheEventStorming` | A decision no aggregate could own, drawn nowhere |
+| `EveryTermInTheUbiquitousLanguage_IsATypeInTheDomain` | The document and the code calling the same thing by different names |
 | `EveryContextOnTheMap_HasItsOwnSection` | The map and the descriptions drifting apart |
 | `EveryContextOnTheMap_AgreesWithItsSectionsStatus` | The map calling a context built while its own section still calls it a port |
+
+Two more hold what these documents *enumerate* rather than what they name:
+`EveryNamedList_AgreesWithTheCode` derives each list of facts from the consumers that read them
+([ADR 0041](../adr/0041-derive-every-named-list-from-the-code.md)), and
+`EveryCountedClaim_AgreesWithTheCode` does the same for every number on this page
+([ADR 0038](../adr/0038-derive-every-counted-claim-from-the-code.md)).
 
 The reasoning behind this documentation — why it lives here rather than among the records, and what
 it deliberately leaves open — is in
