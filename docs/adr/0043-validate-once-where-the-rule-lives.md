@@ -114,4 +114,20 @@ the three in each trainer validator, two each in `CreateTrainingCommandValidator
 over, since the contract requires the file and the property is a non-nullable `byte[]` with a
 default. The identifier exception was proven by watching the rule stay green on
 `TransferTrainingCommandValidator`, then fail when its `NotEmpty()` was moved onto a non-identifier
-field. The behavioural half is `AuthTest` and the two application suites.
+field.
+
+The behavioural half is where this record's central claim lives, and a rule cannot reach it:
+`ErrorFormatTest.MalformedEmail_IsRefusedByTheDomain_WithTheSameCodeOnBothHosts` asserts
+`Trainer.InvalidEmail` under `domainErrors`, in the shared TestKit, so that both hosts run it. A
+per-host assertion would pass on a repository where the two had drifted apart again, which is the
+state this record replaces.
+
+That fact replaces one that proved the opposite, and the replacement is worth recording rather than
+quietly performing. `ValidationPipelineTests.InvalidEmail_IsRejectedByTheValidator_…` pinned
+`Validation` on this exact path, and went red on the commit that removed the divergence — the change
+succeeding, on a test written for the world before it. Its real subject was never the address but
+the *shape* of a pipeline rejection, so it kept that subject and moved to the one payload this layer
+still refuses: an empty identifier on a command. Its sibling,
+`ValidationRunsBeforeTheHandler_LeavingTheAggregateUntouched`, moved with it for a quieter reason —
+it stayed green while its name stopped being true, since the aggregate was now untouched because the
+domain refused rather than because the pipeline did.

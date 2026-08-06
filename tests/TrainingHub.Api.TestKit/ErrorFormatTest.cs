@@ -69,6 +69,51 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
     }
 
     /// <summary>
+    /// Malformed email, is refused by the domain, with the same code on both hosts.
+    /// </summary>
+    /// <remarks>
+    /// ADR 0043's central claim, and the one thing about it a rule cannot see. The CQRS validator
+    /// used to carry <c>EmailAddress()</c> and the layered stack never did, so the same request was
+    /// refused one layer apart and answered two different codes depending on which host received
+    /// it — a divergence ADR 0016 measured, named, and recorded as a cost it was not paying.
+    /// <para>
+    /// It is asserted here rather than in either suite because that is the whole of the claim: a
+    /// per-host test would pass on a repository where the two hosts had drifted apart again, which
+    /// is exactly the state this replaces. The address is refused by <c>Email.Create</c> now, on
+    /// both, and the code a client branches on says which aggregate refused it.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task MalformedEmail_IsRefusedByTheDomain_WithTheSameCodeOnBothHosts()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        var entityTag = await client.GetETagAsync("/Trainer/me");
+
+        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerRequestHttp
+        {
+            Firstname = "Edited",
+            Lastname = "Profile",
+            ContactEmail = "not-an-email"
+        }, entityTag);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.Content.Headers.ContentType!.MediaType.Should().Be("application/problem+json");
+
+        var body = await BodyAsync(response);
+
+        // Not under `errors`: the contract deliberately declares no shape for an address — .NET's
+        // [EmailAddress] and the domain's validator disagree in both directions — so this refusal
+        // is a business failure and reads like one.
+        body.TryGetProperty("errors", out _)
+            .Should().BeFalse("the address is judged by the domain, not by a data annotation");
+
+        body.GetProperty("domainErrors")
+            .EnumerateArray()
+            .Select(error => error.GetProperty("errorCode").GetString())
+            .Should().Contain("Trainer.InvalidEmail");
+    }
+
+    /// <summary>
     /// Validation failure, keeps errors for the field map.
     /// </summary>
     [Fact]
