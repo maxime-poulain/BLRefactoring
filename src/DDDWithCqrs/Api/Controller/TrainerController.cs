@@ -3,6 +3,7 @@ using TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetPhoto;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.RemovePhoto;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.SetPhoto;
 using TrainingHub.Shared;
+using TrainingHub.Shared.Api.Contracts;
 using TrainingHub.Shared.Api.Contracts.Mappings;
 using TrainingHub.Shared.Api.Contracts.Trainers;
 using TrainingHub.Shared.Api.Controllers;
@@ -136,7 +137,9 @@ public sealed class TrainerController(
     [ProducesResponseType(typeof(byte[]), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status304NotModified)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> GetPhotoAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> GetPhotoAsync(
+        [NotEmptyIdentifier] Guid id,
+        CancellationToken cancellationToken = default)
     {
         var photo = await queryDispatcher.DispatchAsync(
             new GetTrainerPhotoQuery(id), cancellationToken);

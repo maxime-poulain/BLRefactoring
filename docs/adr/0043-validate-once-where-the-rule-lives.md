@@ -1,6 +1,6 @@
 # 0043 — Validate once, where the rule lives
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0046](0046-refuse-the-empty-identifier-at-every-entry-point.md): the one shape rule this record kept in the pipeline gains a second half at the HTTP boundary, and the pipeline keeps its own; the sentence emptying the creation validators is corrected there
 - **Date:** 2026-08-06
 - **Amends:** [0016](0016-let-a-rejected-command-fail-like-every-other-command.md)
 

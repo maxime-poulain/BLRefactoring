@@ -1,5 +1,6 @@
 using TrainingHub.DDDWithCqrs.Api.Mappings;
 using TrainingHub.Shared.Api.Authorization;
+using TrainingHub.Shared.Api.Contracts;
 using TrainingHub.Shared.Api.Contracts.Mappings;
 using TrainingHub.Shared.Api.Contracts.Pagination;
 using TrainingHub.Shared.Api.Contracts.Trainings;
@@ -67,7 +68,9 @@ public sealed class TrainingController(
     [ProducesResponseType(typeof(TrainingResponseHttp), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<TrainingResponseHttp>> GetTrainingByIdAsync(Guid trainingId, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<TrainingResponseHttp>> GetTrainingByIdAsync(
+        [NotEmptyIdentifier] Guid trainingId,
+        CancellationToken cancellationToken = default)
     {
         var training = await queryDispatcher.DispatchAsync(
             HttpToApplicationMappings.ToGetTrainingByIdQuery(trainingId), cancellationToken);
@@ -141,7 +144,7 @@ public sealed class TrainingController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status412PreconditionFailed)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status428PreconditionRequired)]
     public async Task<ActionResult> UpdateTrainingAsync(
-        Guid trainingId,
+        [NotEmptyIdentifier] Guid trainingId,
         [FromBody] EditTrainingRequestHttp request,
         [FromHeader(Name = "If-Match")] string? ifMatch,
         CancellationToken cancellationToken = default)
@@ -187,7 +190,9 @@ public sealed class TrainingController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult> DeleteTrainingAsync(Guid trainingId, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> DeleteTrainingAsync(
+        [NotEmptyIdentifier] Guid trainingId,
+        CancellationToken cancellationToken = default)
     {
         var deletionResult = await commandDispatcher.DispatchAsync(
             HttpToApplicationMappings.ToDeleteTrainingCommand(trainingId), cancellationToken);
@@ -205,7 +210,7 @@ public sealed class TrainingController(
     /// not an edit of its content, and the contention that matters — the recipient's capacity and
     /// titles — is checked by the domain service at the moment of the decision.
     /// </remarks>
-    /// <param name="trainingId">The unique identifier of the training to transfer.</param>
+    /// <param name="trainingId">The training the route names.</param>
     /// <param name="request">The transfer request naming the recipient.</param>
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
     /// <returns>
@@ -222,7 +227,7 @@ public sealed class TrainingController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult> TransferTrainingAsync(
-        Guid trainingId,
+        [NotEmptyIdentifier] Guid trainingId,
         [FromBody] TransferTrainingRequestHttp request,
         CancellationToken cancellationToken = default)
     {

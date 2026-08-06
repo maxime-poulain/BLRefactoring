@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 45 architecture decision records.
+2. `docs/adr/README.md` — the index of 46 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 152 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 155 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -87,6 +87,11 @@ repository a named question and maps the aggregates.
 - A query never changes state, and answers a `*Dto` — never an aggregate, entity or value object.
 - Command handlers live in the application layer, query handlers in infrastructure.
 - One validator per command, beside it. One folder per use case.
+- **Every identifier a command or query carries is refused empty by its own validator**, even
+  where the HTTP contract already refuses it (ADR 0046). The two answer different callers: the
+  contract answers a request, the validator answers anything that reaches a dispatcher. The
+  application layer never assumes the boundary checked first
+  (`EveryIdentifierAMessageCarries_IsRefusedEmptyByItsValidator`).
 
 ## HTTP boundary
 

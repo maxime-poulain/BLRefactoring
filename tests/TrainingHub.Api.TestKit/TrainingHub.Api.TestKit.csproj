@@ -11,9 +11,19 @@
     copied beside it, and the whole run aborts — with both real suites passing, which makes
     the failure read like anything but this.
   -->
+  <!--
+    SonarQubeTestProject undoes, for the analyser alone, what IsTestProject had to say to MSBuild.
+    The scanner for .NET reads IsTestProject to decide what a project holds, so declaring it false
+    made this one production code: its files were measured for coverage on new code, and a shared
+    fact added here counted against the gate as though it shipped in a host. Nothing here ships
+    anywhere — the assembly is referenced by the two integration suites and by nothing else.
+    Telling the analyser what the project is corrects a misclassification; it does not silence a
+    finding, and the code is still analysed for issues.
+  -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <IsTestProject>false</IsTestProject>
+    <SonarQubeTestProject>true</SonarQubeTestProject>
   </PropertyGroup>
 
   <ItemGroup>
