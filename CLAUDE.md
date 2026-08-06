@@ -9,7 +9,7 @@ outrank shipping speed. Understand the existing design before changing it.
 1. `README.md` — the architecture, the domain model, the conventions.
 2. `docs/adr/README.md` — the index of 44 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 150 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 151 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -92,7 +92,15 @@ repository a named question and maps the aggregates.
 
 - The published contracts are `*RequestHttp` and `*ResponseHttp`, under `Shared.Api/Contracts/`. No
   controller names a command, a query or an application DTO, and no inner layer names a contract.
-- Application-layer read models carry the `Dto` suffix.
+- **The suffix says which boundary a type belongs to, and the two must never be confused.** The
+  layered stack's application services take a `*Request` and answer a `*Dto`; the API's published
+  contracts are `*RequestHttp` and `*ResponseHttp`. `EditTrainerRequestHttp` is what a client sends;
+  `TrainerEditionRequest` is what the application layer accepts, after the mapping. A type whose
+  name does not say which of the two it is has to be read to be placed
+  (`EveryLayeredServiceSignature_SaysWhichBoundaryItIsOn`).
+- The CQRS stack names its inputs differently on purpose — a `*Command` or a `*Query`, one folder
+  per use case — and answers the same `*Dto`. The `*Request` half is the layered stack's; the `Dto`
+  half is shared by both.
 - Every failure leaves as RFC 7807 Problem Details, with domain codes under `domainErrors`
   (ADR 0004, ADR 0012).
 - Every action declares the statuses it can answer; every route identifier is constrained
