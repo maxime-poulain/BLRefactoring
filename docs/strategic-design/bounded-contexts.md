@@ -60,7 +60,7 @@ name in the code; that is the point of a ubiquitous language.
 |---|---|---|
 | **Trainer** | Someone who publishes trainings. Not an account — see *Identity & Access*. | Aggregate root; created only by registration |
 | **Training** | A training a trainer offers. A catalogue entry, not a scheduled event. | Aggregate root; belongs to exactly one trainer |
-| **Name** | A trainer's `Firstname` and `Lastname` | Neither may be blank |
+| **Name** | A trainer's `Firstname` and `Lastname` | Each 2 to 50 characters once trimmed; both refusals are reported together |
 | **Email** | The address a trainer wishes to be contacted at, split into `LocalPart` and `Domain` | Must be a valid address. **Not unique** — see below |
 | **Bio** | A trainer's own description of themselves | Optional; at most 500 characters, and blank is a refusal rather than an empty bio |
 | **TrainerPhoto** | The portrait a trainer publishes | At most 5 MiB; PNG, JPEG or WebP, recognised by reading the bytes rather than trusting the caller |

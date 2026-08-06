@@ -10,6 +10,12 @@ public static class TrainerErrorCodes
     /// <summary>The address is not one this domain accepts.</summary>
     public static readonly ErrorCode InvalidEmail = new("Trainer.InvalidEmail");
 
+    /// <summary>The first name is not between two and fifty characters, once trimmed.</summary>
+    public static readonly ErrorCode InvalidFirstname = new("Trainer.InvalidFirstname");
+
+    /// <summary>The last name is not between two and fifty characters, once trimmed.</summary>
+    public static readonly ErrorCode InvalidLastname = new("Trainer.InvalidLastname");
+
     /// <summary>A bio was supplied, and it is blank.</summary>
     public static readonly ErrorCode BioEmpty = new("Trainer.BioEmpty");
 

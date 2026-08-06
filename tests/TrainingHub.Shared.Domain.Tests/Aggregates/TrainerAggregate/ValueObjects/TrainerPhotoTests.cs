@@ -71,7 +71,7 @@ public sealed class TrainerPhotoTests
         // Assert
         photo.ContentType.Should().Be(TrainerPhoto.PngContentType);
         photo.ByteSize.Should().Be(128);
-        photo.PhotoId.Should().NotBe(Guid.Empty);
+        photo.PhotoId.Value.Should().NotBe(Guid.Empty);
     }
 
     /// <summary>

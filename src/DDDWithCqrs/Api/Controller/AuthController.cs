@@ -1,6 +1,7 @@
 using TrainingHub.DDDWithCqrs.Api.Mappings;
 using TrainingHub.Shared.Common.Results;
 using TrainingHub.Shared.CQS;
+using TrainingHub.Shared.Api.Contracts.Auth;
 using TrainingHub.Shared.Api.Controllers;
 using TrainingHub.Shared.Api.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -26,7 +27,7 @@ public sealed class AuthController(
     /// the identifier that endpoint publishes in <c>Location</c>.
     /// </remarks>
     protected override async Task<Result<Guid>> CreateTrainerAsync(
-        RegisterRequest request,
+        RegisterRequestHttp request,
         Guid userId,
         CancellationToken cancellationToken = default)
     {

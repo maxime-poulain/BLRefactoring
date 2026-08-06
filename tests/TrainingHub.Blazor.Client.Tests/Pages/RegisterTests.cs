@@ -108,7 +108,7 @@ public sealed class RegisterTests : ComponentTest
     {
         // Arrange
         _auth
-            .Setup(client => client.RegisterAsync(It.IsAny<RegisterRequest>()))
+            .Setup(client => client.RegisterAsync(It.IsAny<RegisterRequestHttp>()))
             .ThrowsAsync(new ApiException(
                 "The HTTP status code of the response was not expected (503).",
                 503,
@@ -132,7 +132,7 @@ public sealed class RegisterTests : ComponentTest
     {
         // Arrange
         _auth
-            .Setup(client => client.RegisterAsync(It.IsAny<RegisterRequest>()))
+            .Setup(client => client.RegisterAsync(It.IsAny<RegisterRequestHttp>()))
             .ReturnsAsync(Guid.NewGuid());
 
         var navigation = (BunitNavigationManager)Services.GetRequiredService<NavigationManager>();
@@ -142,7 +142,7 @@ public sealed class RegisterTests : ComponentTest
 
         // Assert
         navigation.Uri.Should().Be("http://localhost/login");
-        _auth.Verify(client => client.RegisterAsync(It.Is<RegisterRequest>(request =>
+        _auth.Verify(client => client.RegisterAsync(It.Is<RegisterRequestHttp>(request =>
             request.Username == "john"
             && request.Email == "john@example.com"
             && request.Firstname == "John"
@@ -153,7 +153,7 @@ public sealed class RegisterTests : ComponentTest
 
     private void GivenRejection(ProblemDetails problem) =>
         _auth
-            .Setup(client => client.RegisterAsync(It.IsAny<RegisterRequest>()))
+            .Setup(client => client.RegisterAsync(It.IsAny<RegisterRequestHttp>()))
             .ThrowsAsync(new ApiException<ProblemDetails>(
                 "Bad Request", 400, response: null, new Dictionary<string, IEnumerable<string>>(), problem, null));
 

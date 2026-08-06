@@ -29,7 +29,7 @@ public static class TrainerProjections
         Firstname = trainer.Name.Firstname,
         Lastname = trainer.Name.Lastname,
         Bio = trainer.Bio == null ? null : trainer.Bio.Value,
-        PhotoId = trainer.Photo == null ? null : trainer.Photo.PhotoId
+        PhotoId = trainer.Photo == null ? null : trainer.Photo.PhotoId.Value
     };
 
     private static readonly Func<Trainer, TrainerDto> Compiled = ToDtoExpression.Compile();

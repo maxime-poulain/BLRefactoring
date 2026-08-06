@@ -4,11 +4,20 @@ using System.Reflection;
 namespace TrainingHub.Shared.Common;
 
 /// <summary>
-/// Represents the identifier of an <see cref="Entity"/>, backed by a <see cref="Guid"/>.
+/// A typed identifier backed by a <see cref="Guid"/>, whose construction refuses an empty value.
 /// An <see cref="EntityId{TEntityId}"/> is a value object, even though it does not inherit from
 /// <see cref="ValueObject"/>.
 /// </summary>
 /// <remarks>
+/// <para>
+/// It used to say "the identifier of an <see cref="Entity"/>", and two of its four descendants
+/// deny it: <c>UserId</c> names an Identity account, which is not an entity of this model at all
+/// and reaches it through an anti-corruption layer, and <c>PhotoId</c> names the identity a
+/// <c>TrainerPhoto</c> carries — a value object that is nonetheless minted fresh on every upload,
+/// so that a replacement writes a new address (ADR 0021). What this type actually is, and what all
+/// four use it for, is the guarantee below: an identifier that cannot be confused with another and
+/// cannot be empty.
+/// </para>
 /// <para>
 /// <see cref="Create"/> and <see cref="Generate"/> are the construction paths: they validate the
 /// value and instantiate the derived type through its non-public constructor, via a factory

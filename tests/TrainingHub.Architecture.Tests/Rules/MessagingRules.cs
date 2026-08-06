@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using TrainingHub.Architecture.Tests.Framework;
 using TrainingHub.Shared.CQS;
 using TrainingHub.Shared.Common.Results;
@@ -15,8 +16,26 @@ namespace TrainingHub.Architecture.Tests.Rules;
 /// named but placed elsewhere is never registered and never runs. Neither failure is visible in a
 /// diff. Both are visible here.
 /// </remarks>
-public sealed class MessagingRules
+public sealed partial class MessagingRules
 {
+    /// <summary>A rule in a validator: the property it names, and the chain that judges it.</summary>
+    /// <remarks>
+    /// The chain runs to the semicolon, so a rule folded over several lines — which is how the
+    /// training validators write theirs — is read as the one statement it is.
+    /// </remarks>
+    [GeneratedRegex(@"RuleFor\(\s*\w+\s*=>\s*\w+\.(?<property>\w+)\s*\)(?<chain>[^;]*);", RegexOptions.Singleline)]
+    private static partial Regex ValidationRule { get; }
+
+    /// <summary>
+    /// The verbs that judge a value's shape rather than its meaning.
+    /// </summary>
+    /// <remarks>
+    /// Presence and size, which the contract's annotations already declare at model binding — before
+    /// the pipeline runs, so a rule here is at best a second opinion and at worst a stricter one
+    /// only one host holds.
+    /// </remarks>
+    private static readonly string[] ShapeVerbs =
+        ["NotEmpty(", "NotNull(", "EmailAddress(", "Matches(", "Length(", "MaximumLength(", "MinimumLength("];
     // Spelled in two halves, like the error-vocabulary rule for the same reason: a rule that forbids
     // a token cannot write it, or it finds itself. The scan below is path-scoped and would not reach
     // this file, but the convention is cheaper to keep than to re-derive.
@@ -319,6 +338,45 @@ public sealed class MessagingRules
     /// so this suite states a rule about the codebase without taking a dependency on the validation
     /// library to do it.
     /// </remarks>
+    /// <summary>
+    /// No command validator, judges shape.
+    /// </summary>
+    /// <remarks>
+    /// ADR 0016 measured this and deferred it: the duplicated rules were "already unreachable"
+    /// behind the contract's own annotations, except on the registration path, where the request
+    /// bounded nothing at all. ADR 0042 gave that request a contract to be bounded in, so the rules
+    /// can go — and with them the one that was never a duplicate but a divergence,
+    /// <c>EmailAddress()</c>, which no layered validator has and which makes the CQRS host refuse
+    /// addresses the other accepts.
+    /// <para>
+    /// Identifiers are the exception, and they are the decision rather than a hole in it: an empty
+    /// <c>Guid</c> reaching <c>EntityId.Create</c> throws, which is a 500, and neither the contract
+    /// — <c>Guid.Empty</c> is a perfectly well-formed <c>Guid</c> — nor the domain can refuse it
+    /// politely. That is the one thing left for this layer to guard. See ADR 0043.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0043",
+        "the contract declares shape and presence, the domain judges meaning, and the validator guards what neither can")]
+    public void NoCommandValidator_JudgesShape() =>
+        SourceTree.SourceFiles
+            .Where(file => SourceTree.Relative(file).EndsWith("CommandValidator.cs", StringComparison.Ordinal))
+            .Selected("command validator")
+            .SelectMany(file => ValidationRule
+                .Matches(SourceTree.ReadText(file))
+                .Select(rule => (
+                    File: SourceTree.Relative(file),
+                    Property: rule.Groups["property"].Value,
+                    Chain: rule.Groups["chain"].Value)))
+            .Where(rule => !rule.Property.EndsWith("Id", StringComparison.Ordinal))
+            .SelectMany(rule => ShapeVerbs
+                .Where(verb => rule.Chain.Contains(verb, StringComparison.Ordinal))
+                .Select(verb =>
+                    $"{rule.File} judges the shape of {rule.Property} with {verb.TrimEnd('(')}(). " +
+                    "The contract declares shape at model binding, before this runs; a second " +
+                    "opinion here is either dead or a divergence only one host has"))
+            .ShouldHold();
+
     private static IReadOnlyList<(Type Type, Type Validated)> Validators { get; } =
     [
         .. Solution.CqrsApplication.DeclaredTypes()

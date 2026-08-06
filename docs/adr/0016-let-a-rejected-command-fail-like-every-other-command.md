@@ -1,6 +1,6 @@
 # 0016 — Let a rejected command fail like every other command
 
-- **Status:** Accepted
+- **Status:** Accepted — the validation cost it recorded and deferred is paid off by [0043](0043-validate-once-where-the-rule-lives.md)
 - **Date:** 2026-08-02
 - **Amends:** [0012](0012-finish-the-one-error-shape-and-name-its-members-apart.md)
 

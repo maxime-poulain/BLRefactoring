@@ -50,7 +50,7 @@ public sealed class TrainerPhoto : ValueObject
     /// <summary>
     /// Identifies these bytes. The infrastructure derives a storage key from it.
     /// </summary>
-    public Guid PhotoId { get; private init; }
+    public PhotoId PhotoId { get; private init; } = null!;
 
     /// <summary>
     /// The media type, established by reading the bytes rather than by trusting the caller.
@@ -129,7 +129,7 @@ public sealed class TrainerPhoto : ValueObject
 
         return Result<TrainerPhoto>.Success(new TrainerPhoto
         {
-            PhotoId = Guid.NewGuid(),
+            PhotoId = PhotoId.Generate(),
             ContentType = actual,
             ByteSize = content.Length
         });

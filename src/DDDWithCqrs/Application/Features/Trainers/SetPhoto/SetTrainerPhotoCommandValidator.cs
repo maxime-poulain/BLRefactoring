@@ -3,22 +3,22 @@ using FluentValidation;
 namespace TrainingHub.DDDWithCqrs.Application.Features.Trainers.SetPhoto;
 
 /// <summary>
-/// Validates <see cref="SetTrainerPhotoCommand"/>.
+/// Stands between <see cref="SetTrainerPhotoCommand"/> and its handler, and asks nothing.
 /// </summary>
 /// <remarks>
-/// One rule, and deliberately only one. Whether the bytes are an image, which image, and whether
-/// there are too many of them are the aggregate's rules — read off the content itself, and
-/// answered with codes the aggregate owns. Restating any of them here would give the same refusal
-/// two different codes depending on which check happened to run first, and the pipeline's
-/// validation code means "rejected before the domain saw it", which would then stop being true.
+/// Deliberately empty, and kept rather than deleted. Everything this command needs checking for is
+/// checked by somebody better placed: the contract declares shape and presence at model binding,
+/// before this pipeline runs, and the domain judges what the values mean and answers with its own
+/// codes. What is left for this layer is an empty identifier that would reach
+/// <c>EntityId.Create</c> and throw — and this command carries none. An empty validator states
+/// that; a missing one states nothing, and the pipeline refuses a command that has none (ADR 0043).
 /// </remarks>
 public sealed class SetTrainerPhotoCommandValidator : AbstractValidator<SetTrainerPhotoCommand>
 {
     /// <summary>
-    /// Refuses a command with no payload at all, which is a malformed request rather than a bad photo.
+    /// Declares no rule.
     /// </summary>
     public SetTrainerPhotoCommandValidator()
     {
-        RuleFor(command => command.Content).NotNull();
     }
 }

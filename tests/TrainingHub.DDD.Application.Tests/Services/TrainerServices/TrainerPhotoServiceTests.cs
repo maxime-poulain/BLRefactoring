@@ -273,7 +273,7 @@ public sealed class TrainerPhotoServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result!.PhotoId.Should().Be(photo.PhotoId);
+        result!.PhotoId.Should().Be(photo.PhotoId.Value);
         result.ContentType.Should().Be(TrainerPhoto.PngContentType);
     }
 

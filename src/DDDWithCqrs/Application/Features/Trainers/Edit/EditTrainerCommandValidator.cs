@@ -3,18 +3,22 @@ using FluentValidation;
 namespace TrainingHub.DDDWithCqrs.Application.Features.Trainers.Edit;
 
 /// <summary>
-/// Guards what the caller sent. Not who they are: the trainer is no longer a field on this
-/// command — the handler resolves it — so there is nothing here to check about it.
+/// Stands between <see cref="EditTrainerCommand"/> and its handler, and asks nothing.
 /// </summary>
+/// <remarks>
+/// Deliberately empty, and kept rather than deleted. Everything this command needs checking for is
+/// checked by somebody better placed: the contract declares shape and presence at model binding,
+/// before this pipeline runs, and the domain judges what the values mean and answers with its own
+/// codes. What is left for this layer is an empty identifier that would reach
+/// <c>EntityId.Create</c> and throw — and this command carries none. An empty validator states
+/// that; a missing one states nothing, and the pipeline refuses a command that has none (ADR 0043).
+/// </remarks>
 public sealed class EditTrainerCommandValidator : AbstractValidator<EditTrainerCommand>
 {
     /// <summary>
-    /// Builds the rules.
+    /// Declares no rule.
     /// </summary>
     public EditTrainerCommandValidator()
     {
-        RuleFor(command => command.ContactEmail).EmailAddress();
-        RuleFor(command => command.Firstname).NotEmpty();
-        RuleFor(command => command.Lastname).NotEmpty();
     }
 }

@@ -72,7 +72,7 @@ public static class BffEndpoints
     /// Exchanges credentials for a cookie. The token stays here.
     /// </summary>
     private static async Task<IResult> LoginAsync(
-        LoginRequest credentials,
+        LoginRequestHttp credentials,
         IHttpClientFactory httpClientFactory,
         HttpContext httpContext,
         CancellationToken cancellationToken)
@@ -89,7 +89,7 @@ public static class BffEndpoints
             return Results.StatusCode((int)response.StatusCode);
         }
 
-        var body = await response.Content.ReadFromJsonAsync<LoginResponse>(cancellationToken);
+        var body = await response.Content.ReadFromJsonAsync<LoginResponseHttp>(cancellationToken);
 
         if (string.IsNullOrWhiteSpace(body?.Token))
         {

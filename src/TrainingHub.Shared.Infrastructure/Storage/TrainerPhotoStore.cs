@@ -50,6 +50,6 @@ public sealed class TrainerPhotoStore(IObjectStore objectStore) : ITrainerPhotoS
 
         return ObjectKey.Create(string.Create(
             CultureInfo.InvariantCulture,
-            $"trainers/{trainerId.Value}/{photo.PhotoId}"));
+            $"trainers/{trainerId.Value}/{photo.PhotoId.Value}"));
     }
 }

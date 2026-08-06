@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using TrainingHub.Shared.Api.Contracts.Trainers;
-using TrainingHub.Shared.Api.Controllers;
+using TrainingHub.Shared.Api.Contracts.Auth;
 using Xunit;
 
 namespace TrainingHub.Api.TestKit;
@@ -124,7 +124,7 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         (await AuthHelper.RegisterAsync(client, request)).EnsureSuccessStatusCode();
 
         var duplicate = AuthHelper.CreateUniqueRegisterRequest();
-        var response = await AuthHelper.RegisterAsync(client, new RegisterRequest
+        var response = await AuthHelper.RegisterAsync(client, new RegisterRequestHttp
         {
             Username = duplicate.Username,
             Email = request.Email,
@@ -150,7 +150,7 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         (await AuthHelper.RegisterAsync(client, request)).EnsureSuccessStatusCode();
 
         var duplicate = AuthHelper.CreateUniqueRegisterRequest();
-        var response = await AuthHelper.RegisterAsync(client, new RegisterRequest
+        var response = await AuthHelper.RegisterAsync(client, new RegisterRequestHttp
         {
             Username = request.Username,
             Email = duplicate.Email,
@@ -172,7 +172,7 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         var client = Factory.CreateClient();
         var request = AuthHelper.CreateUniqueRegisterRequest();
 
-        var response = await AuthHelper.RegisterAsync(client, new RegisterRequest
+        var response = await AuthHelper.RegisterAsync(client, new RegisterRequestHttp
         {
             Username = request.Username,
             Email = request.Email,
@@ -188,28 +188,27 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
     }
 
     /// <summary>
-    /// Register, when the trainer half is refused, leaves no account behind.
+    /// Register, too short a firstname, returns 400 before anything is created.
     /// </summary>
     /// <remarks>
-    /// The one assertion behind ADR 0040, and the one nothing made until it was written. Six places
-    /// in this repository state that registration is atomic — the README, the context map, the
-    /// event-storming board, both trainer controllers — and ADR 0016 rests on it, since a rejected
-    /// command rolls back by reaching the end of the scope without completing it. All of it was
-    /// held up by a comment.
+    /// The gate that used to be a <c>NotEmpty()</c> in one host's command validator, and is now the
+    /// contract's own <c>[StringLength(50, MinimumLength = 2)]</c> — the same bound
+    /// <c>EditTrainerRequestHttp</c> has always carried, so the two ways into a <c>Trainer</c>
+    /// refuse the same names (ADR 0043). Asserted here rather than on a validator because here is
+    /// where it now happens: at model binding, on both hosts, before any handler runs.
     /// <para>
-    /// A single-character firstname is the payload that reaches the right place: the contract
-    /// requires the field and bounds nothing, the CQRS validator asks only that it not be empty, so
-    /// the request passes both gates, the Identity account is created, and <c>Name</c> refuses two
-    /// characters later — which is exactly the window where an orphan account would survive.
+    /// The unit tests this replaces asserted a rule that had been dead on the edit path — the
+    /// annotation already rejected the request — and live on the registration path only because
+    /// nothing bounded the body. Both are one rule now, in one place.
     /// </para>
     /// </remarks>
     [Fact]
-    public async Task Register_WhenTheTrainerHalfIsRefused_LeavesNoAccountBehind()
+    public async Task Register_TooShortAFirstname_Returns400()
     {
         var client = Factory.CreateClient();
         var request = AuthHelper.CreateUniqueRegisterRequest();
 
-        var registration = await AuthHelper.RegisterAsync(client, new RegisterRequest
+        var response = await AuthHelper.RegisterAsync(client, new RegisterRequestHttp
         {
             Username = request.Username,
             Email = request.Email,
@@ -219,9 +218,53 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
             Lastname = "User"
         });
 
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        // Answered as a field map by [ApiController], which is what a form on the other side needs:
+        // the name of the field that was refused, not a domain code about a value object that was
+        // never built.
+        (await response.Content.ReadAsStringAsync()).Should().Contain("Firstname");
+    }
+
+    /// <summary>
+    /// Register, when the trainer half is refused, leaves no account behind.
+    /// </summary>
+    /// <remarks>
+    /// The one assertion behind ADR 0040, and the one nothing made until it was written. Six places
+    /// in this repository state that registration is atomic — the README, the context map, the
+    /// event-storming board, both trainer controllers — and ADR 0016 rests on it, since a rejected
+    /// command rolls back by reaching the end of the scope without completing it. All of it was
+    /// held up by a comment.
+    /// <para>
+    /// The address is the payload that reaches the right place, and it is the only one left. It used
+    /// to be a single-character firstname, until ADR 0043 bounded the name on the contract so that
+    /// registration and edition refuse alike — which closed that window at model binding. What ADR
+    /// 0043 deliberately did not close is the shape of an address: .NET's <c>[EmailAddress]</c> and
+    /// the domain's validator disagree, and <c>a@b</c> is on the side of the disagreement that
+    /// matters here. Identity accepts it — <c>RequireUniqueEmail</c> is on, so Identity validates
+    /// the format with that very attribute — the account is created, and <c>Email.Create</c> refuses
+    /// two statements later. That is exactly the window where an orphan account would survive.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task Register_WhenTheTrainerHalfIsRefused_LeavesNoAccountBehind()
+    {
+        var client = Factory.CreateClient();
+        var request = AuthHelper.CreateUniqueRegisterRequest();
+
+        var registration = await AuthHelper.RegisterAsync(client, new RegisterRequestHttp
+        {
+            Username = request.Username,
+            Email = "a@b",
+            Password = request.Password,
+            ConfirmPassword = request.Password,
+            Firstname = "Rolled",
+            Lastname = "Back"
+        });
+
         registration.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        var login = await client.PostAsJsonAsync("/Auth/login", new LoginRequest
+        var login = await client.PostAsJsonAsync("/Auth/login", new LoginRequestHttp
         {
             Username = request.Username,
             Password = request.Password
@@ -246,14 +289,14 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         var request = AuthHelper.CreateUniqueRegisterRequest();
         (await AuthHelper.RegisterAsync(client, request)).EnsureSuccessStatusCode();
 
-        var response = await client.PostAsJsonAsync("/Auth/login", new LoginRequest
+        var response = await client.PostAsJsonAsync("/Auth/login", new LoginRequestHttp
         {
             Username = request.Username,
             Password = request.Password
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
+        var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponseHttp>();
         loginResponse!.Token.Should().NotBeNullOrEmpty();
     }
 
@@ -267,7 +310,7 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         var request = AuthHelper.CreateUniqueRegisterRequest();
         (await AuthHelper.RegisterAsync(client, request)).EnsureSuccessStatusCode();
 
-        var response = await client.PostAsJsonAsync("/Auth/login", new LoginRequest
+        var response = await client.PostAsJsonAsync("/Auth/login", new LoginRequestHttp
         {
             Username = request.Username,
             Password = "wrong_password"
@@ -284,7 +327,7 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
     {
         var client = Factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync("/Auth/login", new LoginRequest
+        var response = await client.PostAsJsonAsync("/Auth/login", new LoginRequestHttp
         {
             Username = "nobody_by_that_name",
             Password = "whatever"
