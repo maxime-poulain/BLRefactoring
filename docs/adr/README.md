@@ -43,7 +43,7 @@ simpler from the outside.
 | [0013](0013-make-every-record-answer-to-a-test.md) | Make every record answer to a test | Accepted — amended by 0039: the ledger of exemptions is what says how many there are |
 | [0014](0014-seal-by-default-and-let-inheritance-be-a-decision.md) | Seal by default, and let inheritance be a decision | Accepted |
 | [0015](0015-let-each-aggregate-own-the-errors-it-raises.md) | Let each aggregate own the errors it raises | Accepted |
-| [0016](0016-let-a-rejected-command-fail-like-every-other-command.md) | Let a rejected command fail like every other command | Accepted |
+| [0016](0016-let-a-rejected-command-fail-like-every-other-command.md) | Let a rejected command fail like every other command | Accepted — the validation cost it recorded and deferred is paid off by 0043 |
 | [0017](0017-measure-what-the-rules-cannot-with-sonarqube-cloud.md) | Measure what the rules cannot, with SonarQube Cloud | Accepted — amended by 0018 |
 | [0018](0018-fail-on-the-gate-where-failing-stops-something.md) | Fail on the gate where failing stops something | Accepted |
 | [0019](0019-enforce-the-ruleset-this-repository-already-declared.md) | Enforce the ruleset this repository already declared | Accepted — amended by 0020 |
@@ -69,3 +69,6 @@ simpler from the outside.
 | [0039](0039-hold-the-record-and-its-index-to-the-same-status.md) | Hold the record and its index to the same status | Accepted |
 | [0040](0040-register-the-trainer-and-the-account-in-one-transaction.md) | Register the trainer and the account in one transaction | Accepted |
 | [0041](0041-derive-every-named-list-from-the-code.md) | Derive every named list from the code | Accepted |
+| [0042](0042-close-the-boundarys-vocabulary.md) | Close the boundary's vocabulary | Accepted |
+| [0043](0043-validate-once-where-the-rule-lives.md) | Validate once, where the rule lives | Accepted |
+| [0044](0044-let-the-domain-speak-entirely-in-its-own-terms.md) | Let the domain speak entirely in its own terms | Accepted |

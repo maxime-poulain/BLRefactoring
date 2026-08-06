@@ -1,6 +1,7 @@
 using TrainingHub.DDD.Api.Mappings;
 using TrainingHub.DDD.Application.Services.TrainerServices;
 using TrainingHub.Shared.Common.Results;
+using TrainingHub.Shared.Api.Contracts.Auth;
 using TrainingHub.Shared.Api.Controllers;
 using TrainingHub.Shared.Api.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -25,7 +26,7 @@ public sealed class AuthController(
     /// that read model rather than generated here.
     /// </remarks>
     protected override async Task<Result<Guid>> CreateTrainerAsync(
-        RegisterRequest request,
+        RegisterRequestHttp request,
         Guid userId,
         CancellationToken cancellationToken = default)
     {

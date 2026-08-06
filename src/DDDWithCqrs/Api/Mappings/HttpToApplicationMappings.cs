@@ -7,10 +7,10 @@ using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Edit;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetById;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetMine;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Transfer;
+using TrainingHub.Shared.Api.Contracts.Auth;
 using TrainingHub.Shared.Api.Contracts.Mappings;
 using TrainingHub.Shared.Api.Contracts.Pagination;
 using TrainingHub.Shared.Api.Contracts.Trainers;
-using TrainingHub.Shared.Api.Controllers;
 using TrainingHub.Shared.Api.Contracts.Trainings;
 
 namespace TrainingHub.DDDWithCqrs.Api.Mappings;
@@ -40,7 +40,7 @@ public static class HttpToApplicationMappings
     /// </remarks>
     /// <param name="request">The registration request.</param>
     /// <param name="userId">The identity user created moments earlier.</param>
-    public static CreateTrainerCommand ToCommand(this RegisterRequest request, Guid userId)
+    public static CreateTrainerCommand ToCommand(this RegisterRequestHttp request, Guid userId)
     {
         ArgumentNullException.ThrowIfNull(request);
 

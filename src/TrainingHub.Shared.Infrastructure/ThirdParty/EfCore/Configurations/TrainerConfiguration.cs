@@ -61,7 +61,11 @@ public sealed class TrainerConfiguration : AggregateRootTypeConfiguration<Traine
         {
             photoBuilder.IsRequired(false);
 
+            // Converted like every other typed identifier on this aggregate. The column stays
+            // uniqueidentifier, so typing this needed no migration — what changed is what the
+            // model can confuse it with. See ADR 0044.
             photoBuilder.Property(p => p.PhotoId)
+                .HasConversion(v => v.Value, v => PhotoId.Create(v))
                 .HasColumnName("PhotoId");
 
             photoBuilder.Property(p => p.ContentType)

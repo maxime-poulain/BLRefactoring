@@ -143,6 +143,88 @@ public sealed partial class HttpBoundaryRules
             .ShouldHold();
 
     /// <summary>
+    /// Every type on the boundary, is a contract.
+    /// </summary>
+    /// <remarks>
+    /// The converse of the rule above, and the one that can actually be violated. That one's
+    /// population is <em>types already named as contracts</em>, so a type that is a contract and is
+    /// not named like one is not in it — the convention was checked in the direction where breaking
+    /// it is impossible. Three types had been sitting in the gap since before this suite existed:
+    /// the auth request and response bodies, declared at the bottom of <c>AuthControllerBase.cs</c>
+    /// as <c>RegisterRequest</c>, <c>LoginRequest</c> and <c>LoginResponse</c> — in the generated
+    /// client, consumed by the Blazor front, and named by nothing that would notice.
+    /// <para>
+    /// The population here comes from the actions: what they bind and what they answer, unwrapped
+    /// through <c>Task</c>, <c>ActionResult</c> and the generic contracts, plus the types the
+    /// <c>ProducesResponseType</c> attributes declare — an action that answers a bare
+    /// <c>ActionResult</c> names its body there and nowhere else. See ADR 0042.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0042",
+        "every type an action binds or answers is a contract: named with its suffix, declared under Contracts/")]
+    public void EveryTypeOnTheBoundary_IsAContract() =>
+        Actions
+            .Selected("controller action")
+            .SelectMany(entry => TypesOnTheBoundary(entry.Action)
+                .Select(type => (entry.Controller, entry.Action, Type: type)))
+            .Where(entry => Solution.Backend.Contains(entry.Type.Assembly))
+            .Where(entry => !IsAContract(entry.Type))
+            .Select(entry => entry.Type)
+            .Distinct()
+            .Select(type =>
+                $"{type.FullName} is bound or answered by an action, and is not a contract: a " +
+                "published type is named *RequestHttp or *ResponseHttp and declared under " +
+                "Contracts/. ADR 0042 closes the boundary's vocabulary — move it, or stop " +
+                "publishing it")
+            .ShouldHold();
+
+    /// <summary>Whether a type is a contract by both halves of the convention.</summary>
+    private static bool IsAContract(Type type) =>
+        (Bare(type).EndsWith("RequestHttp", StringComparison.Ordinal)
+         || Bare(type).EndsWith("ResponseHttp", StringComparison.Ordinal))
+        && type.Namespace?.Contains(".Api.Contracts", StringComparison.Ordinal) == true;
+
+    /// <summary>A type's name without the arity a generic carries — <c>PagedResponseHttp`1</c>.</summary>
+    private static string Bare(Type type) =>
+        type.Name.Split('`', 2)[0];
+
+    /// <summary>
+    /// Every type an action puts on the wire: what it binds, what it answers, and what its
+    /// <c>ProducesResponseType</c> attributes declare.
+    /// </summary>
+    private static IEnumerable<Type> TypesOnTheBoundary(MethodInfo action) =>
+        action.GetParameters()
+            .Select(parameter => parameter.ParameterType)
+            .Where(type => type != typeof(CancellationToken))
+            .Concat([action.ReturnType])
+            .Concat(action.GetCustomAttributes<ProducesResponseTypeAttribute>(inherit: true)
+                .Select(attribute => attribute.Type))
+            .SelectMany(Unwrap)
+            .Distinct();
+
+    /// <summary>
+    /// The published types inside a declared one: <c>Task</c> and <c>ActionResult</c> are plumbing,
+    /// a generic contract publishes itself and what it carries.
+    /// </summary>
+    private static IEnumerable<Type> Unwrap(Type type)
+    {
+        if (type.IsGenericType)
+        {
+            var definition = type.GetGenericTypeDefinition();
+
+            if (definition == typeof(Task<>) || definition == typeof(ActionResult<>))
+            {
+                return type.GetGenericArguments().SelectMany(Unwrap);
+            }
+
+            return type.GetGenericArguments().SelectMany(Unwrap).Concat([type]);
+        }
+
+        return [type];
+    }
+
+    /// <summary>
     /// No inner layer, names an http contract.
     /// </summary>
     [Fact]

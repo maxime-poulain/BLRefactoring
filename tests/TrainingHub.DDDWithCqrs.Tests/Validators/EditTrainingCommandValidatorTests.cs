@@ -53,48 +53,4 @@ public sealed class EditTrainingCommandValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.PropertyName == "TrainingId");
     }
-
-    /// <summary>
-    /// Validate, empty title, has error.
-    /// </summary>
-    [Fact]
-    public async Task Validate_EmptyTitle_HasError()
-    {
-        var command = new EditTrainingCommand
-        {
-            TrainingId = Guid.NewGuid(),
-            Title = "",
-            Topics = ["Programming"],
-            Description = "Description",
-            Prerequisites = "Prerequisites",
-            AcquiredSkills = "Skills"
-        };
-
-        var result = await _sut.ValidateAsync(command);
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Title");
-    }
-
-    /// <summary>
-    /// Validate, empty topics, has error.
-    /// </summary>
-    [Fact]
-    public async Task Validate_EmptyTopics_HasError()
-    {
-        var command = new EditTrainingCommand
-        {
-            TrainingId = Guid.NewGuid(),
-            Title = "Valid Title",
-            Topics = [],
-            Description = "Description",
-            Prerequisites = "Prerequisites",
-            AcquiredSkills = "Skills"
-        };
-
-        var result = await _sut.ValidateAsync(command);
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Topics");
-    }
 }

@@ -304,9 +304,9 @@ invalid instance cannot exist.
 
 | Value object | Rule | Error code |
 |---|---|---|
-| `Name` | Firstname and lastname 2–50 characters; **both errors accumulate** | `Unspecified` |
+| `Name` | Firstname and lastname 2–50 characters once trimmed; **both errors accumulate** | `InvalidFirstname`, `InvalidLastname` |
 | `Email` | Non-empty, valid format via `EmailValidation` | `InvalidEmail` |
-| `Bio` | Non-empty, at most 500 characters | `BioEmpty`, `BioExceeds500Characters` |
+| `Bio` | Non-empty, at most 500 characters once trimmed | `BioEmpty`, `BioExceeds500Characters` |
 | `TrainingTitle` | Non-empty, 5–100 characters once trimmed | `InvalidTitle` |
 | `TrainingDescription` | Non-empty, at most 500 characters | `InvalidDescription` |
 | `TrainingPrerequisites` | Non-empty, at most 500 characters | `InvalidPrerequisites` |
@@ -431,7 +431,7 @@ broken, and carries that aggregate's name.
 |---|---|
 | `ErrorCodes` (kernel) | `Unspecified`, `NotFound`, `ConcurrencyConflict`, `Validation` |
 | `TrainingErrorCodes` | `Training.InvalidTitle`, `Training.DuplicateTitle`, `Training.InvalidDescription`, `Training.InvalidPrerequisites`, `Training.InvalidAcquiredSkills`, `Training.InvalidTopic`, `Training.CatalogueFull`, `Training.TransferToSelf`, `Training.RecipientCatalogueFull`, `Training.UnknownRecipient` |
-| `TrainerErrorCodes` | `Trainer.InvalidEmail`, `Trainer.BioEmpty`, `Trainer.BioExceeds500Characters`, `Trainer.PhotoEmpty`, `Trainer.PhotoTooLarge`, `Trainer.PhotoFormatNotSupported`, `Trainer.PhotoContentMismatch` |
+| `TrainerErrorCodes` | `Trainer.InvalidEmail`, `Trainer.InvalidFirstname`, `Trainer.InvalidLastname`, `Trainer.BioEmpty`, `Trainer.BioExceeds500Characters`, `Trainer.PhotoEmpty`, `Trainer.PhotoTooLarge`, `Trainer.PhotoFormatNotSupported`, `Trainer.PhotoContentMismatch` |
 
 `Validation` is the one the kernel declares for somebody else: the FluentValidation pipeline of the
 CQRS stack answers with it, and nothing in the domain ever does (ADR 0016).

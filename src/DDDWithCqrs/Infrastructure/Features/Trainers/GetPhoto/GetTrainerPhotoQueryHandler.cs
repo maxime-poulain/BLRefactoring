@@ -49,6 +49,6 @@ public sealed class GetTrainerPhotoQueryHandler(
             return null;
         }
 
-        return new TrainerPhotoDto(trainer.Photo.PhotoId, stored.Content, stored.ContentType);
+        return new TrainerPhotoDto(trainer.Photo.PhotoId.Value, stored.Content, stored.ContentType);
     }
 }

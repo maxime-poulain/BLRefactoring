@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using TrainingHub.Shared.Common.Errors;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 using TrainingHub.Shared.Domain.Tests.Helpers;
 using Xunit;
@@ -48,7 +48,7 @@ public sealed class NameTests
         var result = Name.Create("J", "Doe");
 
         // Assert
-        result.ShouldContainError(ErrorCodes.Unspecified);
+        result.ShouldContainError(TrainerErrorCodes.InvalidFirstname);
     }
 
     /// <summary>
@@ -61,7 +61,7 @@ public sealed class NameTests
         var result = Name.Create("John", "D");
 
         // Assert
-        result.ShouldContainError(ErrorCodes.Unspecified);
+        result.ShouldContainError(TrainerErrorCodes.InvalidLastname);
     }
 
     /// <summary>
@@ -120,7 +120,7 @@ public sealed class NameTests
         var result = Name.Create(firstname, "Doe");
 
         // Assert
-        result.ShouldContainError(ErrorCodes.Unspecified);
+        result.ShouldContainError(TrainerErrorCodes.InvalidFirstname);
     }
 
     /// <summary>
@@ -134,6 +134,42 @@ public sealed class NameTests
 
         // Assert
         result.ShouldBeFailure();
+    }
+
+    /// <summary>
+    /// Create, surrounding whitespace, stores the trimmed name.
+    /// </summary>
+    /// <remarks>
+    /// Whitespace is how a value was typed, not what it is: without trimming, <c>" Bob "</c> and
+    /// <c>"Bob"</c> are two different trainers to every equality check that reads them. See
+    /// ADR 0044.
+    /// </remarks>
+    [Fact]
+    public void Create_SurroundingWhitespace_StoresTheTrimmedName()
+    {
+        // Act
+        var name = Name.Create("  Bob  ", "  Smith  ").ShouldBeSuccess();
+
+        // Assert
+        name.Firstname.Should().Be("Bob");
+        name.Lastname.Should().Be("Smith");
+    }
+
+    /// <summary>
+    /// Create, only whitespace, returns failure.
+    /// </summary>
+    /// <remarks>
+    /// The length is measured on what would be stored, so five spaces is not a two-character name.
+    /// This passed before trimming, for the wrong reason.
+    /// </remarks>
+    [Fact]
+    public void Create_OnlyWhitespace_ReturnsFailure()
+    {
+        // Act
+        var result = Name.Create("     ", "Smith");
+
+        // Assert
+        result.ShouldContainError(TrainerErrorCodes.InvalidFirstname);
     }
 
     /// <summary>

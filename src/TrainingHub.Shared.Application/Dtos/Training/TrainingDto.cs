@@ -13,40 +13,40 @@ public sealed class TrainingDto
     /// response contract. This read model is no longer serialised to callers, so it no longer
     /// needs to say so.
     /// </remarks>
-    public byte[] RowVersion { get; set; } = [];
+    public byte[] RowVersion { get; init; } = [];
 
     /// <summary>
     /// The identifier.
     /// </summary>
-    public required Guid Id { get; set; }
+    public required Guid Id { get; init; }
 
     /// <summary>
     /// The training's title.
     /// </summary>
-    public required string Title { get; set; } = string.Empty;
+    public required string Title { get; init; } = string.Empty;
 
     /// <summary>
     /// The trainer's identifier.
     /// </summary>
-    public required Guid TrainerId { get; set; }
+    public required Guid TrainerId { get; init; }
 
     /// <summary>
     /// The topics the training is filed under.
     /// </summary>
-    public required List<string> Topics { get; set; } = [];
+    public required List<string> Topics { get; init; } = [];
 
     /// <summary>
     /// The training's description.
     /// </summary>
-    public required string Description { get; set; }
+    public required string Description { get; init; }
 
     /// <summary>
     /// What a participant needs beforehand.
     /// </summary>
-    public required string Prerequisites { get; set; }
+    public required string Prerequisites { get; init; }
 
     /// <summary>
     /// What a participant leaves with.
     /// </summary>
-    public required string AcquiredSkills { get; set; }
+    public required string AcquiredSkills { get; init; }
 }

@@ -32,23 +32,31 @@ public sealed class Bio : ValueObject
     /// <summary>
     /// Builds a <see cref="Bio"/> from raw input.
     /// </summary>
+    /// <remarks>
+    /// Trimmed before it is measured, which is what makes the blank check mean what it says: a bio
+    /// of five spaces was already refused, and is now refused for the reason given rather than by
+    /// <c>IsNullOrWhiteSpace</c> reaching the same answer down a different path. The five hundred
+    /// characters are counted on what is stored (ADR 0044).
+    /// </remarks>
     /// <returns>
     /// The value, or every rule it broke. Failure is returned rather than thrown: a
     /// caller sending three bad fields learns about all three at once.
     /// </returns>
     public static Result<Bio> Create(string value)
     {
-        if (string.IsNullOrWhiteSpace(value))
+        var trimmed = value?.Trim();
+
+        if (string.IsNullOrEmpty(trimmed))
         {
             return Result<Bio>.Failure(TrainerErrorCodes.BioEmpty, "Bio cannot be empty.");
         }
 
-        if (value.Length > 500)
+        if (trimmed.Length > 500)
         {
             return Result<Bio>.Failure(TrainerErrorCodes.BioExceeds500Characters, "Bio cannot exceed 500 characters.");
         }
 
-        return Result<Bio>.Success(new Bio() { Value = value });
+        return Result<Bio>.Success(new Bio() { Value = trimmed });
     }
 
     /// <summary>

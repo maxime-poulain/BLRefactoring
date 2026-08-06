@@ -277,7 +277,7 @@ public sealed class TrainerApplicationService(
         // order that prevents it. Answering "no photo" beats an error nobody can act on.
         return stored is null
             ? null
-            : new TrainerPhotoDto(trainer.Photo.PhotoId, stored.Content, stored.ContentType);
+            : new TrainerPhotoDto(trainer.Photo.PhotoId.Value, stored.Content, stored.ContentType);
     }
 
     private const string PhotoConcurrencyMessage =

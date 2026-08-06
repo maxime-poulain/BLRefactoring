@@ -1,5 +1,5 @@
+using TrainingHub.Shared.Api.Contracts.Auth;
 using TrainingHub.Shared.Api.Contracts.Trainers;
-using TrainingHub.Shared.Api.Controllers;
 using TrainingHub.Shared.Api.Contracts.Trainings;
 using TrainingHub.Shared.Application.Dtos.Trainer;
 using TrainingHub.Shared.Application.Dtos.Training;
@@ -44,7 +44,7 @@ public static class HttpToApplicationMappings
     /// </remarks>
     /// <param name="request">The registration request.</param>
     /// <param name="userId">The identity user created moments earlier.</param>
-    public static TrainerCreationRequest ToApplicationRequest(this RegisterRequest request, Guid userId)
+    public static TrainerCreationRequest ToApplicationRequest(this RegisterRequestHttp request, Guid userId)
     {
         ArgumentNullException.ThrowIfNull(request);
 

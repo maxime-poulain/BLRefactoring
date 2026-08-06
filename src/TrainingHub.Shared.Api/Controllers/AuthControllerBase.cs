@@ -1,4 +1,5 @@
 using System.Transactions;
+using TrainingHub.Shared.Api.Contracts.Auth;
 using TrainingHub.Shared.Api.Http;
 using TrainingHub.Shared.Api.Identity;
 using TrainingHub.Shared.Common.Results;
@@ -36,7 +37,7 @@ public abstract class AuthControllerBase(
     /// <param name="userId">The identifier of the identity user that was just created.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     protected abstract Task<Result<Guid>> CreateTrainerAsync(
-        RegisterRequest request,
+        RegisterRequestHttp request,
         Guid userId,
         CancellationToken cancellationToken = default);
 
@@ -80,7 +81,7 @@ public abstract class AuthControllerBase(
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Register([FromBody] RegisterRequestHttp request, CancellationToken cancellationToken = default)
     {
         using var transactionScope = new TransactionScope(TransactionScopeOption.Required,
             new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
@@ -92,7 +93,7 @@ public abstract class AuthControllerBase(
                 StatusCodes.Status400BadRequest,
                 new Dictionary<string, string[]>
                 {
-                    [nameof(RegisterRequest.ConfirmPassword)] =
+                    [nameof(RegisterRequestHttp.ConfirmPassword)] =
                         ["The password and confirmation password do not match."]
                 });
         }
@@ -186,11 +187,11 @@ public abstract class AuthControllerBase(
     private static string FieldAtFault(IdentityError error) => error.Code switch
     {
         nameof(IdentityErrorDescriber.DuplicateUserName) or
-            nameof(IdentityErrorDescriber.InvalidUserName) => nameof(RegisterRequest.Username),
+            nameof(IdentityErrorDescriber.InvalidUserName) => nameof(RegisterRequestHttp.Username),
         nameof(IdentityErrorDescriber.DuplicateEmail) or
-            nameof(IdentityErrorDescriber.InvalidEmail) => nameof(RegisterRequest.Email),
+            nameof(IdentityErrorDescriber.InvalidEmail) => nameof(RegisterRequestHttp.Email),
         _ when error.Code.StartsWith("Password", StringComparison.Ordinal) =>
-            nameof(RegisterRequest.Password),
+            nameof(RegisterRequestHttp.Password),
         _ => string.Empty
     };
 
@@ -234,9 +235,9 @@ public abstract class AuthControllerBase(
     /// </remarks>
     [AllowAnonymous]
     [HttpPost("login")]
-    [ProducesResponseType<LoginResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<LoginResponseHttp>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Login([FromBody] LoginRequestHttp request, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByNameAsync(request.Username);
         if (user == null)
@@ -258,7 +259,7 @@ public abstract class AuthControllerBase(
 
         var roles = await userManager.GetRolesAsync(user);
         var token = await tokenService.GenerateTokenAsync(user, roles, cancellationToken);
-        return Ok(new LoginResponse() { Token = token });
+        return Ok(new LoginResponseHttp() { Token = token });
     }
 
     /// <summary>
@@ -286,67 +287,4 @@ public abstract class AuthControllerBase(
             ContentTypes = { "application/problem+json" }
         };
     }
-}
-
-/// <summary>
-/// Represents a request to register a new user.
-/// </summary>
-public sealed class RegisterRequest
-{
-    /// <summary>
-    /// The username of the new user.
-    /// </summary>
-    public required string Username { get; init; }
-
-    /// <summary>
-    /// The email address of the new user.
-    /// </summary>
-    public required string Email { get; init; }
-
-    /// <summary>
-    /// The password for the new user.
-    /// </summary>
-    public required string Password { get; init; }
-
-    /// <summary>
-    /// The confirmation of the password.
-    /// </summary>
-    public required string ConfirmPassword { get; init; }
-
-    /// <summary>
-    /// The first name of the new user.
-    /// </summary>
-    public required string Firstname { get; init; }
-
-    /// <summary>
-    /// The last name of the new user.
-    /// </summary>
-    public required string Lastname { get; init; }
-}
-
-/// <summary>
-/// Represents a request to log in a user.
-/// </summary>
-public sealed class LoginRequest
-{
-    /// <summary>
-    /// The username of the user attempting to log in.
-    /// </summary>
-    public required string Username { get; init; }
-
-    /// <summary>
-    /// The password of the user attempting to log in.
-    /// </summary>
-    public required string Password { get; init; }
-}
-
-/// <summary>
-/// Represents the response returned after a successful login.
-/// </summary>
-public sealed class LoginResponse
-{
-    /// <summary>
-    /// The JWT token generated for the authenticated user.
-    /// </summary>
-    public required string Token { get; init; }
 }

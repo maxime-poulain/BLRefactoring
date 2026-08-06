@@ -53,7 +53,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="body">A token to cancel the operation.</param>
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterRequest body);
+        System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterRequestHttp body);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
@@ -80,7 +80,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="body">A token to cancel the operation.</param>
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterRequest body, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterRequestHttp body, System.Threading.CancellationToken cancellationToken);
 
         /// <summary>
         /// Authenticates a user and generates a JWT token if the credentials are valid.
@@ -94,7 +94,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="body">A token to cancel the operation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<LoginResponse> LoginAsync(LoginRequest body);
+        System.Threading.Tasks.Task<LoginResponseHttp> LoginAsync(LoginRequestHttp body);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
@@ -109,7 +109,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="body">A token to cancel the operation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<LoginResponse> LoginAsync(LoginRequest body, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<LoginResponseHttp> LoginAsync(LoginRequestHttp body, System.Threading.CancellationToken cancellationToken);
 
     }
 
@@ -169,7 +169,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="body">A token to cancel the operation.</param>
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterRequest body)
+        public virtual System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterRequestHttp body)
         {
             return RegisterAsync(body, System.Threading.CancellationToken.None);
         }
@@ -199,7 +199,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="body">A token to cancel the operation.</param>
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterRequest body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterRequestHttp body, System.Threading.CancellationToken cancellationToken)
         {
             if (body == null)
                 throw new System.ArgumentNullException("body");
@@ -306,7 +306,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="body">A token to cancel the operation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<LoginResponse> LoginAsync(LoginRequest body)
+        public virtual System.Threading.Tasks.Task<LoginResponseHttp> LoginAsync(LoginRequestHttp body)
         {
             return LoginAsync(body, System.Threading.CancellationToken.None);
         }
@@ -324,7 +324,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="body">A token to cancel the operation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<LoginResponse> LoginAsync(LoginRequest body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<LoginResponseHttp> LoginAsync(LoginRequestHttp body, System.Threading.CancellationToken cancellationToken)
         {
             if (body == null)
                 throw new System.ArgumentNullException("body");
@@ -372,7 +372,7 @@ namespace TrainingHub.GeneratedClients
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<LoginResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<LoginResponseHttp>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -2418,10 +2418,10 @@ namespace TrainingHub.GeneratedClients
     }
 
     /// <summary>
-    /// Represents a request to log in a user.
+    /// The body of `POST /Auth/login`: the credentials to present.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class LoginRequest
+    public partial class LoginRequestHttp
     {
 
         /// <summary>
@@ -2450,10 +2450,10 @@ namespace TrainingHub.GeneratedClients
     }
 
     /// <summary>
-    /// Represents the response returned after a successful login.
+    /// The body of a successful `POST /Auth/login`: the token to present afterwards.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class LoginResponse
+    public partial class LoginResponseHttp
     {
 
         /// <summary>
@@ -2575,10 +2575,10 @@ namespace TrainingHub.GeneratedClients
     }
 
     /// <summary>
-    /// Represents a request to register a new user.
+    /// The body of `POST /Auth/register`: an account to open and the trainer behind it.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class RegisterRequest
+    public partial class RegisterRequestHttp
     {
 
         /// <summary>
@@ -2589,7 +2589,7 @@ namespace TrainingHub.GeneratedClients
         public string Username { get; set; } = default!;
 
         /// <summary>
-        /// The email address of the new user.
+        /// The email address of the new user, which also becomes the trainer's contact address.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("email")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -2613,14 +2613,16 @@ namespace TrainingHub.GeneratedClients
         /// The first name of the new user.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("firstname")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.StringLength(50, MinimumLength = 2)]
         public string Firstname { get; set; } = default!;
 
         /// <summary>
         /// The last name of the new user.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("lastname")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.StringLength(50, MinimumLength = 2)]
         public string Lastname { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;

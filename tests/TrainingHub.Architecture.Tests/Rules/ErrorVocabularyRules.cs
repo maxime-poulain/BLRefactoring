@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.RegularExpressions;
 using TrainingHub.Architecture.Tests.Framework;
 using TrainingHub.Shared.Common.Errors;
 using Xunit;
@@ -18,8 +19,19 @@ namespace TrainingHub.Architecture.Tests.Rules;
 /// branching on the correct spelling.
 /// </para>
 /// </remarks>
-public sealed class ErrorVocabularyRules
+public sealed partial class ErrorVocabularyRules
 {
+    /// <summary>
+    /// A reference to the kernel's own holder, and not to an aggregate's.
+    /// </summary>
+    /// <remarks>
+    /// The lookbehind is the whole rule: <c>TrainerErrorCodes.InvalidEmail</c> ends in the same
+    /// eleven characters as <c>ErrorCodes.Unspecified</c>, and a scan without it would forbid every
+    /// aggregate from naming its own codes — the opposite of ADR 0015.
+    /// </remarks>
+    [GeneratedRegex(@"(?<![A-Za-z0-9_])ErrorCodes\.")]
+    private static partial Regex KernelCodeReference { get; }
+
     // Spelled in two halves, like the assertion-library rule for the same reason: a rule that
     // forbids a token cannot write it, or it finds itself and stays red forever.
     private const string InlineConstruction = "new Error" + "Code(";
@@ -41,6 +53,39 @@ public sealed class ErrorVocabularyRules
             .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)
             .Where(declaration => declaration.FieldType == typeof(ErrorCode))
             .Select(declaration => (holder, declaration, (ErrorCode)declaration.GetValue(null)!)));
+
+    /// <summary>
+    /// No domain type, raises a kernel code.
+    /// </summary>
+    /// <remarks>
+    /// The five rules around this one judge what a code's value looks like and where it is
+    /// declared. None of them can see who <em>raises</em> one, which is how <c>Name.Create</c> came
+    /// to answer a one-letter firstname with <c>ErrorCodes.Unspecified</c> — a code that means
+    /// "something went wrong", from the one layer that always knows what went wrong and whose
+    /// aggregate is right there to own it. It was the only such call under <c>src/</c>.
+    /// <para>
+    /// The kernel's codes are for callers with no aggregate to name: the validation pipeline
+    /// (ADR 0016), and the boundary. Inside the domain there is always an owner. See ADR 0044.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0044",
+        "no domain type raises a kernel code: inside the domain there is always an aggregate to own the refusal")]
+    public void NoDomainType_RaisesAKernelCode() =>
+        SourceTree.SourceFiles
+            .Select(SourceTree.Relative)
+            .Where(file => file.StartsWith("src/TrainingHub.Shared.Domain/", StringComparison.Ordinal))
+            .Selected("domain source file")
+            .SelectMany(file => SourceTree
+                .ReadLines(Path.Combine(SourceTree.RepositoryRoot, file.Replace('/', Path.DirectorySeparatorChar)))
+                .Select((line, number) => (line: line.TrimStart(), number))
+                .Where(entry => !entry.line.StartsWith("//", StringComparison.Ordinal))
+                .Where(entry => KernelCodeReference.IsMatch(entry.line))
+                .Select(entry =>
+                    $"'{file}' line {entry.number + 1} raises a kernel code. ADR 0015 gives each " +
+                    "aggregate the codes it raises, and a domain refusal always has an owner — " +
+                    "declare it on the aggregate's own holder"))
+            .ShouldHold();
 
     /// <summary>
     /// Every code, is declared on a holder.

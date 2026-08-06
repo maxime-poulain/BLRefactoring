@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using AwesomeAssertions;
 using TrainingHub.Shared.Api.Contracts.Trainers;
-using TrainingHub.Shared.Api.Controllers;
+using TrainingHub.Shared.Api.Contracts.Auth;
 using Microsoft.AspNetCore.Http;
 using Xunit;
 
@@ -161,7 +161,7 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
         var request = AuthHelper.CreateUniqueRegisterRequest();
         (await AuthHelper.RegisterAsync(client, request)).EnsureSuccessStatusCode();
 
-        var response = await client.PostAsJsonAsync("/Auth/login", new LoginRequest
+        var response = await client.PostAsJsonAsync("/Auth/login", new LoginRequestHttp
         {
             Username = request.Username,
             Password = "wrong_password"
@@ -188,7 +188,7 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
         (await AuthHelper.RegisterAsync(client, request)).EnsureSuccessStatusCode();
 
         var duplicate = AuthHelper.CreateUniqueRegisterRequest();
-        var response = await AuthHelper.RegisterAsync(client, new RegisterRequest
+        var response = await AuthHelper.RegisterAsync(client, new RegisterRequestHttp
         {
             Username = duplicate.Username,
             Email = request.Email,
@@ -206,7 +206,7 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
         // are about rather than forced into this API's own code enum. It used to be a bare
         // IdentityError array — the shape ADR 0004 removed from forty other places.
         body.GetProperty("errors")
-            .TryGetProperty(nameof(RegisterRequest.Email), out var emailMessages)
+            .TryGetProperty(nameof(RegisterRequestHttp.Email), out var emailMessages)
             .Should().BeTrue("the caller has to know which field is taken");
         emailMessages.EnumerateArray().Should().NotBeEmpty();
     }
