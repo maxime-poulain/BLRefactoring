@@ -1,6 +1,6 @@
 # 0003 — Apply migrations on startup in Development only
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0045](0045-fail-readiness-while-a-migration-is-pending.md): the readiness probe this record said to revisit it for now exists, and a pending migration fails it
 - **Date:** 2026-08-01
 
 ## Context

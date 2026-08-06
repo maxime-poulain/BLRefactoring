@@ -15,7 +15,7 @@ namespace TrainingHub.Shared.Api.Extensions;
 /// <remarks>
 /// Shared by both stacks for the reason the logging pair is: an endpoint mapped in one host's
 /// <c>Program.cs</c> only answers for that host, and the other one silently answers 404 to the
-/// same poll. The serving surface — the two endpoints and the four probes — ships entirely in the
+/// same poll. The serving surface — the two endpoints and the five probes — ships entirely in the
 /// ASP.NET Core shared framework and costs no package; the Development dashboard is what the
 /// three <c>AspNetCore.HealthChecks.UI</c> packages buy. The probes run per request and never
 /// eagerly: no <c>IHealthCheckPublisher</c> is registered and no probe constructor performs IO,
@@ -29,16 +29,17 @@ public static class HealthExtensions
     private const string ReadyTag = "ready";
 
     /// <summary>
-    /// Registers the four readiness probes: the database, the object store, the mail relay, and
-    /// the outbox's poison gauge.
+    /// Registers the five readiness probes: the database, the object store, the mail relay, the
+    /// outbox's poison gauge, and the schema.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection, for chaining.</returns>
     /// <remarks>
     /// The poison gauge alone declares <see cref="HealthStatus.Degraded"/> as its failure
     /// status: poison is operator evidence that halts nothing (ADR 0033), and a host that still
-    /// serves must not fail readiness over it. The other three answer for dependencies the
-    /// serving path genuinely needs, so their failures keep the default
+    /// serves must not fail readiness over it. The other four answer for something the serving
+    /// path genuinely needs — three dependencies, and a schema without which requests touching
+    /// the affected tables will fail (ADR 0045) — so their failures keep the default
     /// <see cref="HealthStatus.Unhealthy"/>.
     /// </remarks>
     public static IServiceCollection AddApiHealth(this IServiceCollection services)
@@ -50,7 +51,8 @@ public static class HealthExtensions
             .AddCheck<ObjectStoreHealthCheck>("s3", tags: [ReadyTag])
             .AddCheck<SmtpHealthCheck>("smtp", tags: [ReadyTag])
             .AddCheck<OutboxPoisonHealthCheck>(
-                "outbox", failureStatus: HealthStatus.Degraded, tags: [ReadyTag]);
+                "outbox", failureStatus: HealthStatus.Degraded, tags: [ReadyTag])
+            .AddCheck<PendingMigrationsHealthCheck>("migrations", tags: [ReadyTag]);
 
         return services;
     }
@@ -63,7 +65,7 @@ public static class HealthExtensions
     /// <remarks>
     /// Liveness runs no checks at all — the predicate refuses every registration — because a 200
     /// there means "the process is up and routing", which is all a container restart decision
-    /// should ever read: restarting this process cannot fix a dependency. Readiness runs the four
+    /// should ever read: restarting this process cannot fix a dependency. Readiness runs the five
     /// tagged probes and answers through <see cref="HealthResponseWriter"/>, names and statuses
     /// only. Anonymous on purpose: an orchestrator holds no token, and the body carries nothing
     /// worth a token (ADR 0037).
@@ -133,7 +135,7 @@ public static class HealthExtensions
     /// <param name="app">The application being composed.</param>
     /// <returns>The application, for chaining.</returns>
     /// <remarks>
-    /// <c>/health/ui</c> answers the same four probes as <c>/health/ready</c> but in the UI's own
+    /// <c>/health/ui</c> answers the same five probes as <c>/health/ready</c> but in the UI's own
     /// format — which carries descriptions, durations and exception messages. That is exactly
     /// what ADR 0037 keeps off the anonymous production surface, and why this endpoint exists
     /// only where Scalar's reference UI does: <c>/health/ready</c> and its names-and-statuses

@@ -11,10 +11,22 @@
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="AwesomeAssertions" />
+    <!--
+      For PendingMigrationsHealthCheckTests: the probe asks EF for the migrations a database has
+      not seen, which needs a relational provider. SQLite in memory answers that question with the
+      real migrations assembly and no container, so the fact stays in the suite that runs without
+      Docker.
+    -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\TrainingHub.Shared.Api\TrainingHub.Shared.Api.csproj" />
+    <!--
+      Stated rather than inherited through Shared.Api: this suite names both DbContexts itself, and
+      a reference that resolves through somebody else's graph is one nobody chose.
+    -->
+    <ProjectReference Include="..\..\src\TrainingHub.Shared.Infrastructure\TrainingHub.Shared.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

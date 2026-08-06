@@ -10,11 +10,13 @@ namespace TrainingHub.Api.TestKit;
 /// </summary>
 /// <remarks>
 /// The suites run actual SQL Server, SeaweedFS and Mailpit containers, so a green
-/// <c>/health/ready</c> here is an end-to-end fact about all four probes — the database, the
-/// signed object-store read, the SMTP connect-and-quit and the poison gauge — not a mock's
-/// opinion of them. The schema assertion is ADR 0037's no-secrets claim made executable: each
-/// entry carries a name and a status, and any new field — a description, an exception, a
-/// duration — fails the test before it reaches an anonymous endpoint.
+/// <c>/health/ready</c> here is an end-to-end fact about all five probes — the database, the
+/// signed object-store read, the SMTP connect-and-quit, the poison gauge and the pending
+/// migrations — not a mock's opinion of them. The last of those is green for a reason worth
+/// stating: the host boots as Development, so it has just applied both contexts' migrations and
+/// the probe finds nothing pending (ADR 0045). The body assertion is ADR 0037's no-secrets claim
+/// made executable: each entry carries a name and a status, and any new field — a description, an
+/// exception, a duration — fails the test before it reaches an anonymous endpoint.
 /// </remarks>
 /// <typeparam name="TFactory">The suite's fixture.</typeparam>
 public abstract class HealthTest<TFactory>(TFactory factory) : IntegrationTest<TFactory>(factory)
@@ -57,9 +59,10 @@ public abstract class HealthTest<TFactory>(TFactory factory) : IntegrationTest<T
         var checks = report.RootElement.GetProperty("checks").EnumerateArray().ToArray();
 
         checks.Select(check => check.GetProperty("name").GetString())
-            .Should().BeEquivalentTo(["sql", "s3", "smtp", "outbox"],
+            .Should().BeEquivalentTo(["sql", "s3", "smtp", "outbox", "migrations"],
                 "readiness answers for exactly the world ADR 0037 names — database, object " +
-                "store, mail relay, outbox — no more and no fewer");
+                "store, mail relay, outbox — plus the schema ADR 0045 added to it, no more and " +
+                "no fewer");
 
         foreach (var check in checks)
         {
@@ -94,7 +97,7 @@ public abstract class HealthTest<TFactory>(TFactory factory) : IntegrationTest<T
     /// Ui endpoint, speaks the dashboard format, in development.
     /// </summary>
     /// <remarks>
-    /// The dashboard's own endpoint answers the same four probes as <c>/health/ready</c> but in
+    /// The dashboard's own endpoint answers the same five probes as <c>/health/ready</c> but in
     /// the UI's format — an <c>entries</c> object keyed by check name, descriptions and durations
     /// included. That richer body is exactly what ADR 0037 keeps off the production surface,
     /// which is why this endpoint only exists where the page that reads it does.
@@ -112,7 +115,7 @@ public abstract class HealthTest<TFactory>(TFactory factory) : IntegrationTest<T
 
         report.RootElement.GetProperty("status").GetString().Should().Be("Healthy");
         report.RootElement.GetProperty("entries").EnumerateObject().Select(entry => entry.Name)
-            .Should().BeEquivalentTo(["sql", "s3", "smtp", "outbox"],
-                "the dashboard reads the same four probes readiness answers for");
+            .Should().BeEquivalentTo(["sql", "s3", "smtp", "outbox", "migrations"],
+                "the dashboard reads the same five probes readiness answers for");
     }
 }

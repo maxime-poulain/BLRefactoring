@@ -810,12 +810,18 @@ body carries nothing worth one:
 
 - `GET /health/live` runs no checks: a `200 Healthy` means the process is up and routing, which is
   all a container restart decision should ever read.
-- `GET /health/ready` runs four probes — the database, a signed single-key read of the object
-  store, an SMTP connect-and-quit, and the outbox's poison gauge — and answers
-  `{ "status": …, "checks": [{ "name": …, "status": … }] }`. Names and statuses, nothing else: no
-  description, no exception, no duration ever leaves on this route, and a unit test holds the
-  writer to that. `Degraded` means poison messages are waiting for an operator while the host
-  still serves; the failure of any other probe is `Unhealthy`.
+- `GET /health/ready` runs five probes — the database, a signed single-key read of the object
+  store, an SMTP connect-and-quit, the outbox's poison gauge, and the pending migrations of both
+  contexts — and answers `{ "status": …, "checks": [{ "name": …, "status": … }] }`. Names and
+  statuses, nothing else: no description, no exception, no duration ever leaves on this route, and
+  a unit test holds the writer to that. `Degraded` means poison messages are waiting for an
+  operator while the host still serves; the failure of any other probe is `Unhealthy`.
+
+  The schema probe is what makes ADR 0003 enforceable rather than merely logged: outside
+  Development a host applies no migration, and one whose database is behind now stops receiving
+  traffic instead of announcing it to a log nobody is reading. It re-reads on every poll and caches
+  nothing, so readiness goes green on its own once the schema is applied out of band — no restart.
+  See [ADR 0045](docs/adr/0045-fail-readiness-while-a-migration-is-pending.md).
 
 The pair is wired once in `Shared.Api` (`AddApiHealth`/`MapApiHealth`), so neither API host can
 answer less than the other; the BFF, whose world is the layered API, answers `/health/live` only.
@@ -823,7 +829,7 @@ The serving surface ships entirely in the ASP.NET Core shared framework and cost
 
 In **Development only** — the same bargain as Scalar's reference UI — each API host also serves a
 dashboard at `/healthchecks-ui` (the Xabaril `AspNetCore.HealthChecks.UI` packages, the one place
-they may be named): a page polling the same four probes every ten seconds through its own
+they may be named): a page polling the same five probes every ten seconds through its own
 detailed endpoint, `/health/ui`, whose richer body — descriptions, durations, exceptions — is
 exactly what stays off the anonymous production surface. Its history is in-memory and forgets on
 restart, deliberately. See

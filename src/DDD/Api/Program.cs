@@ -32,8 +32,9 @@ builder.Services.AddApiLogging(builder.Configuration);
 // a different library, and without a security scheme at all. See ADR 0006.
 builder.Services.AddApiOpenApi();
 
-// The four readiness probes — database, object store, mail relay, outbox poison — shared with the
-// CQRS host so neither can answer less than the other. See ADR 0037.
+// The five readiness probes — database, object store, mail relay, outbox poison, pending
+// migrations — shared with the CQRS host so neither can answer less than the other. See ADR 0037
+// for the pair of endpoints, ADR 0045 for the schema.
 builder.Services.AddApiHealth();
 
 // The dashboard over those probes. Self-gating: outside Development this is a no-op, so the call
