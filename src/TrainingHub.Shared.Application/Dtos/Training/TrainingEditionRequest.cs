@@ -1,11 +1,9 @@
-
 namespace TrainingHub.Shared.Application.Dtos.Training;
 
 /// <summary>
-/// What the application layer needs to create a training, before any of it has been
-/// turned into value objects.
+/// What the application layer needs to replace a training's details.
 /// </summary>
-public sealed class TrainingCreationRequest
+public sealed class TrainingEditionRequest
 {
     /// <summary>
     /// The training's title, as the caller sent it. Bounds are enforced by the value object,
