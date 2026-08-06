@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using AwesomeAssertions;
 using TrainingHub.DDDWithCqrs.Api.IntegrationTests.Fixtures;
-using TrainingHub.Shared.Api.Contracts.Trainings;
 using Xunit;
 
 namespace TrainingHub.DDDWithCqrs.Api.IntegrationTests.Controllers;
@@ -62,10 +61,8 @@ public sealed class ValidationPipelineTests(ApiFactory factory) : IntegrationTes
     public async Task EmptyIdentifier_OnACommand_IsRejectedByTheValidator_AsADomainErrorDocument()
     {
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-
-        var created = await client.PostAsJsonAsync("/Training", TrainingRequests.Valid());
-        created.EnsureSuccessStatusCode();
-        var entityTag = created.Headers.ETag!.ToString();
+        var trainingId = await CreateTrainingAsync(client);
+        var entityTag = await client.GetETagAsync($"/Training/{trainingId}");
 
         var response = await client.PutWithIfMatchAsync(
             $"/Training/{Guid.Empty}", TrainingRequests.ValidEdition(), entityTag);
@@ -113,11 +110,8 @@ public sealed class ValidationPipelineTests(ApiFactory factory) : IntegrationTes
     public async Task ValidationRunsBeforeTheHandler_LeavingTheAggregateUntouched()
     {
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-
-        var created = await client.PostAsJsonAsync("/Training", TrainingRequests.Valid());
-        created.EnsureSuccessStatusCode();
-        var training = await created.Content.ReadFromJsonAsync<TrainingResponseHttp>();
-        var before = created.Headers.ETag!.ToString();
+        var trainingId = await CreateTrainingAsync(client);
+        var before = await client.GetETagAsync($"/Training/{trainingId}");
 
         var response = await client.PutWithIfMatchAsync(
             $"/Training/{Guid.Empty}", TrainingRequests.ValidEdition(), before);
@@ -126,8 +120,24 @@ public sealed class ValidationPipelineTests(ApiFactory factory) : IntegrationTes
         // The behaviour returns before calling the handler, so nothing was saved and the version the
         // caller holds is still current — their next edit must not need a reload. This is the
         // property the move from throwing to returning had to preserve.
-        var after = await client.GetETagAsync($"/Training/{training!.Id}");
+        var after = await client.GetETagAsync($"/Training/{trainingId}");
         after.Should().Be(before);
+    }
+
+    /// <summary>
+    /// Creates a training and answers its identifier.
+    /// </summary>
+    /// <remarks>
+    /// A creation answers 201 with the identifier in the body and the address in <c>Location</c>
+    /// (ADR 0011) — no representation, and therefore no <c>ETag</c>. The version comes from reading
+    /// the training back, which is the same two steps <c>ConditionalRequestTest</c> takes.
+    /// </remarks>
+    private static async Task<Guid> CreateTrainingAsync(HttpClient client)
+    {
+        var created = await client.PostAsJsonAsync("/Training", TrainingRequests.Valid());
+        created.EnsureSuccessStatusCode();
+
+        return await created.Content.ReadFromJsonAsync<Guid>();
     }
 
     /// <summary>
