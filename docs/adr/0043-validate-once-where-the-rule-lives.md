@@ -55,6 +55,18 @@ in.
   on `Id`, `TrainingId` and `RecipientTrainerId` for that reason. Every other shape rule in a
   command validator is deleted.
 
+  That justification was only half true when it was written, and writing it is what exposed the
+  other half. It held for queries and not for commands: the three command routes carry
+  `[Authorize(Policy = TrainingOwnerPolicy.Name)]`, ASP.NET Core runs an authorization policy
+  **before** the action, and its handler asked `TrainingOwnerQuery.GetOwnerIdAsync`, which built a
+  `TrainingId` from the route value. `Guid.Empty` therefore reached `EntityId.Create` in the
+  authorization stage and answered 500 — the very outcome the validator was being kept for, one
+  layer earlier, where the validator could not see it. The rules were unreachable over HTTP: the
+  "already unreachable" category ADR 0016 named, surviving in the one place this record cited as its
+  reason to keep them. The query now answers `null` for an empty identifier — it names no training,
+  which is what `null` already meant there — so the request reaches the pipeline and the sentence
+  above is true of commands as well.
+
 **The boundary stays deliberately looser than the domain on one field, and that is the point.**
 The contract still declines to judge the shape of an address, for the reason ADR 0016 gave. The
 consequence is a window in which a request passes every pre-domain gate and the domain still
