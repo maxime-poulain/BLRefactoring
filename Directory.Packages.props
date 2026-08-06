@@ -117,6 +117,14 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Abstractions" Version="10.0.10" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.10" />
+    <!--
+      A relational provider for one unit test, and it has to be relational: the schema probe asks
+      GetPendingMigrationsAsync, which the in-memory provider above does not answer at all. SQLite
+      in memory gives it a real migrations assembly and a real history table to compare against
+      without a container, which is what keeps that fact in the suite that runs without Docker
+      (ADR 0045). It never touches src/ — the hosts speak SQL Server and nothing else.
+    -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.10" />
@@ -145,6 +153,15 @@
       transitive pinning above keeps the rest coherent. See ADR 0026.
     -->
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
+    <!--
+      Pinned, not referenced — the same mechanism as Microsoft.OpenApi above, and the same reason.
+      The SQLite provider added for the schema probe's unit test drags the native library in at
+      2.1.11, which NuGet's audit reports as GHSA-2m69-gcr7-jv3q, high severity. 2.1.12 is the
+      first version the audit stops reporting, and transitive pinning is what reaches it without
+      waiting for the EF provider to move. Remove this line once
+      Microsoft.EntityFrameworkCore.Sqlite references a patched version itself.
+    -->
+    <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.12" />
     <!--
       The reverse proxy the Blazor host uses as a BFF: the browser calls its own origin, and this
       forwards to the API with the access token attached server-side. See ADR 0009.

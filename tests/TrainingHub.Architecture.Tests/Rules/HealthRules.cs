@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using TrainingHub.Architecture.Tests.Framework;
 using NetArchTest.Rules;
 using Xunit;
@@ -14,8 +15,12 @@ namespace TrainingHub.Architecture.Tests.Rules;
 /// compiled can prove. A host that drops the call keeps building and keeps serving; the drift only
 /// surfaces the day an orchestrator polls an endpoint that is not there.
 /// </remarks>
-public sealed class HealthRules
+public sealed partial class HealthRules
 {
+    /// <summary>The seam ADR 0037 wires the probes in, and ADR 0045 adds one to.</summary>
+    private static readonly string HealthSeam =
+        Path.Combine("src", "TrainingHub.Shared.Api", "Extensions", "HealthExtensions.cs");
+
     /// <summary>The composition roots the decision is about, by host.</summary>
     private static readonly string[] ApiHostPrograms =
     [
@@ -30,7 +35,7 @@ public sealed class HealthRules
     /// Read from the source and stripped of comment lines before searching, exactly as the
     /// logging rule learnt to: a call in <c>Program.cs</c> is top-level-statement code reflection
     /// cannot see, and a commented-out call still contains the name. Both halves are demanded —
-    /// <c>AddApiHealth</c> registers the four probes, <c>MapApiHealth</c> publishes the two
+    /// <c>AddApiHealth</c> registers the five probes, <c>MapApiHealth</c> publishes the two
     /// endpoints, and either one alone is a host that cannot answer.
     /// </remarks>
     [Fact]
@@ -164,4 +169,69 @@ public sealed class HealthRules
             .GetResult()
             .ShouldHold();
     }
+
+    /// <summary>
+    /// Readiness, answers for the pending migrations.
+    /// </summary>
+    /// <remarks>
+    /// Two halves, because either one alone is silence. The probe has to exist as a health check in
+    /// the shared seam — reflection settles that — and it has to be registered <em>with the
+    /// readiness tag</em>, which reflection cannot see: <c>AddCheck&lt;T&gt;</c> hands its tags to a
+    /// registration object, and a check registered without them runs on no endpoint at all. That is
+    /// the shape this rule exists to catch, since it is invisible at the call site and silent at
+    /// runtime — the host simply never asks the question. The tag is read out of the source of the
+    /// seam, from the arguments of this probe's own call rather than the statement's, because the
+    /// five registrations are one fluent chain and a looser match would accept a neighbour's tag.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0045",
+        "a fifth readiness probe answers for the schema: it reports Unhealthy while either context has a " +
+        "pending migration, so an instance whose database is behind stops receiving traffic instead of " +
+        "announcing it to a log nobody is reading")]
+    public void Readiness_AnswersForThePendingMigrations()
+    {
+        const string Probe = "PendingMigrationsHealthCheck";
+
+        var failures = new List<string>();
+
+        // DeclaredTypes, the same door DocumentationRules.Probes() counts through: two rules reading
+        // the same fact from one assembly should not disagree about what "a type of this assembly" is.
+        var probe = Solution.SharedApi.DeclaredTypes()
+            .FirstOrDefault(type => type.Name == Probe && !type.IsAbstract);
+
+        if (probe is null || !Array.Exists(probe.GetInterfaces(), contract => contract.Name == "IHealthCheck"))
+        {
+            failures.Add(
+                $"{Probe} is not a health check in Shared.Api. ADR 0045 answers for the schema on " +
+                "the readiness route — a host whose database is behind must stop receiving traffic, " +
+                "not log about it");
+        }
+
+        var seam = SourceTree.ReadText(Path.Combine(SourceTree.RepositoryRoot, HealthSeam))
+            .Split('\n')
+            .Select(line => line.TrimStart())
+            .Where(line => !line.StartsWith("//", StringComparison.Ordinal))
+            .Aggregate(string.Empty, (all, line) => all + line);
+
+        var registration = ProbeRegistration().Match(seam);
+
+        if (!registration.Success)
+        {
+            failures.Add(
+                $"AddApiHealth never registers {Probe}. A probe nothing registers is a class, " +
+                "not an answer");
+        }
+        else if (!registration.Groups["arguments"].Value.Contains("ReadyTag", StringComparison.Ordinal))
+        {
+            failures.Add(
+                $"{Probe} is registered without the readiness tag, so it runs on no endpoint at " +
+                "all — /health/ready selects by that tag. Restore it, or record the decision that " +
+                "the schema no longer gates readiness");
+        }
+
+        failures.ShouldHold();
+    }
+
+    [GeneratedRegex(@"AddCheck<PendingMigrationsHealthCheck>\((?<arguments>[^)]*)\)")]
+    private static partial Regex ProbeRegistration();
 }
