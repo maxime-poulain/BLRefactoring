@@ -21,4 +21,14 @@ public sealed class FakeTrainingSearchIndexer(ILogger<FakeTrainingSearchIndexer>
 
         return Task.CompletedTask;
     }
+
+    /// <inheritdoc />
+    public Task RemoveAsync(Guid trainingId, CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation(
+            "Removing training `{TrainingId}` from the search index.",
+            trainingId);
+
+        return Task.CompletedTask;
+    }
 }

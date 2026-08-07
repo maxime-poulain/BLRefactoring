@@ -37,7 +37,8 @@ public static class TrainingProjections
         Topics = training.Topics.Select(topic => topic.Name).ToList(),
         Description = training.Description.Value,
         Prerequisites = training.Prerequisites.Value,
-        AcquiredSkills = training.AcquiredSkills.Value
+        AcquiredSkills = training.AcquiredSkills.Value,
+        Status = training.Status.Name
     };
 
     // Compiled once for the lifetime of the process: compilation is expensive enough that doing

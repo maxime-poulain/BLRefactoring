@@ -81,6 +81,7 @@ public abstract class DomainEventPipelineTest<TFactory>(TFactory factory) : Inte
         var trainings = scope.ServiceProvider.GetRequiredService<ITrainingRepository>();
         var titleChecker = scope.ServiceProvider.GetRequiredService<IUniquenessTitleChecker>();
         var trainingCounter = scope.ServiceProvider.GetRequiredService<ITrainingCounter>();
+        var trainerStanding = scope.ServiceProvider.GetRequiredService<ITrainerStanding>();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
         trainers.Add(Trainer.Create(
@@ -99,7 +100,8 @@ public abstract class DomainEventPipelineTest<TFactory>(TFactory factory) : Inte
             Required(AcquiredSkills.Create("Advanced design patterns mastery")),
             [Topic.Programming],
             titleChecker,
-            trainingCounter));
+            trainingCounter,
+            trainerStanding));
 
         trainings.Add(training);
 

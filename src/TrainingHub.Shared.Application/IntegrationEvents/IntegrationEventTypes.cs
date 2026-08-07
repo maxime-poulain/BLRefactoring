@@ -27,6 +27,9 @@ public static class IntegrationEventTypes
             [typeof(TrainingCreatedIntegrationEvent)] = ("TrainingCreated", 1),
             [typeof(TrainingEditedIntegrationEvent)] = ("TrainingEdited", 1),
             [typeof(TrainingTransferredIntegrationEvent)] = ("TrainingTransferred", 1),
+            [typeof(TrainingPublishedIntegrationEvent)] = ("TrainingPublished", 1),
+            [typeof(TrainingUnpublishedIntegrationEvent)] = ("TrainingUnpublished", 1),
+            [typeof(TrainingDeletedIntegrationEvent)] = ("TrainingDeleted", 1),
         };
 
     /// <summary>

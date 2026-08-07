@@ -45,4 +45,23 @@ public static class TrainingErrorCodes
 
     /// <summary>The transfer names a recipient no trainer answers to (ADR 0036).</summary>
     public static readonly ErrorCode UnknownRecipient = new("Training.UnknownRecipient");
+
+    /// <summary>The training is already offered to the public, so publishing it changes nothing.</summary>
+    public static readonly ErrorCode AlreadyPublished = new("Training.AlreadyPublished");
+
+    /// <summary>The training is already withdrawn, so unpublishing it changes nothing.</summary>
+    public static readonly ErrorCode AlreadyUnpublished = new("Training.AlreadyUnpublished");
+
+    /// <summary>
+    /// The trainer is under sanction and may not grow what the public can see (ADR 0050).
+    /// </summary>
+    public static readonly ErrorCode TrainerSuspended = new("Training.TrainerSuspended");
+
+    /// <summary>
+    /// The recipient of a transfer is under sanction. Distinct from <see cref="TrainerSuspended"/>
+    /// for the reason <see cref="RecipientCatalogueFull"/> is distinct from
+    /// <see cref="CatalogueFull"/>: "your account is suspended" and "theirs is" send a caller to
+    /// different places (ADR 0015).
+    /// </summary>
+    public static readonly ErrorCode RecipientSuspended = new("Training.RecipientSuspended");
 }

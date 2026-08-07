@@ -2,13 +2,14 @@ using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using TrainingHub.Shared.Api.Contracts.Trainings;
+using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
 using Xunit;
 
 namespace TrainingHub.Api.TestKit;
 
 /// <summary>
-/// A training's life over HTTP: created, read, edited under a precondition, deleted — and refused
-/// to anyone who does not own it.
+/// A training's life over HTTP: created, read, edited under a precondition, withdrawn and offered
+/// again, deleted — and refused to anyone who does not own it.
 /// </summary>
 /// <remarks>
 /// Thirteen facts that used to be written twice, once per suite. They had already begun to drift
@@ -308,5 +309,180 @@ public abstract class TrainingLifecycleTest<TFactory>(TFactory factory) : Integr
         // Refused and still there: a 403 that had already deleted the row would be worse than a 204.
         (await owner.GetAsync($"/Training/{trainingId}")).StatusCode
             .Should().Be(HttpStatusCode.OK);
+    }
+
+    // -- Publish and unpublish (ADR 0050) --
+
+    /// <summary>
+    /// Create, a new training, is published.
+    /// </summary>
+    [Fact]
+    public async Task Create_ANewTraining_IsPublished()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        var trainingId = await CreateTrainingAsync(client);
+
+        var training = await ReadTrainingAsync(client, trainingId);
+
+        training.Status.Should().Be("Published");
+    }
+
+    /// <summary>
+    /// Unpublish, as owner, returns 204 and the training stays readable to its owner.
+    /// </summary>
+    /// <remarks>
+    /// The claim that separates withdrawing from deleting, over HTTP: the 204 is the same, and what
+    /// follows is not. A withdrawn training answers 200 to its owner with its status changed, where
+    /// a deleted one answers 404.
+    /// </remarks>
+    [Fact]
+    public async Task Unpublish_AsOwner_Returns204AndTheTrainingSurvives()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        var trainingId = await CreateTrainingAsync(client);
+
+        var response = await client.PostAsync($"/Training/{trainingId}/unpublish", content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await ReadTrainingAsync(client, trainingId)).Status.Should().Be("Unpublished");
+    }
+
+    /// <summary>
+    /// Unpublish, then publish, puts the training back on offer.
+    /// </summary>
+    [Fact]
+    public async Task Unpublish_ThenPublish_PutsTheTrainingBackOnOffer()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        var trainingId = await CreateTrainingAsync(client);
+
+        (await client.PostAsync($"/Training/{trainingId}/unpublish", content: null))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await client.PostAsync($"/Training/{trainingId}/publish", content: null))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        (await ReadTrainingAsync(client, trainingId)).Status.Should().Be("Published");
+    }
+
+    /// <summary>
+    /// Unpublish, an already withdrawn training, returns 409.
+    /// </summary>
+    [Fact]
+    public async Task Unpublish_AnAlreadyWithdrawnTraining_Returns409()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        var trainingId = await CreateTrainingAsync(client);
+        (await client.PostAsync($"/Training/{trainingId}/unpublish", content: null))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var response = await client.PostAsync($"/Training/{trainingId}/unpublish", content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    /// <summary>
+    /// Publish, an already published training, returns 409.
+    /// </summary>
+    [Fact]
+    public async Task Publish_AnAlreadyPublishedTraining_Returns409()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        var trainingId = await CreateTrainingAsync(client);
+
+        var response = await client.PostAsync($"/Training/{trainingId}/publish", content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    /// <summary>
+    /// Unpublish, as non owner, returns 403 and changes nothing.
+    /// </summary>
+    [Fact]
+    public async Task Unpublish_AsNonOwner_Returns403()
+    {
+        var owner = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        var trainingId = await CreateTrainingAsync(owner);
+
+        var intruder = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+
+        var response = await intruder.PostAsync($"/Training/{trainingId}/unpublish", content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await ReadTrainingAsync(owner, trainingId)).Status.Should().Be("Published");
+    }
+
+    /// <summary>
+    /// Unpublish, a training that does not exist, returns 404.
+    /// </summary>
+    [Fact]
+    public async Task Unpublish_ANonExistentTraining_Returns404()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+
+        var response = await client.PostAsync($"/Training/{Guid.NewGuid()}/unpublish", content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    /// <summary>
+    /// Unpublish, a training at the catalogue limit, frees a place for another.
+    /// </summary>
+    /// <remarks>
+    /// The invariant with the widest blast radius in ADR 0050, end to end: the quota counts what is
+    /// on offer, so a full catalogue is one a trainer can still work in. Before this, ten trainings
+    /// ended a trainer's catalogue for ever unless they destroyed one.
+    /// </remarks>
+    [Fact]
+    public async Task Unpublish_AtTheCatalogueLimit_FreesAPlace()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+
+        var first = await CreateTrainingAsync(client);
+        for (var i = 1; i < Training.MaximumPerTrainer; i++)
+        {
+            await CreateTrainingAsync(client);
+        }
+
+        // Full: the eleventh is refused.
+        (await client.PostAsJsonAsync("/Training", ValidCreation())).StatusCode
+            .Should().Be(HttpStatusCode.BadRequest);
+
+        (await client.PostAsync($"/Training/{first}/unpublish", content: null))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        // A place freed without a row destroyed.
+        (await client.PostAsJsonAsync("/Training", ValidCreation())).StatusCode
+            .Should().Be(HttpStatusCode.Created);
+
+        // And the withdrawn one cannot come back while the catalogue is full again — the hole a
+        // quota on published trainings would otherwise leave open.
+        (await client.PostAsync($"/Training/{first}/publish", content: null))
+            .StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>
+    /// Unpublish, a training, keeps its title taken.
+    /// </summary>
+    [Fact]
+    public async Task Unpublish_ATraining_KeepsItsTitleTaken()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        var title = $"Withdrawn {Guid.NewGuid():N}"[..25];
+        var trainingId = await CreateTrainingAsync(client, title);
+
+        (await client.PostAsync($"/Training/{trainingId}/unpublish", content: null))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        // Taken, but by something its owner can see, republish or rename — so the refusal names
+        // something actionable rather than something invisible (ADR 0050).
+        (await client.PostAsJsonAsync("/Training", ValidCreation(title))).StatusCode
+            .Should().Be(HttpStatusCode.Conflict);
+    }
+
+    private static async Task<TrainingHttpResponse> ReadTrainingAsync(HttpClient client, Guid trainingId)
+    {
+        var response = await client.GetAsync($"/Training/{trainingId}");
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<TrainingHttpResponse>())!;
     }
 }

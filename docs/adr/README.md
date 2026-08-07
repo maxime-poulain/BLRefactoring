@@ -77,4 +77,4 @@ simpler from the outside.
 | [0047](0047-verify-the-build-a-pull-request-delegates.md) | Verify the build a pull request delegates | Accepted |
 | [0048](0048-qualify-a-contract-before-naming-what-it-is.md) | Qualify a contract before naming what it is | Accepted |
 | [0049](0049-measure-duplication-where-repetition-is-a-defect.md) | Measure duplication where repetition is a defect | Accepted |
-| [0050](0050-retire-a-training-rather-than-delete-it.md) | Retire a training rather than delete it | Proposed |
+| [0050](0050-retire-a-training-rather-than-delete-it.md) | Retire a training rather than delete it | Accepted |

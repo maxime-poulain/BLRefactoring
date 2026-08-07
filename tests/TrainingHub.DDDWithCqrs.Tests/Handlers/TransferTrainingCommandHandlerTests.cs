@@ -25,6 +25,7 @@ public sealed class TransferTrainingCommandHandlerTests
     private readonly Mock<ITrainerRepository> _trainerRepository = new();
     private readonly Mock<ITrainingCounter> _trainingCounter = new();
     private readonly Mock<IUniquenessTitleChecker> _titleChecker = new();
+    private readonly Mock<ITrainerStanding> _trainerStanding = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
     private TransferTrainingCommandHandler CreateSut() => new(
@@ -32,6 +33,7 @@ public sealed class TransferTrainingCommandHandlerTests
         _trainerRepository.Object,
         _trainingCounter.Object,
         _titleChecker.Object,
+        _trainerStanding.Object,
         _unitOfWork.Object);
 
     /// <summary>

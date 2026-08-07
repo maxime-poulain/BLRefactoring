@@ -21,6 +21,7 @@ public sealed class TrainingBuilder
     private List<string> _topics = ["Programming"];
     private bool _titleExistsResult;
     private int _publishedCount;
+    private bool _trainerSuspended;
 
     /// <summary>
     /// With title.
@@ -77,6 +78,24 @@ public sealed class TrainingBuilder
     }
 
     /// <summary>
+    /// With the owning trainer under sanction (ADR 0050).
+    /// </summary>
+    public TrainingBuilder WithSuspendedTrainer() { _trainerSuspended = true; return this; }
+
+    /// <summary>
+    /// Create trainer standing mock.
+    /// </summary>
+    public Mock<ITrainerStanding> CreateTrainerStandingMock()
+    {
+        var mock = new Mock<ITrainerStanding>();
+        mock.Setup(c => c.IsSuspendedAsync(
+                It.IsAny<TrainerId>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_trainerSuspended);
+        return mock;
+    }
+
+    /// <summary>
     /// Create training counter mock.
     /// </summary>
     public Mock<ITrainingCounter> CreateTrainingCounterMock()
@@ -105,6 +124,7 @@ public sealed class TrainingBuilder
     {
         var mockChecker = CreateTitleCheckerMock();
         var mockCounter = CreateTrainingCounterMock();
+        var mockStanding = CreateTrainerStandingMock();
 
         return await Training.CreateAsync(
             TrainingId.Generate(),
@@ -115,7 +135,8 @@ public sealed class TrainingBuilder
             AcquiredSkills.Create(_acquiredSkills).ShouldBeSuccess(),
             BuildTopics(),
             mockChecker.Object,
-            mockCounter.Object);
+            mockCounter.Object,
+            mockStanding.Object);
     }
 
     /// <summary>

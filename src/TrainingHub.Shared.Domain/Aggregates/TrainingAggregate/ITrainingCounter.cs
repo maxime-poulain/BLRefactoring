@@ -18,6 +18,13 @@ public interface ITrainingCounter
     /// <summary>
     /// Counts the trainings the given trainer currently publishes.
     /// </summary>
+    /// <remarks>
+    /// Published ones, and only those — it used to count every row the trainer owned, which was the
+    /// same number until a training could be withdrawn. A trainer who unpublishes all ten of theirs
+    /// offers the public nothing and must be able to write an eleventh; the rule is about a
+    /// catalogue on offer, not about rows. The criteria is
+    /// <see cref="Specifications.TrainingIsPublishedSpecification"/>. See ADR 0050.
+    /// </remarks>
     /// <param name="trainerId">The trainer whose catalogue is being measured.</param>
     /// <param name="cancellationToken">
     /// A <see cref="CancellationToken"/> to observe while waiting for the task to complete.

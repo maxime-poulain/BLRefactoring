@@ -38,6 +38,7 @@ public sealed class TransferTrainingCommandHandler(
     ITrainerRepository trainerRepository,
     ITrainingCounter trainingCounter,
     IUniquenessTitleChecker uniquenessTitleChecker,
+    ITrainerStanding trainerStanding,
     IUnitOfWork unitOfWork)
     : ICommandHandler<TransferTrainingCommand, Result>
 {
@@ -60,7 +61,7 @@ public sealed class TransferTrainingCommandHandler(
         }
 
         var result = await TrainingTransferDomainService.TransferAsync(
-            training, recipient, trainingCounter, uniquenessTitleChecker, cancellationToken);
+            training, recipient, trainingCounter, uniquenessTitleChecker, trainerStanding, cancellationToken);
 
         return await result.MatchAsync(
             onSuccess: async () =>

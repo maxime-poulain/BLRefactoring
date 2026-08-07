@@ -1,7 +1,9 @@
+using AwesomeAssertions;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Delete;
 using TrainingHub.Shared;
 using TrainingHub.Shared.Common.Errors;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
+using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.DomainEvents;
 using TrainingHub.Shared.Domain.Tests.Helpers;
 using Moq;
 using Xunit;
@@ -54,5 +56,26 @@ public sealed class DeleteTrainingCommandHandlerTests
         var result = await sut.Handle(new DeleteTrainingCommand(Guid.NewGuid()), CancellationToken.None);
 
         result.ShouldContainError(ErrorCodes.NotFound);
+    }
+
+    /// <summary>
+    /// Handle, existing training, raises the deletion fact before staging the removal.
+    /// </summary>
+    /// <remarks>
+    /// Deleting used to raise nothing at all, which is why a deleted training stayed in the search
+    /// index for ever: the row went, and no consumer was ever told (ADR 0050).
+    /// </remarks>
+    [Fact]
+    public async Task Handle_ExistingTraining_RaisesTheDeletionFact()
+    {
+        var training = await new TrainingBuilder().BuildValidAsync();
+        training.ClearDomainEvents();
+        _trainingRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainingId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(training);
+
+        await CreateSut().Handle(new DeleteTrainingCommand(training.Id.Value), CancellationToken.None);
+
+        training.DomainEvents.Should().ContainSingle(e => e is TrainingDeletedDomainEvent);
     }
 }

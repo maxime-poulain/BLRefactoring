@@ -49,9 +49,28 @@
             @foreach (var training in _page.Items)
             {
                 <MudItem xs="12" sm="6" md="4">
-                    <MudCard Elevation="3" Class="h-100">
+                    @* The card's own surface carries the status, so a trainer reads their
+                       catalogue at a glance instead of card by card. A withdrawn one sits on the
+                       theme's recessed surface — the same one MudBlazor gives a data grid's group
+                       rows — while a published one keeps the default and is not touched. *@
+                    <MudCard Elevation="3" Class="@CardClass(training)">
                         <MudCardContent>
-                            <MudText Typo="Typo.h6" Class="mb-2">@training.Title</MudText>
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start" Class="mb-2">
+                                <MudText Typo="Typo.h6">@training.Title</MudText>
+                                @* Only the withdrawn state is shown. Published is what a training
+                                   is unless something happened to it, and a badge on every card
+                                   saying so would be noise that makes the one badge that matters
+                                   harder to see. *@
+                                @if (!IsPublished(training))
+                                {
+                                    <MudChip T="string"
+                                             Size="Size.Small"
+                                             Color="Color.Warning"
+                                             Variant="Variant.Filled">
+                                        Unpublished
+                                    </MudChip>
+                                }
+                            </MudStack>
                             <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1">
                                 @foreach (var topic in training.Topics)
                                 {
@@ -65,7 +84,7 @@
                             </MudStack>
                         </MudCardContent>
                         <MudCardActions>
-                            @* Only a training's owner may edit or delete it — the API enforces
+                            @* Only a training's owner may edit or withdraw it — the API enforces
                                that with TrainingOwnerPolicy. This page used to load every training
                                and hide the buttons on the ones belonging to somebody else, which
                                meant the browser had already received them. It now asks for its
@@ -74,9 +93,22 @@
                             <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                            Color="Color.Primary"
                                            Href="@($"/trainings/edit/{training.Id}")" />
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                           Color="Color.Error"
-                                           OnClick="@(() => OpenDeleteDialog(training))" />
+                            @* Withdrawing replaced deleting here, and deleting is not offered at
+                               all: it is still on the API, for the training created by mistake and
+                               for erasure on request, but it is no longer the button a trainer
+                               reaches for to stop offering a course. See ADR 0050. *@
+                            @if (IsPublished(training))
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.VisibilityOff"
+                                               Color="Color.Warning"
+                                               OnClick="@(() => OpenUnpublishDialog(training))" />
+                            }
+                            else
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                               Color="Color.Success"
+                                               OnClick="@(() => PublishTraining(training.Id))" />
+                            }
                         </MudCardActions>
                     </MudCard>
                 </MudItem>
@@ -97,6 +129,30 @@
 @code {
     private const int StatusForbidden = 403;
     private const int StatusNotFound = 404;
+
+    // The word the API publishes, which is the domain's own (ADR 0050). Compared ordinally: this
+    // is a protocol value, never something to fold with the viewer's culture.
+    private const string PublishedStatus = "Published";
+
+    private static bool IsPublished(TrainingHttpResponse training)
+        => string.Equals(training.Status, PublishedStatus, StringComparison.Ordinal);
+
+    /// <remarks>
+    /// A MudBlazor utility class rather than a colour of our own. There is no stylesheet in this
+    /// project and no <c>MudTheme</c> override — every colour on screen comes from the theme — and
+    /// the layout carries a dark mode toggle, so a literal would be right in one of the two themes
+    /// and wrong in the other. <c>mud-background-gray</c> resolves to
+    /// <c>--mud-palette-background-gray</c>, which the theme provider sets per mode; it is the
+    /// surface MudBlazor itself uses for a data grid's group rows, which is the same idea — content
+    /// that is present but set back.
+    /// <para>
+    /// Published returns the class it already had, so a training on offer looks exactly as it did.
+    /// Colour is never the only signal either: the withdrawn card still carries the word
+    /// <em>Unpublished</em> in its chip, for a reader who cannot see the difference in tone.
+    /// </para>
+    /// </remarks>
+    private static string CardClass(TrainingHttpResponse training)
+        => IsPublished(training) ? "h-100" : "h-100 mud-background-gray";
 
     private PagedHttpResponseOfTrainingHttpResponse? _page;
     private int _currentPage = 1;
@@ -129,8 +185,8 @@
             // rules, and the cap is the server's to hold.
             _page = await TrainingClient.GetMineAsync(_currentPage, null);
 
-            // Deleting the last training of the last page leaves the caller on a page past the
-            // end; the pager cannot show it, so step back onto the last one there is.
+            // A page can still fall past the end — withdrawing keeps the row, but the list is
+            // read again after every action and the server decides how many pages there are.
             if (_currentPage > _page.TotalPages)
             {
                 _currentPage = _page.TotalPages;
@@ -162,9 +218,9 @@
         }
     }
 
-    private async Task OpenDeleteDialog(TrainingHttpResponse training)
+    private async Task OpenUnpublishDialog(TrainingHttpResponse training)
     {
-        var parameters = new DialogParameters<DeleteTrainingDialog>
+        var parameters = new DialogParameters<UnpublishTrainingDialog>
         {
             { x => x.TrainingTitle, training.Title }
         };
@@ -176,21 +232,45 @@
             FullWidth = true
         };
 
-        var dialog = await DialogService.ShowAsync<DeleteTrainingDialog>("Delete Training", parameters, options);
+        var dialog = await DialogService.ShowAsync<UnpublishTrainingDialog>(
+            "Unpublish Training", parameters, options);
         var result = await dialog.Result;
 
         if (result is { Canceled: false })
         {
-            await DeleteTraining(training.Id);
+            await UnpublishTraining(training.Id);
         }
     }
 
-    private async Task DeleteTraining(Guid trainingId)
+    private async Task UnpublishTraining(Guid trainingId)
+    {
+        // Confirmed by a dialog, unlike publishing: withdrawing takes something away from the
+        // people the training was on offer to, and that is worth one click of hesitation. Putting
+        // it back takes nothing away from anybody.
+        await RunTransition(
+            () => TrainingClient.UnpublishTrainingAsync(trainingId),
+            "Training unpublished. It stays in your list and can be published again.",
+            "unpublished");
+    }
+
+    private async Task PublishTraining(Guid trainingId)
+        => await RunTransition(
+            () => TrainingClient.PublishTrainingAsync(trainingId),
+            "Training published.",
+            "published");
+
+    /// <remarks>
+    /// One error-handling body for both transitions. They fail the same ways and would otherwise
+    /// be two copies of the same six catch blocks — with the two that matter, the 404 and the 403,
+    /// free to drift apart. The verb is a parameter because the last sentence is the only thing
+    /// that genuinely differs.
+    /// </remarks>
+    private async Task RunTransition(Func<Task> transition, string success, string verb)
     {
         try
         {
-            await TrainingClient.DeleteTrainingAsync(trainingId);
-            Snackbar.Add("Training deleted successfully!", Severity.Success);
+            await transition();
+            Snackbar.Add(success, Severity.Success);
             await LoadTrainings();
         }
         catch (ApiException<ProblemDetails> ex) when (ex.StatusCode == StatusNotFound)
@@ -204,7 +284,11 @@
         {
             // One RFC 7807 document rather than a bare array of errors: the detail carries the
             // message, and the domain codes travel in the `domainErrors` extension. See ADR 0004.
+            // A 409 lands here too: the training was already in the state being asked for, and the
+            // server's sentence says so better than anything this page could invent. Reloading
+            // afterwards is what makes the buttons agree with the truth again.
             Snackbar.Add(ex.Result.Detail ?? ex.Result.Title ?? "The request was rejected.", Severity.Error);
+            await LoadTrainings();
         }
         catch (ApiException ex) when (ex.StatusCode == StatusForbidden)
         {
@@ -217,12 +301,12 @@
         catch (ApiException ex)
         {
             Console.Error.WriteLine(ex);
-            Snackbar.Add("The training could not be deleted. Try again in a moment.", Severity.Error);
+            Snackbar.Add($"The training could not be {verb}. Try again in a moment.", Severity.Error);
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine(ex);
-            Snackbar.Add("Something went wrong deleting the training.", Severity.Error);
+            Snackbar.Add($"Something went wrong; the training was not {verb}.", Severity.Error);
         }
     }
 }

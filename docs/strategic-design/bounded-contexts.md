@@ -69,9 +69,11 @@ name in the code; that is the point of a ubiquitous language.
 | **TrainingPrerequisites** | What a participant needs beforehand | Required, at most 500 characters |
 | **AcquiredSkills** | What a participant leaves with | Required, at most 500 characters |
 | **Topic** | What a training is filed under | A **closed set of six**: Programming, Design, Marketing, Business, Personal Development, Leadership |
+| **TrainingStatus** | Whether a training is offered to the public or withdrawn from it | `Published` or `Unpublished`; born published, and reachable in both directions |
+| **TrainerStatus** | Whether a trainer is in good standing or under sanction | `Active` or `Suspended`; the whole of a suspension is this one field |
 | **TrainingTransferDomainService** | Handing a training to another trainer, who becomes its owner | The recipient must be able to accept it; the giver keeps nothing |
 
-Three entries in that table are worth pausing on, because each encodes a business decision rather
+Four entries in that table are worth pausing on, because each encodes a business decision rather
 than a technical one.
 
 **A contact address is not a login.** `Trainer.ContactEmail` carries no uniqueness rule, and the
@@ -92,6 +94,14 @@ domain service, and the only term in this table that is not a noun of the busine
 `TrainingTransferDomainService`, static and stateless, deciding through the same two ports creation
 uses ([ADR 0036](../adr/0036-model-the-decision-that-has-no-home-as-a-domain-service.md)).
 
+**Visibility is composed, never stored.** A training is publicly visible when it is `Published`
+**and** its trainer is `Active`. There is no third field holding the answer, and that is what makes
+a suspension liftable: it writes one column on one aggregate and touches no training, so nothing
+has to remember which trainings it hid — it hid none, and the catalogue simply became invisible
+with its owner. Cascading the sanction onto each training was considered and refused for exactly
+this reason
+([ADR 0050](../adr/0050-retire-a-training-rather-than-delete-it.md)).
+
 ### Aggregates
 
 - `Trainer` — the profile, its contact address, its bio and its portrait.
@@ -103,8 +113,11 @@ holds a `Trainer` instance.
 ### Invariants
 
 - A training's title is unique among the trainings of the same trainer.
-- A trainer publishes at most ten trainings (`Training.MaximumPerTrainer`); the eleventh is
-  refused at creation.
+- A trainer publishes at most ten **published** trainings (`Training.MaximumPerTrainer`); the
+  eleventh is refused, both at creation and when a withdrawn training is published again. A
+  withdrawn training holds no place in the quota — otherwise ten of them would end a trainer's
+  catalogue for ever — and checking only at creation would leave the limit bypassable in three
+  moves: unpublish one, create a replacement, publish the first back.
 - A training always belongs to a trainer; there is no orphan training.
 - A training changes hands only to a trainer who could have published it themselves: room under the
   ten, and no training of theirs already carrying that title. A transfer that would break either
@@ -112,6 +125,16 @@ holds a `Trainer` instance.
 - Every value object is valid by construction — an aggregate never holds a malformed field, because
   it never accepts a raw `string`.
 - A trainer never disappears silently: deletion takes their trainings with it.
+- A training moves between `Published` and `Unpublished`, and each move announces itself. A
+  transition to the state it is already in is refused rather than ignored: a change that changes
+  nothing must not raise a fact. Deleting announces itself too, which it did not before — the
+  absence is why a deleted training used to stay in the search index for ever.
+- A withdrawn training keeps its title, and the title stays taken. It is taken by something its
+  owner can see in their own listing and can republish, rename or delete, so the refusal names
+  something actionable rather than something invisible.
+- A suspended trainer may not increase their public footprint: creating, publishing and
+  transferring — giving and receiving alike — are refused. Editing and unpublishing stay open, so a
+  trainer can repair what earned them the sanction.
 
 ### Actors
 
@@ -239,18 +262,23 @@ Registration, authentication, token issuance, lockout.
 
 **Generic.** Keeping a read model in step with the writes.
 
-- **Language:** `IndexAsync(Guid trainingId, Guid trainerId)`. Note the primitives: the port speaks
-  `Guid`, never `TrainingId`. Its own remark says so — *"the search engine sitting behind it knows
-  nothing about the domain's typed identifiers."* That is a published language in miniature.
+- **Language:** `IndexAsync(Guid trainingId, Guid trainerId)` and `RemoveAsync(Guid trainingId)`.
+  Note the primitives: the port speaks `Guid`, never `TrainingId`. Its own remark says so — *"the
+  search engine sitting behind it knows nothing about the domain's typed identifiers."* That is a
+  published language in miniature. The removal is what lets a withdrawn or deleted training leave
+  the index; without it ADR 0050 would have changed nothing a visitor could observe.
 - **Aggregates:** none.
 - **Status:** port only, one fake implementation that logs. It is nonetheless the seed of the
   public catalogue: the index this port maintains is what a search page would read.
-- **Fed by:** the transactional outbox, end to end. Creating, editing or handing over a training
-  commits `TrainingCreatedIntegrationEvent`, `TrainingEditedIntegrationEvent` or
-  `TrainingTransferredIntegrationEvent` with it (ADR 0002, ADR 0024), and the delivery worker
-  replays each fact into this port after the commit (ADR 0025) — the index only ever learns of
-  trainings the database accepted. A transfer is an indexing event like the other two: what a
-  public search would show changes, because the training is filed under a different trainer.
+- **Fed by:** the transactional outbox, end to end. Creating, editing, handing over, publishing,
+  withdrawing or deleting a training commits `TrainingCreatedIntegrationEvent`,
+  `TrainingEditedIntegrationEvent`, `TrainingTransferredIntegrationEvent`,
+  `TrainingPublishedIntegrationEvent`, `TrainingUnpublishedIntegrationEvent` or
+  `TrainingDeletedIntegrationEvent` with it (ADR 0002, ADR 0024), and the delivery worker replays
+  each fact into this port after the commit (ADR 0025) — the index only ever learns of trainings
+  the database accepted. A transfer is an indexing event like the others: what a public search
+  would show changes, because the training is filed under a different trainer. The last three
+  arrived with ADR 0050, and two of them remove rather than index.
 
 ---
 
@@ -278,7 +306,9 @@ for it, and a reader should know that they are not accidents:
 
 - **`ITrainingSearchIndexer`** is the port a public search would read through, and the facts that
   will maintain its index — `TrainingCreatedIntegrationEvent`, `TrainingEditedIntegrationEvent`,
-  `TrainingTransferredIntegrationEvent` — already land durably in the outbox on every commit.
+  `TrainingTransferredIntegrationEvent`, `TrainingPublishedIntegrationEvent`,
+  `TrainingUnpublishedIntegrationEvent`, `TrainingDeletedIntegrationEvent` — already land durably in
+  the outbox on every commit.
 - **`GET /Trainer/{id}/photo`** is the one read addressed by identifier rather than by `me`, with a
   year-long immutable cache and an `ETag` cut from the photo's identity. Making it public is
   `[AllowAnonymous]` and nothing else.
@@ -293,41 +323,6 @@ reads, it does not decide.
 words from the write side, because a search result is not a `Training`.
 
 ---
-
-## Decided, not yet built
-
-One thing sits between *built* and *not decided*, and this document had no room for it until now: a
-change to an existing context's model that has been argued and settled, and that no code answers to.
-It is written here rather than into the sections above because those are read off the model as it
-stands — the language table promises that every term below it is a type in
-`src/TrainingHub.Shared.Domain/`, and a rule holds it to that promise in both directions. A word
-added there before the type exists would make the document false on the day it was written, which is
-the failure ADR 0023 exists to prevent.
-
-**A training gains a life beyond existing, and a trainer gains a standing.**
-[ADR 0050](../adr/0050-retire-a-training-rather-than-delete-it.md) carries the argument; the shape
-is this:
-
-- A training is *published* or *unpublished*. It is born published — there is no drafting, because
-  creation takes five required fields and produces a complete training in one call.
-- A trainer is *active* or *suspended*.
-- A training is publicly visible when it is published **and** its trainer is active. The composition
-  is made where it is read and stored nowhere, so suspending a trainer writes one field and touches
-  no training. Lifting the suspension needs no record of what it hid, because it hid nothing — the
-  catalogue simply became invisible with its owner.
-- A suspended trainer may not increase their public footprint: no creating, no publishing, no
-  transferring in either direction. Editing and unpublishing stay open, so a trainer can repair what
-  earned them the sanction.
-- Withdrawing a training stops being a deletion. Deleting survives for the training created by
-  mistake and for erasure, which a system that never deletes anything cannot honour.
-
-**What it changes in this context, when it arrives:** the ubiquitous language gains the two statuses;
-the invariants gain the transitions and the rule about a suspended trainer; the search-indexing port
-gains a way to remove, which it does not have; and the quota stops counting what is no longer
-published. **What it does not change:** any boundary on the map. Nothing moves between contexts.
-
-Until then the sections above describe the model that exists, and this one describes the model that
-was agreed. Keeping the two apart is the whole discipline.
 
 ## Not decided
 

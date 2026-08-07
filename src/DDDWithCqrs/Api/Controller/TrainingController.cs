@@ -242,4 +242,83 @@ public sealed class TrainingController(
                     ? this.Problem(StatusCodes.Status409Conflict, errors)
                     : this.Problem(StatusCodes.Status400BadRequest, errors));
     }
+
+    /// <summary>
+    /// Offers a withdrawn training to the public again (ADR 0050).
+    /// </summary>
+    /// <remarks>
+    /// No If-Match, mirroring delete and transfer rather than edit: this is an action on the
+    /// resource, not an edit of its content. The race it could lose is the only one worth guarding,
+    /// and the aggregate already refuses it by name — publishing a training that is published
+    /// answers 409 rather than quietly succeeding, so a caller that lost the race is told so.
+    /// </remarks>
+    /// <param name="trainingId">The training the route names.</param>
+    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
+    /// <returns>
+    /// 204 No Content when the training is now on offer.
+    /// 400 Bad Request when the owner is suspended or their catalogue is full.
+    /// 404 Not Found if the training does not exist.
+    /// 409 Conflict when the training was already published.
+    /// </returns>
+    [Authorize(Policy = TrainingOwnerPolicy.Name)]
+    [HttpPost("{trainingId:guid}/publish")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult> PublishTrainingAsync(
+        [NotEmptyIdentifier] Guid trainingId,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await commandDispatcher.DispatchAsync(
+            HttpToApplicationMappings.ToPublishTrainingCommand(trainingId), cancellationToken);
+
+        return result.Match<ActionResult>(
+            NoContent,
+            errors => errors.Any(e => e.ErrorCode == ErrorCodes.NotFound)
+                ? NotFound()
+                : errors.Any(e => e.ErrorCode == TrainingErrorCodes.AlreadyPublished)
+                    ? this.Problem(StatusCodes.Status409Conflict, errors)
+                    : this.Problem(StatusCodes.Status400BadRequest, errors));
+    }
+
+    /// <summary>
+    /// Withdraws a training from public view, keeping it in its owner's listing (ADR 0050).
+    /// </summary>
+    /// <remarks>
+    /// The everyday act that took the place delete used to hold in the interface. Deleting survives
+    /// on this API and answers what withdrawing cannot: the training created by mistake, and a
+    /// trainer's right to have their data removed.
+    /// </remarks>
+    /// <param name="trainingId">The training the route names.</param>
+    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
+    /// <returns>
+    /// 204 No Content when the training has left public view.
+    /// 400 Bad Request on validation errors.
+    /// 404 Not Found if the training does not exist.
+    /// 409 Conflict when the training was already withdrawn.
+    /// </returns>
+    [Authorize(Policy = TrainingOwnerPolicy.Name)]
+    [HttpPost("{trainingId:guid}/unpublish")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult> UnpublishTrainingAsync(
+        [NotEmptyIdentifier] Guid trainingId,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await commandDispatcher.DispatchAsync(
+            HttpToApplicationMappings.ToUnpublishTrainingCommand(trainingId), cancellationToken);
+
+        return result.Match<ActionResult>(
+            NoContent,
+            errors => errors.Any(e => e.ErrorCode == ErrorCodes.NotFound)
+                ? NotFound()
+                : errors.Any(e => e.ErrorCode == TrainingErrorCodes.AlreadyUnpublished)
+                    ? this.Problem(StatusCodes.Status409Conflict, errors)
+                    : this.Problem(StatusCodes.Status400BadRequest, errors));
+    }
 }

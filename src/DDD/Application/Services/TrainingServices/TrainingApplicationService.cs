@@ -67,6 +67,16 @@ public interface ITrainingApplicationService
     /// (ADR 0036).
     /// </summary>
     Task<Result> TransferAsync(Guid trainingId, Guid recipientTrainerId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Offers a withdrawn training to the public again (ADR 0050).
+    /// </summary>
+    Task<Result> PublishAsync(Guid trainingId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Withdraws a training from public view, keeping it in its owner's own listing (ADR 0050).
+    /// </summary>
+    Task<Result> UnpublishAsync(Guid trainingId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -77,6 +87,7 @@ public sealed class TrainingApplicationService(
     ITrainerRepository trainerRepository,
     IUniquenessTitleChecker uniquenessTitleChecker,
     ITrainingCounter trainingCounter,
+    ITrainerStanding trainerStanding,
     ITrainingRepository trainingRepository,
     ICurrentUserService currentUserService,
     IUnitOfWork unitOfWork)
@@ -108,6 +119,7 @@ public sealed class TrainingApplicationService(
                 details.Topics,
                 uniquenessTitleChecker,
                 trainingCounter,
+                trainerStanding,
                 cancellationToken),
             Result<Training>.FailureAsync);
 
@@ -233,9 +245,60 @@ public sealed class TrainingApplicationService(
                 $"Training with id `{trainingId}` not found.");
         }
 
+        // The aggregate announces its own disappearance before the repository stages it. Deleting
+        // used to raise nothing at all, which is how a training could vanish from the database and
+        // stay in the search index for ever (ADR 0050).
+        training.MarkForDeletion();
+
         trainingRepository.Delete(training);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> PublishAsync(Guid trainingId, CancellationToken cancellationToken = default)
+    {
+        var training = await trainingRepository.GetByIdAsync(TrainingId.Create(trainingId), cancellationToken);
+        if (training is null)
+        {
+            return Result.Failure(
+                ErrorCodes.NotFound,
+                $"Training with id `{trainingId}` not found.");
+        }
+
+        var result = await training.PublishAsync(trainerStanding, trainingCounter, cancellationToken);
+
+        return await result.MatchAsync(
+            onSuccess: async () =>
+            {
+                trainingRepository.Update(training);
+                await unitOfWork.SaveChangesAsync(cancellationToken);
+                return Result.Success();
+            },
+            onFailure: Result.FailureAsync);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> UnpublishAsync(Guid trainingId, CancellationToken cancellationToken = default)
+    {
+        var training = await trainingRepository.GetByIdAsync(TrainingId.Create(trainingId), cancellationToken);
+        if (training is null)
+        {
+            return Result.Failure(
+                ErrorCodes.NotFound,
+                $"Training with id `{trainingId}` not found.");
+        }
+
+        var result = training.Unpublish();
+
+        return await result.MatchAsync(
+            onSuccess: async () =>
+            {
+                trainingRepository.Update(training);
+                await unitOfWork.SaveChangesAsync(cancellationToken);
+                return Result.Success();
+            },
+            onFailure: Result.FailureAsync);
     }
 
     /// <inheritdoc />
@@ -260,7 +323,7 @@ public sealed class TrainingApplicationService(
         }
 
         var result = await TrainingTransferDomainService.TransferAsync(
-            training, recipient, trainingCounter, uniquenessTitleChecker, cancellationToken);
+            training, recipient, trainingCounter, uniquenessTitleChecker, trainerStanding, cancellationToken);
 
         return await result.MatchAsync(
             onSuccess: async () =>

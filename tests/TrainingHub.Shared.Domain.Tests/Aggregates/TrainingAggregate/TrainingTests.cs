@@ -107,7 +107,8 @@ public sealed class TrainingTests
         // Act
         var act = () => Training.CreateAsync(
             TrainingId.Generate(), TrainerId.Generate(),
-            null!, Description(), Prerequisites(), Skills(), Topics(), checker, EmptyCatalogueCounter().Object);
+            null!, Description(), Prerequisites(), Skills(), Topics(), checker, EmptyCatalogueCounter().Object,
+            ActiveTrainerStanding().Object);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -122,7 +123,8 @@ public sealed class TrainingTests
         // Act
         var act = () => Training.CreateAsync(
             TrainingId.Generate(), TrainerId.Generate(),
-            Title(), Description(), Prerequisites(), Skills(), Topics(), null!, EmptyCatalogueCounter().Object);
+            Title(), Description(), Prerequisites(), Skills(), Topics(), null!, EmptyCatalogueCounter().Object,
+            ActiveTrainerStanding().Object);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -140,7 +142,8 @@ public sealed class TrainingTests
         // Act
         var act = () => Training.CreateAsync(
             TrainingId.Generate(), TrainerId.Generate(),
-            Title(), Description(), Prerequisites(), Skills(), Topics(), checker, null!);
+            Title(), Description(), Prerequisites(), Skills(), Topics(), checker, null!,
+            ActiveTrainerStanding().Object);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -383,6 +386,16 @@ public sealed class TrainingTests
 
         // Assert
         training.Topics.Should().HaveCount(2);
+    }
+
+    private static Mock<ITrainerStanding> ActiveTrainerStanding()
+    {
+        var standing = new Mock<ITrainerStanding>();
+        standing.Setup(s => s.IsSuspendedAsync(
+                It.IsAny<TrainerId>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        return standing;
     }
 
     private static Mock<ITrainingCounter> EmptyCatalogueCounter()

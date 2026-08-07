@@ -43,6 +43,11 @@ namespace TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("UserId");
@@ -140,6 +145,11 @@ namespace TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Title")
                         .IsRequired()

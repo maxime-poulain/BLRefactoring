@@ -39,8 +39,12 @@ public sealed class CreateTrainingCommandHandlerTests
     // test about the capacity rule mentions the counter.
     private readonly Mock<ITrainingCounter> _trainingCounter = new();
 
+    // Answers "not suspended" unless a test raises it, for the same reason as the counter above.
+    private readonly Mock<ITrainerStanding> _trainerStanding = new();
+
     private CreateTrainingCommandHandler CreateSut() =>
-        new(_trainingRepository.Object, _trainerRepository.Object, _titleChecker.Object, _trainingCounter.Object, _currentUserService.Object, _unitOfWork.Object);
+        new(_trainingRepository.Object, _trainerRepository.Object, _titleChecker.Object, _trainingCounter.Object,
+            _trainerStanding.Object, _currentUserService.Object, _unitOfWork.Object);
 
     /// <summary>
     /// Handle, valid command, returns success and calls save.
