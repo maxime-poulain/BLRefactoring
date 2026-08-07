@@ -168,6 +168,73 @@ public sealed partial class TestConventionRules
                 "discovering an inherited one")
             .ShouldHold();
 
+    /// <summary>
+    /// No fact, is asserted by both suites in their own code.
+    /// </summary>
+    /// <remarks>
+    /// The three rules above look outward from the kit — a shared base is abstract and generic, is
+    /// derived in both suites, and each derivation carries its own collection. Every one of them
+    /// takes its population from types that are <em>already</em> in the kit, so the convention was
+    /// checked in the direction where breaking it is impossible. A fact living in both suites and in
+    /// neither the kit is invisible to all three, which is how twenty-one of them accumulated in
+    /// <c>TrainerControllerTests</c> and <c>TrainingControllerTests</c> before anything noticed.
+    /// <para>
+    /// This is the other direction. A suite's own code is what it declares outside a derivation, and
+    /// what belongs there is a fact about <em>that host</em> — the CQRS validation pipeline, and
+    /// nothing else today. A fact asserted in both is a fact about the API, and the API is what the
+    /// kit exists for: written once, run twice, so the two hosts cannot answer it differently
+    /// without one of them going red.
+    /// </para>
+    /// <para>
+    /// Matched by name, and that is a real limit rather than an oversight. A copy that was renamed
+    /// on its way into the second suite escapes this — <c>GetById_Unknown_Returns404</c> and
+    /// <c>GetById_NonExistent_Returns404</c> were the same fact and would not have been caught.
+    /// What this stops is the copy that kept its name, which is how the duplication happens when
+    /// somebody reaches for the file next door; catching the ones already here was never its job.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("README#testing",
+        "a fact about the API is written once in the shared kit, so both suites run it rather than one")]
+    public void NoFact_IsAssertedByBothSuitesInTheirOwnCode() =>
+        Solution.Suites
+            .SelectMany(suite => FactsDeclaredBy(suite)
+                .Select(fact => (Suite: suite.GetName().Name!, fact.Type, fact.Name)))
+            .Selected("fact a suite declares outside a derivation")
+            .GroupBy(entry => entry.Name, StringComparer.Ordinal)
+            .Where(group => group
+                .Select(entry => entry.Suite)
+                .Distinct(StringComparer.Ordinal)
+                .Skip(1)
+                .Any())
+            .Select(group =>
+                $"'{group.Key}' is asserted by both suites in their own code — " +
+                $"{string.Join(" and ", group.Select(entry => entry.Type.Name).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))}. " +
+                "Two copies of one fact about the API drift apart silently, and the suite that was " +
+                "not updated goes on passing. Move it to a *Test base in the kit and leave each " +
+                "suite a derivation")
+            .ShouldHold();
+
+    /// <summary>
+    /// The facts a suite declares itself, rather than inheriting from a base in the kit.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="BindingFlags.DeclaredOnly"/> is the whole of it, and it is deliberately *not*
+    /// paired with a filter on the type. Excluding derivations of a shared base looked equivalent
+    /// and was not: it hid a fact declared *inside* a derivation, which is the one way a suite can
+    /// grow its own copy of a shared fact while still looking like a one-line file. The mistake was
+    /// found by breaking this rule and watching it stay green, which is the only reason anybody
+    /// finds a hole in a guard. A file that derives and adds nothing contributes nothing here,
+    /// because inherited methods are not declared ones.
+    /// </remarks>
+    private static IEnumerable<(Type Type, string Name)> FactsDeclaredBy(Assembly suite) =>
+        suite.DeclaredTypes()
+            .Where(type => !type.IsAbstract)
+            .SelectMany(type => type
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                .Where(method => method.GetCustomAttributes<FactAttribute>(inherit: true).Any())
+                .Select(method => (Type: type, method.Name)));
+
     /// <summary>The kit's abstract generic bases that actually declare tests.</summary>
     private static IReadOnlySet<Type> SharedTestBases { get; } =
         Solution.TestKit.DeclaredTypes()
