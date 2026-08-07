@@ -22,20 +22,20 @@ public static class PaginationMappings
     /// <see langword="null"/> when the caller passes no query string at all — and an unpaged call
     /// must not mean an unbounded read, so the defaults apply here as well as on the contract.
     /// </remarks>
-    public static PageRequest ToPageRequest(this PaginationRequestHttp? pagination)
+    public static PageRequest ToPageRequest(this PaginationHttpRequest? pagination)
         => new() { Page = pagination?.Page ?? 1, PageSize = pagination?.PageSize ?? PageRequest.DefaultPageSize };
 
     /// <summary>
     /// Publishes one page of read models, recomputing the metadata from the query result.
     /// </summary>
-    public static PagedResponseHttp<TResponse> ToHttp<TItem, TResponse>(
+    public static PagedHttpResponse<TResponse> ToHttp<TItem, TResponse>(
         this PagedResult<TItem> page,
         Func<IEnumerable<TItem>, List<TResponse>> mapItems)
     {
         ArgumentNullException.ThrowIfNull(page);
         ArgumentNullException.ThrowIfNull(mapItems);
 
-        return new PagedResponseHttp<TResponse>
+        return new PagedHttpResponse<TResponse>
         {
             Items = mapItems(page.Items),
             Page = page.Page,

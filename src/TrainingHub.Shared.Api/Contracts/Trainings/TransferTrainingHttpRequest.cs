@@ -15,7 +15,7 @@ namespace TrainingHub.Shared.Api.Contracts.Trainings;
 /// <see cref="NotEmptyIdentifierAttribute"/> is what the remark always described (ADR 0046).
 /// </para>
 /// </remarks>
-public sealed class TransferTrainingRequestHttp
+public sealed class TransferTrainingHttpRequest
 {
     /// <summary>The trainer receiving the training.</summary>
     [NotEmptyIdentifier]

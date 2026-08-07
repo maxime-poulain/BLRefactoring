@@ -283,7 +283,7 @@ public sealed class ProfileTests : ComponentTest
             .ReturnsAsync(ProfileWithPhoto(uploaded));
 
         _trainerClient
-            .Setup(client => client.EditCurrentAsync(It.IsAny<string?>(), It.IsAny<EditTrainerRequestHttp>()))
+            .Setup(client => client.EditCurrentAsync(It.IsAny<string?>(), It.IsAny<EditTrainerHttpRequest>()))
             .ReturnsAsync(ProfileWithPhoto(uploaded));
 
         var page = Render<Profile>();
@@ -300,7 +300,7 @@ public sealed class ProfileTests : ComponentTest
 
         // Assert
         page.WaitForAssertion(() => _trainerClient.Verify(
-            client => client.EditCurrentAsync("\"v2\"", It.IsAny<EditTrainerRequestHttp>()), Times.Once));
+            client => client.EditCurrentAsync("\"v2\"", It.IsAny<EditTrainerHttpRequest>()), Times.Once));
     }
 
     /// <summary>
@@ -354,15 +354,15 @@ public sealed class ProfileTests : ComponentTest
 
     private static readonly Guid TrainerId = Guid.NewGuid();
 
-    private void GivenProfile(TrainerResponseHttp trainer) =>
+    private void GivenProfile(TrainerHttpResponse trainer) =>
         _trainerClient
             .Setup(client => client.GetCurrentAsync())
             .ReturnsAsync(Answering("\"AAAAAAAAB9E=\"", trainer));
 
-    private static SwaggerResponse<TrainerResponseHttp> Answering(string etag, TrainerResponseHttp trainer) =>
+    private static SwaggerResponse<TrainerHttpResponse> Answering(string etag, TrainerHttpResponse trainer) =>
         new(200, new Dictionary<string, IEnumerable<string>> { ["ETag"] = [etag] }, trainer);
 
-    private static TrainerResponseHttp ProfileWithoutPhoto() => new()
+    private static TrainerHttpResponse ProfileWithoutPhoto() => new()
     {
         Id = TrainerId,
         Firstname = "John",
@@ -370,7 +370,7 @@ public sealed class ProfileTests : ComponentTest
         ContactEmail = "john.doe@example.com"
     };
 
-    private static TrainerResponseHttp ProfileWithPhoto(Guid photoId) => new()
+    private static TrainerHttpResponse ProfileWithPhoto(Guid photoId) => new()
     {
         Id = TrainerId,
         Firstname = "John",

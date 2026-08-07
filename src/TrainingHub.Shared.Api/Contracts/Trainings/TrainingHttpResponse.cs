@@ -5,10 +5,10 @@ namespace TrainingHub.Shared.Api.Contracts.Trainings;
 /// </summary>
 /// <remarks>
 /// The application layer's <c>TrainingDto</c> is a read model shared by both stacks; this is the
-/// contract callers depend on. As with <see cref="Trainers.TrainerResponseHttp"/>, the row
+/// contract callers depend on. As with <see cref="Trainers.TrainerHttpResponse"/>, the row
 /// version is absent here and travels in the <c>ETag</c> header.
 /// </remarks>
-public sealed class TrainingResponseHttp
+public sealed class TrainingHttpResponse
 {
     /// <summary>
     /// The identifier.

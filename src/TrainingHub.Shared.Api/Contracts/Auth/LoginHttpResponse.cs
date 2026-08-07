@@ -8,7 +8,7 @@ namespace TrainingHub.Shared.Api.Contracts.Auth;
 /// say who the caller is, and the trainer they map to is read from the token by
 /// <c>ICurrentUserService</c> rather than handed out here.
 /// </remarks>
-public sealed class LoginResponseHttp
+public sealed class LoginHttpResponse
 {
     /// <summary>
     /// The JWT token generated for the authenticated user.

@@ -17,7 +17,7 @@ namespace TrainingHub.Shared.Api.Contracts.Errors;
 /// now the string it always was.
 /// </para>
 /// </remarks>
-public sealed class ErrorResponseHttp
+public sealed class ErrorHttpResponse
 {
     /// <summary>
     /// What went wrong, in terms a caller can act on.

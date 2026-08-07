@@ -1,6 +1,6 @@
 # 0017 — Measure what the rules cannot, with SonarQube Cloud
 
-- **Status:** Accepted — amended by [0018](0018-fail-on-the-gate-where-failing-stops-something.md)
+- **Status:** Accepted — amended by [0018](0018-fail-on-the-gate-where-failing-stops-something.md), and by [0049](0049-measure-duplication-where-repetition-is-a-defect.md): the duplication measure exempts the two hosts, whose published declarations two rules require to be identical
 - **Date:** 2026-08-02
 
 ## Context

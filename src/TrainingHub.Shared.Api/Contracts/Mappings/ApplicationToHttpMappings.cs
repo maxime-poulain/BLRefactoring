@@ -27,11 +27,11 @@ public static class ApplicationToHttpMappings
     /// Publishes a trainer read model. The row version is deliberately dropped: it leaves in the
     /// <c>ETag</c>, which the controller sets from the read model itself.
     /// </summary>
-    public static TrainerResponseHttp ToHttp(this TrainerDto trainer)
+    public static TrainerHttpResponse ToHttp(this TrainerDto trainer)
     {
         ArgumentNullException.ThrowIfNull(trainer);
 
-        return new TrainerResponseHttp
+        return new TrainerHttpResponse
         {
             Id = trainer.Id,
             Firstname = trainer.Firstname,
@@ -45,17 +45,17 @@ public static class ApplicationToHttpMappings
     /// <summary>
     /// Publishes a sequence of trainer read models.
     /// </summary>
-    public static List<TrainerResponseHttp> ToHttp(this IEnumerable<TrainerDto> trainers)
+    public static List<TrainerHttpResponse> ToHttp(this IEnumerable<TrainerDto> trainers)
         => [.. trainers.Select(ToHttp)];
 
     /// <summary>
     /// Publishes a training read model.
     /// </summary>
-    public static TrainingResponseHttp ToHttp(this TrainingDto training)
+    public static TrainingHttpResponse ToHttp(this TrainingDto training)
     {
         ArgumentNullException.ThrowIfNull(training);
 
-        return new TrainingResponseHttp
+        return new TrainingHttpResponse
         {
             Id = training.Id,
             Title = training.Title,
@@ -70,7 +70,7 @@ public static class ApplicationToHttpMappings
     /// <summary>
     /// Publishes a sequence of training read models.
     /// </summary>
-    public static List<TrainingResponseHttp> ToHttp(this IEnumerable<TrainingDto> trainings)
+    public static List<TrainingHttpResponse> ToHttp(this IEnumerable<TrainingDto> trainings)
         => [.. trainings.Select(ToHttp)];
 
     /// <summary>
@@ -81,8 +81,8 @@ public static class ApplicationToHttpMappings
     /// so no caller sees a difference. It is also the single place to change the day the API
     /// answers in <c>ProblemDetails</c>.
     /// </remarks>
-    public static List<ErrorResponseHttp> ToHttp(this IEnumerable<Error> errors)
-        => [.. errors.Select(error => new ErrorResponseHttp
+    public static List<ErrorHttpResponse> ToHttp(this IEnumerable<Error> errors)
+        => [.. errors.Select(error => new ErrorHttpResponse
         {
             ErrorMessage = error.ErrorMessage,
             ErrorCode = error.ErrorCode.Value

@@ -18,10 +18,10 @@ public static class AuthHelper
     /// </summary>
     /// <param name="firstname">The first name — a marker some test-only consumers key on, such as
     /// <see cref="FailOnceWhenTrainerCreatedIntegrationEventHandler.Marker"/>.</param>
-    public static RegisterRequestHttp CreateUniqueRegisterRequest(string firstname = "Test")
+    public static RegisterHttpRequest CreateUniqueRegisterRequest(string firstname = "Test")
     {
         var id = Interlocked.Increment(ref _counter);
-        return new RegisterRequestHttp
+        return new RegisterHttpRequest
         {
             Username = $"testuser{id}",
             Email = $"testuser{id}@example.com",
@@ -35,7 +35,7 @@ public static class AuthHelper
     /// <summary>
     /// Register async.
     /// </summary>
-    public static async Task<HttpResponseMessage> RegisterAsync(HttpClient client, RegisterRequestHttp request)
+    public static async Task<HttpResponseMessage> RegisterAsync(HttpClient client, RegisterHttpRequest request)
     {
         return await client.PostAsJsonAsync("/Auth/register", request);
     }
@@ -45,14 +45,14 @@ public static class AuthHelper
     /// </summary>
     public static async Task<string> LoginAsync(HttpClient client, string username, string password)
     {
-        var response = await client.PostAsJsonAsync("/Auth/login", new LoginRequestHttp
+        var response = await client.PostAsJsonAsync("/Auth/login", new LoginHttpRequest
         {
             Username = username,
             Password = password
         });
 
         response.EnsureSuccessStatusCode();
-        var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponseHttp>();
+        var loginResponse = await response.Content.ReadFromJsonAsync<LoginHttpResponse>();
         return loginResponse!.Token;
     }
 

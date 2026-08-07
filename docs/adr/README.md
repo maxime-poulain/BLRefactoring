@@ -44,7 +44,7 @@ simpler from the outside.
 | [0014](0014-seal-by-default-and-let-inheritance-be-a-decision.md) | Seal by default, and let inheritance be a decision | Accepted |
 | [0015](0015-let-each-aggregate-own-the-errors-it-raises.md) | Let each aggregate own the errors it raises | Accepted |
 | [0016](0016-let-a-rejected-command-fail-like-every-other-command.md) | Let a rejected command fail like every other command | Accepted — the validation cost it recorded and deferred is paid off by 0043 |
-| [0017](0017-measure-what-the-rules-cannot-with-sonarqube-cloud.md) | Measure what the rules cannot, with SonarQube Cloud | Accepted — amended by 0018 |
+| [0017](0017-measure-what-the-rules-cannot-with-sonarqube-cloud.md) | Measure what the rules cannot, with SonarQube Cloud | Accepted — amended by 0018, and by [0049](0049-measure-duplication-where-repetition-is-a-defect.md): the duplication measure exempts the two hosts, whose published declarations two rules require to be identical |
 | [0018](0018-fail-on-the-gate-where-failing-stops-something.md) | Fail on the gate where failing stops something | Accepted |
 | [0019](0019-enforce-the-ruleset-this-repository-already-declared.md) | Enforce the ruleset this repository already declared | Accepted — amended by 0020 |
 | [0020](0020-declare-every-rule-this-codebase-already-satisfies.md) | Declare every rule this codebase already satisfies | Accepted |
@@ -69,9 +69,11 @@ simpler from the outside.
 | [0039](0039-hold-the-record-and-its-index-to-the-same-status.md) | Hold the record and its index to the same status | Accepted |
 | [0040](0040-register-the-trainer-and-the-account-in-one-transaction.md) | Register the trainer and the account in one transaction | Accepted |
 | [0041](0041-derive-every-named-list-from-the-code.md) | Derive every named list from the code | Accepted |
-| [0042](0042-close-the-boundarys-vocabulary.md) | Close the boundary's vocabulary | Accepted |
+| [0042](0042-close-the-boundarys-vocabulary.md) | Close the boundary's vocabulary | Accepted — amended by [0048](0048-qualify-a-contract-before-naming-what-it-is.md): the qualifier moves to the front of the contract's name, and the rules read the assembly rather than the suffix |
 | [0043](0043-validate-once-where-the-rule-lives.md) | Validate once, where the rule lives | Accepted — amended by [0046](0046-refuse-the-empty-identifier-at-every-entry-point.md): the one shape rule this record kept in the pipeline gains a second half at the HTTP boundary, and the pipeline keeps its own; the sentence emptying the creation validators is corrected there |
 | [0044](0044-let-the-domain-speak-entirely-in-its-own-terms.md) | Let the domain speak entirely in its own terms | Accepted |
 | [0045](0045-fail-readiness-while-a-migration-is-pending.md) | Fail readiness while a migration is pending | Accepted |
 | [0046](0046-refuse-the-empty-identifier-at-every-entry-point.md) | Refuse the empty identifier at every entry point | Accepted |
 | [0047](0047-verify-the-build-a-pull-request-delegates.md) | Verify the build a pull request delegates | Accepted |
+| [0048](0048-qualify-a-contract-before-naming-what-it-is.md) | Qualify a contract before naming what it is | Accepted |
+| [0049](0049-measure-duplication-where-repetition-is-a-defect.md) | Measure duplication where repetition is a defect | Accepted |

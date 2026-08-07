@@ -15,10 +15,10 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
 {
     // One definition of "a valid training", in the test kit, rather than the five copies of the
     // same object literal this suite and its twin used to carry between them.
-    private static CreateTrainingRequestHttp ValidCreation(string? title = null) =>
+    private static CreateTrainingHttpRequest ValidCreation(string? title = null) =>
         TrainingRequests.Valid(title ?? $"Training {Guid.NewGuid():N}"[..25]);
 
-    private static EditTrainingRequestHttp ValidEdition(string? title = null) => new()
+    private static EditTrainingHttpRequest ValidEdition(string? title = null) => new()
     {
         Title = title ?? $"Updated {Guid.NewGuid():N}"[..25],
         Description = "Updated description for the training",
@@ -84,7 +84,7 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
     {
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
 
-        var response = await client.PostAsJsonAsync("/Training", new CreateTrainingRequestHttp
+        var response = await client.PostAsJsonAsync("/Training", new CreateTrainingHttpRequest
         {
             Title = "ab",
             Description = "",
@@ -140,7 +140,7 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Headers.ETag.Should().NotBeNull();
-        var dto = await response.Content.ReadFromJsonAsync<TrainingResponseHttp>();
+        var dto = await response.Content.ReadFromJsonAsync<TrainingHttpResponse>();
         dto!.Id.Should().Be(trainingId);
     }
 
@@ -177,7 +177,7 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         // the ETag. This host used to answer a bare 200 with neither — so a caller who edited
         // twice in a row was guaranteed a 412 on the second attempt, holding a version the first
         // edit had just superseded, with no way forward but another GET.
-        var edited = await response.Content.ReadFromJsonAsync<TrainingResponseHttp>();
+        var edited = await response.Content.ReadFromJsonAsync<TrainingHttpResponse>();
         edited!.Title.Should().Be("Renamed Training");
 
         response.Headers.ETag.Should().NotBeNull("the caller needs the new version to edit again");
@@ -217,7 +217,7 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
 
         second.StatusCode.Should().Be(HttpStatusCode.PreconditionFailed);
 
-        var reread = await client.GetFromJsonAsync<TrainingResponseHttp>($"/Training/{trainingId}");
+        var reread = await client.GetFromJsonAsync<TrainingHttpResponse>($"/Training/{trainingId}");
         reread!.Title.Should().Be("First Edit Wins", "the second edit must not have overwritten the first");
     }
 

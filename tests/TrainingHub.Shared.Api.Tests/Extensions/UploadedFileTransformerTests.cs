@@ -75,7 +75,7 @@ public sealed class UploadedFileTransformerTests
             {
                 Schemas = new Dictionary<string, IOpenApiSchema>
                 {
-                    ["TrainerResponseHttp"] = new OpenApiSchema { Type = JsonSchemaType.Object }
+                    ["TrainerHttpResponse"] = new OpenApiSchema { Type = JsonSchemaType.Object }
                 }
             }
         };
@@ -84,7 +84,7 @@ public sealed class UploadedFileTransformerTests
         await new UploadedFileTransformer().TransformAsync(document, null!, CancellationToken.None);
 
         // Assert
-        document.Components.Schemas.Should().ContainKey("TrainerResponseHttp");
+        document.Components.Schemas.Should().ContainKey("TrainerHttpResponse");
     }
 
     private static OpenApiDocument DocumentWithAnUpload()

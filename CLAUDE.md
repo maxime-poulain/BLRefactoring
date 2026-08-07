@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 47 architecture decision records.
+2. `docs/adr/README.md` — the index of 49 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 156 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 158 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -95,14 +95,18 @@ repository a named question and maps the aggregates.
 
 ## HTTP boundary
 
-- The published contracts are `*RequestHttp` and `*ResponseHttp`, under `Shared.Api/Contracts/`. No
+- The published contracts are `*HttpRequest` and `*HttpResponse`, under `Shared.Api/Contracts/`. No
   controller names a command, a query or an application DTO, and no inner layer names a contract.
-- **The suffix says which boundary a type belongs to, and the two must never be confused.** The
+- **The qualifier says which boundary a type belongs to, and the two must never be confused.** The
   layered stack's application services take a `*Request` and answer a `*Dto`; the API's published
-  contracts are `*RequestHttp` and `*ResponseHttp`. `EditTrainerRequestHttp` is what a client sends;
-  `TrainerEditionRequest` is what the application layer accepts, after the mapping. A type whose
-  name does not say which of the two it is has to be read to be placed
-  (`EveryLayeredServiceSignature_SaysWhichBoundaryItIsOn`).
+  contracts are `*HttpRequest` and `*HttpResponse`. `EditTrainerHttpRequest` is what a client sends;
+  `TrainerEditionRequest` is what the application layer accepts, after the mapping.
+- **Both end in `Request`, so the suffix no longer places a type and no rule may ask it to**
+  (ADR 0048). What an action binds or answers is named for the transport and lives under
+  `Contracts/`; what an inner layer declares never is. That is checked per assembly rather than per
+  string, in two halves that can fail separately — a layered signature that takes an `*HttpRequest`
+  (`EveryLayeredServiceSignature_SaysWhichBoundaryItIsOn`), and an inner layer that declares one
+  (`NoInnerLayer_DeclaresATypeNamedForTheTransport`).
 - The CQRS stack names its inputs differently on purpose — a `*Command` or a `*Query`, one folder
   per use case — and answers the same `*Dto`. The `*Request` half is the layered stack's; the `Dto`
   half is shared by both.

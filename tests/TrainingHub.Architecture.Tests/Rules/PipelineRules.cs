@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using TrainingHub.Architecture.Tests.Framework;
 using Xunit;
 
@@ -15,7 +16,7 @@ namespace TrainingHub.Architecture.Tests.Rules;
 /// makes a run red — they make the numbers wrong or the bill high, and a wrong number is still
 /// believed.
 /// </remarks>
-public sealed class PipelineRules
+public sealed partial class PipelineRules
 {
     private static string Workflow { get; } =
         Path.Combine(SourceTree.RepositoryRoot, ".github", "workflows", "sonar.yml");
@@ -186,4 +187,99 @@ public sealed class PipelineRules
             .Select(rule => $"'.github/workflows/sonar.yml' {rule.Wrong}")
             .ShouldHold();
     }
+
+    /// <summary>
+    /// The duplication measure, excludes the hosts written twice and nothing else.
+    /// </summary>
+    /// <remarks>
+    /// This repository publishes one API from two implementations, so the routing attribute, the
+    /// <c>[ProducesResponseType]</c> run and the action signature of every endpoint appear twice —
+    /// identically, because <c>BothHosts_PublishTheSameOperations</c> and
+    /// <c>BothHosts_AnswerEachOperationWithTheSameShape</c> require it. A copy-paste detector reads
+    /// that as duplication, and it is not wrong about the text: it is wrong about what the text is.
+    /// <para>
+    /// So the exemption exists, and this rule is what keeps it honest. It holds three things that
+    /// fail separately. Every host is <em>covered</em>, derived from <see cref="Solution.Hosts"/>
+    /// rather than spelled here, so a third host cannot arrive without the exclusion following it.
+    /// It is the <em>duplication</em> measure that is relaxed and not the analysis — a host path in
+    /// <c>sonar.exclusions</c> would stop measuring bugs and coverage on the busiest files in the
+    /// repository to settle a duplication figure. And the exemption does not <em>grow</em>: anything
+    /// in <c>sonar.cpd.exclusions</c> that is not a host is a suppression wearing this record's
+    /// clothes.
+    /// </para>
+    /// <para>
+    /// The third clause is the one worth the rule. Without it this is a line in a workflow that
+    /// anybody can lengthen by one path the next time a figure is inconvenient, which is the move
+    /// <c>CLAUDE.md</c> forbids: never act on a finding to make it stop reporting. See ADR 0049.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0049",
+        "duplication is measured where repetition is a defect: the two hosts are exempt because two rules " +
+        "require their published declarations to be identical, and nothing else is")]
+    public void TheDuplicationMeasure_ExcludesTheHostsWrittenTwiceAndNothingElse()
+    {
+        var text = SourceTree.ReadText(Workflow);
+        var exempt = Excluded(text, "sonar.cpd.exclusions");
+        var unanalysed = Excluded(text, "sonar.exclusions");
+
+        var hosts = HostProjects.Selected("host the API is written in");
+
+        hosts
+            .Where(host => !exempt.Contains(Everything(host), StringComparison.Ordinal))
+            .Select(host =>
+                $"'{Everything(host)}' is missing from sonar.cpd.exclusions. Every endpoint under it " +
+                "is the second copy of its twin, and two rules require the two copies to declare the " +
+                "same operations and the same shapes — so the gate would fail on any change touching " +
+                "both hosts, for repetition this repository decided on")
+            .Concat(hosts
+                .Where(host => unanalysed.Contains(host, StringComparison.Ordinal))
+                .Select(host =>
+                    $"'{host}' is named in sonar.exclusions, which removes it from the analysis " +
+                    "altogether. What ADR 0049 exempts is the duplication measure alone: bugs, " +
+                    "hotspots and coverage on a host's controllers are exactly what nobody wants to " +
+                    "stop reading"))
+            .Concat(exempt
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(path => !hosts.Any(host =>
+                    string.Equals(path, Everything(host), StringComparison.Ordinal)))
+                .Select(path =>
+                    $"'{path}' is exempt from the duplication measure and is not a host of this API. " +
+                    "ADR 0049 exempts the code this repository writes twice on purpose; anything else " +
+                    "under that setting is a finding being silenced rather than answered"))
+            .ShouldHold();
+    }
+
+    /// <summary>The glob covering everything a project holds.</summary>
+    private static string Everything(string project) => $"{project}/**";
+
+    /// <summary>
+    /// The directory of each host's project, relative to the root and derived from the solution.
+    /// </summary>
+    /// <remarks>
+    /// From <see cref="Solution.Hosts"/> rather than written down, for the reason ADR 0041 gives: a
+    /// list restated in a rule is a second copy that drifts from the first, and a rule reading its
+    /// own copy holds nothing.
+    /// </remarks>
+    private static IReadOnlyList<string> HostProjects { get; } =
+    [
+        .. Solution.Hosts
+            .Select(host => host.GetName().Name)
+            .Select(name => SourceTree.ProjectFiles.Single(project =>
+                string.Equals(Path.GetFileNameWithoutExtension(project), name, StringComparison.Ordinal)))
+            .Select(project => SourceTree.Relative(Path.GetDirectoryName(project)!))
+            .OrderBy(path => path, StringComparer.Ordinal)
+    ];
+
+    /// <summary>The comma-separated value a scanner setting carries, or empty when it is absent.</summary>
+    private static string Excluded(string workflow, string setting) =>
+        ScannerSetting
+            .Matches(workflow)
+            .Where(match => string.Equals(match.Groups["name"].Value, setting, StringComparison.Ordinal))
+            .Select(match => match.Groups["value"].Value)
+            .FirstOrDefault(string.Empty);
+
+    /// <summary>A setting handed to <c>sonarscanner begin</c>, with the value it carries.</summary>
+    [GeneratedRegex(@"/d:(?<name>sonar(?:\.\w+)+)=""(?<value>[^""]*)""")]
+    private static partial Regex ScannerSetting { get; }
 }

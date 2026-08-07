@@ -14,7 +14,7 @@ namespace TrainingHub.Shared.Api.Contracts.Trainers;
 /// does, the attribute is gone with the coupling that required it.
 /// </para>
 /// </remarks>
-public sealed class TrainerResponseHttp
+public sealed class TrainerHttpResponse
 {
     /// <summary>
     /// The identifier.

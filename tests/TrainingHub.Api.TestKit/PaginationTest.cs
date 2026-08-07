@@ -40,13 +40,13 @@ public abstract class PaginationTest<TFactory>(TFactory factory) : IntegrationTe
         }
     }
 
-    private static async Task<PagedResponseHttp<TrainingResponseHttp>> GetPageAsync(
+    private static async Task<PagedHttpResponse<TrainingHttpResponse>> GetPageAsync(
         HttpClient client, int page, int pageSize)
     {
         var response = await client.GetAsync($"/Training/my-trainings?page={page}&pageSize={pageSize}");
         response.EnsureSuccessStatusCode();
 
-        return (await response.Content.ReadFromJsonAsync<PagedResponseHttp<TrainingResponseHttp>>())!;
+        return (await response.Content.ReadFromJsonAsync<PagedHttpResponse<TrainingHttpResponse>>())!;
     }
 
     /// <summary>
@@ -103,7 +103,7 @@ public abstract class PaginationTest<TFactory>(TFactory factory) : IntegrationTe
         var response = await client.GetAsync("/Training/my-trainings");
         response.EnsureSuccessStatusCode();
 
-        var page = (await response.Content.ReadFromJsonAsync<PagedResponseHttp<TrainingResponseHttp>>())!;
+        var page = (await response.Content.ReadFromJsonAsync<PagedHttpResponse<TrainingHttpResponse>>())!;
 
         // An unpaged call must not mean an unbounded read: the default applies.
         page.Page.Should().Be(1);
@@ -125,6 +125,6 @@ public abstract class PaginationTest<TFactory>(TFactory factory) : IntegrationTe
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         var problem = await response.Content.ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ValidationProblemDetails>();
-        problem!.Errors.Should().ContainKey(nameof(PaginationRequestHttp.PageSize));
+        problem!.Errors.Should().ContainKey(nameof(PaginationHttpRequest.PageSize));
     }
 }

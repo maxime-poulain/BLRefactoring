@@ -1,6 +1,6 @@
 # 0042 — Close the boundary's vocabulary
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0048](0048-qualify-a-contract-before-naming-what-it-is.md): the qualifier moves to the front of the contract's name, and the rules read the assembly rather than the suffix
 - **Date:** 2026-08-06
 
 ## Context

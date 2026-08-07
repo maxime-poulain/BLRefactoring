@@ -104,8 +104,8 @@ concurrency — lives in `TrainingHub.Shared.Api`, so a rule can only be written
 one, and how it kept relying on an `IHttpContextAccessor` it never registered. Persistence stayed
 in `TrainingHub.Shared.Infrastructure`, which carries no ASP.NET Core framework reference.
 
-**HTTP is a boundary, not a window.** The contracts the API publishes — `*RequestHttp` and
-`*ResponseHttp`, under `Shared.Api/Contracts/` — belong to the API and to nothing else. Commands,
+**HTTP is a boundary, not a window.** The contracts the API publishes — `*HttpRequest` and
+`*HttpResponse`, under `Shared.Api/Contracts/` — belong to the API and to nothing else. Commands,
 queries and application DTOs stop at that line: no controller names one, and each host maps the
 shared contracts onto its own vocabulary — the layered one to its application services, the CQRS
 one to its commands and queries. Before that, the CQRS controllers bound an `EditTrainingCommand`
@@ -160,7 +160,7 @@ Twenty-seven projects: sixteen under `src/`, eleven under `tests/`. The backend 
 | `TrainingHub.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, and the fact ports `IUniquenessTitleChecker` and `ITrainingCounter` |
 | `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the seven domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the five post-commit consumers — all shared by both stacks |
 | `TrainingHub.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the paged-read extensions (`NewestFirst`, `ToPagedResultAsync`), the identity store, and the transactional outbox — publisher, delivery worker, dispatcher |
-| `TrainingHub.Shared.Api` | The HTTP boundary: the `*RequestHttp` and `*ResponseHttp` contracts both hosts publish, their mappings to the application layer, the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, concurrency helpers |
+| `TrainingHub.Shared.Api` | The HTTP boundary: the `*HttpRequest` and `*HttpResponse` contracts both hosts publish, their mappings to the application layer, the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, concurrency helpers |
 | `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService` |
 | `DDD.Api` | REST host for the layered stack — controllers, composition root |
 | `DDDWithCqrs.Application` | Commands, command handlers, FluentValidation validators |
@@ -1142,6 +1142,17 @@ near-identical by construction, so they would decide the duplication figure; not
 covers them, so they would decide the coverage figure; and an issue raised in either is fixed by
 regenerating, never by editing. Test projects need no exclusion — the .NET scanner recognises them
 and keeps them out of the coverage denominator on its own, architecture tests included.
+
+**One measure is narrowed rather than one family excluded.** The two host projects — `src/DDD/Api`
+and `src/DDDWithCqrs/Api` — are named in `sonar.cpd.exclusions`, which removes them from the
+*duplication* detector and from nothing else: their bugs, hotspots and coverage are read like any
+other code, and they are the files every request passes through. What is exempt is the repetition,
+because this repository publishes one API from two implementations and two rules require the two
+copies to declare the same operations and the same shapes — so an endpoint's routing attribute,
+`[ProducesResponseType]` run and action signature exist twice, identically, by decision. A rule
+derives that list from the hosts and fails if it grows past them, so the setting cannot become a
+place to file an inconvenient figure. See
+[ADR 0049](docs/adr/0049-measure-duplication-where-repetition-is-a-defect.md).
 
 Test *results* are published alongside coverage, from the same run: `--logger trx` feeds
 `sonar.cs.vstest.reportsPaths`, so the dashboard reports how many tests ran and how long they took,

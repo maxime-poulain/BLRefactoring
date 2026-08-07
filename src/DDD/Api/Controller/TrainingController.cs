@@ -47,7 +47,7 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     public async Task<ActionResult> CreateTrainingAsync(
-        [FromBody] CreateTrainingRequestHttp request,
+        [FromBody] CreateTrainingHttpRequest request,
         CancellationToken cancellationToken = default)
     {
         var result = await trainingApplicationService.CreateAsync(
@@ -73,7 +73,7 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     [HttpGet("{trainingId:guid}")]
     [ProducesEntityTag]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(TrainingResponseHttp), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TrainingHttpResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> GetTrainingByIdAsync(
         [NotEmptyIdentifier] Guid trainingId,
@@ -130,14 +130,14 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     [ProducesEntityTag]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    [ProducesResponseType(typeof(TrainingResponseHttp), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TrainingHttpResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status412PreconditionFailed)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status428PreconditionRequired)]
     public async Task<ActionResult> UpdateTrainingAsync(
         [NotEmptyIdentifier] Guid trainingId,
-        [FromBody] EditTrainingRequestHttp request,
+        [FromBody] EditTrainingHttpRequest request,
         [FromHeader(Name = "If-Match")] string? ifMatch,
         CancellationToken cancellationToken = default)
     {
@@ -201,10 +201,10 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     /// </para>
     /// </remarks>
     [HttpGet("my-trainings")]
-    [ProducesResponseType(typeof(PagedResponseHttp<TrainingResponseHttp>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedHttpResponse<TrainingHttpResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<PagedResponseHttp<TrainingResponseHttp>>> GetMineAsync(
-        [FromQuery] PaginationRequestHttp pagination,
+    public async Task<ActionResult<PagedHttpResponse<TrainingHttpResponse>>> GetMineAsync(
+        [FromQuery] PaginationHttpRequest pagination,
         CancellationToken cancellationToken = default)
     {
         var page = await trainingApplicationService.GetMineAsync(
@@ -268,7 +268,7 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> TransferTrainingAsync(
         [NotEmptyIdentifier] Guid trainingId,
-        [FromBody] TransferTrainingRequestHttp request,
+        [FromBody] TransferTrainingHttpRequest request,
         CancellationToken cancellationToken = default)
     {
         var result = await trainingApplicationService.TransferAsync(

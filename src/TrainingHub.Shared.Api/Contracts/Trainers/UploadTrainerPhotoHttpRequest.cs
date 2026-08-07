@@ -11,7 +11,7 @@ namespace TrainingHub.Shared.Api.Contracts.Trainers;
 /// generator describes a bound model, so this is what gives the generated clients a named part
 /// instead of an untyped stream.
 /// </remarks>
-public sealed class UploadTrainerPhotoRequestHttp
+public sealed class UploadTrainerPhotoHttpRequest
 {
     /// <summary>
     /// The image being published.

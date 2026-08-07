@@ -21,7 +21,7 @@ public static class HttpToApplicationMappings
     /// being edited and the version the caller read are passed alongside, not inside: they come
     /// from the token and from <c>If-Match</c>, not from the body.
     /// </summary>
-    public static TrainerEditionRequest ToApplicationRequest(this EditTrainerRequestHttp request)
+    public static TrainerEditionRequest ToApplicationRequest(this EditTrainerHttpRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -44,7 +44,7 @@ public static class HttpToApplicationMappings
     /// </remarks>
     /// <param name="request">The registration request.</param>
     /// <param name="userId">The identity user created moments earlier.</param>
-    public static TrainerCreationRequest ToApplicationRequest(this RegisterRequestHttp request, Guid userId)
+    public static TrainerCreationRequest ToApplicationRequest(this RegisterHttpRequest request, Guid userId)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -60,7 +60,7 @@ public static class HttpToApplicationMappings
     /// <summary>
     /// Builds the creation request for <c>ITrainingApplicationService.CreateAsync</c>.
     /// </summary>
-    public static TrainingCreationRequest ToApplicationRequest(this CreateTrainingRequestHttp request)
+    public static TrainingCreationRequest ToApplicationRequest(this CreateTrainingHttpRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -77,7 +77,7 @@ public static class HttpToApplicationMappings
     /// <summary>
     /// Builds the edition request for <c>ITrainingApplicationService.EditAsync</c>.
     /// </summary>
-    public static TrainingEditionRequest ToApplicationRequest(this EditTrainingRequestHttp request)
+    public static TrainingEditionRequest ToApplicationRequest(this EditTrainingHttpRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 

@@ -36,7 +36,7 @@ public abstract class ConditionalRequestTest<TFactory>(TFactory factory) : Integ
         response.Headers.ETag.Should().NotBeNull("the caller needs it to edit conditionally later");
         // The trainer registered a line above is the one served — the endpoint takes no identifier,
         // so this is the only trainer it can answer with.
-        var dto = await response.Content.ReadFromJsonAsync<TrainerResponseHttp>();
+        var dto = await response.Content.ReadFromJsonAsync<TrainerHttpResponse>();
         dto!.Id.Should().NotBeEmpty();
     }
 
@@ -65,11 +65,11 @@ public abstract class ConditionalRequestTest<TFactory>(TFactory factory) : Integ
 
         second.StatusCode.Should().Be(HttpStatusCode.OK, "the first edit handed back a current version");
 
-        var reread = await client.GetFromJsonAsync<TrainingResponseHttp>($"/Training/{trainingId}");
+        var reread = await client.GetFromJsonAsync<TrainingHttpResponse>($"/Training/{trainingId}");
         reread!.Title.Should().Be("Second Edit");
     }
 
-    private static EditTrainingRequestHttp ValidEdition(string title) => new()
+    private static EditTrainingHttpRequest ValidEdition(string title) => new()
     {
         Title = title,
         Description = "Updated description for the training",

@@ -22,7 +22,7 @@ namespace TrainingHub.Blazor.Client.Tests.Pages;
 /// the direction that produces no error to read, only a user who cannot type what they meant.
 /// <para>
 /// The expectation is therefore not written here. It is read off
-/// <see cref="CreateTrainingRequestHttp"/>, which NSwag generates from the API's own OpenAPI
+/// <see cref="CreateTrainingHttpRequest"/>, which NSwag generates from the API's own OpenAPI
 /// document, which the API generates from the annotation that mirrors the domain's value object.
 /// Change <c>TrainingTitle</c> and the chain moves; forget the page and this fails.
 /// </para>
@@ -79,8 +79,8 @@ public sealed class TitleBoundsTests : ComponentTest
     /// The bounds the API publishes for a training title, as the generated client carries them.
     /// </summary>
     private static StringLengthAttribute Published() =>
-        typeof(CreateTrainingRequestHttp)
-            .GetProperty(nameof(CreateTrainingRequestHttp.Title))!
+        typeof(CreateTrainingHttpRequest)
+            .GetProperty(nameof(CreateTrainingHttpRequest.Title))!
             .GetCustomAttribute<StringLengthAttribute>()
         ?? throw new InvalidOperationException(
             "The generated contract declares no length for a training title. Either the API stopped " +

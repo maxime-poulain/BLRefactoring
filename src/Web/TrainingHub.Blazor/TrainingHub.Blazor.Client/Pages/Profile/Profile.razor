@@ -223,7 +223,7 @@
         }
     }
 
-    private void Apply(TrainerResponseHttp trainer)
+    private void Apply(TrainerHttpResponse trainer)
     {
         _trainerId = trainer.Id;
         _firstname = trainer.Firstname;
@@ -331,7 +331,7 @@
         {
             var updated = await TrainerClient.EditCurrentAsync(
                 _version,
-                new EditTrainerRequestHttp
+                new EditTrainerHttpRequest
                 {
                     Firstname = _firstname,
                     Lastname = _lastname,

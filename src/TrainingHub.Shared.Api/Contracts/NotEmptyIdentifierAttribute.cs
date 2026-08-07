@@ -7,7 +7,7 @@ namespace TrainingHub.Shared.Api.Contracts;
 /// </summary>
 /// <remarks>
 /// <see cref="RequiredAttribute"/> cannot do this job, and this repository carried the proof:
-/// <c>TransferTrainingRequestHttp.RecipientTrainerId</c> was marked <c>[Required]</c> and its own
+/// <c>TransferTrainingHttpRequest.RecipientTrainerId</c> was marked <c>[Required]</c> and its own
 /// remark claimed the attribute "only refuses a message with no recipient at all". It did not. A
 /// non-nullable <see cref="Guid"/> always has a value, so <see cref="Guid.Empty"/> satisfies
 /// <c>[Required]</c> and travels on — the annotation read as a guard and was none. What actually

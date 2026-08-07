@@ -29,7 +29,7 @@ namespace TrainingHub.Shared.Api.Contracts.Trainers;
 /// and an API that refuses what the domain accepts would be worse than one that asks later.
 /// </para>
 /// </remarks>
-public sealed class EditTrainerRequestHttp
+public sealed class EditTrainerHttpRequest
 {
     /// <summary>
     /// The trainer's first name, as the caller sent it.

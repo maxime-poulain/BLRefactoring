@@ -92,9 +92,9 @@ public abstract class EmptyIdentifierTest<TFactory>(TFactory factory) : Integrat
 
         var response = await client.PostAsJsonAsync(
             $"/Training/{trainingId}/transfer",
-            new TransferTrainingRequestHttp { RecipientTrainerId = Guid.Empty });
+            new TransferTrainingHttpRequest { RecipientTrainerId = Guid.Empty });
 
-        await ShouldBeRefusedNaming(response, nameof(TransferTrainingRequestHttp.RecipientTrainerId));
+        await ShouldBeRefusedNaming(response, nameof(TransferTrainingHttpRequest.RecipientTrainerId));
     }
 
     private static async Task ShouldBeRefusedNaming(HttpResponseMessage response, string parameter)
