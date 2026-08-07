@@ -51,15 +51,14 @@ public abstract class EntityId<TEntityId> :
     /// Initializes the identifier with a non-empty value.
     /// </summary>
     /// <param name="value">The value of the identifier.</param>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="EmptyIdentifierException">
     /// Thrown when <paramref name="value"/> is <see cref="Guid.Empty"/>.
     /// </exception>
     protected EntityId(Guid value)
     {
         if (value == Guid.Empty)
         {
-            throw new ArgumentException(
-                $"A {typeof(TEntityId).Name} cannot be empty.", nameof(value));
+            throw new EmptyIdentifierException(typeof(TEntityId).Name, nameof(value));
         }
 
         Value = value;
@@ -71,7 +70,7 @@ public abstract class EntityId<TEntityId> :
     /// </summary>
     /// <param name="value">The value for the new instance. Must not be <see cref="Guid.Empty"/>.</param>
     /// <returns>A new <typeparamref name="TEntityId"/> holding <paramref name="value"/>.</returns>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="EmptyIdentifierException">
     /// Thrown when <paramref name="value"/> is <see cref="Guid.Empty"/>.
     /// </exception>
     public static TEntityId Create(Guid value) => Factory(value);
