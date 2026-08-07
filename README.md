@@ -297,6 +297,13 @@ no-reading-through-aggregates rule rather than eroding it: it wears
 data-returning methods pins it by name, so the next question has to arrive with a record of its
 own. See ADR 0028.
 
+Neither aggregate carries a lifecycle: a training exists or it does not, and removing one is a
+`DELETE`. [ADR 0050](docs/adr/0050-retire-a-training-rather-than-delete-it.md) is a **proposed**
+record that changes that — a training becomes published or unpublished, a trainer active or
+suspended, and public visibility is composed from the two rather than stored. It is written down
+before it is built, and its status says so: nothing in this repository answers to it yet, which is
+why no rule defends it and why the strategic design keeps it in a section of its own.
+
 ### Value objects
 
 Every value object has a private constructor and a static `Create` returning `Result<T>`, so an

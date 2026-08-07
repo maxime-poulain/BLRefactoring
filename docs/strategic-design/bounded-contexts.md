@@ -294,6 +294,41 @@ words from the write side, because a search result is not a `Training`.
 
 ---
 
+## Decided, not yet built
+
+One thing sits between *built* and *not decided*, and this document had no room for it until now: a
+change to an existing context's model that has been argued and settled, and that no code answers to.
+It is written here rather than into the sections above because those are read off the model as it
+stands — the language table promises that every term below it is a type in
+`src/TrainingHub.Shared.Domain/`, and a rule holds it to that promise in both directions. A word
+added there before the type exists would make the document false on the day it was written, which is
+the failure ADR 0023 exists to prevent.
+
+**A training gains a life beyond existing, and a trainer gains a standing.**
+[ADR 0050](../adr/0050-retire-a-training-rather-than-delete-it.md) carries the argument; the shape
+is this:
+
+- A training is *published* or *unpublished*. It is born published — there is no drafting, because
+  creation takes five required fields and produces a complete training in one call.
+- A trainer is *active* or *suspended*.
+- A training is publicly visible when it is published **and** its trainer is active. The composition
+  is made where it is read and stored nowhere, so suspending a trainer writes one field and touches
+  no training. Lifting the suspension needs no record of what it hid, because it hid nothing — the
+  catalogue simply became invisible with its owner.
+- A suspended trainer may not increase their public footprint: no creating, no publishing, no
+  transferring in either direction. Editing and unpublishing stay open, so a trainer can repair what
+  earned them the sanction.
+- Withdrawing a training stops being a deletion. Deleting survives for the training created by
+  mistake and for erasure, which a system that never deletes anything cannot honour.
+
+**What it changes in this context, when it arrives:** the ubiquitous language gains the two statuses;
+the invariants gain the transitions and the rule about a suspended trainer; the search-indexing port
+gains a way to remove, which it does not have; and the quota stops counting what is no longer
+published. **What it does not change:** any boundary on the map. Nothing moves between contexts.
+
+Until then the sections above describe the model that exists, and this one describes the model that
+was agreed. Keeping the two apart is the whole discipline.
+
 ## Not decided
 
 The two contexts below are **hypotheses**, not plans. They are named because the model's silences
@@ -309,3 +344,9 @@ catalogue and its own rules about seats and cancellation.
 
 Neither is being built. If either ever is, this section should be deleted and replaced by a context
 above it, with the same evidence the others carry.
+
+A third hypothesis is worth naming for what it is *not*. **Moderation** — a sanction with a reason, a
+duration, an author, an appeal — would be a context, because those concepts describe a judgement
+rather than a trainer or a training and nobody else owns them. The trainer standing decided above
+presupposes none of it: one reversible state, no reason recorded, no history kept. If a sanction ever
+needs to be explained, timed or contested, that is the moment to draw the boundary — and not before.

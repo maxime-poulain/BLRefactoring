@@ -70,7 +70,11 @@ Three choices keep it from doing that:
   they are one context. Getting that wrong is the standard way these documents become fiction.
 - **What is intended is separated from what is built.** *Catalogue Discovery* is on the map because
   three existing decisions were made for it. *Scheduling* and *Enrolment* are named in a section
-  called **Not decided**, and kept off the map on purpose.
+  called **Not decided**, and kept off the map on purpose. Between the two sits a third category,
+  **Decided, not yet built** — a change to an existing context that has been argued and settled and
+  that no code answers to yet. The training lifecycle of
+  [ADR 0050](../adr/0050-retire-a-training-rather-than-delete-it.md) is there, deliberately outside
+  the sections the rules read: a term promised to be a type must be one, and it is not one yet.
 - **The documents answer to a test.** See below.
 
 ## How this stays true
