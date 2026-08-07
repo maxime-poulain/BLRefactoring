@@ -70,6 +70,7 @@ simpler from the outside.
 | [0040](0040-register-the-trainer-and-the-account-in-one-transaction.md) | Register the trainer and the account in one transaction | Accepted |
 | [0041](0041-derive-every-named-list-from-the-code.md) | Derive every named list from the code | Accepted |
 | [0042](0042-close-the-boundarys-vocabulary.md) | Close the boundary's vocabulary | Accepted |
-| [0043](0043-validate-once-where-the-rule-lives.md) | Validate once, where the rule lives | Accepted |
+| [0043](0043-validate-once-where-the-rule-lives.md) | Validate once, where the rule lives | Accepted — amended by [0046](0046-refuse-the-empty-identifier-at-every-entry-point.md): the one shape rule this record kept in the pipeline gains a second half at the HTTP boundary, and the pipeline keeps its own; the sentence emptying the creation validators is corrected there |
 | [0044](0044-let-the-domain-speak-entirely-in-its-own-terms.md) | Let the domain speak entirely in its own terms | Accepted |
 | [0045](0045-fail-readiness-while-a-migration-is-pending.md) | Fail readiness while a migration is pending | Accepted |
+| [0046](0046-refuse-the-empty-identifier-at-every-entry-point.md) | Refuse the empty identifier at every entry point | Accepted |

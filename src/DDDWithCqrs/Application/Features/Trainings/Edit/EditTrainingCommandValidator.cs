@@ -9,12 +9,15 @@ namespace TrainingHub.DDDWithCqrs.Application.Features.Trainings.Edit;
 /// The identifier, and nothing else. The contract declares the shape of every field at model
 /// binding, before this pipeline runs, and the domain judges what those fields mean and answers
 /// with its own codes — so the rules this validator used to carry on <c>Title</c> and
-/// <c>Topics</c> were either dead or a second, stricter opinion only one host held.
+/// <c>Topics</c> were either dead or a second, stricter opinion only one host held (ADR 0043).
 /// <para>
-/// What is left is the one refusal neither of the other two layers can make politely:
-/// <c>Guid.Empty</c> is a perfectly well-formed <c>Guid</c>, so the contract has no reason to
-/// reject it, and by the time the domain sees it <c>EntityId.Create</c> has already thrown — a 500
-/// where the caller deserves a 400. See ADR 0043.
+/// The identifier is different, and stays. <c>[NotEmptyIdentifier]</c> on the route parameter now
+/// refuses <c>Guid.Empty</c> at model binding, which closes the HTTP path on both hosts — but it
+/// closes only that path. This rule answers for every other way a command can reach
+/// <c>ICommandDispatcher</c>: an integration event consumer, a background service, a scheduler.
+/// None exists today; the point is that the day one does, the guard is already there rather than
+/// silently absent, and the failure is a named refusal instead of an exception out of
+/// <c>EntityId.Create</c> (ADR 0046).
 /// </para>
 /// </remarks>
 public sealed class EditTrainingCommandValidator : AbstractValidator<EditTrainingCommand>

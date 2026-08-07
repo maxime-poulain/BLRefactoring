@@ -1,6 +1,7 @@
 using TrainingHub.DDD.Api.Mappings;
 using TrainingHub.DDD.Application.Services.TrainingServices;
 using TrainingHub.Shared.Api.Authorization;
+using TrainingHub.Shared.Api.Contracts;
 using TrainingHub.Shared.Api.Contracts.Mappings;
 using TrainingHub.Shared.Api.Contracts.Pagination;
 using TrainingHub.Shared.Api.Contracts.Trainings;
@@ -62,7 +63,7 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     /// <summary>
     /// Retrieves a training by its unique identifier.
     /// </summary>
-    /// <param name="trainingId">The unique identifier of the training.</param>
+    /// <param name="trainingId">The training the route names.</param>
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
     /// <returns>
     /// 200 OK with the training details if found.
@@ -74,7 +75,9 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(TrainingResponseHttp), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> GetTrainingByIdAsync(Guid trainingId, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> GetTrainingByIdAsync(
+        [NotEmptyIdentifier] Guid trainingId,
+        CancellationToken cancellationToken = default)
     {
         var result = await trainingApplicationService.GetByIdAsync(trainingId, cancellationToken);
 
@@ -94,7 +97,7 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     /// <summary>
     /// Updates an existing training.
     /// </summary>
-    /// <param name="trainingId">The unique identifier of the training to update.</param>
+    /// <param name="trainingId">The training the route names.</param>
     /// <param name="request">The training update request containing updated training details.</param>
     /// <param name="ifMatch">The version the caller read, as served in the <c>ETag</c>.</param>
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
@@ -133,7 +136,7 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status412PreconditionFailed)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status428PreconditionRequired)]
     public async Task<ActionResult> UpdateTrainingAsync(
-        Guid trainingId,
+        [NotEmptyIdentifier] Guid trainingId,
         [FromBody] EditTrainingRequestHttp request,
         [FromHeader(Name = "If-Match")] string? ifMatch,
         CancellationToken cancellationToken = default)
@@ -213,7 +216,7 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     /// <summary>
     /// Deletes a training by its unique identifier.
     /// </summary>
-    /// <param name="trainingId">The unique identifier of the training to delete.</param>
+    /// <param name="trainingId">The training the route names.</param>
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
     /// <returns>
     /// 204 No Content if the deletion was successful.
@@ -226,7 +229,9 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteTrainingAsync(Guid trainingId, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> DeleteTrainingAsync(
+        [NotEmptyIdentifier] Guid trainingId,
+        CancellationToken cancellationToken = default)
     {
         var result = await trainingApplicationService.DeleteAsync(trainingId, cancellationToken);
 
@@ -245,7 +250,7 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     /// not an edit of its content, and the contention that matters — the recipient's capacity and
     /// titles — is checked by the domain service at the moment of the decision.
     /// </remarks>
-    /// <param name="trainingId">The unique identifier of the training to transfer.</param>
+    /// <param name="trainingId">The training the route names.</param>
     /// <param name="request">The transfer request naming the recipient.</param>
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
     /// <returns>
@@ -262,7 +267,7 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> TransferTrainingAsync(
-        Guid trainingId,
+        [NotEmptyIdentifier] Guid trainingId,
         [FromBody] TransferTrainingRequestHttp request,
         CancellationToken cancellationToken = default)
     {

@@ -3,22 +3,30 @@ using FluentValidation;
 namespace TrainingHub.DDDWithCqrs.Application.Features.Trainings.Create;
 
 /// <summary>
-/// Stands between <see cref="CreateTrainingCommand"/> and its handler, and asks nothing.
+/// Stands between <see cref="CreateTrainingCommand"/> and its handler, and asks about its identifier.
 /// </summary>
 /// <remarks>
-/// Deliberately empty, and kept rather than deleted. Everything this command needs checking for is
-/// checked by somebody better placed: the contract declares shape and presence at model binding,
-/// before this pipeline runs, and the domain judges what the values mean and answers with its own
-/// codes. What is left for this layer is an empty identifier that would reach
-/// <c>EntityId.Create</c> and throw — and this command carries none. An empty validator states
-/// that; a missing one states nothing, and the pipeline refuses a command that has none (ADR 0043).
+/// Everything about the training's <em>content</em> is checked by somebody better placed: the
+/// contract declares shape and presence at model binding, before this pipeline runs, and the domain
+/// judges what the values mean and answers with its own codes. That is ADR 0043, and it is why the
+/// rules on the title and the topics went.
+/// <para>
+/// The identifier is the exception, and it was emptied out by mistake. ADR 0043 justified leaving
+/// this validator bare by saying that what remains for this layer is "an empty identifier that would
+/// reach <c>EntityId.Create</c> and throw — and this command carries none". It carries one:
+/// <c>TrainingId</c> defaults to a fresh <c>Guid</c>, but the property is <c>init</c>, so a caller
+/// can set it back to <c>Guid.Empty</c>, and the handler hands it to <c>TrainingId.Create</c>
+/// unexamined. Over HTTP nothing can: the contract has no such field, and the identifier is minted
+/// here. A dispatcher's other callers are not so constrained (ADR 0046).
+/// </para>
 /// </remarks>
 public sealed class CreateTrainingCommandValidator : AbstractValidator<CreateTrainingCommand>
 {
     /// <summary>
-    /// Declares no rule.
+    /// Declares the one rule that is this layer's to make.
     /// </summary>
     public CreateTrainingCommandValidator()
     {
+        RuleFor(command => command.TrainingId).NotEmpty();
     }
 }

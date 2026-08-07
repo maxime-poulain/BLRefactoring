@@ -1,6 +1,8 @@
+using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using TrainingHub.Architecture.Tests.Framework;
+using TrainingHub.Shared.Api.Contracts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using NetArchTest.Rules;
@@ -452,6 +454,71 @@ public sealed partial class HttpBoundaryRules
 
         return $"{controllerName}_{actionName}";
     }
+
+    /// <summary>
+    /// Every identifier an action takes, is refused empty.
+    /// </summary>
+    /// <remarks>
+    /// Unannotated, the value travels to <c>EntityId.Create</c>, which refuses the empty one by
+    /// throwing — a 500 on the layered host, where no validation pipeline stands in the way, against
+    /// the 400 the CQRS host answered for the same request. <c>[NotEmptyIdentifier]</c> is answered
+    /// at model binding by <c>[ApiController]</c>, with the <c>ValidationProblemDetails</c> this API
+    /// already answers everywhere else, and it is answered identically on both hosts because both
+    /// carry the annotation (ADR 0046).
+    /// <para>
+    /// The annotation sits on the parameter rather than on a route contract of its own, and that was
+    /// measured rather than assumed: a complex <c>[FromRoute]</c> model emits its property's
+    /// description onto the operation's <em>request body</em> whenever the action also carries one,
+    /// which put "The training being addressed" on the body of <c>PUT /Training/{trainingId}</c> in
+    /// the published document. Reordering the parameters did not move it. A contract that lies about
+    /// the payload is worse than a parameter that carries its own guard.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0046",
+        "an identifier a caller supplies carries the annotation that refuses the empty one, where the client " +
+        "reads it and the boundary answers it")]
+    public void EveryIdentifierAnActionTakes_IsRefusedEmpty() =>
+        Actions
+            .SelectMany(entry => entry.Action.GetParameters()
+                .Select(parameter => (entry.Controller, entry.Action, Parameter: parameter)))
+            .Selected("action parameter")
+            .Where(entry => entry.Parameter.ParameterType == typeof(Guid)
+                && !entry.Parameter.IsDefined(typeof(NotEmptyIdentifierAttribute), inherit: true))
+            .Select(entry =>
+                $"{entry.Controller.Name}.{entry.Action.Name} takes '{entry.Parameter.Name}' as an " +
+                "unguarded Guid. Guid.Empty then reaches EntityId.Create, which throws — a 500 where " +
+                "the caller deserves a 400. Mark it [NotEmptyIdentifier]")
+            .ShouldHold();
+
+    /// <summary>
+    /// No contract, marks an identifier required.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="System.ComponentModel.DataAnnotations.RequiredAttribute"/> on a non-nullable
+    /// <see cref="Guid"/> is satisfied by <see cref="Guid.Empty"/> — the value is always present, so
+    /// the annotation refuses nothing while reading exactly like a guard. This is not hypothetical:
+    /// <c>TransferTrainingRequestHttp.RecipientTrainerId</c> carried it, and the contract's own
+    /// remark claimed it "only refuses a message with no recipient at all" (ADR 0046).
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0046",
+        "a non-nullable Guid never carries [Required] in a contract: there the annotation refuses nothing " +
+        "and reads as a guard")]
+    public void NoContract_MarksAnIdentifierRequired() =>
+        Solution.SharedApi.DeclaredTypes()
+            .Where(IsHttpContract)
+            .SelectMany(contract => contract
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Select(property => (Contract: contract, Property: property)))
+            .Selected("contract property")
+            .Where(entry => entry.Property.PropertyType == typeof(Guid)
+                && entry.Property.IsDefined(typeof(RequiredAttribute), inherit: true))
+            .Select(entry =>
+                $"{entry.Contract.Name}.{entry.Property.Name} is a non-nullable Guid marked [Required], " +
+                "which Guid.Empty satisfies. Use [NotEmptyIdentifier], which refuses what this one only " +
+                "appears to")
+            .ShouldHold();
 
     private static bool IsHttpContract(Type type)
     {

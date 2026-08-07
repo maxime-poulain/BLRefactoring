@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using FluentValidation;
 using TrainingHub.Architecture.Tests.Framework;
 using TrainingHub.Shared.CQS;
 using TrainingHub.Shared.Common.Results;
@@ -376,6 +377,76 @@ public sealed partial class MessagingRules
                     "The contract declares shape at model binding, before this runs; a second " +
                     "opinion here is either dead or a divergence only one host has"))
             .ShouldHold();
+
+    /// <summary>
+    /// Every identifier a message carries, is refused empty by its own validator.
+    /// </summary>
+    /// <remarks>
+    /// The HTTP contract refuses <c>Guid.Empty</c> at model binding, on both hosts (ADR 0046). That
+    /// closes the only entry point there is today, and it closes exactly that one: a command reaching
+    /// <c>ICommandDispatcher</c> from an integration event consumer, a background service or a
+    /// scheduler never passes a controller, and would arrive unguarded.
+    /// <para>
+    /// So the rule is stated twice on purpose, and this is the half that does not depend on the
+    /// transport. The application layer declares the preconditions of its own messages rather than
+    /// assuming a layer it cannot see has already checked them — which is also why the duplication is
+    /// not the kind ADR 0043 removed. That record deleted a rule that made <em>two hosts disagree
+    /// about one request</em>; these two guards answer two different callers.
+    /// </para>
+    /// <para>
+    /// Written as a rule rather than a comment for the reason this suite exists: the guard's whole
+    /// value is that it survives the day somebody decides it looks redundant. It has been deleted
+    /// once already.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0046",
+        "the application layer refuses an empty identifier on its own messages, whatever entry point " +
+        "dispatched them — it never assumes the boundary checked first")]
+    public void EveryIdentifierAMessageCarries_IsRefusedEmptyByItsValidator()
+    {
+        var validators = Validators.ToDictionary(validator => validator.Validated, validator => validator.Type);
+
+        CqrsTypes
+            .Where(type => typeof(ICommandBase).IsAssignableFrom(type) || typeof(IQuery).IsAssignableFrom(type))
+            .SelectMany(message => message
+                .GetProperties()
+                .Where(property => property.PropertyType == typeof(Guid))
+                .Select(property => (Message: message, Property: property)))
+            .Selected("identifier on a command or a query")
+            .Where(entry => !IsRefusedEmpty(validators.GetValueOrDefault(entry.Message), entry.Property.Name))
+            .Select(entry =>
+                $"{entry.Message.Name}.{entry.Property.Name} is an identifier its validator does not " +
+                "refuse empty. Over HTTP the contract stops Guid.Empty first, but a dispatcher has " +
+                "other callers, and there the value would reach EntityId.Create and throw. Declare " +
+                $"RuleFor(m => m.{entry.Property.Name}).NotEmpty()")
+            .ShouldHold();
+    }
+
+    /// <summary>
+    /// Whether a validator declares a <c>NotEmpty</c> rule for the named member.
+    /// </summary>
+    /// <remarks>
+    /// Asked of FluentValidation's own descriptor rather than of the source text, so a rule spelled
+    /// across several lines, or reached through a chain, answers the same as one written inline. The
+    /// component's <c>Name</c> is the validator's public name — <c>"NotEmptyValidator"</c> — which is
+    /// what the library uses to build an error code, so it is a documented value rather than a type
+    /// name that could be an implementation detail.
+    /// </remarks>
+    private static bool IsRefusedEmpty(Type? validator, string member)
+    {
+        if (validator is null)
+        {
+            return false;
+        }
+
+        var descriptor = ((IValidator)Activator.CreateInstance(validator)!).CreateDescriptor();
+
+        return descriptor
+            .GetRulesForMember(member)
+            .SelectMany(rule => rule.Components)
+            .Any(component => component.Validator.Name is "NotEmptyValidator");
+    }
 
     private static IReadOnlyList<(Type Type, Type Validated)> Validators { get; } =
     [

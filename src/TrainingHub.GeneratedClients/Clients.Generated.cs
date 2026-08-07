@@ -2773,7 +2773,6 @@ namespace TrainingHub.GeneratedClients
         /// The trainer receiving the training.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("recipientTrainerId")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid RecipientTrainerId { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
