@@ -28,10 +28,25 @@ public sealed partial class LifecycleRules
     [GeneratedRegex(@"^    (?=(public|private|protected|internal)\s)", RegexOptions.Multiline)]
     private static partial Regex MemberBoundary { get; }
 
+    // Staging an aggregate for removal: `something.Delete(` on a repository. The repository's own
+    // declaration of the method has no receiver before it, and its implementation calls EF's
+    // `Remove`, so neither matches — what matches is a use case asking for a deletion.
+    [GeneratedRegex(@"\.Delete\(")]
+    private static partial Regex RepositoryDeletion { get; }
+
     private static IEnumerable<string> DomainSourceFiles =>
         SourceTree.SourceFiles
             .Select(SourceTree.Relative)
             .Where(file => file.StartsWith("src/TrainingHub.Shared.Domain/", StringComparison.Ordinal));
+
+    private static IEnumerable<string> ProductionSourceFiles =>
+        SourceTree.SourceFiles
+            .Select(SourceTree.Relative)
+            .Where(file => file.StartsWith("src/", StringComparison.Ordinal));
+
+    private static IEnumerable<string> MembersOf(string file) =>
+        MemberBoundary.Split(SourceTree.ReadText(
+            Path.Combine(SourceTree.RepositoryRoot, file.Replace('/', Path.DirectorySeparatorChar))));
 
     /// <summary>
     /// Every status transition, announces itself.
@@ -54,9 +69,7 @@ public sealed partial class LifecycleRules
     public void EveryStatusTransition_AnnouncesItself() =>
         DomainSourceFiles
             .Selected("domain source file")
-            .SelectMany(file => MemberBoundary
-                .Split(SourceTree.ReadText(
-                    Path.Combine(SourceTree.RepositoryRoot, file.Replace('/', Path.DirectorySeparatorChar))))
+            .SelectMany(file => MembersOf(file)
                 .Where(member => StatusAssignment.IsMatch(member))
                 .Where(member => !member.Contains("AddDomainEvent", StringComparison.Ordinal))
                 .Select(member =>
@@ -64,6 +77,38 @@ public sealed partial class LifecycleRules
                     $"'{FirstLineOf(member)}'. A state nothing announces is a state no reader ever " +
                     "learns about — an index keeps serving what was withdrawn, and the lifecycle is " +
                     "a soft delete after all (ADR 0050)"))
+            .ShouldHold();
+
+    /// <summary>
+    /// Every deletion, announces itself.
+    /// </summary>
+    /// <remarks>
+    /// The sibling above watches members that <em>move</em> a status, and a deletion moves none — it
+    /// removes the row the status was written on. That is not a gap in how the rule is written but
+    /// in what it is about, and it is the gap the trainer-deletion cascade fell into: it removed
+    /// every training a departing trainer owned and announced not one of them, so the search index
+    /// went on serving all of them. The two halves of ADR 0050 need two rules — one for the
+    /// transitions, one for the way out.
+    /// <para>
+    /// Deliberately not restricted to trainings. No use case deletes a trainer today, the endpoint
+    /// having been withdrawn until a role is entitled to it; when one returns it will stage a
+    /// deletion through a repository like every other, and this rule will already be waiting for it.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0050",
+        "deleting a training announces it, which is what the deletion never used to do")]
+    public void EveryDeletion_AnnouncesItself() =>
+        ProductionSourceFiles
+            .Selected("production source file")
+            .SelectMany(file => MembersOf(file)
+                .Where(member => RepositoryDeletion.IsMatch(member))
+                .Where(member => !member.Contains("MarkForDeletion", StringComparison.Ordinal))
+                .Select(member =>
+                    $"'{file}' stages a deletion in a member that announces nothing: " +
+                    $"'{FirstLineOf(member)}'. Rows leave the database and every reader built from " +
+                    "them keeps serving what is gone — the search index first of all, which is the " +
+                    "defect ADR 0050 exists to close"))
             .ShouldHold();
 
     private static string FirstLineOf(string member) =>

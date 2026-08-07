@@ -6,6 +6,11 @@ using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
+using TrainingHub.Shared.Application.IntegrationEvents;
+using TrainingHub.Shared.Infrastructure.Outbox;
+using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
+using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Outbox;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -47,7 +52,7 @@ public abstract class DomainEventPipelineTest<TFactory>(TFactory factory) : Inte
     public async Task DeletingATrainer_RemovesTheirTrainings_WithinTheSameCommit()
     {
         var trainerId = TrainerId.Generate();
-        await SeedTrainerWithOneTrainingAsync(trainerId);
+        await SeedTrainerWithTwoTrainingsAsync(trainerId);
 
         using (var scope = Factory.CreateScope())
         {
@@ -74,7 +79,60 @@ public abstract class DomainEventPipelineTest<TFactory>(TFactory factory) : Inte
         }
     }
 
-    private async Task SeedTrainerWithOneTrainingAsync(TrainerId trainerId)
+    /// <summary>
+    /// Deleting a trainer, announces every training it takes with it.
+    /// </summary>
+    /// <remarks>
+    /// The fact above proves the rows leave; this one proves somebody is told. The distinction is
+    /// not academic — the cascade removed trainings silently until ADR 0050's second rule caught it,
+    /// and the test that covered it could not tell the two apart, which is exactly why it went
+    /// unnoticed. A deletion nothing announces leaves the search index serving every training a
+    /// departing trainer owned.
+    /// <para>
+    /// Two trainings, deliberately: "one fact per training" is the claim, and a single-training
+    /// fixture cannot distinguish it from "one fact per cascade".
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task DeletingATrainer_AnnouncesEveryTrainingItTakesWithIt()
+    {
+        var trainerId = TrainerId.Generate();
+        var seeded = await SeedTrainerWithTwoTrainingsAsync(trainerId);
+
+        using (var scope = Factory.CreateScope())
+        {
+            var trainers = scope.ServiceProvider.GetRequiredService<ITrainerRepository>();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+            var trainer = await trainers.GetByIdAsync(trainerId);
+            trainer.Should().NotBeNull();
+
+            trainer.MarkForDeletion();
+            trainers.Delete(trainer);
+
+            await unitOfWork.SaveChangesAsync();
+        }
+
+        using (var scope = Factory.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<TrainingContext>();
+
+            // Committed by the same SaveChanges that removed the rows, which is the whole point of
+            // the outbox: the fact and the deletion cannot disagree about whether they happened.
+            var announced = (await context.Set<OutboxMessage>().ToListAsync())
+                .Where(message => message.Name == "TrainingDeleted")
+                .Select(message => IntegrationEventSerializer
+                    .Deserialize(message.Name, message.Version, message.Payload))
+                .Cast<TrainingDeletedIntegrationEvent>()
+                .ToList();
+
+            announced.Select(fact => fact.TrainingId)
+                .Should().BeEquivalentTo(seeded.Select(id => id.Value));
+            announced.Should().OnlyContain(fact => fact.TrainerId == trainerId.Value);
+        }
+    }
+
+    private async Task<IReadOnlyList<TrainingId>> SeedTrainerWithTwoTrainingsAsync(TrainerId trainerId)
     {
         using var scope = Factory.CreateScope();
         var trainers = scope.ServiceProvider.GetRequiredService<ITrainerRepository>();
@@ -91,21 +149,29 @@ public abstract class DomainEventPipelineTest<TFactory>(TFactory factory) : Inte
             Required(Email.Create("ada.lovelace@example.com")),
             bio: null));
 
-        var training = Required(await Training.CreateAsync(
-            TrainingId.Generate(),
-            trainerId,
-            Required(TrainingTitle.Create("A Training To Cascade")),
-            Required(TrainingDescription.Create("A valid training description for testing purposes")),
-            Required(TrainingPrerequisites.Create("Basic programming knowledge required")),
-            Required(AcquiredSkills.Create("Advanced design patterns mastery")),
-            [Topic.Programming],
-            titleChecker,
-            trainingCounter,
-            trainerStanding));
+        var seeded = new List<TrainingId>();
 
-        trainings.Add(training);
+        foreach (var title in new[] { "A Training To Cascade", "Another To Cascade" })
+        {
+            var training = Required(await Training.CreateAsync(
+                TrainingId.Generate(),
+                trainerId,
+                Required(TrainingTitle.Create(title)),
+                Required(TrainingDescription.Create("A valid training description for testing purposes")),
+                Required(TrainingPrerequisites.Create("Basic programming knowledge required")),
+                Required(AcquiredSkills.Create("Advanced design patterns mastery")),
+                [Topic.Programming],
+                titleChecker,
+                trainingCounter,
+                trainerStanding));
+
+            trainings.Add(training);
+            seeded.Add(training.Id);
+        }
 
         await unitOfWork.SaveChangesAsync();
+
+        return seeded;
     }
 
     /// <summary>
