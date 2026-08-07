@@ -19,7 +19,7 @@ namespace TrainingHub.Shared.Api.Http;
 /// </para>
 /// <para>
 /// The domain codes are not lost to the standard: the <c>domainErrors</c> extension carries the same
-/// <see cref="ErrorResponseHttp"/> array as before, unchanged down to the nested code. A client
+/// <see cref="ErrorHttpResponse"/> array as before, unchanged down to the nested code. A client
 /// branching on <c>DuplicateTitle</c> keeps its logic and changes only where it reads it from.
 /// </para>
 /// </remarks>
@@ -58,7 +58,7 @@ public static class ProblemResultExtensions
     public static ActionResult Problem(
         this ControllerBase controller,
         int statusCode,
-        IReadOnlyList<ErrorResponseHttp> errors)
+        IReadOnlyList<ErrorHttpResponse> errors)
     {
         ArgumentNullException.ThrowIfNull(controller);
         ArgumentNullException.ThrowIfNull(errors);

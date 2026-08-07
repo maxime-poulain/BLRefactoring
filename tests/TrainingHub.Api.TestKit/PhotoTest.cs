@@ -197,7 +197,7 @@ public abstract class PhotoTest<TFactory>(TFactory factory) : IntegrationTest<TF
     {
         // Arrange
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var trainer = await client.GetFromJsonAsync<TrainerResponseHttp>("/Trainer/me");
+        var trainer = await client.GetFromJsonAsync<TrainerHttpResponse>("/Trainer/me");
 
         // Act
         var response = await client.GetAsync($"/Trainer/{trainer!.Id}/photo");
@@ -324,7 +324,7 @@ public abstract class PhotoTest<TFactory>(TFactory factory) : IntegrationTest<TF
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    private async Task<TrainerResponseHttp> UploadAsync(
+    private async Task<TrainerHttpResponse> UploadAsync(
         HttpClient client,
         byte[] content,
         string contentType)
@@ -341,7 +341,7 @@ public abstract class PhotoTest<TFactory>(TFactory factory) : IntegrationTest<TF
             await response.Content.ReadAsStringAsync(),
             LastServerError());
 
-        return (await response.Content.ReadFromJsonAsync<TrainerResponseHttp>())!;
+        return (await response.Content.ReadFromJsonAsync<TrainerHttpResponse>())!;
     }
 
     private string LastServerError()

@@ -37,7 +37,7 @@ public abstract class AuthControllerBase(
     /// <param name="userId">The identifier of the identity user that was just created.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     protected abstract Task<Result<Guid>> CreateTrainerAsync(
-        RegisterRequestHttp request,
+        RegisterHttpRequest request,
         Guid userId,
         CancellationToken cancellationToken = default);
 
@@ -81,7 +81,7 @@ public abstract class AuthControllerBase(
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> Register([FromBody] RegisterRequestHttp request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Register([FromBody] RegisterHttpRequest request, CancellationToken cancellationToken = default)
     {
         using var transactionScope = new TransactionScope(TransactionScopeOption.Required,
             new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
@@ -93,7 +93,7 @@ public abstract class AuthControllerBase(
                 StatusCodes.Status400BadRequest,
                 new Dictionary<string, string[]>
                 {
-                    [nameof(RegisterRequestHttp.ConfirmPassword)] =
+                    [nameof(RegisterHttpRequest.ConfirmPassword)] =
                         ["The password and confirmation password do not match."]
                 });
         }
@@ -187,11 +187,11 @@ public abstract class AuthControllerBase(
     private static string FieldAtFault(IdentityError error) => error.Code switch
     {
         nameof(IdentityErrorDescriber.DuplicateUserName) or
-            nameof(IdentityErrorDescriber.InvalidUserName) => nameof(RegisterRequestHttp.Username),
+            nameof(IdentityErrorDescriber.InvalidUserName) => nameof(RegisterHttpRequest.Username),
         nameof(IdentityErrorDescriber.DuplicateEmail) or
-            nameof(IdentityErrorDescriber.InvalidEmail) => nameof(RegisterRequestHttp.Email),
+            nameof(IdentityErrorDescriber.InvalidEmail) => nameof(RegisterHttpRequest.Email),
         _ when error.Code.StartsWith("Password", StringComparison.Ordinal) =>
-            nameof(RegisterRequestHttp.Password),
+            nameof(RegisterHttpRequest.Password),
         _ => string.Empty
     };
 
@@ -235,9 +235,9 @@ public abstract class AuthControllerBase(
     /// </remarks>
     [AllowAnonymous]
     [HttpPost("login")]
-    [ProducesResponseType<LoginResponseHttp>(StatusCodes.Status200OK)]
+    [ProducesResponseType<LoginHttpResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Login([FromBody] LoginRequestHttp request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Login([FromBody] LoginHttpRequest request, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByNameAsync(request.Username);
         if (user == null)
@@ -259,7 +259,7 @@ public abstract class AuthControllerBase(
 
         var roles = await userManager.GetRolesAsync(user);
         var token = await tokenService.GenerateTokenAsync(user, roles, cancellationToken);
-        return Ok(new LoginResponseHttp() { Token = token });
+        return Ok(new LoginHttpResponse() { Token = token });
     }
 
     /// <summary>

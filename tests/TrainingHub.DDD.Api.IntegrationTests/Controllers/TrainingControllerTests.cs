@@ -16,7 +16,7 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
 {
     // One definition of "a valid training", in the test kit, rather than the five copies of the
     // same object literal this suite and its twin used to carry between them.
-    private static CreateTrainingRequestHttp CreateValidTrainingRequest(string? title = null) =>
+    private static CreateTrainingHttpRequest CreateValidTrainingRequest(string? title = null) =>
         TrainingRequests.Valid(title ?? $"Training {Guid.NewGuid():N}"[..25]);
 
     // -- Create --
@@ -48,7 +48,7 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
     public async Task Create_InvalidData_Returns400()
     {
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var request = new CreateTrainingRequestHttp
+        var request = new CreateTrainingHttpRequest
         {
             Title = "ab",
             Description = "",
@@ -128,7 +128,7 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         var response = await client.GetAsync($"/Training/{trainingId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var dto = await response.Content.ReadFromJsonAsync<TrainingResponseHttp>();
+        var dto = await response.Content.ReadFromJsonAsync<TrainingHttpResponse>();
         dto!.Id.Should().Be(trainingId);
     }
 
@@ -157,7 +157,7 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         var createResponse = await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
         var trainingId = await createResponse.Content.ReadFromJsonAsync<Guid>();
 
-        var editRequest = new EditTrainingRequestHttp
+        var editRequest = new EditTrainingHttpRequest
         {
             Title = $"Updated {Guid.NewGuid():N}"[..25],
             Description = "Updated description for the training",
@@ -183,7 +183,7 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         var createResponse = await client.PostAsJsonAsync("/Training", CreateValidTrainingRequest());
         var trainingId = await createResponse.Content.ReadFromJsonAsync<Guid>();
 
-        var response = await client.PutAsJsonAsync($"/Training/{trainingId}", new EditTrainingRequestHttp
+        var response = await client.PutAsJsonAsync($"/Training/{trainingId}", new EditTrainingHttpRequest
         {
             Title = $"Updated {Guid.NewGuid():N}"[..25],
             Description = "Updated description for the training",
@@ -210,7 +210,7 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         var staleTag = await client.GetETagAsync($"/Training/{trainingId}");
 
         var firstTitle = $"First {Guid.NewGuid():N}"[..25];
-        var first = await client.PutWithIfMatchAsync($"/Training/{trainingId}", new EditTrainingRequestHttp
+        var first = await client.PutWithIfMatchAsync($"/Training/{trainingId}", new EditTrainingHttpRequest
         {
             Title = firstTitle,
             Description = "The edit that got there first",
@@ -220,7 +220,7 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         }, staleTag);
         first.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var second = await client.PutWithIfMatchAsync($"/Training/{trainingId}", new EditTrainingRequestHttp
+        var second = await client.PutWithIfMatchAsync($"/Training/{trainingId}", new EditTrainingHttpRequest
         {
             Title = $"Second {Guid.NewGuid():N}"[..25],
             Description = "The edit that must be refused",
@@ -232,7 +232,7 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         second.StatusCode.Should().Be(HttpStatusCode.PreconditionFailed);
 
         var reread = await client.GetAsync($"/Training/{trainingId}");
-        var training = await reread.Content.ReadFromJsonAsync<TrainingResponseHttp>();
+        var training = await reread.Content.ReadFromJsonAsync<TrainingHttpResponse>();
         training!.Title.Should().Be(firstTitle, "the second edit must not have overwritten the first");
     }
 
@@ -247,7 +247,7 @@ public sealed class TrainingControllerTests(ApiFactory factory) : IntegrationTes
         var trainingId = await createResponse.Content.ReadFromJsonAsync<Guid>();
 
         var otherClient = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var editRequest = new EditTrainingRequestHttp
+        var editRequest = new EditTrainingHttpRequest
         {
             Title = $"Hacked {Guid.NewGuid():N}"[..25],
             Description = "Should not be allowed",

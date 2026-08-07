@@ -41,7 +41,7 @@ public static class ConcurrencyControllerExtensions
     /// Refusing an unconditional write is the point: accepting it would let the
     /// caller overwrite changes they never saw.
     /// <para>
-    /// The body goes through <see cref="ProblemResultExtensions.Problem(ControllerBase, int, IReadOnlyList{ErrorResponseHttp})"/>
+    /// The body goes through <see cref="ProblemResultExtensions.Problem(ControllerBase, int, IReadOnlyList{ErrorHttpResponse})"/>
     /// like every other failure. This one has no <c>Result</c> behind it — the application layer
     /// never hears about a missing header — so it states its own error, and still comes out in the
     /// same shape.
@@ -55,7 +55,7 @@ public static class ConcurrencyControllerExtensions
             StatusCodes.Status428PreconditionRequired,
             new[]
             {
-                new ErrorResponseHttp
+                new ErrorHttpResponse
                 {
                     ErrorMessage =
                         "This request must carry an If-Match header holding the ETag returned when the resource was read.",

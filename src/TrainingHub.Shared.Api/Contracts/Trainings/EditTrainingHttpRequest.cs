@@ -11,11 +11,11 @@ namespace TrainingHub.Shared.Api.Contracts.Trainings;
 /// <c>[JsonIgnore]</c> properties with public setters, assigned by the controller after model
 /// binding — the mapping now composes them explicitly instead.
 /// <para>
-/// See <see cref="Trainers.EditTrainerRequestHttp"/> for why the constraints are attributes and
+/// See <see cref="Trainers.EditTrainerHttpRequest"/> for why the constraints are attributes and
 /// what they are, and are not, meant to decide.
 /// </para>
 /// </remarks>
-public sealed class EditTrainingRequestHttp
+public sealed class EditTrainingHttpRequest
 {
     /// <summary>
     /// The training's title, as the caller sent it. Bounds are enforced by the value object,

@@ -37,7 +37,7 @@ namespace TrainingHub.Api.TestKit;
 public abstract class OwnTrainingsTest<TFactory>(TFactory factory) : IntegrationTest<TFactory>(factory)
     where TFactory : IResettableDatabase, IHttpClientSource
 {
-    // Short on purpose: CreateTrainingRequestHttp.Title is [StringLength(100, MinimumLength = 5)],
+    // Short on purpose: CreateTrainingHttpRequest.Title is [StringLength(100, MinimumLength = 5)],
     // so a sentence-length title is refused at model binding and the POST that sets the scene fails
     // before the read under test is ever reached. Neither is a substring of the other, which is what
     // the assertions below rely on.

@@ -263,7 +263,7 @@
             {
                 // The identifier travels in the route now, not in the body: the request contract
                 // carries only what a caller actually sends.
-                var request = new EditTrainingRequestHttp
+                var request = new EditTrainingHttpRequest
                 {
                     Title = _title.Trim(),
                     Topics = _selectedTopics.ToList(),
@@ -279,7 +279,7 @@
             }
             else
             {
-                var request = new CreateTrainingRequestHttp
+                var request = new CreateTrainingHttpRequest
                 {
                     Title = _title.Trim(),
                     Topics = _selectedTopics.ToList(),

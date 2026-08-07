@@ -89,7 +89,7 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var entityTag = await client.GetETagAsync("/Trainer/me");
 
-        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerRequestHttp
+        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerHttpRequest
         {
             Firstname = "Edited",
             Lastname = "Profile",
@@ -122,7 +122,7 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var entityTag = await client.GetETagAsync("/Trainer/me");
 
-        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerRequestHttp
+        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerHttpRequest
         {
             Firstname = "J",
             Lastname = string.Empty,
@@ -137,7 +137,7 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
         // RFC 7807 defines, keyed by field. It used to mean this on one host and an array of domain
         // codes on the other, for the same request.
         body.GetProperty("errors").ValueKind.Should().Be(JsonValueKind.Object);
-        body.GetProperty("errors").TryGetProperty(nameof(EditTrainerRequestHttp.Firstname), out _)
+        body.GetProperty("errors").TryGetProperty(nameof(EditTrainerHttpRequest.Firstname), out _)
             .Should().BeTrue();
     }
 
@@ -151,7 +151,7 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
 
         // No If-Match: refused before the application layer hears about it, and answered by the
         // API on its own — the one failure with no Result behind it.
-        var response = await client.PutAsJsonAsync("/Trainer/me", new EditTrainerRequestHttp
+        var response = await client.PutAsJsonAsync("/Trainer/me", new EditTrainerHttpRequest
         {
             Firstname = "Edited",
             Lastname = "Profile",
@@ -206,7 +206,7 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
         var request = AuthHelper.CreateUniqueRegisterRequest();
         (await AuthHelper.RegisterAsync(client, request)).EnsureSuccessStatusCode();
 
-        var response = await client.PostAsJsonAsync("/Auth/login", new LoginRequestHttp
+        var response = await client.PostAsJsonAsync("/Auth/login", new LoginHttpRequest
         {
             Username = request.Username,
             Password = "wrong_password"
@@ -233,7 +233,7 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
         (await AuthHelper.RegisterAsync(client, request)).EnsureSuccessStatusCode();
 
         var duplicate = AuthHelper.CreateUniqueRegisterRequest();
-        var response = await AuthHelper.RegisterAsync(client, new RegisterRequestHttp
+        var response = await AuthHelper.RegisterAsync(client, new RegisterHttpRequest
         {
             Username = duplicate.Username,
             Email = request.Email,
@@ -251,7 +251,7 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
         // are about rather than forced into this API's own code enum. It used to be a bare
         // IdentityError array — the shape ADR 0004 removed from forty other places.
         body.GetProperty("errors")
-            .TryGetProperty(nameof(RegisterRequestHttp.Email), out var emailMessages)
+            .TryGetProperty(nameof(RegisterHttpRequest.Email), out var emailMessages)
             .Should().BeTrue("the caller has to know which field is taken");
         emailMessages.EnumerateArray().Should().NotBeEmpty();
     }

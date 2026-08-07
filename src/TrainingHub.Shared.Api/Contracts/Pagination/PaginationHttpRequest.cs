@@ -18,7 +18,7 @@ namespace TrainingHub.Shared.Api.Contracts.Pagination;
 /// rather than restated, so the published limit and the one the server enforces cannot drift.
 /// </para>
 /// </remarks>
-public sealed class PaginationRequestHttp
+public sealed class PaginationHttpRequest
 {
     /// <summary>
     /// The page to return, counted from 1.

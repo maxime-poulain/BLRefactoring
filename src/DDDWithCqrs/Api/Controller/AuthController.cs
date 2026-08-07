@@ -27,7 +27,7 @@ public sealed class AuthController(
     /// the identifier that endpoint publishes in <c>Location</c>.
     /// </remarks>
     protected override async Task<Result<Guid>> CreateTrainerAsync(
-        RegisterRequestHttp request,
+        RegisterHttpRequest request,
         Guid userId,
         CancellationToken cancellationToken = default)
     {

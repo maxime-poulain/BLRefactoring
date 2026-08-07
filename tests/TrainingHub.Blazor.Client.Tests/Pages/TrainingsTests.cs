@@ -227,11 +227,11 @@ public sealed class TrainingsTests : ComponentTest
             .Which.Message.Should().Be("Something went wrong loading the trainings."));
     }
 
-    private static PagedResponseHttpOfTrainingResponseHttp Page(
+    private static PagedHttpResponseOfTrainingHttpResponse Page(
         int page,
         int totalPages,
         int totalCount,
-        params TrainingResponseHttp[] trainings) =>
+        params TrainingHttpResponse[] trainings) =>
         new()
         {
             Items = [.. trainings],
@@ -243,7 +243,7 @@ public sealed class TrainingsTests : ComponentTest
             HasPreviousPage = page > 1
         };
 
-    private static TrainingResponseHttp Training(string title, params string[] topics) =>
+    private static TrainingHttpResponse Training(string title, params string[] topics) =>
         new()
         {
             Id = Guid.NewGuid(),

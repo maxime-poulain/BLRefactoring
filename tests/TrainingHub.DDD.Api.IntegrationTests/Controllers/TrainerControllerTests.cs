@@ -26,7 +26,7 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
 
         var entityTag = await client.GetETagAsync("/Trainer/me");
 
-        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerRequestHttp
+        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerHttpRequest
         {
             Firstname = "Edited",
             Lastname = "Profile",
@@ -35,7 +35,7 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
         }, entityTag);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var dto = await response.Content.ReadFromJsonAsync<TrainerResponseHttp>();
+        var dto = await response.Content.ReadFromJsonAsync<TrainerHttpResponse>();
         dto!.Firstname.Should().Be("Edited");
         dto.Lastname.Should().Be("Profile");
         dto.ContactEmail.Should().Be("edited.profile@example.com");
@@ -57,7 +57,7 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
 
         var entityTag = await client.GetETagAsync("/Trainer/me");
 
-        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerRequestHttp
+        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerHttpRequest
         {
             Firstname = "Test",
             Lastname = "User",
@@ -83,7 +83,7 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
 
         var entityTag = await client.GetETagAsync("/Trainer/me");
 
-        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerRequestHttp
+        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerHttpRequest
         {
             Firstname = "Edited",
             Lastname = "Profile",
@@ -101,7 +101,7 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
     {
         var client = Factory.CreateClient();
 
-        var response = await client.PutAsJsonAsync("/Trainer/me", new EditTrainerRequestHttp
+        var response = await client.PutAsJsonAsync("/Trainer/me", new EditTrainerHttpRequest
         {
             Firstname = "Edited",
             Lastname = "Profile",
@@ -119,7 +119,7 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
     {
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
 
-        var response = await client.PutAsJsonAsync("/Trainer/me", new EditTrainerRequestHttp
+        var response = await client.PutAsJsonAsync("/Trainer/me", new EditTrainerHttpRequest
         {
             Firstname = "Edited",
             Lastname = "Profile",
@@ -141,7 +141,7 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
         // Both callers read the same version, as two users would from their form.
         var staleTag = await client.GetETagAsync("/Trainer/me");
 
-        var first = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerRequestHttp
+        var first = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerHttpRequest
         {
             Firstname = "First",
             Lastname = "Edit",
@@ -149,7 +149,7 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
         }, staleTag);
         first.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var second = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerRequestHttp
+        var second = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerHttpRequest
         {
             Firstname = "Second",
             Lastname = "Edit",
@@ -158,7 +158,7 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
 
         second.StatusCode.Should().Be(HttpStatusCode.PreconditionFailed);
 
-        var reread = await client.GetFromJsonAsync<TrainerResponseHttp>("/Trainer/me");
+        var reread = await client.GetFromJsonAsync<TrainerHttpResponse>("/Trainer/me");
         reread!.Firstname.Should().Be("First", "the second edit must not have overwritten the first");
     }
 
@@ -174,7 +174,7 @@ public sealed class TrainerControllerTests(ApiFactory factory) : IntegrationTest
         // the API exposes nothing at all. Both `me` and an identifier used to answer 204, and this
         // test is what keeps self-deletion from creeping back in.
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var me = (await client.GetFromJsonAsync<TrainerResponseHttp>("/Trainer/me"))!;
+        var me = (await client.GetFromJsonAsync<TrainerHttpResponse>("/Trainer/me"))!;
 
         var onMe = await client.DeleteAsync("/Trainer/me");
         var onIdentifier = await client.DeleteAsync($"/Trainer/{me.Id}");

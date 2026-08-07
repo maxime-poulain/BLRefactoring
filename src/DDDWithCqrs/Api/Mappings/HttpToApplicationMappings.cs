@@ -40,7 +40,7 @@ public static class HttpToApplicationMappings
     /// </remarks>
     /// <param name="request">The registration request.</param>
     /// <param name="userId">The identity user created moments earlier.</param>
-    public static CreateTrainerCommand ToCommand(this RegisterRequestHttp request, Guid userId)
+    public static CreateTrainerCommand ToCommand(this RegisterHttpRequest request, Guid userId)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -59,7 +59,7 @@ public static class HttpToApplicationMappings
     /// <param name="request">What the caller sent in the body.</param>
     /// <param name="expectedVersion">The version read from the <c>If-Match</c> header.</param>
     public static EditTrainerCommand ToCommand(
-        this EditTrainerRequestHttp request,
+        this EditTrainerHttpRequest request,
         byte[] expectedVersion)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -78,7 +78,7 @@ public static class HttpToApplicationMappings
     /// Builds the command creating a training. The identifier the command generates is the one the
     /// controller publishes in <c>Location</c>.
     /// </summary>
-    public static CreateTrainingCommand ToCommand(this CreateTrainingRequestHttp request)
+    public static CreateTrainingCommand ToCommand(this CreateTrainingHttpRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -99,7 +99,7 @@ public static class HttpToApplicationMappings
     /// <param name="trainingId">The training named in the route.</param>
     /// <param name="expectedVersion">The version read from the <c>If-Match</c> header.</param>
     public static EditTrainingCommand ToCommand(
-        this EditTrainingRequestHttp request,
+        this EditTrainingHttpRequest request,
         Guid trainingId,
         byte[] expectedVersion)
     {
@@ -121,7 +121,7 @@ public static class HttpToApplicationMappings
     public static DeleteTrainingCommand ToDeleteTrainingCommand(Guid trainingId) => new(trainingId);
 
     /// <summary>Builds the command handing a training over to another trainer (ADR 0036).</summary>
-    public static TransferTrainingCommand ToCommand(this TransferTrainingRequestHttp request, Guid trainingId)
+    public static TransferTrainingCommand ToCommand(this TransferTrainingHttpRequest request, Guid trainingId)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -141,6 +141,6 @@ public static class HttpToApplicationMappings
     /// and no way to carry the wrong one. The paging translation itself is the shared
     /// <c>ToPageRequest</c>, so this host and the layered one cannot disagree on a default.
     /// </remarks>
-    public static GetMyTrainingsQuery ToGetMyTrainingsQuery(this PaginationRequestHttp pagination)
+    public static GetMyTrainingsQuery ToGetMyTrainingsQuery(this PaginationHttpRequest pagination)
         => new() { Paging = pagination.ToPageRequest() };
 }

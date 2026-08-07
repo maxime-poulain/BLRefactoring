@@ -45,9 +45,9 @@ public sealed class TrainerController(
     /// </remarks>
     [HttpGet("me")]
     [ProducesEntityTag]
-    [ProducesResponseType(typeof(TrainerResponseHttp), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TrainerHttpResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<TrainerResponseHttp>> GetCurrentAsync(CancellationToken cancellationToken = default)
+    public async Task<ActionResult<TrainerHttpResponse>> GetCurrentAsync(CancellationToken cancellationToken = default)
     {
         var result = await trainerApplicationService.GetByIdAsync(
             currentUserService.TrainerId, cancellationToken);
@@ -90,13 +90,13 @@ public sealed class TrainerController(
     /// </remarks>
     [HttpPut("me")]
     [ProducesEntityTag]
-    [ProducesResponseType(typeof(TrainerResponseHttp), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TrainerHttpResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status412PreconditionFailed)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status428PreconditionRequired)]
-    public async Task<ActionResult<TrainerResponseHttp>> EditCurrentAsync(
-        [FromBody] EditTrainerRequestHttp request,
+    public async Task<ActionResult<TrainerHttpResponse>> EditCurrentAsync(
+        [FromBody] EditTrainerHttpRequest request,
         [FromHeader(Name = "If-Match")] string? ifMatch,
         CancellationToken cancellationToken = default)
     {
@@ -183,12 +183,12 @@ public sealed class TrainerController(
     // that reads fine.
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(TrainerPhotoControllerExtensions.MaxRequestBytes)]
-    [ProducesResponseType(typeof(TrainerResponseHttp), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TrainerHttpResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<TrainerResponseHttp>> SetPhotoAsync(
-        [FromForm] UploadTrainerPhotoRequestHttp request,
+    public async Task<ActionResult<TrainerHttpResponse>> SetPhotoAsync(
+        [FromForm] UploadTrainerPhotoHttpRequest request,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);

@@ -59,7 +59,7 @@ public sealed class CreateTrainingTests : ComponentTest
         // Arrange
         _trainingClient
             .Setup(client => client.UpdateTrainingAsync(
-                It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<EditTrainingRequestHttp>()))
+                It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<EditTrainingHttpRequest>()))
             .ThrowsAsync(Unreachable());
 
         var page = RenderPrefilled();
@@ -85,7 +85,7 @@ public sealed class CreateTrainingTests : ComponentTest
         // Arrange
         _trainingClient
             .Setup(client => client.UpdateTrainingAsync(
-                It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<EditTrainingRequestHttp>()))
+                It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<EditTrainingHttpRequest>()))
             .ThrowsAsync(new InvalidOperationException("a stack detail nobody should read on screen"));
 
         var page = RenderPrefilled();
@@ -110,10 +110,10 @@ public sealed class CreateTrainingTests : ComponentTest
     {
         _trainingClient
             .Setup(client => client.GetTrainingByIdAsync(It.IsAny<Guid>()))
-            .ReturnsAsync(new SwaggerResponse<TrainingResponseHttp>(
+            .ReturnsAsync(new SwaggerResponse<TrainingHttpResponse>(
                 200,
                 new Dictionary<string, IEnumerable<string>> { ["ETag"] = ["\"v1\""] },
-                new TrainingResponseHttp
+                new TrainingHttpResponse
                 {
                     Id = Guid.NewGuid(),
                     Title = "A valid training title",

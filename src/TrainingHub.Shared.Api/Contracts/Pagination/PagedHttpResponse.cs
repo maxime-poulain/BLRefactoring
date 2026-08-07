@@ -14,7 +14,7 @@ namespace TrainingHub.Shared.Api.Contracts.Pagination;
 /// type free of the application's <c>PagedResult</c> and lets either evolve on its own.
 /// </para>
 /// </remarks>
-public sealed class PagedResponseHttp<T>
+public sealed class PagedHttpResponse<T>
 {
     /// <summary>The page itself.</summary>
     public required IReadOnlyList<T> Items { get; init; }

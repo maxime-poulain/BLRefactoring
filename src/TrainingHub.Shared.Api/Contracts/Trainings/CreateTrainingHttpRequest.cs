@@ -10,11 +10,11 @@ namespace TrainingHub.Shared.Api.Contracts.Trainings;
 /// <c>trainer_id</c> claim. No training identifier either — the API does not let a client choose
 /// the identity of a resource it is creating; each stack mints one on its own side.
 /// <para>
-/// See <see cref="Trainers.EditTrainerRequestHttp"/> for why the constraints are attributes and
+/// See <see cref="Trainers.EditTrainerHttpRequest"/> for why the constraints are attributes and
 /// what they are, and are not, meant to decide.
 /// </para>
 /// </remarks>
-public sealed class CreateTrainingRequestHttp
+public sealed class CreateTrainingHttpRequest
 {
     /// <summary>
     /// The training's title, as the caller sent it. Bounds are enforced by the value object,

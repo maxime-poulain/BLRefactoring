@@ -40,10 +40,17 @@ public sealed class ApplicationServiceRules
     /// </summary>
     /// <remarks>
     /// Two vocabularies meet at the layered stack's application services, and they look alike enough
-    /// to be swapped by anybody reading quickly: `EditTrainerRequestHttp` is what a client sends,
+    /// to be swapped by anybody reading quickly: `EditTrainerHttpRequest` is what a client sends,
     /// `TrainerEditionRequest` is what the application layer accepts after the mapping. The suffix
     /// is what tells them apart at the name alone — a `*Request` in, a `*Dto` out, against
-    /// `*RequestHttp` and `*ResponseHttp` on the boundary above.
+    /// `*HttpRequest` and `*HttpResponse` on the boundary above.
+    /// <para>
+    /// Since ADR 0048 the two are no longer separable by suffix — `EditTrainerHttpRequest` ends in
+    /// `Request` exactly as `TrainerEditionRequest` does — so this rule cannot ask only that. It
+    /// excludes the qualified name explicitly, and that clause is the whole guard: without it, an
+    /// HTTP contract handed straight to an application service would <em>satisfy</em> the rule
+    /// written to catch it.
+    /// </para>
     /// <para>
     /// The population is the signatures rather than a folder, because the risk is not a badly named
     /// file: it is an HTTP contract or a domain type appearing where an application model belongs.
@@ -56,7 +63,7 @@ public sealed class ApplicationServiceRules
     [Fact]
     [ArchitectureRule("README#use-cases",
         "the layered application takes a *Request and answers a *Dto, so a name says which boundary " +
-        "it belongs to — never confusable with the API's *RequestHttp and *ResponseHttp")]
+        "it belongs to — never confusable with the API's *HttpRequest and *HttpResponse")]
     public void EveryLayeredServiceSignature_SaysWhichBoundaryItIsOn() =>
         Solution.LayeredApplication.DeclaredTypes()
             .Where(type => type.Name.EndsWith("ApplicationService", StringComparison.Ordinal))
@@ -65,7 +72,8 @@ public sealed class ApplicationServiceRules
                 .Select(method => (Service: service, Method: method)))
             .Selected("layered application service method")
             .SelectMany(entry => Ours(entry.Method.GetParameters().Select(parameter => parameter.ParameterType))
-                .Where(type => !type.Name.EndsWith("Request", StringComparison.Ordinal))
+                .Where(type => !type.Name.EndsWith("Request", StringComparison.Ordinal)
+                               || type.Name.EndsWith("HttpRequest", StringComparison.Ordinal))
                 .Select(type => (entry, type, Half: "takes", Suffix: "Request"))
                 .Concat(Ours(Unwrap(entry.Method.ReturnType))
                     .Where(type => !type.Name.EndsWith("Dto", StringComparison.Ordinal))
@@ -74,7 +82,8 @@ public sealed class ApplicationServiceRules
                 $"{found.entry.Service.Name}.{found.entry.Method.Name} {found.Half} " +
                 $"{found.type.Name}, which does not end in {found.Suffix}. The layered application " +
                 "takes a *Request and answers a *Dto; a name that says neither has to be read to be " +
-                "placed, and the boundary above it is one suffix away (*RequestHttp, *ResponseHttp)")
+                "placed, and a name qualified for the transport (*HttpRequest, *HttpResponse) belongs " +
+                "to the boundary above rather than here")
             .ShouldHold();
 
     /// <summary>The types in a sequence that this solution declares, and therefore names.</summary>

@@ -24,7 +24,7 @@ public sealed class BffSessionClient(IHttpClientFactory httpClientFactory) : IBf
 
         var response = await client.PostAsJsonAsync(
             "bff/login",
-            new LoginRequestHttp { Username = username, Password = password },
+            new LoginHttpRequest { Username = username, Password = password },
             cancellationToken);
 
         if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.BadRequest)

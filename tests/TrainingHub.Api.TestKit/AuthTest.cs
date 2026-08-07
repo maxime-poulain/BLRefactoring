@@ -108,7 +108,7 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         // Registration carries no bio, so the Bio column is null. This pins the round trip
         // through the database: an absent bio must come back as null, never as an empty
         // value object the mapping conjured out of a null column. See ADR 0032.
-        var trainer = await client.GetFromJsonAsync<TrainerResponseHttp>("/Trainer/me");
+        var trainer = await client.GetFromJsonAsync<TrainerHttpResponse>("/Trainer/me");
 
         trainer!.Bio.Should().BeNull();
     }
@@ -124,7 +124,7 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         (await AuthHelper.RegisterAsync(client, request)).EnsureSuccessStatusCode();
 
         var duplicate = AuthHelper.CreateUniqueRegisterRequest();
-        var response = await AuthHelper.RegisterAsync(client, new RegisterRequestHttp
+        var response = await AuthHelper.RegisterAsync(client, new RegisterHttpRequest
         {
             Username = duplicate.Username,
             Email = request.Email,
@@ -150,7 +150,7 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         (await AuthHelper.RegisterAsync(client, request)).EnsureSuccessStatusCode();
 
         var duplicate = AuthHelper.CreateUniqueRegisterRequest();
-        var response = await AuthHelper.RegisterAsync(client, new RegisterRequestHttp
+        var response = await AuthHelper.RegisterAsync(client, new RegisterHttpRequest
         {
             Username = request.Username,
             Email = duplicate.Email,
@@ -172,7 +172,7 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         var client = Factory.CreateClient();
         var request = AuthHelper.CreateUniqueRegisterRequest();
 
-        var response = await AuthHelper.RegisterAsync(client, new RegisterRequestHttp
+        var response = await AuthHelper.RegisterAsync(client, new RegisterHttpRequest
         {
             Username = request.Username,
             Email = request.Email,
@@ -193,7 +193,7 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
     /// <remarks>
     /// The gate that used to be a <c>NotEmpty()</c> in one host's command validator, and is now the
     /// contract's own <c>[StringLength(50, MinimumLength = 2)]</c> — the same bound
-    /// <c>EditTrainerRequestHttp</c> has always carried, so the two ways into a <c>Trainer</c>
+    /// <c>EditTrainerHttpRequest</c> has always carried, so the two ways into a <c>Trainer</c>
     /// refuse the same names (ADR 0043). Asserted here rather than on a validator because here is
     /// where it now happens: at model binding, on both hosts, before any handler runs.
     /// <para>
@@ -208,7 +208,7 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         var client = Factory.CreateClient();
         var request = AuthHelper.CreateUniqueRegisterRequest();
 
-        var response = await AuthHelper.RegisterAsync(client, new RegisterRequestHttp
+        var response = await AuthHelper.RegisterAsync(client, new RegisterHttpRequest
         {
             Username = request.Username,
             Email = request.Email,
@@ -252,7 +252,7 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         var client = Factory.CreateClient();
         var request = AuthHelper.CreateUniqueRegisterRequest();
 
-        var registration = await AuthHelper.RegisterAsync(client, new RegisterRequestHttp
+        var registration = await AuthHelper.RegisterAsync(client, new RegisterHttpRequest
         {
             Username = request.Username,
             Email = "a@b",
@@ -264,7 +264,7 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
 
         registration.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        var login = await client.PostAsJsonAsync("/Auth/login", new LoginRequestHttp
+        var login = await client.PostAsJsonAsync("/Auth/login", new LoginHttpRequest
         {
             Username = request.Username,
             Password = request.Password
@@ -289,14 +289,14 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         var request = AuthHelper.CreateUniqueRegisterRequest();
         (await AuthHelper.RegisterAsync(client, request)).EnsureSuccessStatusCode();
 
-        var response = await client.PostAsJsonAsync("/Auth/login", new LoginRequestHttp
+        var response = await client.PostAsJsonAsync("/Auth/login", new LoginHttpRequest
         {
             Username = request.Username,
             Password = request.Password
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponseHttp>();
+        var loginResponse = await response.Content.ReadFromJsonAsync<LoginHttpResponse>();
         loginResponse!.Token.Should().NotBeNullOrEmpty();
     }
 
@@ -310,7 +310,7 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
         var request = AuthHelper.CreateUniqueRegisterRequest();
         (await AuthHelper.RegisterAsync(client, request)).EnsureSuccessStatusCode();
 
-        var response = await client.PostAsJsonAsync("/Auth/login", new LoginRequestHttp
+        var response = await client.PostAsJsonAsync("/Auth/login", new LoginHttpRequest
         {
             Username = request.Username,
             Password = "wrong_password"
@@ -327,7 +327,7 @@ public abstract class AuthTest<TFactory>(TFactory factory) : IntegrationTest<TFa
     {
         var client = Factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync("/Auth/login", new LoginRequestHttp
+        var response = await client.PostAsJsonAsync("/Auth/login", new LoginHttpRequest
         {
             Username = "nobody_by_that_name",
             Password = "whatever"

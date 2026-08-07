@@ -39,11 +39,11 @@ public abstract class TrainingTransferTest<TFactory>(TFactory factory) : Integra
         var trainingId = await created.Content.ReadFromJsonAsync<Guid>();
 
         var recipient = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var recipientId = (await recipient.GetFromJsonAsync<TrainerResponseHttp>("/Trainer/me"))!.Id;
+        var recipientId = (await recipient.GetFromJsonAsync<TrainerHttpResponse>("/Trainer/me"))!.Id;
 
         var transferred = await giver.PostAsJsonAsync(
             $"/Training/{trainingId}/transfer",
-            new TransferTrainingRequestHttp { RecipientTrainerId = recipientId });
+            new TransferTrainingHttpRequest { RecipientTrainerId = recipientId });
         transferred.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // The giver can no longer read what they gave away; the recipient's list gained it.
@@ -72,13 +72,13 @@ public abstract class TrainingTransferTest<TFactory>(TFactory factory) : Integra
         var trainingId = await created.Content.ReadFromJsonAsync<Guid>();
 
         var recipient = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var recipientId = (await recipient.GetFromJsonAsync<TrainerResponseHttp>("/Trainer/me"))!.Id;
+        var recipientId = (await recipient.GetFromJsonAsync<TrainerHttpResponse>("/Trainer/me"))!.Id;
         (await recipient.PostAsJsonAsync("/Training", TrainingRequests.Valid("A contested title")))
             .StatusCode.Should().Be(HttpStatusCode.Created);
 
         var refused = await giver.PostAsJsonAsync(
             $"/Training/{trainingId}/transfer",
-            new TransferTrainingRequestHttp { RecipientTrainerId = recipientId });
+            new TransferTrainingHttpRequest { RecipientTrainerId = recipientId });
 
         // The same business sentence creation and edit refuse with, as a problem document whose
         // code a caller can branch on (ADR 0015, ADR 0016).

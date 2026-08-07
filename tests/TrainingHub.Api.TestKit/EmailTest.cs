@@ -56,7 +56,7 @@ public abstract class EmailTest<TFactory>(TFactory factory) : IntegrationTest<TF
 
         var newAddress = $"changed-{request.Username}@example.com";
         var entityTag = await client.GetETagAsync("/Trainer/me");
-        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerRequestHttp
+        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerHttpRequest
         {
             Firstname = request.Firstname,
             Lastname = request.Lastname,

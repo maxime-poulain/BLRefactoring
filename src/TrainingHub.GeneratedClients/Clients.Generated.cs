@@ -53,7 +53,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="body">A token to cancel the operation.</param>
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterRequestHttp body);
+        System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterHttpRequest body);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
@@ -80,7 +80,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="body">A token to cancel the operation.</param>
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterRequestHttp body, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterHttpRequest body, System.Threading.CancellationToken cancellationToken);
 
         /// <summary>
         /// Authenticates a user and generates a JWT token if the credentials are valid.
@@ -94,7 +94,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="body">A token to cancel the operation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<LoginResponseHttp> LoginAsync(LoginRequestHttp body);
+        System.Threading.Tasks.Task<LoginHttpResponse> LoginAsync(LoginHttpRequest body);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
@@ -109,7 +109,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="body">A token to cancel the operation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<LoginResponseHttp> LoginAsync(LoginRequestHttp body, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<LoginHttpResponse> LoginAsync(LoginHttpRequest body, System.Threading.CancellationToken cancellationToken);
 
     }
 
@@ -169,7 +169,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="body">A token to cancel the operation.</param>
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterRequestHttp body)
+        public virtual System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterHttpRequest body)
         {
             return RegisterAsync(body, System.Threading.CancellationToken.None);
         }
@@ -199,7 +199,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="body">A token to cancel the operation.</param>
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterRequestHttp body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<System.Guid> RegisterAsync(RegisterHttpRequest body, System.Threading.CancellationToken cancellationToken)
         {
             if (body == null)
                 throw new System.ArgumentNullException("body");
@@ -306,7 +306,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="body">A token to cancel the operation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<LoginResponseHttp> LoginAsync(LoginRequestHttp body)
+        public virtual System.Threading.Tasks.Task<LoginHttpResponse> LoginAsync(LoginHttpRequest body)
         {
             return LoginAsync(body, System.Threading.CancellationToken.None);
         }
@@ -324,7 +324,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="body">A token to cancel the operation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<LoginResponseHttp> LoginAsync(LoginRequestHttp body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<LoginHttpResponse> LoginAsync(LoginHttpRequest body, System.Threading.CancellationToken cancellationToken)
         {
             if (body == null)
                 throw new System.ArgumentNullException("body");
@@ -372,7 +372,7 @@ namespace TrainingHub.GeneratedClients
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<LoginResponseHttp>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<LoginHttpResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -543,21 +543,21 @@ namespace TrainingHub.GeneratedClients
     {
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<SwaggerResponse<TrainerResponseHttp>> GetCurrentAsync();
+        System.Threading.Tasks.Task<SwaggerResponse<TrainerHttpResponse>> GetCurrentAsync();
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<SwaggerResponse<TrainerResponseHttp>> GetCurrentAsync(System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<SwaggerResponse<TrainerHttpResponse>> GetCurrentAsync(System.Threading.CancellationToken cancellationToken);
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<TrainerResponseHttp> EditCurrentAsync(string? if_Match, EditTrainerRequestHttp body);
+        System.Threading.Tasks.Task<TrainerHttpResponse> EditCurrentAsync(string? if_Match, EditTrainerHttpRequest body);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<TrainerResponseHttp> EditCurrentAsync(string? if_Match, EditTrainerRequestHttp body, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<TrainerHttpResponse> EditCurrentAsync(string? if_Match, EditTrainerHttpRequest body, System.Threading.CancellationToken cancellationToken);
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
@@ -570,12 +570,12 @@ namespace TrainingHub.GeneratedClients
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<TrainerResponseHttp> SetPhotoAsync(FileParameter photo);
+        System.Threading.Tasks.Task<TrainerHttpResponse> SetPhotoAsync(FileParameter photo);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<TrainerResponseHttp> SetPhotoAsync(FileParameter photo, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<TrainerHttpResponse> SetPhotoAsync(FileParameter photo, System.Threading.CancellationToken cancellationToken);
 
         /// <returns>No Content</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
@@ -622,7 +622,7 @@ namespace TrainingHub.GeneratedClients
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<SwaggerResponse<TrainerResponseHttp>> GetCurrentAsync()
+        public virtual System.Threading.Tasks.Task<SwaggerResponse<TrainerHttpResponse>> GetCurrentAsync()
         {
             return GetCurrentAsync(System.Threading.CancellationToken.None);
         }
@@ -630,7 +630,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<SwaggerResponse<TrainerResponseHttp>> GetCurrentAsync(System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<SwaggerResponse<TrainerHttpResponse>> GetCurrentAsync(System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -671,12 +671,12 @@ namespace TrainingHub.GeneratedClients
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<TrainerResponseHttp>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<TrainerHttpResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            return new SwaggerResponse<TrainerResponseHttp>(status_, headers_, objectResponse_.Object);
+                            return new SwaggerResponse<TrainerHttpResponse>(status_, headers_, objectResponse_.Object);
                         }
                         else
                         if (status_ == 401)
@@ -716,7 +716,7 @@ namespace TrainingHub.GeneratedClients
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<TrainerResponseHttp> EditCurrentAsync(string? if_Match, EditTrainerRequestHttp body)
+        public virtual System.Threading.Tasks.Task<TrainerHttpResponse> EditCurrentAsync(string? if_Match, EditTrainerHttpRequest body)
         {
             return EditCurrentAsync(if_Match, body, System.Threading.CancellationToken.None);
         }
@@ -724,7 +724,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<TrainerResponseHttp> EditCurrentAsync(string? if_Match, EditTrainerRequestHttp body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<TrainerHttpResponse> EditCurrentAsync(string? if_Match, EditTrainerHttpRequest body, System.Threading.CancellationToken cancellationToken)
         {
             if (body == null)
                 throw new System.ArgumentNullException("body");
@@ -775,7 +775,7 @@ namespace TrainingHub.GeneratedClients
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<TrainerResponseHttp>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<TrainerHttpResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -955,7 +955,7 @@ namespace TrainingHub.GeneratedClients
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<TrainerResponseHttp> SetPhotoAsync(FileParameter photo)
+        public virtual System.Threading.Tasks.Task<TrainerHttpResponse> SetPhotoAsync(FileParameter photo)
         {
             return SetPhotoAsync(photo, System.Threading.CancellationToken.None);
         }
@@ -963,7 +963,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<TrainerResponseHttp> SetPhotoAsync(FileParameter photo, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<TrainerHttpResponse> SetPhotoAsync(FileParameter photo, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -1019,7 +1019,7 @@ namespace TrainingHub.GeneratedClients
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<TrainerResponseHttp>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<TrainerHttpResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1314,30 +1314,30 @@ namespace TrainingHub.GeneratedClients
     {
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Guid> CreateTrainingAsync(CreateTrainingRequestHttp body);
+        System.Threading.Tasks.Task<System.Guid> CreateTrainingAsync(CreateTrainingHttpRequest body);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Guid> CreateTrainingAsync(CreateTrainingRequestHttp body, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<System.Guid> CreateTrainingAsync(CreateTrainingHttpRequest body, System.Threading.CancellationToken cancellationToken);
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<SwaggerResponse<TrainingResponseHttp>> GetTrainingByIdAsync(System.Guid trainingId);
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>OK</returns>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<SwaggerResponse<TrainingResponseHttp>> GetTrainingByIdAsync(System.Guid trainingId, System.Threading.CancellationToken cancellationToken);
-
-        /// <returns>OK</returns>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<TrainingResponseHttp> UpdateTrainingAsync(System.Guid trainingId, string? if_Match, EditTrainingRequestHttp body);
+        System.Threading.Tasks.Task<SwaggerResponse<TrainingHttpResponse>> GetTrainingByIdAsync(System.Guid trainingId);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<TrainingResponseHttp> UpdateTrainingAsync(System.Guid trainingId, string? if_Match, EditTrainingRequestHttp body, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<SwaggerResponse<TrainingHttpResponse>> GetTrainingByIdAsync(System.Guid trainingId, System.Threading.CancellationToken cancellationToken);
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<TrainingHttpResponse> UpdateTrainingAsync(System.Guid trainingId, string? if_Match, EditTrainingHttpRequest body);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<TrainingHttpResponse> UpdateTrainingAsync(System.Guid trainingId, string? if_Match, EditTrainingHttpRequest body, System.Threading.CancellationToken cancellationToken);
 
         /// <returns>No Content</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
@@ -1352,23 +1352,23 @@ namespace TrainingHub.GeneratedClients
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedResponseHttpOfTrainingResponseHttp> GetMineAsync(int? page, int? pageSize);
+        System.Threading.Tasks.Task<PagedHttpResponseOfTrainingHttpResponse> GetMineAsync(int? page, int? pageSize);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="page">The page to return, counted from 1.</param>
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedResponseHttpOfTrainingResponseHttp> GetMineAsync(int? page, int? pageSize, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<PagedHttpResponseOfTrainingHttpResponse> GetMineAsync(int? page, int? pageSize, System.Threading.CancellationToken cancellationToken);
 
         /// <returns>No Content</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task TransferTrainingAsync(System.Guid trainingId, TransferTrainingRequestHttp body);
+        System.Threading.Tasks.Task TransferTrainingAsync(System.Guid trainingId, TransferTrainingHttpRequest body);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>No Content</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task TransferTrainingAsync(System.Guid trainingId, TransferTrainingRequestHttp body, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task TransferTrainingAsync(System.Guid trainingId, TransferTrainingHttpRequest body, System.Threading.CancellationToken cancellationToken);
 
     }
 
@@ -1406,7 +1406,7 @@ namespace TrainingHub.GeneratedClients
 
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<System.Guid> CreateTrainingAsync(CreateTrainingRequestHttp body)
+        public virtual System.Threading.Tasks.Task<System.Guid> CreateTrainingAsync(CreateTrainingHttpRequest body)
         {
             return CreateTrainingAsync(body, System.Threading.CancellationToken.None);
         }
@@ -1414,7 +1414,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<System.Guid> CreateTrainingAsync(CreateTrainingRequestHttp body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<System.Guid> CreateTrainingAsync(CreateTrainingHttpRequest body, System.Threading.CancellationToken cancellationToken)
         {
             if (body == null)
                 throw new System.ArgumentNullException("body");
@@ -1517,7 +1517,7 @@ namespace TrainingHub.GeneratedClients
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<SwaggerResponse<TrainingResponseHttp>> GetTrainingByIdAsync(System.Guid trainingId)
+        public virtual System.Threading.Tasks.Task<SwaggerResponse<TrainingHttpResponse>> GetTrainingByIdAsync(System.Guid trainingId)
         {
             return GetTrainingByIdAsync(trainingId, System.Threading.CancellationToken.None);
         }
@@ -1525,7 +1525,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<SwaggerResponse<TrainingResponseHttp>> GetTrainingByIdAsync(System.Guid trainingId, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<SwaggerResponse<TrainingHttpResponse>> GetTrainingByIdAsync(System.Guid trainingId, System.Threading.CancellationToken cancellationToken)
         {
             if (trainingId == null)
                 throw new System.ArgumentNullException("trainingId");
@@ -1570,12 +1570,12 @@ namespace TrainingHub.GeneratedClients
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<TrainingResponseHttp>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<TrainingHttpResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            return new SwaggerResponse<TrainingResponseHttp>(status_, headers_, objectResponse_.Object);
+                            return new SwaggerResponse<TrainingHttpResponse>(status_, headers_, objectResponse_.Object);
                         }
                         else
                         if (status_ == 400)
@@ -1625,7 +1625,7 @@ namespace TrainingHub.GeneratedClients
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<TrainingResponseHttp> UpdateTrainingAsync(System.Guid trainingId, string? if_Match, EditTrainingRequestHttp body)
+        public virtual System.Threading.Tasks.Task<TrainingHttpResponse> UpdateTrainingAsync(System.Guid trainingId, string? if_Match, EditTrainingHttpRequest body)
         {
             return UpdateTrainingAsync(trainingId, if_Match, body, System.Threading.CancellationToken.None);
         }
@@ -1633,7 +1633,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<TrainingResponseHttp> UpdateTrainingAsync(System.Guid trainingId, string? if_Match, EditTrainingRequestHttp body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<TrainingHttpResponse> UpdateTrainingAsync(System.Guid trainingId, string? if_Match, EditTrainingHttpRequest body, System.Threading.CancellationToken cancellationToken)
         {
             if (trainingId == null)
                 throw new System.ArgumentNullException("trainingId");
@@ -1688,7 +1688,7 @@ namespace TrainingHub.GeneratedClients
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<TrainingResponseHttp>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<TrainingHttpResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1889,7 +1889,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<PagedResponseHttpOfTrainingResponseHttp> GetMineAsync(int? page, int? pageSize)
+        public virtual System.Threading.Tasks.Task<PagedHttpResponseOfTrainingHttpResponse> GetMineAsync(int? page, int? pageSize)
         {
             return GetMineAsync(page, pageSize, System.Threading.CancellationToken.None);
         }
@@ -1899,7 +1899,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedResponseHttpOfTrainingResponseHttp> GetMineAsync(int? page, int? pageSize, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<PagedHttpResponseOfTrainingHttpResponse> GetMineAsync(int? page, int? pageSize, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -1950,7 +1950,7 @@ namespace TrainingHub.GeneratedClients
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<PagedResponseHttpOfTrainingResponseHttp>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<PagedHttpResponseOfTrainingHttpResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1995,7 +1995,7 @@ namespace TrainingHub.GeneratedClients
 
         /// <returns>No Content</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task TransferTrainingAsync(System.Guid trainingId, TransferTrainingRequestHttp body)
+        public virtual System.Threading.Tasks.Task TransferTrainingAsync(System.Guid trainingId, TransferTrainingHttpRequest body)
         {
             return TransferTrainingAsync(trainingId, body, System.Threading.CancellationToken.None);
         }
@@ -2003,7 +2003,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>No Content</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task TransferTrainingAsync(System.Guid trainingId, TransferTrainingRequestHttp body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task TransferTrainingAsync(System.Guid trainingId, TransferTrainingHttpRequest body, System.Threading.CancellationToken cancellationToken)
         {
             if (trainingId == null)
                 throw new System.ArgumentNullException("trainingId");
@@ -2252,7 +2252,7 @@ namespace TrainingHub.GeneratedClients
     /// The body of `POST /Training`.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class CreateTrainingRequestHttp
+    public partial class CreateTrainingHttpRequest
     {
 
         /// <summary>
@@ -2313,7 +2313,7 @@ namespace TrainingHub.GeneratedClients
     /// The body of `PUT /Trainer/me`: the new state of the caller's profile.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class EditTrainerRequestHttp
+    public partial class EditTrainerHttpRequest
     {
 
         /// <summary>
@@ -2362,7 +2362,7 @@ namespace TrainingHub.GeneratedClients
     /// The body of `PUT /Training/{trainingId}`: the new state of the training.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class EditTrainingRequestHttp
+    public partial class EditTrainingHttpRequest
     {
 
         /// <summary>
@@ -2421,7 +2421,7 @@ namespace TrainingHub.GeneratedClients
     /// The body of `POST /Auth/login`: the credentials to present.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class LoginRequestHttp
+    public partial class LoginHttpRequest
     {
 
         /// <summary>
@@ -2453,7 +2453,7 @@ namespace TrainingHub.GeneratedClients
     /// The body of a successful `POST /Auth/login`: the token to present afterwards.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class LoginResponseHttp
+    public partial class LoginHttpResponse
     {
 
         /// <summary>
@@ -2478,7 +2478,7 @@ namespace TrainingHub.GeneratedClients
     /// One page of a collection, as the API publishes it.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class PagedResponseHttpOfTrainingResponseHttp
+    public partial class PagedHttpResponseOfTrainingHttpResponse
     {
 
         /// <summary>
@@ -2486,7 +2486,7 @@ namespace TrainingHub.GeneratedClients
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("items")]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.List<TrainingResponseHttp> Items { get; set; } = new System.Collections.Generic.List<TrainingResponseHttp>();
+        public System.Collections.Generic.List<TrainingHttpResponse> Items { get; set; } = new System.Collections.Generic.List<TrainingHttpResponse>();
 
         /// <summary>
         /// The page returned, counted from 1.
@@ -2578,7 +2578,7 @@ namespace TrainingHub.GeneratedClients
     /// The body of `POST /Auth/register`: an account to open and the trainer behind it.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class RegisterRequestHttp
+    public partial class RegisterHttpRequest
     {
 
         /// <summary>
@@ -2640,7 +2640,7 @@ namespace TrainingHub.GeneratedClients
     /// A trainer as the API publishes it.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class TrainerResponseHttp
+    public partial class TrainerHttpResponse
     {
 
         /// <summary>
@@ -2699,7 +2699,7 @@ namespace TrainingHub.GeneratedClients
     /// A training as the API publishes it.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class TrainingResponseHttp
+    public partial class TrainingHttpResponse
     {
 
         /// <summary>
@@ -2766,7 +2766,7 @@ namespace TrainingHub.GeneratedClients
     /// The body of `POST /Training/{trainingId}/transfer`.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class TransferTrainingRequestHttp
+    public partial class TransferTrainingHttpRequest
     {
 
         /// <summary>

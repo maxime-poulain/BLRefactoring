@@ -11,7 +11,7 @@ namespace TrainingHub.Shared.Api.Contracts.Auth;
 /// that an unknown username and a wrong password are answered identically — telling them apart
 /// would make it an oracle for which accounts exist.
 /// </remarks>
-public sealed class LoginRequestHttp
+public sealed class LoginHttpRequest
 {
     /// <summary>
     /// The username of the user attempting to log in.

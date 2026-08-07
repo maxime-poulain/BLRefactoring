@@ -26,7 +26,7 @@ public sealed class AuthController(
     /// that read model rather than generated here.
     /// </remarks>
     protected override async Task<Result<Guid>> CreateTrainerAsync(
-        RegisterRequestHttp request,
+        RegisterHttpRequest request,
         Guid userId,
         CancellationToken cancellationToken = default)
     {

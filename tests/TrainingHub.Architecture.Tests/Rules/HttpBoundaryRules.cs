@@ -136,8 +136,7 @@ public sealed partial class HttpBoundaryRules
         Solution.Backend
             .SelectMany(assembly => assembly.DeclaredTypes())
             .Selected("type in the backend")
-            .Where(type => type.Name.EndsWith("RequestHttp", StringComparison.Ordinal)
-                           || type.Name.EndsWith("ResponseHttp", StringComparison.Ordinal))
+            .Where(type => IsNamedForTheBoundary(type.Name))
             .Where(type => type.Namespace?.Contains(".Api.Contracts", StringComparison.Ordinal) != true)
             .Select(type =>
                 $"{type.FullName} is named as an HTTP contract but does not live in an " +
@@ -164,7 +163,10 @@ public sealed partial class HttpBoundaryRules
     /// </remarks>
     [Fact]
     [ArchitectureRule("0042",
-        "every type an action binds or answers is a contract: named with its suffix, declared under Contracts/")]
+        "every type an action binds or answers is a contract, declared under Contracts/: what the " +
+        "boundary publishes comes from a closed vocabulary")]
+    [ArchitectureRule("0048",
+        "a published contract is named *HttpRequest or *HttpResponse, with the qualifier in front")]
     public void EveryTypeOnTheBoundary_IsAContract() =>
         Actions
             .Selected("controller action")
@@ -176,18 +178,30 @@ public sealed partial class HttpBoundaryRules
             .Distinct()
             .Select(type =>
                 $"{type.FullName} is bound or answered by an action, and is not a contract: a " +
-                "published type is named *RequestHttp or *ResponseHttp and declared under " +
-                "Contracts/. ADR 0042 closes the boundary's vocabulary — move it, or stop " +
-                "publishing it")
+                "published type is named *HttpRequest or *HttpResponse and declared under " +
+                "Contracts/. ADR 0042 closed the boundary's vocabulary and ADR 0048 put the " +
+                "qualifier in front — move it, or stop publishing it")
             .ShouldHold();
 
     /// <summary>Whether a type is a contract by both halves of the convention.</summary>
     private static bool IsAContract(Type type) =>
-        (Bare(type).EndsWith("RequestHttp", StringComparison.Ordinal)
-         || Bare(type).EndsWith("ResponseHttp", StringComparison.Ordinal))
+        IsNamedForTheBoundary(Bare(type))
         && type.Namespace?.Contains(".Api.Contracts", StringComparison.Ordinal) == true;
 
-    /// <summary>A type's name without the arity a generic carries — <c>PagedResponseHttp`1</c>.</summary>
+    /// <summary>
+    /// Whether a name says, in front, that the type belongs to the HTTP boundary.
+    /// </summary>
+    /// <remarks>
+    /// The one place the convention is spelled, so the rules below and the one above cannot drift
+    /// apart. In front rather than at the end since ADR 0048, which is also why no rule may ask
+    /// "does this end in Request" to place a type: <c>CreateTrainerHttpRequest</c> and the
+    /// application layer's <c>TrainerEditionRequest</c> both do.
+    /// </remarks>
+    private static bool IsNamedForTheBoundary(string name) =>
+        name.EndsWith("HttpRequest", StringComparison.Ordinal)
+        || name.EndsWith("HttpResponse", StringComparison.Ordinal);
+
+    /// <summary>A type's name without the arity a generic carries — <c>PagedHttpResponse`1</c>.</summary>
     private static string Bare(Type type) =>
         type.Name.Split('`', 2)[0];
 
@@ -257,6 +271,53 @@ public sealed partial class HttpBoundaryRules
     }
 
     /// <summary>
+    /// No inner layer, declares a type named for the transport.
+    /// </summary>
+    /// <remarks>
+    /// The neighbour above catches an inner layer that <em>uses</em> a contract — one appearing in a
+    /// public signature below the boundary. This one catches an inner layer that <em>declares</em> a
+    /// type wearing the boundary's name, which no signature need ever expose, and which the neighbour
+    /// would therefore miss until somebody passed it around.
+    /// <para>
+    /// It is the half of ADR 0048 the rename could not carry on its own. While the boundary's types ended
+    /// in <c>RequestHttp</c>, the two vocabularies were separable by suffix and nothing had to say
+    /// so: an application input ended in <c>Request</c>, a contract did not. Now that a contract ends
+    /// in <c>HttpRequest</c>, both end in <c>Request</c>, and the only thing left that tells them
+    /// apart is which assembly declares them.
+    /// </para>
+    /// <para>
+    /// So the rule is per assembly rather than per string, and it guards the direction that matters:
+    /// a type named for the transport, declared inside. The kernel, the domain, both application
+    /// layers and infrastructure answer to callers that never crossed HTTP — a name from the boundary
+    /// there is either a contract that leaked inwards or an inner type pretending to be one, and both
+    /// are the confusion ADR 0042 gave the boundary a vocabulary to prevent.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0048",
+        "the HTTP qualifier belongs to the API assemblies: an inner layer names no *HttpRequest and no " +
+        "*HttpResponse, whatever its own suffixes look like")]
+    public void NoInnerLayer_DeclaresATypeNamedForTheTransport() =>
+        new[]
+        {
+            (Layer: "the kernel", Assembly: Solution.Kernel),
+            (Layer: "the domain", Assembly: Solution.Domain),
+            (Layer: "the shared application layer", Assembly: Solution.Application),
+            (Layer: "the layered application", Assembly: Solution.LayeredApplication),
+            (Layer: "the CQRS application layer", Assembly: Solution.CqrsApplication),
+            (Layer: "infrastructure", Assembly: Solution.Infrastructure),
+            (Layer: "the CQRS infrastructure layer", Assembly: Solution.CqrsInfrastructure)
+        }
+            .SelectMany(layer => layer.Assembly.DeclaredTypes().Select(type => (layer.Layer, Type: type)))
+            .Selected("type declared inside the boundary")
+            .Where(entry => IsNamedForTheBoundary(Bare(entry.Type)))
+            .Select(entry =>
+                $"{entry.Type.FullName} is named for the HTTP boundary and is declared in " +
+                $"{entry.Layer}. A contract belongs under *.Api.Contracts; what this layer takes is a " +
+                "*Request and what it answers is a *Dto, and neither wears the transport's name")
+            .ShouldHold();
+
+    /// <summary>
     /// No http response, publishes the concurrency token.
     /// </summary>
     [Fact]
@@ -265,7 +326,7 @@ public sealed partial class HttpBoundaryRules
     public void NoHttpResponse_PublishesTheConcurrencyToken() =>
         Solution.Backend
             .SelectMany(assembly => assembly.DeclaredTypes())
-            .Where(type => type.Name.EndsWith("ResponseHttp", StringComparison.Ordinal))
+            .Where(type => type.Name.EndsWith("HttpResponse", StringComparison.Ordinal))
             .Selected("HTTP response contract")
             .SelectMany(type => type.GetProperties().Select(property => (type, property)))
             .Where(pair => pair.property.Name.Equals("RowVersion", StringComparison.Ordinal))
@@ -498,7 +559,7 @@ public sealed partial class HttpBoundaryRules
     /// <see cref="System.ComponentModel.DataAnnotations.RequiredAttribute"/> on a non-nullable
     /// <see cref="Guid"/> is satisfied by <see cref="Guid.Empty"/> — the value is always present, so
     /// the annotation refuses nothing while reading exactly like a guard. This is not hypothetical:
-    /// <c>TransferTrainingRequestHttp.RecipientTrainerId</c> carried it, and the contract's own
+    /// <c>TransferTrainingHttpRequest.RecipientTrainerId</c> carried it, and the contract's own
     /// remark claimed it "only refuses a message with no recipient at all" (ADR 0046).
     /// </remarks>
     [Fact]
@@ -526,8 +587,6 @@ public sealed partial class HttpBoundaryRules
             ? new[] { type }.Concat(type.GetGenericArguments())
             : new[] { type };
 
-        return candidates.Any(candidate =>
-            candidate.Name.EndsWith("RequestHttp", StringComparison.Ordinal)
-            || candidate.Name.EndsWith("ResponseHttp", StringComparison.Ordinal));
+        return candidates.Any(candidate => IsNamedForTheBoundary(candidate.Name));
     }
 }

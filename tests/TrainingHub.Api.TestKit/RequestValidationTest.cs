@@ -35,7 +35,7 @@ public abstract class RequestValidationTest<TFactory>(TFactory factory) : Integr
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var entityTag = await client.GetETagAsync("/Trainer/me");
 
-        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerRequestHttp
+        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerHttpRequest
         {
             Firstname = "J",                    // shorter than the two characters a name needs
             Lastname = string.Empty,            // absent as far as [Required] is concerned
@@ -49,8 +49,8 @@ public abstract class RequestValidationTest<TFactory>(TFactory factory) : Integr
         // A caller filling a form deserves every invalid field at once rather than one round-trip
         // per mistake, and deserves to be told which ones.
         problem!.Errors.Should().ContainKeys(
-            nameof(EditTrainerRequestHttp.Firstname),
-            nameof(EditTrainerRequestHttp.Lastname));
+            nameof(EditTrainerHttpRequest.Firstname),
+            nameof(EditTrainerHttpRequest.Lastname));
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ public abstract class RequestValidationTest<TFactory>(TFactory factory) : Integr
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var entityTag = await client.GetETagAsync("/Trainer/me");
 
-        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerRequestHttp
+        var response = await client.PutWithIfMatchAsync("/Trainer/me", new EditTrainerHttpRequest
         {
             Firstname = "Edited",
             Lastname = "Profile",

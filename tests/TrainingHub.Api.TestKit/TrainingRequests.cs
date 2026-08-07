@@ -19,7 +19,7 @@ public static class TrainingRequests
     /// </summary>
     /// <param name="title">The title, which is the only field a test usually needs to vary — it is
     /// what the uniqueness rule is about.</param>
-    public static CreateTrainingRequestHttp Valid(string title = "Valid training title") => new()
+    public static CreateTrainingHttpRequest Valid(string title = "Valid training title") => new()
     {
         Title = title,
         Description = "A valid training description for integration testing",
@@ -31,7 +31,7 @@ public static class TrainingRequests
     /// <summary>
     /// An edition request that passes every data annotation and every domain rule.
     /// </summary>
-    public static EditTrainingRequestHttp ValidEdition(string title = "Edited training title") => new()
+    public static EditTrainingHttpRequest ValidEdition(string title = "Edited training title") => new()
     {
         Title = title,
         Description = "An edited training description for integration testing",

@@ -98,7 +98,7 @@
     private const int StatusForbidden = 403;
     private const int StatusNotFound = 404;
 
-    private PagedResponseHttpOfTrainingResponseHttp? _page;
+    private PagedHttpResponseOfTrainingHttpResponse? _page;
     private int _currentPage = 1;
     private bool _isLoading = true;
 
@@ -162,7 +162,7 @@
         }
     }
 
-    private async Task OpenDeleteDialog(TrainingResponseHttp training)
+    private async Task OpenDeleteDialog(TrainingHttpResponse training)
     {
         var parameters = new DialogParameters<DeleteTrainingDialog>
         {

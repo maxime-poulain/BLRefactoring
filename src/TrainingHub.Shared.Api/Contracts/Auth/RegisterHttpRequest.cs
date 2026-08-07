@@ -14,7 +14,7 @@ namespace TrainingHub.Shared.Api.Contracts.Auth;
 /// of them, in the generated client and consumed by the Blazor front.
 /// </para>
 /// <para>
-/// The name is bounded here, exactly as <c>EditTrainerRequestHttp</c> bounds it, so that the two
+/// The name is bounded here, exactly as <c>EditTrainerHttpRequest</c> bounds it, so that the two
 /// paths into a <c>Trainer</c> refuse the same names. What is deliberately absent is any check on
 /// the shape of <see cref="Email"/>: .NET's <c>[EmailAddress]</c> and the domain's validator
 /// disagree in both directions — the domain accepts a quoted local part containing an <c>@</c>,
@@ -22,7 +22,7 @@ namespace TrainingHub.Shared.Api.Contracts.Auth;
 /// domain judge the address (ADR 0043).
 /// </para>
 /// </remarks>
-public sealed class RegisterRequestHttp
+public sealed class RegisterHttpRequest
 {
     /// <summary>
     /// The username of the new user.
