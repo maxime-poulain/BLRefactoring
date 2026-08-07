@@ -128,6 +128,13 @@ handler on the write side at all.
 
 ## Verification
 
+- **`LifecycleRules.EveryDeletion_AnnouncesItself`** — added after the fact, and the record is
+  honest about why. The rule below watches members that *move* a status; a deletion moves none, it
+  removes the row the status was written on. `DeleteTrainingWhenTrainerDeletedEventHandler` fell
+  straight through that gap: it deleted every training a departing trainer owned and announced not
+  one of them, so the search index went on serving all of them — the very defect this record was
+  written to close, surviving on the bulk path. Two halves, two rules. Watched red on the cascade,
+  then red again on a path that was already correct, to prove it is not aimed at one file.
 - **`LifecycleRules.EveryStatusTransition_AnnouncesItself`** — the rule this record turns on. It
   reads the domain's source, splits each file into members, and refuses any member that moves a
   `Status` without calling `AddDomainEvent`. Watched failing first: deleting the
@@ -147,7 +154,11 @@ handler on the write side at all.
   asserted on the signature rather than on a call, because a method with no port cannot be made to
   ask.
 - **Shared facts in `tests/TrainingHub.Api.TestKit/`**, so both hosts answer them: nine additions to
-  `TrainingLifecycleTest`, run twice.
+  `TrainingLifecycleTest`, run twice. `DomainEventPipelineTest` gained a tenth,
+  `DeletingATrainer_AnnouncesEveryTrainingItTakesWithIt`: the fact beside it proves the rows leave,
+  and proved only that, which is how the cascade stayed silent through the commit that shipped this
+  record. It seeds two trainings on purpose — "one fact per training" is the claim, and one training
+  cannot distinguish it from "one fact per cascade".
 
 One rule was widened rather than added. `EveryValueObject_IsBuiltThroughAFactoryThatCanRefuse` named
 `Topic` as its single recorded exception, which left the next closed set a choice between editing a

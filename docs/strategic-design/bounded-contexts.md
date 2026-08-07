@@ -127,7 +127,9 @@ holds a `Trainer` instance.
 - A trainer never disappears silently: deletion takes their trainings with it.
 - A training moves between `Published` and `Unpublished`, and each move announces itself. A
   transition to the state it is already in is refused rather than ignored: a change that changes
-  nothing must not raise a fact. Deleting announces itself too, which it did not before — the
+  nothing must not raise a fact. Deleting announces itself too, on all three paths that delete a
+  training — the everyday one on each stack, and the cascade that removes a departing trainer's
+  catalogue, which was the last one still silent. It did not before, and the
   absence is why a deleted training used to stay in the search index for ever.
 - A withdrawn training keeps its title, and the title stays taken. It is taken by something its
   owner can see in their own listing and can republish, rename or delete, so the refusal names
