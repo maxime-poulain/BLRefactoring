@@ -37,6 +37,11 @@ public sealed class DeleteTrainingCommandHandler(
             return Result.Failure(ErrorCodes.NotFound, $"Training with id `{request.Id}` does not exist");
         }
 
+        // The aggregate announces its own disappearance before the repository stages it. Deleting
+        // used to raise nothing at all, which is how a training could vanish from the database and
+        // stay in the search index for ever (ADR 0050).
+        training.MarkForDeletion();
+
         trainingRepository.Delete(training);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success();

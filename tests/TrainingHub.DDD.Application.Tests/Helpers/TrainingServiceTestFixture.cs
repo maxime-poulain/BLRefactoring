@@ -33,6 +33,11 @@ public sealed class TrainingServiceTestFixture
     public Mock<ITrainingRepository> TrainingRepository { get; } = new();
 
     /// <summary>
+    /// Trainer standing — answers "not suspended" unless a test says otherwise (ADR 0050).
+    /// </summary>
+    public Mock<ITrainerStanding> TrainerStanding { get; } = new();
+
+    /// <summary>
     /// Current user service.
     /// </summary>
     public Mock<ICurrentUserService> CurrentUserService { get; } = new();
@@ -49,6 +54,7 @@ public sealed class TrainingServiceTestFixture
         TrainerRepository.Object,
         TitleChecker.Object,
         TrainingCounter.Object,
+        TrainerStanding.Object,
         TrainingRepository.Object,
         CurrentUserService.Object,
         UnitOfWork.Object);

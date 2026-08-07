@@ -1,15 +1,13 @@
 # 0050 — Retire a training rather than delete it
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-08-07
 
-**Why `Proposed` and not `Accepted`.** The design below is settled — it came out of a review that
-argued it against the model and rejected three earlier shapes. What is not settled is the code:
-nothing in this repository answers to this record yet. `AdrRecord.IsInForce` reads that status and
-excludes the record from `EveryRecordInForce_IsDefendedByARule_OrSaysWhyItCannotBe`, whose comment
-says why — *"a proposed record is not a decision yet"*. This becomes `Accepted` in the commit that
-implements it, together with the rules that defend it. Writing it down first is the point; claiming
-the code already obeys it would be the lie this repository refuses everywhere else.
+**This record was `Proposed` for exactly one commit.** It was written before any code answered to
+it, which is what that status means here, and it became `Accepted` in the commit that built it —
+together with `EveryStatusTransition_AnnouncesItself`, the rule the Verification section below
+promised. The two paragraphs that explained the wait are gone with the wait; what they said is
+recorded in ADR 0039 and ADR 0040, which own the question of what a status means.
 
 ## Context
 
@@ -128,14 +126,32 @@ from one the trainer had withdrawn. And it duplicates onto the training a fact t
 the trainer, so the two can disagree. Derived visibility has none of those costs and needs no
 handler on the write side at all.
 
-## Verification *(when this is built)*
+## Verification
 
-Nothing here is defended by a rule today, and that is what the `Proposed` status says. The commit
-that implements it carries, at minimum:
+- **`LifecycleRules.EveryStatusTransition_AnnouncesItself`** — the rule this record turns on. It
+  reads the domain's source, splits each file into members, and refuses any member that moves a
+  `Status` without calling `AddDomainEvent`. Watched failing first: deleting the
+  `TrainingUnpublishedDomainEvent` line from `Training.Unpublish` names the member and the file.
+  It deliberately does not check that the fact *matches* the state — that is the unit tests' job —
+  because what a rule can hold and a test would not miss is the transition nobody wrote a test for
+  at all.
+- **The transitions and the refused transitions**, on both aggregates:
+  `TrainingLifecycleTests` and `TrainerStandingTests`. Each state is reached, each no-op transition
+  is refused by name, and each aggregate is walked in both directions — the assertion that this is
+  a lifecycle and not a tombstone.
+- **The three invariants this record changes.** The quota and the title are asserted in the domain
+  *and* end to end: `Unpublish_AtTheCatalogueLimit_FreesAPlace` withdraws one of ten, creates an
+  eleventh, and then watches the withdrawn one refused on the way back — the hole a quota on
+  published trainings would otherwise leave open. What a suspended trainer may do is asserted on
+  `CreateAsync`, `PublishAsync` and both sides of the transfer; that they may still *unpublish* is
+  asserted on the signature rather than on a call, because a method with no port cannot be made to
+  ask.
+- **Shared facts in `tests/TrainingHub.Api.TestKit/`**, so both hosts answer them: nine additions to
+  `TrainingLifecycleTest`, run twice.
 
-- the transitions and the refused transitions, on the aggregates;
-- the three invariants this record changes — the quota, the title, and what a suspended trainer may
-  do — each watched failing before it is made to pass;
-- shared facts in `tests/TrainingHub.Api.TestKit/`, so both hosts answer them;
-- a rule holding that every state transition raises a fact, which is the claim that separates this
-  from a soft delete and the one a reader is entitled to see enforced.
+One rule was widened rather than added. `EveryValueObject_IsBuiltThroughAFactoryThatCanRefuse` named
+`Topic` as its single recorded exception, which left the next closed set a choice between editing a
+list of names by hand and writing a `TryFrom` that no caller would use. It now exempts closed
+enumerations by shape — no public constructor, and instances that are its own static fields — which
+is a stronger answer than a factory rather than a weaker one: a factory can refuse, whereas here
+there is nothing to refuse.

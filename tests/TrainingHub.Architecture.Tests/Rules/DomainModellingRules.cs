@@ -282,15 +282,18 @@ public sealed class DomainModellingRules
     /// </summary>
     [Fact]
     [ArchitectureRule("README#value-objects",
-        "a value object is built through a factory that can refuse: Create returning a Result, or a TryFrom")]
+        "a value object is built through a factory that can refuse — Create returning a Result, or a "
+        + "TryFrom — unless it is a closed enumeration, whose instances are all it has")]
     public void EveryValueObject_IsBuiltThroughAFactoryThatCanRefuse() =>
         ValueObjects
             .Selected("value object")
-            .Where(valueObject => !HasResultFactory(valueObject) && !HasTryFrom(valueObject))
+            .Where(valueObject => !HasResultFactory(valueObject)
+                                  && !HasTryFrom(valueObject)
+                                  && !IsClosedEnumeration(valueObject))
             .Select(valueObject =>
                 $"{valueObject.Name} offers neither a static Create returning Result<{valueObject.Name}> " +
-                "nor a TryFrom. Topic is the recorded exception: it is a closed set, so the only way " +
-                "in is by name")
+                "nor a TryFrom, and is not a closed enumeration either — so a caller has some way of " +
+                "building one this type never approved")
             .ShouldHold();
 
     // ------------------------------------------------------------------ identifiers
@@ -536,6 +539,29 @@ public sealed class DomainModellingRules
             .GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)
             .Any(method => method.Name.StartsWith("TryFrom", StringComparison.Ordinal)
                            && method.ReturnType == typeof(bool));
+
+    /// <summary>
+    /// Whether the type is a closed enumeration: every instance there will ever be is one of its own
+    /// public static readonly fields, and no constructor is reachable to make another.
+    /// </summary>
+    /// <remarks>
+    /// The exemption the factory rule grants, stated as a shape rather than as a list of names. What
+    /// that rule is really defending is that no caller can hold an invalid instance, and a closed
+    /// enumeration answers it more strongly than a factory does — a factory can refuse, whereas here
+    /// there is nothing to refuse, because the only values are the ones the type declared.
+    /// <para>
+    /// It used to name <c>Topic</c> as the single recorded exception, which turned the next closed
+    /// set into a choice between two bad options: widen a list by hand, or add a <c>TryFrom</c> that
+    /// exists only to satisfy a rule. <c>Topic</c> keeps its <c>TryFromName</c> because a client
+    /// genuinely names a topic; nobody names a <c>TrainingStatus</c>, so one there would be dead
+    /// code this rule had invented.
+    /// </para>
+    /// </remarks>
+    private static bool IsClosedEnumeration(Type valueObject) =>
+        valueObject.GetConstructors(BindingFlags.Instance | BindingFlags.Public).Length == 0
+        && valueObject
+            .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)
+            .Any(field => field.IsInitOnly && field.FieldType == valueObject);
 
     private static string? TryCreate(Type identifier)
     {

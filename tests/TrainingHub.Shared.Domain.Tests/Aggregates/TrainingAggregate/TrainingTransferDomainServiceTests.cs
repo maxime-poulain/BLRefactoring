@@ -38,6 +38,14 @@ public sealed class TrainingTransferDomainServiceTests
         return checker;
     }
 
+    private static Mock<ITrainerStanding> StandingAnswering(bool suspended)
+    {
+        var standing = new Mock<ITrainerStanding>();
+        standing.Setup(s => s.IsSuspendedAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(suspended);
+        return standing;
+    }
+
     /// <summary>
     /// Transfer async, a recipient with room and a free title, reassigns the owner.
     /// </summary>
@@ -47,7 +55,7 @@ public sealed class TrainingTransferDomainServiceTests
         var training = await new TrainingBuilder().BuildValidAsync();
 
         var result = await TrainingTransferDomainService.TransferAsync(
-            training, Recipient, CounterAnswering(0).Object, TitleCheckerAnswering(false).Object);
+            training, Recipient, CounterAnswering(0).Object, TitleCheckerAnswering(false).Object, StandingAnswering(false).Object);
 
         result.ShouldBeSuccess();
         training.TrainerId.Should().Be(Recipient);
@@ -63,7 +71,7 @@ public sealed class TrainingTransferDomainServiceTests
         var formerOwner = training.TrainerId;
 
         (await TrainingTransferDomainService.TransferAsync(
-            training, Recipient, CounterAnswering(0).Object, TitleCheckerAnswering(false).Object))
+            training, Recipient, CounterAnswering(0).Object, TitleCheckerAnswering(false).Object, StandingAnswering(false).Object))
             .ShouldBeSuccess();
 
         var fact = training.DomainEvents.Should()
@@ -87,7 +95,7 @@ public sealed class TrainingTransferDomainServiceTests
 
         var result = await TrainingTransferDomainService.TransferAsync(
             training, Recipient, CounterAnswering(Training.MaximumPerTrainer).Object,
-            TitleCheckerAnswering(false).Object);
+            TitleCheckerAnswering(false).Object, StandingAnswering(false).Object);
 
         var error = result.ShouldBeFailure().Should().ContainSingle().Which;
         error.ErrorCode.Should().Be(TrainingErrorCodes.RecipientCatalogueFull);
@@ -105,7 +113,7 @@ public sealed class TrainingTransferDomainServiceTests
 
         var result = await TrainingTransferDomainService.TransferAsync(
             training, Recipient, CounterAnswering(Training.MaximumPerTrainer - 1).Object,
-            TitleCheckerAnswering(false).Object);
+            TitleCheckerAnswering(false).Object, StandingAnswering(false).Object);
 
         // Nine published trainings leave room for a tenth: the boundary is >= 10, not > 9.
         result.ShouldBeSuccess();
@@ -121,7 +129,8 @@ public sealed class TrainingTransferDomainServiceTests
         var titleChecker = TitleCheckerAnswering(true);
 
         var result = await TrainingTransferDomainService.TransferAsync(
-            training, Recipient, CounterAnswering(Training.MaximumPerTrainer).Object, titleChecker.Object);
+            training, Recipient, CounterAnswering(Training.MaximumPerTrainer).Object, titleChecker.Object,
+            StandingAnswering(false).Object);
 
         result.ShouldBeFailure().Should().ContainSingle()
             .Which.ErrorCode.Should().Be(TrainingErrorCodes.RecipientCatalogueFull);
@@ -140,7 +149,7 @@ public sealed class TrainingTransferDomainServiceTests
         var formerOwner = training.TrainerId;
 
         var result = await TrainingTransferDomainService.TransferAsync(
-            training, Recipient, CounterAnswering(0).Object, TitleCheckerAnswering(true).Object);
+            training, Recipient, CounterAnswering(0).Object, TitleCheckerAnswering(true).Object, StandingAnswering(false).Object);
 
         result.ShouldBeFailure().Should().ContainSingle()
             .Which.ErrorCode.Should().Be(TrainingErrorCodes.DuplicateTitle);
@@ -159,7 +168,7 @@ public sealed class TrainingTransferDomainServiceTests
         var titleChecker = TitleCheckerAnswering(false);
 
         var result = await TrainingTransferDomainService.TransferAsync(
-            training, training.TrainerId, counter.Object, titleChecker.Object);
+            training, training.TrainerId, counter.Object, titleChecker.Object, StandingAnswering(false).Object);
 
         result.ShouldBeFailure().Should().ContainSingle()
             .Which.ErrorCode.Should().Be(TrainingErrorCodes.TransferToSelf);
@@ -179,13 +188,15 @@ public sealed class TrainingTransferDomainServiceTests
         var training = await new TrainingBuilder().BuildValidAsync();
         var counter = CounterAnswering(0).Object;
         var titleChecker = TitleCheckerAnswering(false).Object;
+        var standing = StandingAnswering(false).Object;
 
         var acts = new Func<Task>[]
         {
-            () => TrainingTransferDomainService.TransferAsync(null!, Recipient, counter, titleChecker),
-            () => TrainingTransferDomainService.TransferAsync(training, null!, counter, titleChecker),
-            () => TrainingTransferDomainService.TransferAsync(training, Recipient, null!, titleChecker),
-            () => TrainingTransferDomainService.TransferAsync(training, Recipient, counter, null!),
+            () => TrainingTransferDomainService.TransferAsync(null!, Recipient, counter, titleChecker, standing),
+            () => TrainingTransferDomainService.TransferAsync(training, null!, counter, titleChecker, standing),
+            () => TrainingTransferDomainService.TransferAsync(training, Recipient, null!, titleChecker, standing),
+            () => TrainingTransferDomainService.TransferAsync(training, Recipient, counter, null!, standing),
+            () => TrainingTransferDomainService.TransferAsync(training, Recipient, counter, titleChecker, null!),
         };
 
         foreach (var act in acts)

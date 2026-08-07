@@ -158,7 +158,7 @@ Twenty-seven projects: sixteen under `src/`, eleven under `tests/`. The backend 
 |---|---|
 | `TrainingHub.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, `PageRequest`/`PagedResult`, and the cross-cutting ports `IUnitOfWork`, `ICurrentUserService`, `ITrainingSearchIndexer`, plus the CQS marker interfaces |
 | `TrainingHub.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, and the fact ports `IUniquenessTitleChecker` and `ITrainingCounter` |
-| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the seven domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the five post-commit consumers — all shared by both stacks |
+| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the twelve domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the eight post-commit consumers — all shared by both stacks |
 | `TrainingHub.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the paged-read extensions (`NewestFirst`, `ToPagedResultAsync`), the identity store, and the transactional outbox — publisher, delivery worker, dispatcher |
 | `TrainingHub.Shared.Api` | The HTTP boundary: the `*HttpRequest` and `*HttpResponse` contracts both hosts publish, their mappings to the application layer, the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, concurrency helpers |
 | `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService` |
@@ -297,17 +297,21 @@ no-reading-through-aggregates rule rather than eroding it: it wears
 data-returning methods pins it by name, so the next question has to arrive with a record of its
 own. See ADR 0028.
 
-Neither aggregate carries a lifecycle: a training exists or it does not, and removing one is a
-`DELETE`. [ADR 0050](docs/adr/0050-retire-a-training-rather-than-delete-it.md) is a **proposed**
-record that changes that — a training becomes published or unpublished, a trainer active or
-suspended, and public visibility is composed from the two rather than stored. It is written down
-before it is built, and its status says so: nothing in this repository answers to it yet, which is
-why no rule defends it and why the strategic design keeps it in a section of its own.
+Both aggregates carry a lifecycle
+([ADR 0050](docs/adr/0050-retire-a-training-rather-than-delete-it.md)). A training is `Published` or
+`Unpublished`, a trainer `Active` or `Suspended`, and public visibility is composed from the two
+rather than stored — so suspending a trainer writes one column and touches none of their trainings,
+which is what makes the sanction liftable. Both pairs are reachable in both directions and every
+move announces itself, which is what separates this from a soft delete wearing an enum; a rule
+holds that last part. Deleting survives and changes role: withdrawing is the everyday act, and
+`DELETE` answers the training created by mistake and a trainer's right to have their data removed.
 
 ### Value objects
 
 Every value object has a private constructor and a static `Create` returning `Result<T>`, so an
-invalid instance cannot exist.
+invalid instance cannot exist. The three closed enumerations are the exception the rule states as a
+shape: their only instances are their own static fields, so there is no factory because there is
+nothing to refuse.
 
 | Value object | Rule | Error code |
 |---|---|---|
@@ -319,15 +323,22 @@ invalid instance cannot exist.
 | `TrainingPrerequisites` | Non-empty, at most 500 characters | `InvalidPrerequisites` |
 | `AcquiredSkills` | Non-empty, at most 500 characters | `InvalidAcquiredSkills` |
 | `Topic` | Closed set of six values, resolved by name | `InvalidTopic` |
+| `TrainingStatus` | Closed set of two: `Published`, `Unpublished` | — |
+| `TrainerStatus` | Closed set of two: `Active`, `Suspended` | — |
 | `TrainerPhoto` | Non-empty, at most 5 MiB, PNG/JPEG/WebP — and the bytes must be what the content type declares | `PhotoEmpty`, `PhotoTooLarge`, `PhotoFormatNotSupported`, `PhotoContentMismatch` |
 
-Two behaviours are worth knowing:
+Three behaviours are worth knowing:
 
 - **`TrainingTitle` compares case-insensitively.** `"Intro to C#"` and `"INTRO TO C#"` are the
   same title, which is what makes the uniqueness rule meaningful.
 - **`Topic` is a closed enumeration**, not free text: Programming, Design, Marketing, Business,
   Personal Development, Leadership. `Topic.TryFromName` resolves a name without throwing — an
   unrecognised name is a validation error produced by the application layer, never an exception.
+- **The two statuses resolve by name and throw**, unlike `Topic`, and the asymmetry is the point:
+  a topic name arrives from a client and is reported back with everything else that was wrong,
+  while a status name arrives from the column the domain wrote it to. A word the domain does not
+  know there means a corrupt row, which no caller can be asked to handle and none should silently
+  read as `Published`.
 
 ### Typed identifiers
 
@@ -375,7 +386,7 @@ aggregate states is the rule — a trainer does not disappear without their trai
 holds whoever ends up triggering it. The behaviour is covered by `DomainEventPipelineTests`, which
 drives it through the host's own services.
 
-Two of the seven handlers act inside the transaction — ADR 0002's *domain reactions* — and five
+Four of the twelve handlers act inside the transaction — ADR 0002's *domain reactions* — and eight
 translate the domain event into an integration event and commit it to the transactional outbox
 (see [ADR 0024](docs/adr/0024-publish-facts-not-intents-and-version-them-in-the-envelope.md) and
 [the outbox section](#domain-events-and-the-unit-of-work)). After the commit, the outbox delivery
@@ -437,8 +448,8 @@ broken, and carries that aggregate's name.
 | Holder | Codes |
 |---|---|
 | `ErrorCodes` (kernel) | `Unspecified`, `NotFound`, `ConcurrencyConflict`, `Validation` |
-| `TrainingErrorCodes` | `Training.InvalidTitle`, `Training.DuplicateTitle`, `Training.InvalidDescription`, `Training.InvalidPrerequisites`, `Training.InvalidAcquiredSkills`, `Training.InvalidTopic`, `Training.CatalogueFull`, `Training.TransferToSelf`, `Training.RecipientCatalogueFull`, `Training.UnknownRecipient` |
-| `TrainerErrorCodes` | `Trainer.InvalidEmail`, `Trainer.InvalidFirstname`, `Trainer.InvalidLastname`, `Trainer.BioEmpty`, `Trainer.BioExceeds500Characters`, `Trainer.PhotoEmpty`, `Trainer.PhotoTooLarge`, `Trainer.PhotoFormatNotSupported`, `Trainer.PhotoContentMismatch` |
+| `TrainingErrorCodes` | `Training.InvalidTitle`, `Training.DuplicateTitle`, `Training.InvalidDescription`, `Training.InvalidPrerequisites`, `Training.InvalidAcquiredSkills`, `Training.InvalidTopic`, `Training.CatalogueFull`, `Training.TransferToSelf`, `Training.RecipientCatalogueFull`, `Training.UnknownRecipient`, `Training.AlreadyPublished`, `Training.AlreadyUnpublished`, `Training.TrainerSuspended`, `Training.RecipientSuspended` |
+| `TrainerErrorCodes` | `Trainer.InvalidEmail`, `Trainer.InvalidFirstname`, `Trainer.InvalidLastname`, `Trainer.BioEmpty`, `Trainer.BioExceeds500Characters`, `Trainer.PhotoEmpty`, `Trainer.PhotoTooLarge`, `Trainer.PhotoFormatNotSupported`, `Trainer.PhotoContentMismatch`, `Trainer.AlreadySuspended`, `Trainer.NotSuspended` |
 
 `Validation` is the one the kernel declares for somebody else: the FluentValidation pipeline of the
 CQRS stack answers with it, and nothing in the domain ever does (ADR 0016).
@@ -759,14 +770,16 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 | `GET` | `/Trainer/{id}/photo` | The trainer's portrait, with a strong `ETag` and a year-long immutable cache. `200`, `304`, `404` |
 | `PUT` | `/Trainer/me/photo` | `multipart/form-data`. Publishes **and** replaces. `200` with the updated profile, `400`, `404`, `409` |
 | `DELETE` | `/Trainer/me/photo` | `204`, `404`, `409` |
-| `POST` | `/Training` | `201` with the new identifier, `409` on a duplicate title, `400` when the catalogue is full (`Training.CatalogueFull`, at ten trainings) or the content is invalid |
+| `POST` | `/Training` | `201` with the new identifier, `409` on a duplicate title, `400` when the catalogue is full (`Training.CatalogueFull`, at ten **published** trainings) or the content is invalid |
 | `GET` | `/Training/my-trainings` | The caller's own trainings, newest first. Takes no identifier. One page on either host: `?page=` and `?pageSize=` (default 20, maximum 100), answered as `{ items, page, pageSize, totalCount, totalPages, hasNextPage, hasPreviousPage }` |
 | `GET` | `/Training/{id}` | Owner only. `200` with an `ETag`, `400` on a malformed identifier, or `404` — including when the training exists but belongs to somebody else |
 | `PUT` | `/Training/{trainingId}` | Owner only. Requires `If-Match`. `200` with the updated training and its new `ETag`, `400`, `403`, `404`, `409`, `412`, `428` |
 | `DELETE` | `/Training/{trainingId}` | Owner only. `204`, `400`, `403`, `404` |
-| `POST` | `/Training/{trainingId}/transfer` | Owner only. Hands the training to the recipient the body names when their catalogue allows it (ADR 0036). `204`, `400` (self, unknown or full recipient), `403`, `404`, `409` on the recipient's duplicate title |
+| `POST` | `/Training/{trainingId}/transfer` | Owner only. Hands the training to the recipient the body names when their catalogue allows it (ADR 0036). `204`, `400` (self, unknown, full or suspended recipient), `403`, `404`, `409` on the recipient's duplicate title |
+| `POST` | `/Training/{trainingId}/unpublish` | Owner only. Withdraws the training from public view; it stays in the owner's own listing (ADR 0050). No body, no `If-Match`. `204`, `400`, `403`, `404`, `409` when it was already withdrawn |
+| `POST` | `/Training/{trainingId}/publish` | Owner only. Offers a withdrawn training again. `204`, `400` when the owner is suspended or their catalogue is full, `403`, `404`, `409` when it was already published |
 
-Thirteen endpoints, and not one of them serves a resource the caller does not own. There used to be
+Fifteen endpoints, and not one of them serves a resource the caller does not own. There used to be
 five more — `/Trainer/all`, `/Trainer/{id}`, `/Training/all`, `/Training/by-trainer/{id}` and
 `/Training/by-topic/{topic}` — and between them they handed out every trainer's name, contact email
 and bio to any authenticated caller, enumerable. Nothing in the application asked for them: the
@@ -1037,7 +1050,7 @@ The two filters are exact inverses, so between them every test runs exactly once
 | Project | Scope |
 |---|---|
 | `TrainingHub.Shared.Domain.Tests` | Aggregates, value objects, typed identifiers, `Result`, specifications, the page vocabulary's bounds and arithmetic |
-| `TrainingHub.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers — including the five that translate a domain event into an integration event — and the five post-commit consumers |
+| `TrainingHub.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers — including the eight that translate a domain event into an integration event — and the eight post-commit consumers |
 | `TrainingHub.DDDWithCqrs.Tests` | Command handlers, validators, pipeline behaviours |
 | `TrainingHub.Shared.Api.Tests` | Entity-tag encoding and parsing, the guard that keeps client generation away from a database, what the unhandled-exception handler is allowed to tell a caller, and the transformer that describes an uploaded file inline so a client generator recognises it as one |
 | `TrainingHub.Shared.Infrastructure.Tests` | The auditable-entities interceptor — that it stamps, and reads the clock once per entity —, the outbox publisher observed through the change tracker, the serializer's round trip for every registered event, the dispatcher held to its routing table, the envelope's state transitions, and the bucket bootstrapper, mostly for when it does nothing |

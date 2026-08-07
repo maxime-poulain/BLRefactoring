@@ -61,6 +61,16 @@ public sealed class TrainingConfiguration : AggregateRootTypeConfiguration<Train
             .HasMaxLength(500)
             .IsRequired();
 
+        // One column, not a table: a status is a single value, unlike the topics below. Persisted
+        // as the word the domain uses rather than an ordinal — a column a human can read, and one
+        // that cannot silently change meaning when a value is inserted into the middle of the set.
+        builder.Property(training => training.Status)
+            .HasConversion(
+                status => status.Name,
+                value => TrainingStatus.FromName(value))
+            .HasMaxLength(20)
+            .IsRequired();
+
         builder.OwnsMany(training => training.Topics, topicsBuilder =>
         {
             topicsBuilder.ToTable("TrainingTopic");

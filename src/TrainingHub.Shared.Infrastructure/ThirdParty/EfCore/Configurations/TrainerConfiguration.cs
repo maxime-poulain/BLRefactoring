@@ -1,5 +1,6 @@
 using TrainingHub.Shared.Domain;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -75,6 +76,16 @@ public sealed class TrainerConfiguration : AggregateRootTypeConfiguration<Traine
             photoBuilder.Property(p => p.ByteSize)
                 .HasColumnName("PhotoByteSize");
         });
+
+        // Stored as the word rather than an ordinal, like the training's own status: the whole of a
+        // suspension is this column, so it had better be one a reader can interpret without a
+        // lookup table (ADR 0050).
+        builder.Property(trainer => trainer.Status)
+            .HasConversion(
+                status => status.Name,
+                value => TrainerStatus.FromName(value))
+            .HasMaxLength(20)
+            .IsRequired();
 
         builder.Property(p => p.UserId)
             .HasConversion(v => v.Value, v => UserId.Create(v))

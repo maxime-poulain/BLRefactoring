@@ -1,4 +1,5 @@
 using TrainingHub.Shared.Common;
+using TrainingHub.Shared.Common.Results;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 
@@ -46,6 +47,16 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     /// Gets the identifier of the identity account the trainer is attached to.
     /// </summary>
     public UserId UserId { get; private set; } = null!;
+
+    /// <summary>
+    /// Gets whether the trainer is in good standing or under sanction.
+    /// </summary>
+    /// <remarks>
+    /// A trainer is born <see cref="TrainerStatus.Active"/>. This one field is the whole of a
+    /// suspension: the trainings are not touched, so the catalogue leaves public view because its
+    /// owner did, and comes back whole when <see cref="Reinstate"/> is called. See ADR 0050.
+    /// </remarks>
+    public TrainerStatus Status { get; private set; } = TrainerStatus.Active;
 
     /// <summary>
     /// Private constructor used by the factories and by EF Core constructor
@@ -174,5 +185,59 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     public void MarkForDeletion()
     {
         AddDomainEvent(new TrainerDeletedDomainEvent(Id));
+    }
+
+    /// <summary>
+    /// Places the trainer under sanction: their catalogue leaves public view and cannot grow.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Writes one field and nothing else. Cascading the sanction onto each training was considered
+    /// and refused (ADR 0050): it writes N rows to record one fact, and it destroys the very
+    /// information needed to lift the sanction, since nothing would then distinguish a training the
+    /// suspension hid from one the trainer had withdrawn themselves.
+    /// </para>
+    /// <para>
+    /// No use case reaches this, deliberately and for the reason <see cref="MarkForDeletion"/>
+    /// gives: suspending is an administrative decision, and no endpoint exposes it until a role is
+    /// entitled to it. The rule the aggregate states here holds whoever ends up triggering it.
+    /// </para>
+    /// </remarks>
+    /// <returns>Success, or a refusal when the trainer was already suspended.</returns>
+    public Result Suspend()
+    {
+        if (Status == TrainerStatus.Suspended)
+        {
+            return Result.Failure(TrainerErrorCodes.AlreadySuspended,
+                "This trainer is already suspended.");
+        }
+
+        Status = TrainerStatus.Suspended;
+        AddDomainEvent(new TrainerSuspendedDomainEvent(Id));
+
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Lifts the sanction: the trainer's catalogue returns exactly as they left it.
+    /// </summary>
+    /// <remarks>
+    /// Nothing is restored, because nothing was taken. A training the trainer had unpublished
+    /// before the sanction stays unpublished afterwards — which is the scenario that decided the
+    /// shape of this whole record, and the one a single <c>Disabled</c> state could not answer.
+    /// </remarks>
+    /// <returns>Success, or a refusal when the trainer was not under sanction.</returns>
+    public Result Reinstate()
+    {
+        if (Status == TrainerStatus.Active)
+        {
+            return Result.Failure(TrainerErrorCodes.NotSuspended,
+                "This trainer is not suspended.");
+        }
+
+        Status = TrainerStatus.Active;
+        AddDomainEvent(new TrainerReinstatedDomainEvent(Id));
+
+        return Result.Success();
     }
 }

@@ -47,12 +47,23 @@ public sealed class TrainingRepository(TrainingContext trainingContext)
     /// Counts the trainings the given trainer currently publishes — the data half of the
     /// catalogue-capacity rule, whose decision stays in <see cref="Training.CreateAsync"/>.
     /// </summary>
+    /// <remarks>
+    /// Two clauses that are not the same kind of thing, and are written apart for it: the
+    /// <c>Where</c> scopes the rows to one trainer, which states no rule, while the count carries
+    /// <see cref="TrainingIsPublishedSpecification"/>, which states one — a withdrawn training
+    /// holds no place in the quota (ADR 0028, ADR 0050).
+    /// </remarks>
     public async Task<int> CountForTrainerAsync(
         TrainerId trainerId,
-        CancellationToken cancellationToken = default) =>
-        await trainingContext.Trainings
-            .CountAsync(training => training.TrainerId == trainerId, cancellationToken)
+        CancellationToken cancellationToken = default)
+    {
+        var published = new TrainingIsPublishedSpecification();
+
+        return await trainingContext.Trainings
+            .Where(training => training.TrainerId == trainerId)
+            .CountAsync(published.Criteria, cancellationToken)
             .ConfigureAwait(false);
+    }
 
     /// <summary>
     /// Registers a new training to be written when the unit of work commits.

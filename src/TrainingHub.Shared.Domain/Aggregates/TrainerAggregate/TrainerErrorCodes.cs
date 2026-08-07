@@ -39,4 +39,10 @@ public static class TrainerErrorCodes
     /// their upload is fine and their <c>Content-Type</c> is wrong, which is a different fix.
     /// </remarks>
     public static readonly ErrorCode PhotoContentMismatch = new("Trainer.PhotoContentMismatch");
+
+    /// <summary>The trainer is already under sanction, so suspending them changes nothing.</summary>
+    public static readonly ErrorCode AlreadySuspended = new("Trainer.AlreadySuspended");
+
+    /// <summary>The trainer is not under sanction, so there is nothing to lift.</summary>
+    public static readonly ErrorCode NotSuspended = new("Trainer.NotSuspended");
 }

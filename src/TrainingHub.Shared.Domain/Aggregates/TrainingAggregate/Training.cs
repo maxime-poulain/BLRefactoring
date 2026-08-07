@@ -63,6 +63,22 @@ public sealed class Training : AggregateRoot<TrainingId>
     public TrainerId TrainerId { get; private set; } = null!;
 
     /// <summary>
+    /// Whether this training is offered to the public or withdrawn from it.
+    /// </summary>
+    /// <remarks>
+    /// A training is born <see cref="TrainingStatus.Published"/>, which the initialiser states
+    /// rather than the factory: there is no path that produces a training in any other state, so
+    /// the default belongs to the field. It is only ever moved by <see cref="PublishAsync"/> and
+    /// <see cref="Unpublish"/>, each of which announces the move.
+    /// <para>
+    /// This is half of what makes a training publicly visible. The other half is its owner's
+    /// standing, and the pair is composed at the point of asking rather than stored here — a
+    /// suspension writes one field on one aggregate and touches no training at all (ADR 0050).
+    /// </para>
+    /// </remarks>
+    public TrainingStatus Status { get; private set; } = TrainingStatus.Published;
+
+    /// <summary>
     /// Private constructor used by the factories and by EF Core constructor
     /// binding (parameter names match the <c>Id</c> and <c>TrainerId</c> properties).
     /// </summary>
@@ -101,10 +117,20 @@ public sealed class Training : AggregateRoot<TrainingId>
         IReadOnlyCollection<Topic> topics,
         IUniquenessTitleChecker titleChecker,
         ITrainingCounter trainingCounter,
+        ITrainerStanding trainerStanding,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(trainerId);
         ArgumentNullException.ThrowIfNull(trainingCounter);
+        ArgumentNullException.ThrowIfNull(trainerStanding);
+
+        // Standing before capacity: a suspended trainer may not add to what the public can see,
+        // and that refusal does not depend on how full their catalogue is (ADR 0050).
+        if (await trainerStanding.IsSuspendedAsync(trainerId, cancellationToken))
+        {
+            return Result<Training>.Failure(TrainingErrorCodes.TrainerSuspended,
+                "A suspended trainer cannot publish a new training.");
+        }
 
         // Asked before the content is even looked at: no title makes an eleventh training
         // acceptable, so a full catalogue refuses the creation whole rather than per field.
@@ -146,6 +172,107 @@ public sealed class Training : AggregateRoot<TrainingId>
         ArgumentNullException.ThrowIfNull(trainerId);
 
         return new Specifications.TrainingOwnedBySpecification(trainerId).IsSatisfiedBy(this);
+    }
+
+    /// <summary>
+    /// Offers this training to the public again, when its owner's standing and catalogue allow it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The capacity question is asked here and not only at creation, and that is the whole reason
+    /// this method takes a counter. Once the quota counts published trainings alone, a trainer
+    /// sitting at the limit could unpublish one, create a replacement, and republish the first —
+    /// eleven trainings on offer, each one added through a check that passed. Publishing is the
+    /// second act that grows the public catalogue, so it answers the same rule creation does.
+    /// </para>
+    /// <para>
+    /// Editing takes no such argument and never will: an edition changes a training, never how
+    /// many of them the public can see.
+    /// </para>
+    /// </remarks>
+    /// <param name="trainerStanding">Answers whether the owner is under sanction.</param>
+    /// <param name="trainingCounter">Answers how many trainings the owner already publishes.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    /// <returns>Success, or the rule that refused.</returns>
+    public async Task<Result> PublishAsync(
+        ITrainerStanding trainerStanding,
+        ITrainingCounter trainingCounter,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(trainerStanding);
+        ArgumentNullException.ThrowIfNull(trainingCounter);
+
+        // Asked first, like the transfer asks whether the recipient is already the owner: a move
+        // to the state the aggregate is already in makes the rules below vacuous, and answering
+        // it with success would put a fact on the wire that nothing happened for.
+        if (Status == TrainingStatus.Published)
+        {
+            return Result.Failure(TrainingErrorCodes.AlreadyPublished,
+                "This training is already published.");
+        }
+
+        if (await trainerStanding.IsSuspendedAsync(TrainerId, cancellationToken))
+        {
+            return Result.Failure(TrainingErrorCodes.TrainerSuspended,
+                "A suspended trainer cannot publish a training.");
+        }
+
+        var published = await trainingCounter.CountForTrainerAsync(TrainerId, cancellationToken);
+        if (published >= MaximumPerTrainer)
+        {
+            return Result.Failure(TrainingErrorCodes.CatalogueFull,
+                $"A trainer cannot publish more than {MaximumPerTrainer} trainings.");
+        }
+
+        Status = TrainingStatus.Published;
+        AddDomainEvent(new TrainingPublishedDomainEvent(Id, TrainerId));
+
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Withdraws this training from public view.
+    /// </summary>
+    /// <remarks>
+    /// Takes no port, and that is a decision rather than an omission: withdrawing shrinks what the
+    /// public sees, so no rule about a trainer's standing or capacity can stand in its way. A
+    /// suspended trainer may unpublish, which is part of leaving them able to repair what earned
+    /// them the sanction (ADR 0050). The training keeps its title and its rows; what it gives up is
+    /// its place in the quota and its entry in the search index.
+    /// </remarks>
+    /// <returns>Success, or a refusal when the training was already withdrawn.</returns>
+    public Result Unpublish()
+    {
+        if (Status == TrainingStatus.Unpublished)
+        {
+            return Result.Failure(TrainingErrorCodes.AlreadyUnpublished,
+                "This training is already unpublished.");
+        }
+
+        Status = TrainingStatus.Unpublished;
+        AddDomainEvent(new TrainingUnpublishedDomainEvent(Id, TrainerId));
+
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Marks this training for deletion, announcing the fact so that what was built from it — its
+    /// entry in the search index, first of all — can be dealt with.
+    /// </summary>
+    /// <remarks>
+    /// Deleting a training used to raise nothing at all, which is why an indexed training outlived
+    /// its own rows in the index for ever. The method mirrors <c>Trainer.MarkForDeletion</c>: the
+    /// aggregate states the fact, and removing the rows stays the repository's act in the same unit
+    /// of work.
+    /// <para>
+    /// Deletion survives <see cref="Unpublish"/> rather than being replaced by it, and answers a
+    /// different need: the training created by mistake, and the trainer exercising a right to have
+    /// their data removed — which a system that only ever hides things cannot honour.
+    /// </para>
+    /// </remarks>
+    public void MarkForDeletion()
+    {
+        AddDomainEvent(new TrainingDeletedDomainEvent(Id, TrainerId));
     }
 
     /// <summary>

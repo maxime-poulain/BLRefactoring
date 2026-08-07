@@ -72,6 +72,156 @@ public sealed class TrainingsTests : ComponentTest
     }
 
     /// <summary>
+    /// Renders, a published training, badges nothing and offers to withdraw it.
+    /// </summary>
+    /// <remarks>
+    /// Published is what a training is unless something happened to it, so the card says nothing —
+    /// a badge on every card would make the one badge that matters harder to see.
+    /// </remarks>
+    [Fact]
+    public void Renders_APublishedTraining_BadgesNothingAndOffersToWithdrawIt()
+    {
+        // Arrange
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 1,
+                Training("Domain-Driven Design", "Programming")));
+
+        // Act
+        var page = Render<Trainings>();
+
+        // Assert
+        page.Markup.Should().NotContain("Unpublished");
+        page.Markup.Should().Contain(Icons.Material.Filled.VisibilityOff);
+    }
+
+    /// <summary>
+    /// Renders, a withdrawn training, says so and offers to publish it again.
+    /// </summary>
+    /// <remarks>
+    /// The pair of buttons is what makes the lifecycle usable rather than merely modelled: a
+    /// trainer who withdrew a training and thought better of it gets it back without recreating it.
+    /// </remarks>
+    [Fact]
+    public void Renders_AWithdrawnTraining_SaysSoAndOffersToPublishItAgain()
+    {
+        // Arrange
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 1,
+                WithdrawnTraining("Public speaking", "Leadership")));
+
+        // Act
+        var page = Render<Trainings>();
+
+        // Assert
+        page.Markup.Should().Contain("Unpublished");
+        page.Markup.Should().Contain(Icons.Material.Filled.Visibility);
+    }
+
+    /// <summary>
+    /// Renders, a published training, keeps the default card surface.
+    /// </summary>
+    /// <remarks>
+    /// The pair of facts below is what makes the status readable across a whole page rather than
+    /// card by card. This half asserts the absence: published is the ordinary state, so its card is
+    /// the one nothing was done to, and a treatment applied to every card would say nothing about
+    /// any of them.
+    /// </remarks>
+    [Fact]
+    public void Renders_APublishedTraining_KeepsTheDefaultCardSurface()
+    {
+        // Arrange
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 1,
+                Training("Domain-Driven Design", "Programming")));
+
+        // Act
+        var page = Render<Trainings>();
+
+        // Assert
+        page.Find("div.mud-card").ClassList.Should().NotContain(RecessedSurface);
+    }
+
+    /// <summary>
+    /// Renders, a withdrawn training, sets its card back on the theme's recessed surface.
+    /// </summary>
+    /// <remarks>
+    /// Asserted on the theme's class rather than on a colour, because that is what the page is
+    /// allowed to say: there is no stylesheet in this project and the layout toggles dark mode, so
+    /// a test that pinned a hex would pin the wrong one half the time. Colour is not the only
+    /// signal — the sibling fact above checks the word is on the card too.
+    /// </remarks>
+    [Fact]
+    public void Renders_AWithdrawnTraining_SetsItsCardBackOnTheRecessedSurface()
+    {
+        // Arrange
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 1,
+                WithdrawnTraining("Public speaking", "Leadership")));
+
+        // Act
+        var page = Render<Trainings>();
+
+        // Assert
+        page.Find("div.mud-card").ClassList.Should().Contain(RecessedSurface);
+    }
+
+    /// <summary>
+    /// Renders, a mixed page, tells the two apart card by card.
+    /// </summary>
+    /// <remarks>
+    /// The two facts above each render one card, so either would pass against a page that gave
+    /// every card the same treatment. This one is the one that fails if the status is read once for
+    /// the page rather than once per training.
+    /// </remarks>
+    [Fact]
+    public void Renders_AMixedPage_TellsTheTwoApartCardByCard()
+    {
+        // Arrange
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 2,
+                Training("Domain-Driven Design", "Programming"),
+                WithdrawnTraining("Public speaking", "Leadership")));
+
+        // Act
+        var page = Render<Trainings>();
+
+        // Assert
+        var cards = page.FindAll("div.mud-card");
+        cards.Should().HaveCount(2);
+        cards[0].ClassList.Should().NotContain(RecessedSurface);
+        cards[1].ClassList.Should().Contain(RecessedSurface);
+    }
+
+    /// <summary>
+    /// Renders, offers no way to delete a training.
+    /// </summary>
+    /// <remarks>
+    /// Deleting stays on the API — for the training created by mistake, and for erasure on request
+    /// — and leaves the interface entirely. Withdrawing is the everyday act now, and a button that
+    /// destroys a catalogue entry should not sit where the everyday one used to (ADR 0050).
+    /// </remarks>
+    [Fact]
+    public void Renders_OffersNoWayToDeleteATraining()
+    {
+        // Arrange
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 1,
+                Training("Domain-Driven Design", "Programming")));
+
+        // Act
+        var page = Render<Trainings>();
+
+        // Assert
+        page.Markup.Should().NotContain(Icons.Material.Filled.Delete);
+    }
+
+    /// <summary>
     /// Renders, asks the server for its own trainings rather than for all of them.
     /// </summary>
     /// <remarks>
@@ -243,11 +393,26 @@ public sealed class TrainingsTests : ComponentTest
             HasPreviousPage = page > 1
         };
 
+    // MudBlazor's own utility for the theme's recessed surface, which resolves to
+    // --mud-palette-background-gray and therefore follows the layout's dark mode toggle. Named
+    // once so the page and its tests cannot drift onto two different words for one decision.
+    private const string RecessedSurface = "mud-background-gray";
+
     private static TrainingHttpResponse Training(string title, params string[] topics) =>
+        WithStatus(title, "Published", topics);
+
+    private static TrainingHttpResponse WithdrawnTraining(string title, params string[] topics) =>
+        WithStatus(title, "Unpublished", topics);
+
+    // Not an overload of Training: two methods differing only by a leading string let overload
+    // resolution bind the first topic as the status, and the test that caught it did so by
+    // rendering an "Unpublished" badge on a training nobody had withdrawn.
+    private static TrainingHttpResponse WithStatus(string title, string status, string[] topics) =>
         new()
         {
             Id = Guid.NewGuid(),
             Title = title,
-            Topics = [.. topics]
+            Topics = [.. topics],
+            Status = status
         };
 }

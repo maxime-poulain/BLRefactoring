@@ -59,7 +59,7 @@ Read them in that order. Each is self-contained; together they take about fiftee
 
 ## An honest note on scale
 
-This is a small domain: two aggregates, seven domain events, twelve use cases. A strategic-design
+This is a small domain: two aggregates, twelve domain events, fourteen use cases. A strategic-design
 document for a system this size risks being longer than the model it describes, and risks inventing
 boundaries to fill the page.
 
@@ -70,11 +70,13 @@ Three choices keep it from doing that:
   they are one context. Getting that wrong is the standard way these documents become fiction.
 - **What is intended is separated from what is built.** *Catalogue Discovery* is on the map because
   three existing decisions were made for it. *Scheduling* and *Enrolment* are named in a section
-  called **Not decided**, and kept off the map on purpose. Between the two sits a third category,
-  **Decided, not yet built** — a change to an existing context that has been argued and settled and
-  that no code answers to yet. The training lifecycle of
-  [ADR 0050](../adr/0050-retire-a-training-rather-than-delete-it.md) is there, deliberately outside
-  the sections the rules read: a term promised to be a type must be one, and it is not one yet.
+  called **Not decided**, and kept off the map on purpose. There was briefly a third category,
+  **Decided, not yet built**, holding the training lifecycle of
+  [ADR 0050](../adr/0050-retire-a-training-rather-than-delete-it.md) while the record was
+  `Proposed`: its terms were promised to be types and were not yet, so they were kept outside the
+  sections the rules read. The lifecycle is built, so the section is gone and the terms sit in the
+  language table where every other term does. The category was never meant to have residents for
+  long.
 - **The documents answer to a test.** See below.
 
 ## How this stays true

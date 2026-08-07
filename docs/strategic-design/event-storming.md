@@ -3,7 +3,7 @@
 ## Is this worth doing here?
 
 Event storming earns its keep in two ways: **discovering** a domain nobody has modelled yet, and
-**explaining** one that is already built. On a domain of two aggregates and seven events, there is
+**explaining** one that is already built. On a domain of two aggregates and twelve events, there is
 nothing left to discover — so this document makes no pretence of being a workshop record. It is here
 for the second reason, and one property of this codebase makes it unusually effective:
 
@@ -109,26 +109,40 @@ flowchart LR
     A --> C2["🔵 Edit a training"]
     A --> C3["🔵 Delete a training"]
     A --> C4["🔵 Transfer a training"]
+    A --> C5["🔵 Unpublish a training"]
+    A --> C6["🔵 Publish a training"]
     B(["👤 Recipient trainer"]) -.->|"receives"| C4
 
     C1 --> AG["🟡 Training"]
     C2 --> AG
     C3 --> AG
+    C5 --> AG
+    C6 --> AG
     C4 --> DS["TrainingTransferDomainService"]
     DS --> AG
 
     AG --> INV{{"⚠ A title is unique<br/>per trainer"}}
-    DS --> INV2{{"⚠ The recipient has room<br/>and is free of the title"}}
+    DS --> INV2{{"⚠ The recipient has room,<br/>is free of the title<br/>and is not suspended"}}
+    AG --> INV3{{"⚠ The owner is not suspended<br/>and has room among the published"}}
     INV --> E1["🟠 TrainingCreatedDomainEvent"]
     INV --> E2["🟠 TrainingEditedDomainEvent"]
     INV2 --> E4["🟠 TrainingTransferredDomainEvent"]
+    INV3 --> E5["🟠 TrainingPublishedDomainEvent"]
+    AG --> E6["🟠 TrainingUnpublishedDomainEvent"]
+    AG --> E7["🟠 TrainingDeletedDomainEvent"]
 
     E1 --> P1["🟣 Publish TrainingCreatedIntegrationEvent"]
     E2 --> P2["🟣 Publish TrainingEditedIntegrationEvent"]
     E4 --> P4["🟣 Publish TrainingTransferredIntegrationEvent"]
+    E5 --> P5["🟣 Publish TrainingPublishedIntegrationEvent"]
+    E6 --> P6["🟣 Publish TrainingUnpublishedIntegrationEvent"]
+    E7 --> P7["🟣 Publish TrainingDeletedIntegrationEvent"]
     P1 --> OB["Transactional outbox"]
     P2 --> OB
     P4 --> OB
+    P5 --> OB
+    P6 --> OB
+    P7 --> OB
     OB -->|"delivery worker, post-commit"| SI["Search Indexing context"]
 
     SI -.-> RM["🟢 Future public catalogue"]
@@ -162,13 +176,22 @@ checks the same thing: a trainer may not list the same title twice. Creation is 
 an empty draft — which is why `Training.CreateAsync` is asynchronous while `Trainer.Create` is not.
 The trainer aggregate has no rule it cannot answer alone; the training aggregate has exactly one.
 
-**Three events, three facts, one future consumer.** `TrainingCreatedIntegrationEvent`,
-`TrainingEditedIntegrationEvent` and `TrainingTransferredIntegrationEvent` are three distinct
-integration events even though the indexer that will consume them upserts and could treat them
-alike. They are kept apart on the wire so the reactions can diverge — an edit might one day also
-invalidate a cache or notify subscribed students, a create never would, and a transfer is the only
-one of the three that changes which trainer the entry is filed under — and a consumer that cares
-about the difference must not have to guess it back out of a merged message.
+**Six events, six facts, one future consumer.** `TrainingCreatedIntegrationEvent`,
+`TrainingEditedIntegrationEvent`, `TrainingTransferredIntegrationEvent`,
+`TrainingPublishedIntegrationEvent`, `TrainingUnpublishedIntegrationEvent` and
+`TrainingDeletedIntegrationEvent` are six distinct integration events even though the indexer that
+consumes them upserts and removes, and could treat several of them alike. They are kept apart on
+the wire so the reactions can diverge — an edit might one day also invalidate a cache or notify
+subscribed students, a create never would, a transfer is the only one that changes which trainer
+the entry is filed under, and withdrawing is not deleting however identical the removal looks from
+the index — and a consumer that cares about the difference must not have to guess it back out of a
+merged message.
+
+**A training now has a life, and both directions of it are on the wire.** Publishing and
+unpublishing are the everyday pair; deleting stays for the training created by mistake and for
+erasure. The three arrived together with ADR 0050, and it is the removal half that made the record
+worth building: an index that keeps serving a withdrawn training turns the status into a field the
+write side respects and every reader ignores.
 
 **Deleting a trainer reaches into another aggregate.** `TrainerDeletedDomainEvent` is handled by a
 policy that deletes trainings *inside the same unit of work*. This is the strongest evidence that
@@ -182,8 +205,6 @@ and only it can reach the aggregate's internal reassignment (ADR 0036).
 
 ### 🔴 Hotspots
 
-- **Deleting a training raises no event**, so nothing removes it from the search index. Harmless
-  while the index is a fake; a real one would serve a training that no longer exists.
 - **Which uniqueness wins under concurrency?** The rule is checked before the write, and a unique
   index in the database is what actually enforces it — the check produces a good message, the
   constraint produces the guarantee.
@@ -203,13 +224,24 @@ and only it can reach the aggregate's internal reassignment (ADR 0036).
 | Transfer a training | `Training`, decided by `TrainingTransferDomainService` | Recipient publishes fewer than ten; recipient free of the title | `TrainingTransferredDomainEvent` | Commit `TrainingTransferredIntegrationEvent` to the outbox; the worker reindexes under the new owner after the commit | `PublishIntegrationEventWhenTrainingTransferredEventHandler` |
 | Publish a portrait | `Trainer` | ≤ 5 MiB, PNG/JPEG/WebP, content matches the declared type | *(none, deliberately)* | — | — |
 | Remove a portrait | `Trainer` | — | *(none, deliberately)* | — | — |
-| Delete a training | `Training` | Caller owns it | *(none — a hotspot)* | — | — |
+| Delete a training | `Training` | Caller owns it | `TrainingDeletedDomainEvent` | Commit `TrainingDeletedIntegrationEvent` to the outbox; the worker removes it from the index after the commit | `PublishIntegrationEventWhenTrainingDeletedEventHandler` |
+| Unpublish a training | `Training` | It is not already withdrawn | `TrainingUnpublishedDomainEvent` | Commit `TrainingUnpublishedIntegrationEvent` to the outbox; the worker removes it from the index after the commit | `PublishIntegrationEventWhenTrainingUnpublishedEventHandler` |
+| Publish a training | `Training` | It is withdrawn; the owner is not suspended and publishes fewer than ten | `TrainingPublishedDomainEvent` | Commit `TrainingPublishedIntegrationEvent` to the outbox; the worker indexes it after the commit | `PublishIntegrationEventWhenTrainingPublishedEventHandler` |
+| *(no command yet)* | `Trainer` | The trainer is not already suspended | `TrainerSuspendedDomainEvent` | Record the sanction | `AuditWhenTrainerSuspendedEventHandler` |
+| *(no command yet)* | `Trainer` | The trainer is suspended | `TrainerReinstatedDomainEvent` | Record the lifting | `AuditWhenTrainerReinstatedEventHandler` |
 
-Seven events, seven handlers, and three commands that raise nothing — two by decision, and one,
-deleting a training, that the board marks as a hotspot. The two the model refuses deliberately are
-as informative as the seven it raises. Of the seven reactions, two act inside
-the transaction — the cascade and the audit line, ADR 0002's *domain* side — and five commit an
-integration event into the outbox, to be acted on after the commit.
+Twelve events, twelve handlers, and two commands that raise nothing — both by decision. Publishing
+and removing a portrait are as informative as the twelve that do raise something: the bytes live in
+a store a rollback could not put back, so the aggregate says nothing and the caller cleans up after
+the commit. Of the twelve reactions, four act inside the transaction — the cascade and three audit
+lines, ADR 0002's *domain* side — and eight commit an integration event into the outbox, to be
+acted on after the commit.
+
+Two rows carry *(no command yet)* for the same reason a third already did: suspending a trainer is
+an administrative decision and no role is entitled to it, so the rule is modelled and tested while
+the permission to trigger it is deliberately absent. Neither becomes an integration event — nothing
+raises them and nothing consumes them, and outbox plumbing for a fact nobody produces is the
+anticipation this repository refuses (ADR 0050).
 
 ## What the boards show that the code does not
 

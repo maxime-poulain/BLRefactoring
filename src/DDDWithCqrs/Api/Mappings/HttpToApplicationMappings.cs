@@ -6,7 +6,9 @@ using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Delete;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Edit;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetById;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetMine;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Publish;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Transfer;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Unpublish;
 using TrainingHub.Shared.Api.Contracts.Auth;
 using TrainingHub.Shared.Api.Contracts.Mappings;
 using TrainingHub.Shared.Api.Contracts.Pagination;
@@ -127,6 +129,12 @@ public static class HttpToApplicationMappings
 
         return new TransferTrainingCommand(trainingId, request.RecipientTrainerId);
     }
+
+    /// <summary>Builds the command offering a withdrawn training to the public again (ADR 0050).</summary>
+    public static PublishTrainingCommand ToPublishTrainingCommand(Guid trainingId) => new(trainingId);
+
+    /// <summary>Builds the command withdrawing a training from public view (ADR 0050).</summary>
+    public static UnpublishTrainingCommand ToUnpublishTrainingCommand(Guid trainingId) => new(trainingId);
 
     /// <summary>Builds the query reading one trainer.</summary>
     public static GetTrainerByIdQuery ToGetTrainerByIdQuery(Guid trainerId) => new(trainerId);

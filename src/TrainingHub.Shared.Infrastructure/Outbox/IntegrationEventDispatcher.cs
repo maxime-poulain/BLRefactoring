@@ -23,7 +23,10 @@ public sealed class IntegrationEventDispatcher(
     IEnumerable<IIntegrationEventHandler<TrainerContactEmailChangedIntegrationEvent>> contactEmailChangedConsumers,
     IEnumerable<IIntegrationEventHandler<TrainingCreatedIntegrationEvent>> trainingCreatedConsumers,
     IEnumerable<IIntegrationEventHandler<TrainingEditedIntegrationEvent>> trainingEditedConsumers,
-    IEnumerable<IIntegrationEventHandler<TrainingTransferredIntegrationEvent>> trainingTransferredConsumers)
+    IEnumerable<IIntegrationEventHandler<TrainingTransferredIntegrationEvent>> trainingTransferredConsumers,
+    IEnumerable<IIntegrationEventHandler<TrainingPublishedIntegrationEvent>> trainingPublishedConsumers,
+    IEnumerable<IIntegrationEventHandler<TrainingUnpublishedIntegrationEvent>> trainingUnpublishedConsumers,
+    IEnumerable<IIntegrationEventHandler<TrainingDeletedIntegrationEvent>> trainingDeletedConsumers)
 {
     /// <summary>
     /// Hands the fact to each of its registered consumers, in registration order, skipping the
@@ -44,6 +47,9 @@ public sealed class IntegrationEventDispatcher(
             TrainingCreatedIntegrationEvent fact => HandleAllAsync(trainingCreatedConsumers, fact, alreadyDelivered, cancellationToken),
             TrainingEditedIntegrationEvent fact => HandleAllAsync(trainingEditedConsumers, fact, alreadyDelivered, cancellationToken),
             TrainingTransferredIntegrationEvent fact => HandleAllAsync(trainingTransferredConsumers, fact, alreadyDelivered, cancellationToken),
+            TrainingPublishedIntegrationEvent fact => HandleAllAsync(trainingPublishedConsumers, fact, alreadyDelivered, cancellationToken),
+            TrainingUnpublishedIntegrationEvent fact => HandleAllAsync(trainingUnpublishedConsumers, fact, alreadyDelivered, cancellationToken),
+            TrainingDeletedIntegrationEvent fact => HandleAllAsync(trainingDeletedConsumers, fact, alreadyDelivered, cancellationToken),
             _ => throw new InvalidOperationException(
                 $"{integrationEvent.GetType().Name} has no route in {nameof(IntegrationEventDispatcher)}. " +
                 "A new integration event is registered, serialized, consumed — and routed here."),

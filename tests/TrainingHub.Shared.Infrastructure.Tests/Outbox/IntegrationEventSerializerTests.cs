@@ -25,6 +25,9 @@ public sealed class IntegrationEventSerializerTests
         new TrainingCreatedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
         new TrainingEditedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
         new TrainingTransferredIntegrationEvent(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()),
+        new TrainingPublishedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
+        new TrainingUnpublishedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
+        new TrainingDeletedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
     ];
 
     /// <summary>One instance of each registered integration event, as theory rows.</summary>

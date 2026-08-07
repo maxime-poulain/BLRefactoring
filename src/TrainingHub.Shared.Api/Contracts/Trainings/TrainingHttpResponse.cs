@@ -44,4 +44,16 @@ public sealed class TrainingHttpResponse
     /// What a participant leaves with.
     /// </summary>
     public required string AcquiredSkills { get; init; }
+
+    /// <summary>
+    /// Whether the training is offered to the public or withdrawn from it: <c>Published</c> or
+    /// <c>Unpublished</c>.
+    /// </summary>
+    /// <remarks>
+    /// Published as the word rather than a boolean, so that adding a state later is an additive
+    /// change to this contract instead of a breaking one. It says what the owner decided, not what
+    /// a visitor would see: that is composed with the owner's standing, which this response does
+    /// not carry because the only caller who can read it is the owner themselves (ADR 0050).
+    /// </remarks>
+    public required string Status { get; init; }
 }

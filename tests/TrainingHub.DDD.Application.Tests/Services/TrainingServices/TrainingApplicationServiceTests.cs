@@ -6,6 +6,7 @@ using TrainingHub.Shared.Common.Errors;
 using TrainingHub.Shared.Common.Pagination;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
+using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.DomainEvents;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 using TrainingHub.Shared.Domain.Tests.Helpers;
 using Moq;
@@ -523,6 +524,113 @@ public sealed class TrainingApplicationServiceTests
         _fixture.UnitOfWork.Verify(
             uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    /// <summary>
+    /// Delete async, existing training, raises the deletion fact before staging the removal.
+    /// </summary>
+    /// <remarks>
+    /// The orchestration ADR 0050 adds here. Deleting used to raise nothing at all, which is why
+    /// a deleted training stayed in the search index for ever: the row went, and no consumer was
+    /// ever told. The aggregate announces it, the repository stages it, one unit of work commits
+    /// both.
+    /// </remarks>
+    [Fact]
+    public async Task DeleteAsync_ExistingTraining_RaisesTheDeletionFact()
+    {
+        var training = await new TrainingBuilder().BuildValidAsync();
+        training.ClearDomainEvents();
+        _fixture.TrainingRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainingId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(training);
+        var sut = _fixture.CreateSut();
+
+        await sut.DeleteAsync(training.Id.Value);
+
+        training.DomainEvents.Should().ContainSingle(e => e is TrainingDeletedDomainEvent);
+    }
+
+    // -- PublishAsync and UnpublishAsync --
+
+    /// <summary>
+    /// Unpublish async, existing training, withdraws it and commits once.
+    /// </summary>
+    [Fact]
+    public async Task UnpublishAsync_ExistingTraining_WithdrawsItAndCommitsOnce()
+    {
+        var training = await new TrainingBuilder().BuildValidAsync();
+        _fixture.TrainingRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainingId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(training);
+        var sut = _fixture.CreateSut();
+
+        var result = await sut.UnpublishAsync(training.Id.Value);
+
+        result.ShouldBeSuccess();
+        training.Status.Should().Be(TrainingStatus.Unpublished);
+        _fixture.UnitOfWork.Verify(uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Unpublish async, a training that does not exist, answers not found.
+    /// </summary>
+    [Fact]
+    public async Task UnpublishAsync_ANonExistentTraining_AnswersNotFound()
+    {
+        _fixture.TrainingRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainingId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Training?)null);
+        var sut = _fixture.CreateSut();
+
+        var result = await sut.UnpublishAsync(Guid.NewGuid());
+
+        result.ShouldBeFailure().Should().ContainSingle()
+            .Which.ErrorCode.Should().Be(ErrorCodes.NotFound);
+        _fixture.UnitOfWork.Verify(uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// Publish async, a withdrawn training, offers it again and commits once.
+    /// </summary>
+    [Fact]
+    public async Task PublishAsync_AWithdrawnTraining_OffersItAgainAndCommitsOnce()
+    {
+        var training = await new TrainingBuilder().BuildValidAsync();
+        training.Unpublish().ShouldBeSuccess();
+        _fixture.TrainingRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainingId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(training);
+        var sut = _fixture.CreateSut();
+
+        var result = await sut.PublishAsync(training.Id.Value);
+
+        result.ShouldBeSuccess();
+        training.Status.Should().Be(TrainingStatus.Published);
+        _fixture.UnitOfWork.Verify(uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Publish async, the aggregate refuses, nothing is committed.
+    /// </summary>
+    /// <remarks>
+    /// The rule is the aggregate's and is proven in the domain suite; what this asserts is that a
+    /// refusal travels out of this layer without a write — the failure an orchestration is most
+    /// likely to have.
+    /// </remarks>
+    [Fact]
+    public async Task PublishAsync_TheAggregateRefuses_CommitsNothing()
+    {
+        var training = await new TrainingBuilder().BuildValidAsync();
+        _fixture.TrainingRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainingId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(training);
+        var sut = _fixture.CreateSut();
+
+        var result = await sut.PublishAsync(training.Id.Value);
+
+        result.ShouldBeFailure().Should().ContainSingle()
+            .Which.ErrorCode.Should().Be(TrainingErrorCodes.AlreadyPublished);
+        _fixture.UnitOfWork.Verify(uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>

@@ -49,4 +49,15 @@ public sealed class TrainingDto
     /// What a participant leaves with.
     /// </summary>
     public required string AcquiredSkills { get; init; }
+
+    /// <summary>
+    /// Whether the training is offered to the public or withdrawn from it.
+    /// </summary>
+    /// <remarks>
+    /// The word the domain uses — <c>Published</c> or <c>Unpublished</c> — rather than a boolean:
+    /// this is one half of a lifecycle that can grow, and a flag would have to be renamed the day
+    /// it does. What the public can actually see is composed with the owner's standing and is not
+    /// this field (ADR 0050).
+    /// </remarks>
+    public required string Status { get; init; }
 }

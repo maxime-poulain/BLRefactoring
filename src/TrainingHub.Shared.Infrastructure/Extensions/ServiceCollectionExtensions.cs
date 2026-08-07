@@ -64,6 +64,10 @@ public static class ServiceCollectionExtensions
                 (TrainingRepository)serviceProvider.GetRequiredService<ITrainingRepository>())
             .AddScoped<ITrainingCounter>(serviceProvider =>
                 (TrainingRepository)serviceProvider.GetRequiredService<ITrainingRepository>())
+            // The standing port answers about a trainer, so it is the trainer's repository that
+            // implements it — resolved through ITrainerRepository for the same reason as above.
+            .AddScoped<ITrainerStanding>(serviceProvider =>
+                (TrainerRepository)serviceProvider.GetRequiredService<ITrainerRepository>())
             // The read side of two questions the API used to ask a repository: who owns this
             // training, and which trainer is behind this Identity user. Both answers are a handful
             // of columns; both used to cost a whole aggregate.
@@ -74,7 +78,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<IIntegrationEventPublisher, OutboxIntegrationEventPublisher>()
             // The outbox's read side (ADR 0025, hardened per ADR 0033): the worker each host
             // runs, the processor it scopes per batch, the dispatcher that routes a fact to its
-            // consumers, and the five consumers themselves — the policies that used to run inside
+            // consumers, and the eight consumers themselves — the policies that used to run inside
             // the transaction, reattached after the commit. The options bind above, validated.
             .AddScoped<OutboxProcessor>()
             .AddScoped<IntegrationEventDispatcher>()
@@ -88,6 +92,12 @@ public static class ServiceCollectionExtensions
                 ReindexTrainingWhenTrainingEditedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<TrainingTransferredIntegrationEvent>,
                 ReindexTrainingWhenTrainingTransferredIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<TrainingPublishedIntegrationEvent>,
+                IndexTrainingWhenTrainingPublishedIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<TrainingUnpublishedIntegrationEvent>,
+                RemoveTrainingFromIndexWhenTrainingUnpublishedIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<TrainingDeletedIntegrationEvent>,
+                RemoveTrainingFromIndexWhenTrainingDeletedIntegrationEventHandler>()
             .AddHostedService<OutboxDeliveryWorker>()
             .AddDbContext<TrainingContext>((serviceProvider, options) =>
             {

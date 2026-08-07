@@ -3,15 +3,19 @@
 <MudDialog>
     <DialogContent>
         <MudText>
-            Are you sure you want to delete "<strong>@TrainingTitle</strong>"?
+            Withdraw "<strong>@TrainingTitle</strong>" from public view?
         </MudText>
+        @* The copy replaced "this action cannot be undone", which was true of the deletion this
+           dialog used to confirm and is the opposite of what withdrawing means. Saying so is the
+           point: a trainer who hesitated over an irreversible button should not hesitate over
+           this one. See ADR 0050. *@
         <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">
-            This action cannot be undone.
+            It stays in your own list, keeps its title, and you can publish it again at any time.
         </MudText>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
-        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="Confirm">Delete</MudButton>
+        <MudButton Color="Color.Warning" Variant="Variant.Filled" OnClick="Confirm">Unpublish</MudButton>
     </DialogActions>
 </MudDialog>
 

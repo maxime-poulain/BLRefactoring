@@ -1,5 +1,7 @@
 using TrainingHub.Shared.Domain;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
+using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,8 +10,25 @@ namespace TrainingHub.Shared.Infrastructure.Repositories;
 /// <summary>
 /// Reads and writes trainers through EF Core.
 /// </summary>
-public sealed class TrainerRepository(TrainingContext trainingContext) : ITrainerRepository
+public sealed class TrainerRepository(TrainingContext trainingContext) : ITrainerRepository, ITrainerStanding
 {
+    /// <summary>
+    /// Answers whether the given trainer is under sanction, without loading the aggregate.
+    /// </summary>
+    /// <remarks>
+    /// One column, asked of the trainer's own table, for a decision that belongs to the training
+    /// aggregate: the port is declared beside <see cref="Training"/> and implemented here, where
+    /// the row is. A trainer no row answers to reports <see langword="false"/> — this question is
+    /// about standing, and "no such trainer" is a different refusal with a different code.
+    /// </remarks>
+    public Task<bool> IsSuspendedAsync(TrainerId trainerId, CancellationToken cancellationToken = default)
+    {
+        var suspended = TrainerStatus.Suspended;
+
+        return trainingContext.Trainers
+            .AnyAsync(trainer => trainer.Id == trainerId && trainer.Status == suspended, cancellationToken);
+    }
+
     /// <summary>
     /// Finds a trainer by identifier, or <see langword="null"/> when there is none.
     /// </summary>

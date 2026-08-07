@@ -27,18 +27,21 @@ public static class TrainingTransferDomainService
     /// <param name="recipient">The trainer receiving it.</param>
     /// <param name="trainingCounter">Answers how many trainings the recipient publishes.</param>
     /// <param name="titleChecker">Answers whether the recipient already lists the title.</param>
+    /// <param name="trainerStanding">Answers whether either trainer is under sanction.</param>
     /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     public static async Task<Result> TransferAsync(
         Training training,
         TrainerId recipient,
         ITrainingCounter trainingCounter,
         IUniquenessTitleChecker titleChecker,
+        ITrainerStanding trainerStanding,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(training);
         ArgumentNullException.ThrowIfNull(recipient);
         ArgumentNullException.ThrowIfNull(trainingCounter);
         ArgumentNullException.ThrowIfNull(titleChecker);
+        ArgumentNullException.ThrowIfNull(trainerStanding);
 
         // The aggregate's own question, asked first: a transfer to the current owner would make
         // the recipient-side rules vacuous and put a lie of a fact on the wire.
@@ -46,6 +49,24 @@ public static class TrainingTransferDomainService
         {
             return Result.Failure(TrainingErrorCodes.TransferToSelf,
                 "A training cannot be transferred to the trainer who already owns it.");
+        }
+
+        // Both sides are asked, because a transfer moves a training out of one public catalogue and
+        // into another. The giver is refused for the reason ADR 0050 gives — a suspended trainer
+        // may not change what the public sees — and the recipient because a transfer they cannot
+        // refuse would grow a catalogue the sanction exists to freeze. This is what the record
+        // means by "giving and receiving alike"; ADR 0036's "the recipient must be able to accept
+        // it" now has a second half.
+        if (await trainerStanding.IsSuspendedAsync(training.TrainerId, cancellationToken))
+        {
+            return Result.Failure(TrainingErrorCodes.TrainerSuspended,
+                "A suspended trainer cannot transfer a training.");
+        }
+
+        if (await trainerStanding.IsSuspendedAsync(recipient, cancellationToken))
+        {
+            return Result.Failure(TrainingErrorCodes.RecipientSuspended,
+                "The recipient is suspended and cannot receive a training.");
         }
 
         // Capacity before content, mirroring creation: no title makes an eleventh training
