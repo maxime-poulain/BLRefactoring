@@ -164,3 +164,27 @@ AI-assisted commit keeps its `Co-Authored-By` trailer — always — but never c
 session reference: no `Claude-Session` trailer, no session URL, not in the message and not in
 anything committed. Check the message and the staged diff for one before every commit. If you see
 a better design that no accepted record forbids, propose it before implementing it.
+
+**A pull request Claude Code owns carries one commit, and stays that way.** After every push to a
+`claude/*` branch, squash the branch back to a single commit against the base, force-push it, and
+then *check* — `git log --oneline origin/master..HEAD` prints one line, or the job is not finished.
+The message is rewritten to describe the whole change, never appended to: a squashed history whose
+message still narrates the first attempt is worse than the commits it replaced. It obeys the same
+conventions as any other — imperative title, no Conventional Commits prefix, blank line, body.
+
+Three conditions, and none of them is optional:
+
+- **Fetch first, and squash everything since the base — not "your" commits.** `ci.yml` commits the
+  regenerated client to the pull request's branch with `GITHUB_TOKEN`, and that push triggers no
+  workflow, so a squash computed from a stale local view deletes work nothing will redo. Fetch, then
+  `git reset --soft $(git merge-base HEAD origin/master)`, so the bot's tree is *inside* the squash
+  rather than under it.
+- **`--force-with-lease`, never a bare `--force`** — and know what the bare form compares against.
+  It checks the remote-tracking ref, which the fetch above has just moved, so on its own it stops
+  protecting you at exactly the moment it matters. Name what you verified:
+  `--force-with-lease=<branch>:<sha>`.
+- **Only a branch Claude Code owns, and only before review.** Never rewrite a branch anyone else
+  pushes to. Once a reviewer has commented, stop squashing: a force-push orphans inline comments
+  anchored to commits that no longer exist and destroys the *changes since your last review* diff.
+  From then on, add commits and squash once, at the end — GitHub's squash-merge would deliver the
+  same single commit to `master` either way.
