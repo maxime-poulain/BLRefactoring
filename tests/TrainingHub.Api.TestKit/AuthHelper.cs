@@ -78,4 +78,31 @@ public static class AuthHelper
 
         return client;
     }
+
+    /// <summary>
+    /// Registers an account, then signs in with the wrong password, and answers what came back.
+    /// </summary>
+    /// <remarks>
+    /// The arrangement rather than the assertion, because two tests need it and neither is about
+    /// it: one holds the status to 401, the other holds the body to the problem shape ADR 0004
+    /// requires. Registering first is what makes the refusal about the password — an unknown
+    /// username is refused too, identically and on purpose, so a test that skipped the registration
+    /// would pass without proving anything about credentials.
+    /// </remarks>
+    /// <param name="factory">The suite's fixture.</param>
+    /// <returns>The response to the refused sign-in.</returns>
+    public static async Task<HttpResponseMessage> SignInWithTheWrongPasswordAsync(IHttpClientSource factory)
+    {
+        ArgumentNullException.ThrowIfNull(factory);
+
+        var client = factory.CreateClient();
+        var request = CreateUniqueRegisterRequest();
+        (await RegisterAsync(client, request)).EnsureSuccessStatusCode();
+
+        return await client.PostAsJsonAsync("/Auth/login", new LoginHttpRequest
+        {
+            Username = request.Username,
+            Password = "wrong_password"
+        });
+    }
 }

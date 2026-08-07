@@ -202,15 +202,7 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
     [Fact]
     public async Task SignInFailure_IsAProblemDocument()
     {
-        var client = Factory.CreateClient();
-        var request = AuthHelper.CreateUniqueRegisterRequest();
-        (await AuthHelper.RegisterAsync(client, request)).EnsureSuccessStatusCode();
-
-        var response = await client.PostAsJsonAsync("/Auth/login", new LoginHttpRequest
-        {
-            Username = request.Username,
-            Password = "wrong_password"
-        });
+        var response = await AuthHelper.SignInWithTheWrongPasswordAsync(Factory);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 

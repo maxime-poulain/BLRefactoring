@@ -1076,6 +1076,17 @@ rather than throwing; what differs is the code inside it, because two different 
 checkpoint, the registration and conditional-request helpers — generic over the entry point.
 Only the `Program` type differs between the two suites.
 
+**It also holds the facts themselves, and that is the point of it.** A fact about the API is
+written once as an abstract `*Test<TFactory>` and run twice, so the two hosts cannot answer it
+differently without one of them going red; each suite carries a one-line derivation and nothing
+else. `TrainerProfileTest` and `TrainingLifecycleTest` were the last two that were not shared —
+twenty-one facts each suite spelled out for itself, already drifting in what they checked rather
+than in what they expected. What a suite still declares on its own is a fact about *that host*: on
+the CQRS side, that a message its validator refuses never reaches the aggregate.
+`NoFact_IsAssertedByBothSuitesInTheirOwnCode` is what keeps a copy from reappearing — the three
+older rules all read outward from the kit and could not see a fact that lived in both suites and in
+neither.
+
 **The BFF suite needs no infrastructure at all**, which is why it sits with the unit tests. It hosts
 the real `Program.cs` — pipeline order included — and replaces only the far side of the proxy, with
 a handler that records what the API was sent. Cookie authentication, the forgery guard, the

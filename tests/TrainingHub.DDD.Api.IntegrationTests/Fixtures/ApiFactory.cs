@@ -12,11 +12,10 @@ namespace TrainingHub.DDD.Api.IntegrationTests.Fixtures;
 /// </remarks>
 public sealed class ApiFactory : ApiFactory<Program>;
 
-/// <summary>
-/// Base class for this suite's tests, fixing the factory type so test classes keep naming
-/// <c>ApiFactory</c> instead of carrying a generic argument.
-/// </summary>
-public abstract class IntegrationTest(ApiFactory factory) : IntegrationTest<ApiFactory>(factory);
+// The shorthand base this file used to carry — `IntegrationTest(ApiFactory)`, fixing the generic
+// argument so a test class could name the factory once — went with the last test that declared its
+// own facts here. Every class in this suite now derives from a base in the kit, which names the
+// factory itself. `EveryAbstractClass_IsActuallyInherited` is what noticed.
 
 /// <summary>
 /// Api collection.
