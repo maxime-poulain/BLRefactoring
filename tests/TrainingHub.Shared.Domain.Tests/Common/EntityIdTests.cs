@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using TrainingHub.Shared.Common;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using Xunit;
 
@@ -138,7 +139,10 @@ public sealed class EntityIdTests
     {
         var act = () => TrainerId.Create(Guid.Empty);
 
-        act.Should().Throw<ArgumentException>();
+        // The named type rather than ArgumentException: the base type would also be satisfied by a
+        // throw from somewhere else entirely, which is the assertion this one replaces.
+        act.Should().Throw<EmptyIdentifierException>()
+            .Which.IdentifierType.Should().Be(nameof(TrainerId));
     }
 
     /// <summary>

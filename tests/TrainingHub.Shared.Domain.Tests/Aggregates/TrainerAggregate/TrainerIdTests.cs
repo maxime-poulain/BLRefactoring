@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using TrainingHub.Shared.Common;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using Xunit;
 
@@ -78,7 +79,8 @@ public sealed class TrainerIdTests
         // shortcut around it.
         var act = () => (TrainerId)Guid.Empty;
 
-        act.Should().Throw<ArgumentException>();
+        act.Should().Throw<EmptyIdentifierException>()
+            .Which.IdentifierType.Should().Be(nameof(TrainerId));
     }
 
     /// <summary>
@@ -91,7 +93,8 @@ public sealed class TrainerIdTests
         var act = () => TrainerId.Create(Guid.Empty);
 
         // Assert
-        act.Should().Throw<ArgumentException>();
+        act.Should().Throw<EmptyIdentifierException>()
+            .Which.IdentifierType.Should().Be(nameof(TrainerId));
     }
 
     /// <summary>

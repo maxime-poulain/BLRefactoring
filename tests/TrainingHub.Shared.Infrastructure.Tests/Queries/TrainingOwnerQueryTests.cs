@@ -3,6 +3,7 @@ using TrainingHub.Shared.Infrastructure.Queries;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
+using TrainingHub.Shared.Common;
 
 namespace TrainingHub.Shared.Infrastructure.Tests.Queries;
 
@@ -31,7 +32,7 @@ public sealed class TrainingOwnerQueryTests
     /// </summary>
     /// <remarks>
     /// Two failures in one assertion, and the context is what separates them. If the guard is gone,
-    /// this throws <see cref="ArgumentException"/> out of <c>TrainingId.Create</c> — the 500 this
+    /// this throws <see cref="EmptyIdentifierException"/> out of <c>TrainingId.Create</c> — the 500 this
     /// exists to prevent. If the guard were written after the query instead of before it, the call
     /// would try to open an unreachable connection and fail differently. Only answering
     /// <see langword="null"/> immediately passes.
