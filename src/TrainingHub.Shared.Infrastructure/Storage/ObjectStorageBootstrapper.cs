@@ -46,9 +46,16 @@ public sealed class ObjectStorageBootstrapper(
 
             logger.LogInformation("Object storage: bucket {Bucket} is ready.", _options.BucketName);
         }
+        // The exception travels with the line rather than being discarded on the way. The filter
+        // below admits two error codes and may one day admit a third; without it, the log would say
+        // "already exists" and keep to itself which of them S3 actually answered. An exception that
+        // is caught and dropped is the one piece of evidence nobody can reconstruct afterwards.
         catch (AmazonS3Exception exception) when (AlreadyThere(exception))
         {
-            logger.LogInformation("Object storage: bucket {Bucket} already exists.", _options.BucketName);
+            logger.LogInformation(
+                exception,
+                "Object storage: bucket {Bucket} already exists.",
+                _options.BucketName);
         }
     }
 
