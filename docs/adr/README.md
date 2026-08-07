@@ -74,3 +74,4 @@ simpler from the outside.
 | [0044](0044-let-the-domain-speak-entirely-in-its-own-terms.md) | Let the domain speak entirely in its own terms | Accepted |
 | [0045](0045-fail-readiness-while-a-migration-is-pending.md) | Fail readiness while a migration is pending | Accepted |
 | [0046](0046-refuse-the-empty-identifier-at-every-entry-point.md) | Refuse the empty identifier at every entry point | Accepted |
+| [0047](0047-verify-the-build-a-pull-request-delegates.md) | Verify the build a pull request delegates | Accepted |

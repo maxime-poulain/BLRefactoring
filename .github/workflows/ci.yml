@@ -1,7 +1,7 @@
 name: CI
 
 # Two triggers, one run. Which one fires depends on where the branch lives, and the job below
-# skips the case where both would.
+# resolves the case where both would — by verifying the other run rather than assuming it (ADR 0047).
 on:
   push:
     # Agent branches as well as master, for the same reason the integration suite runs on them:
@@ -18,7 +18,10 @@ on:
 
 # This workflow writes to the repository, so two runs on one branch can race: both regenerate, both
 # push, and the loser fails with a non-fast-forward nobody caused. Push runs therefore queue rather
-# than cancel. Pull-request runs write nothing, so a superseded one is simply wasted minutes.
+# than cancel. A superseded pull-request run is cancelled instead, which is safe for the branches
+# that reach this point: a `claude/**` one delegates its build and writes nothing at all, and a
+# fork's is read-only by permission. A same-repo branch the `push` trigger does not name is the one
+# that both builds and commits here, and it has no push run to race against.
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -29,48 +32,98 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
-    # The whole point of the two triggers above, in one condition: build a pull request only when
-    # its branch is one this repository already builds on push. A `claude/**` branch here fires
-    # both events for the same commit — the runs land in different concurrency groups, so neither
-    # cancels the other, and the same eighty seconds were being spent twice for one answer.
+    # This job used to carry a job-level `if` that skipped it outright for a same-repo `claude/**`
+    # pull request, on the ground that the push trigger had already built that commit. The ground
+    # was never checked. A skipped job still posts its check, GitHub counts a skipped check as
+    # passing, and the sentence "its commit was already built when it was pushed" was a claim about
+    # a run this workflow never looked at. When that run is cancelled without ever reaching a
+    # runner — measured on this repository, `runner_id: 0` after fifteen minutes in the queue — the
+    # pull request wears a green `Build & Test` for a build that did not happen. See ADR 0047.
     #
-    # The skip must mirror the `push` trigger's branch list exactly, and the first version of this
-    # condition did not: it skipped every same-repo pull request, assuming a push run had built the
-    # branch — but `push` only listens to master and `claude/**`. A `feature/*` branch fired no
-    # push run, its pull-request run was skipped, and the pull request reached review built and
-    # tested by nobody, wearing a skipped check GitHub counts as passing. Measured, not assumed:
-    # #62 merged exactly that way.
-    #
-    # So three cases run and one is skipped. A push run: that is the primary build. A fork's pull
-    # request: no push to somebody else's clone reaches this repository's Actions, so the
-    # pull-request run is the only build it will ever get. A same-repo pull request from any branch
-    # the `push` trigger does not name: same reasoning, same conclusion. Only a same-repo
-    # `claude/**` pull request is skipped — its commit was already built when it was pushed.
-    #
-    # The job is skipped rather than the workflow, so the check still appears on the pull request —
-    # as skipped, which GitHub counts as passing for a required check, beside the successful one the
-    # push run posted on the same commit.
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name != github.repository ||
-      !startsWith(github.event.pull_request.head.ref, 'claude/')
+    # The optimisation survives; only the assumption goes. The first step below decides whether
+    # this run must build or may stand on one that already did, and in the second case it waits for
+    # that run and adopts its verdict. Every step after it carries the same condition, which is
+    # noisier than a job-level `if` and is the point: a job that always runs is a check that can
+    # never be green for nothing.
 
     # `contents: write` is for one step: the workflow regenerates the HTTP client and commits it
-    # when the API has changed. Nothing else here writes. Declared on the job rather than on the
+    # when the API has changed. Nothing else here writes. `actions: read` is for the delegation
+    # step, which asks the API what the push run concluded. Declared on the job rather than on the
     # workflow so a second job added later starts from nothing rather than from this.
     permissions:
       contents: write
+      actions: read
 
     steps:
+      # Build, or stand on a build that already happened — and never on the mere belief that one
+      # did. Only a same-repo `claude/**` pull request delegates: a push run is the primary build,
+      # a fork's pull request is the only build it will ever get, and a same-repo branch the `push`
+      # trigger does not name gets no push run at all. That last case is why the delegation is
+      # narrow: it was once written as "every same-repo pull request", and `feature/*` branches
+      # merged built by nobody — #62 did exactly that.
+      #
+      # Waiting rather than reading once, because the two events start together: at the moment this
+      # runs, the push run is normally still building. What is waited for is a conclusion, not a
+      # duration, so the answer is the push run's own verdict rather than a guess about timing.
+      - name: Was this commit already built?
+        id: delegation
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          DELEGATES: ${{ github.event_name == 'pull_request'
+            && github.event.pull_request.head.repo.full_name == github.repository
+            && startsWith(github.event.pull_request.head.ref, 'claude/') }}
+        run: |
+          set -euo pipefail
+
+          if [ "$DELEGATES" != "true" ]; then
+            echo "This run is the build for $GITHUB_SHA."
+            echo "build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Waiting for the push run that builds $HEAD_SHA."
+
+          # Fifteen minutes, under the job's twenty. A push run normally appears within seconds and
+          # finishes in about two minutes; the wait exists for the day it does not, and ending it
+          # red is the honest answer to "no build has concluded for this commit".
+          for _ in $(seq 1 60); do
+            verdict=$(gh api \
+              "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?event=push&head_sha=$HEAD_SHA&per_page=1" \
+              --jq '.workflow_runs[0] | "\(.status) \(.conclusion)"' 2>/dev/null || true)
+
+            case "$verdict" in
+              "completed success")
+                echo "::notice::Built by the push run for $HEAD_SHA; not building it again."
+                echo "build=false" >> "$GITHUB_OUTPUT"
+                exit 0
+                ;;
+              "completed "*)
+                echo "::error::The push run for $HEAD_SHA ended as '${verdict#completed }'." \
+                     "This pull request has no successful build, and a skipped check would have" \
+                     "said otherwise."
+                exit 1
+                ;;
+            esac
+
+            sleep 15
+          done
+
+          echo "::error::No push run reached a conclusion for $HEAD_SHA within fifteen minutes." \
+               "Re-run this job once one has; it will adopt that verdict."
+          exit 1
+
       # On a pull request, check out the head branch itself rather than the merge commit GitHub
       # prepares. The regeneration below has to be able to commit its result, and a merge commit is
       # not on any branch. Skipped for forks, where the token is read-only anyway.
       - uses: actions/checkout@v5
+        if: steps.delegation.outputs.build == 'true'
         with:
           ref: ${{ github.event.pull_request.head.ref || github.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
 
       - name: Setup .NET
+        if: steps.delegation.outputs.build == 'true'
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
@@ -78,6 +131,7 @@ jobs:
       # Restore is run three times per job — inside the generator script, by the build, and for the
       # pinned NSwag CLI — and every one of them reaches the network without this.
       - name: Cache NuGet packages
+        if: steps.delegation.outputs.build == 'true'
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
@@ -89,6 +143,7 @@ jobs:
       # regeneration just broke. Running it afterwards would report a stale success and leave the
       # breakage for the next push to discover.
       - name: Regenerate the HTTP client
+        if: steps.delegation.outputs.build == 'true'
         run: ./scripts/generate-clients.sh
 
       # The API is the source of truth: when a controller changes, the client follows, in the same
@@ -107,8 +162,9 @@ jobs:
       # help. A fork's client is checked below instead.
       - name: Commit the regenerated client
         if: >-
-          github.event_name == 'push' ||
-          github.event.pull_request.head.repo.full_name == github.repository
+          steps.delegation.outputs.build == 'true' &&
+          (github.event_name == 'push' ||
+           github.event.pull_request.head.repo.full_name == github.repository)
         run: |
           if git diff --quiet -- src/TrainingHub.GeneratedClients/; then
             echo "The client already matches the API."
@@ -129,6 +185,7 @@ jobs:
       # only path left where a stale client can reach review.
       - name: Client is up to date
         if: >-
+          steps.delegation.outputs.build == 'true' &&
           github.event_name == 'pull_request' &&
           github.event.pull_request.head.repo.full_name != github.repository
         run: |
@@ -142,6 +199,7 @@ jobs:
       # Everything is built, including the integration tests: a project that no
       # longer compiles must fail the pipeline even when its tests are not run.
       - name: Build
+        if: steps.delegation.outputs.build == 'true'
         run: dotnet build --configuration Release
 
       # Unit tests only. The integration tests spin up a SQL Server through
@@ -149,6 +207,7 @@ jobs:
       # are excluded by project name, so any future *.IntegrationTests project is
       # left out too.
       - name: Unit tests
+        if: steps.delegation.outputs.build == 'true'
         run: >-
           dotnet test --no-build --configuration Release --verbosity normal
           --filter "FullyQualifiedName!~IntegrationTests"

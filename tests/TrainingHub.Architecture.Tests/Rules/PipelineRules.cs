@@ -56,22 +56,72 @@ public sealed class PipelineRules
         // one file where the sets do overlap is named here.
         var text = SourceTree.ReadText(ContinuousIntegration);
 
-        // The opening half of the job's condition, not the head-repository comparison it ends on:
-        // that comparison also appears on the two steps that tell a fork from a branch, so a rule
-        // matching it would have gone on passing with the job-level guard deleted.
-        const string Guard = "github.event_name != 'pull_request' ||";
+        // The step that decides, rather than the job-level condition that used to. ADR 0047 moved
+        // the choice inside the job so the check is always produced by something that ran; what
+        // this rule holds is unchanged — that the overlap is still resolved somewhere, and that
+        // deleting the resolution costs a build twice rather than passing unnoticed.
+        const string Delegation = "id: delegation";
 
         new[] { SourceTree.Relative(ContinuousIntegration) }
             .Selected("workflow whose triggers overlap")
             .Where(_ =>
                 text.Contains("  push:", StringComparison.Ordinal) &&
                 text.Contains("  pull_request:", StringComparison.Ordinal) &&
-                !text.Contains(Guard, StringComparison.Ordinal))
+                !text.Contains(Delegation, StringComparison.Ordinal))
             .Select(file =>
-                $"'{file}' fires on both push and pull_request without skipping the case where both " +
-                "reach the same commit. A branch of this repository triggers each once a pull " +
-                "request is open, and the two runs land in different concurrency groups, so neither " +
-                "cancels the other and one build is paid for twice")
+                $"'{file}' fires on both push and pull_request without deciding which of the two " +
+                "builds the commit. A branch of this repository triggers each once a pull request " +
+                "is open, and the two runs land in different concurrency groups, so neither cancels " +
+                "the other and one build is paid for twice")
+            .ShouldHold();
+    }
+
+    /// <summary>
+    /// No delegated build, is taken on trust.
+    /// </summary>
+    /// <remarks>
+    /// The green failure this one guards is the worst kind: a pull request whose check says a build
+    /// passed when none ran. A job skipped by a job-level condition still posts its check, and
+    /// GitHub counts a skipped check as passing — so the sentence "its commit was already built when
+    /// it was pushed" was load-bearing while being a claim about a run nothing looked at. It stops
+    /// being true whenever the push run is cancelled without reaching a runner, which this
+    /// repository has measured on its own default branch.
+    /// <para>
+    /// So the job must run in every case, and where it delegates it must read the other run's
+    /// conclusion. Two things are asserted, and the second is the one that matters: any
+    /// <c>if:</c> at the job's own level would bring the skipped check back, and the delegation must
+    /// consult <c>conclusion</c> rather than merely observe that a run exists. A run that exists and
+    /// failed is exactly the case ADR 0047 was written for.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0047",
+        "a check on a pull request is green only for a build that happened: where the build is delegated, " +
+        "the delegating job waits for that build and adopts its verdict")]
+    public void NoDelegatedBuild_IsTakenOnTrust()
+    {
+        var text = SourceTree.ReadText(ContinuousIntegration);
+
+        // The job's own condition sits at four spaces; a step's sits at eight. Matching the indent
+        // is what tells "this job may be skipped entirely" apart from "this step may be".
+        var skipsTheJob = text.Contains("\n    if:", StringComparison.Ordinal);
+
+        new[]
+        {
+            (Broken: skipsTheJob,
+             Wrong: "carries a job-level `if:` on the build. A job skipped that way still posts its " +
+                    "check, and GitHub reads a skipped check as a passing one — which is a green " +
+                    "answer for a build that never ran"),
+            (Broken: !text.Contains("head_sha=$HEAD_SHA", StringComparison.Ordinal),
+             Wrong: "does not look the delegated build up by the commit under review, so whatever it " +
+                    "reads is about some other commit"),
+            (Broken: !text.Contains("completed success", StringComparison.Ordinal),
+             Wrong: "does not require the delegated build to have concluded successfully. A run that " +
+                    "exists and failed would pass for one that worked")
+        }
+            .Selected("condition on the delegated build")
+            .Where(assertion => assertion.Broken)
+            .Select(assertion => $"'.github/workflows/ci.yml' {assertion.Wrong} (ADR 0047)")
             .ShouldHold();
     }
 
