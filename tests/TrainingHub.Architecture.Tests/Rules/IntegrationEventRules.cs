@@ -194,6 +194,39 @@ public sealed partial class IntegrationEventRules
             .ShouldHold();
 
     /// <summary>
+    /// No integration event consumer, reads through a repository.
+    /// </summary>
+    /// <remarks>
+    /// One interface further out than its sibling above, and for the same reason. That rule refuses
+    /// <c>IUnitOfWork</c> and <c>TrainingContext</c>, which stops a consumer committing — and stops
+    /// nothing at all about <c>ITrainerRepository</c>, whose surface is <c>Add</c>, <c>Update</c>,
+    /// <c>Delete</c> and a handful of reads. Handing that to something that runs after the commit
+    /// hands it every write it was just forbidden, by another name.
+    /// <para>
+    /// So a consumer that needs a fact about the write model asks a port that cannot write. Since
+    /// ADR 0056 that is not hypothetical: three consumers look up where a trainer is reachable, and
+    /// the shape they use is the shape this rule keeps them to.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0056",
+        "a post-commit consumer reads through a port that cannot write, never through a repository")]
+    public void NoIntegrationEventConsumer_ReadsThroughARepository() =>
+        Solution.Application.DeclaredTypes()
+            .Where(consumer => consumer.GetInterfaces().Any(contract =>
+                contract.IsGenericType
+                && contract.GetGenericTypeDefinition().Name.StartsWith("IIntegrationEventHandler", StringComparison.Ordinal)))
+            .Selected("integration event handler")
+            .SelectMany(consumer => consumer.GetConstructors()
+                .SelectMany(constructor => constructor.GetParameters())
+                .Where(parameter => parameter.ParameterType.Name.EndsWith("Repository", StringComparison.Ordinal))
+                .Select(parameter =>
+                    $"{consumer.Name} takes {parameter.ParameterType.Name}. A repository can write, and a " +
+                    "consumer may not; what it needs to read belongs behind a port that answers the " +
+                    "question and nothing else"))
+            .ShouldHold();
+
+    /// <summary>
     /// Every integration event consumer, owns a stable name.
     /// </summary>
     /// <remarks>

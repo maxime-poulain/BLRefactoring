@@ -1,5 +1,4 @@
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using AwesomeAssertions;
 using TrainingHub.Shared.Api.Contracts.Trainers;
 using Xunit;
@@ -33,7 +32,7 @@ public abstract class EmailTest<TFactory>(TFactory factory) : IntegrationTest<TF
         var response = await AuthHelper.RegisterAsync(Factory.CreateClient(), request);
         response.EnsureSuccessStatusCode();
 
-        var text = await WaitForEmailAsync(request.Email, "Welcome aboard!");
+        var text = await Mailbox.WaitForEmailAsync(Factory, request.Email, "Welcome aboard!");
 
         text.Should().Contain(
             $"{request.Firstname} {request.Lastname}",
@@ -64,68 +63,11 @@ public abstract class EmailTest<TFactory>(TFactory factory) : IntegrationTest<TF
         }, entityTag);
         response.EnsureSuccessStatusCode();
 
-        var text = await WaitForEmailAsync(request.Email, "Your contact email address was changed");
+        var text = await Mailbox.WaitForEmailAsync(
+            Factory, request.Email, "Your contact email address was changed");
 
         text.Should().Contain(
             newAddress,
             "the warning tells the previous owner where their profile now points");
     }
-
-    /// <summary>
-    /// Polls the mailbox until a message addressed to <paramref name="recipient"/> and titled
-    /// <paramref name="subject"/> arrives, and answers its plain-text body. Fails with what the
-    /// mailbox actually held when the message does not arrive in time.
-    /// </summary>
-    /// <remarks>
-    /// Polling is the honest shape here, as it is for the outbox proofs: the delivery worker is a
-    /// real background loop and the SMTP hop is a real network hop. The subject is part of the
-    /// match rather than a later assertion because one address legitimately receives more than one
-    /// message — the old contact address got a welcome before it got its warning. The whole list is
-    /// fetched and filtered client-side rather than through the server's query syntax — the mailbox
-    /// belongs to this fixture and stays small, and an address is easier to trust than a query DSL.
-    /// </remarks>
-    private async Task<string> WaitForEmailAsync(string recipient, string subject)
-    {
-        using var client = new HttpClient { BaseAddress = Factory.MailboxApiBaseAddress };
-
-        var timeout = TimeSpan.FromSeconds(15);
-        var started = DateTime.UtcNow;
-        IReadOnlyList<MailpitMessageSummary> lastSeen = [];
-
-        while (DateTime.UtcNow - started < timeout)
-        {
-            var mailbox = await client.GetFromJsonAsync<MailpitMessageList>("/api/v1/messages");
-            lastSeen = mailbox?.Messages ?? [];
-
-            var match = lastSeen.FirstOrDefault(message =>
-                message.Subject == subject && message.To.Any(address => address.Address == recipient));
-
-            if (match is not null)
-            {
-                var detail = await client.GetFromJsonAsync<MailpitMessageDetail>($"/api/v1/message/{match.ID}");
-                detail.Should().NotBeNull("the mailbox listed the message a moment ago");
-                return detail.Text;
-            }
-
-            await Task.Delay(100);
-        }
-
-        throw new InvalidOperationException(
-            $"No message addressed to '{recipient}' with subject '{subject}' arrived within {timeout.TotalSeconds}s. " +
-            (lastSeen.Count == 0
-                ? "The mailbox is empty."
-                : $"The mailbox holds {lastSeen.Count}: " + string.Join("; ", lastSeen.Select(message =>
-                    $"To={string.Join(",", message.To.Select(address => address.Address))} Subject='{message.Subject}'")) + "."));
-    }
-
-    // The slices of Mailpit's API answers these proofs read. Property names follow the wire
-    // (deserialized case-insensitively), and everything not asserted on is left out.
-
-    private sealed record MailpitMessageList(List<MailpitMessageSummary> Messages);
-
-    private sealed record MailpitMessageSummary(string ID, string Subject, List<MailpitAddress> To);
-
-    private sealed record MailpitAddress(string Address);
-
-    private sealed record MailpitMessageDetail(string Text);
 }

@@ -68,24 +68,35 @@ public static class ServiceCollectionExtensions
             // implements it — resolved through ITrainerRepository for the same reason as above.
             .AddScoped<ITrainerStanding>(serviceProvider =>
                 (TrainerRepository)serviceProvider.GetRequiredService<ITrainerRepository>())
-            // The read side of two questions the API used to ask a repository: who owns this
-            // training, and which trainer is behind this Identity user. Both answers are a handful
-            // of columns; both used to cost a whole aggregate.
+            // The read side of three questions that used to cost a whole aggregate, or would have:
+            // who owns this training, which trainer is behind this Identity user, and where a
+            // trainer is reachable as a person. Each answer is a handful of columns, and none of
+            // these ports can write — which is what a post-commit consumer may hold (ADR 0056).
             .AddScoped<ITrainingOwnerQuery, TrainingOwnerQuery>()
             .AddScoped<ITrainerIdentityQuery, TrainerIdentityQuery>()
+            .AddScoped<ITrainerAccountQuery, TrainerAccountQuery>()
             // Scoped like the DbContext it stages rows into: the publisher must share the unit of
             // work of the save that is dispatching the domain events (ADR 0002).
             .AddScoped<IIntegrationEventPublisher, OutboxIntegrationEventPublisher>()
             // The outbox's read side (ADR 0025, hardened per ADR 0033): the worker each host
             // runs, the processor it scopes per batch, the dispatcher that routes a fact to its
-            // consumers, and the eight consumers themselves — the policies that used to run inside
-            // the transaction, reattached after the commit. The options bind above, validated.
+            // consumers, and the fourteen consumers themselves — the policies that used to run
+            // inside the transaction, reattached after the commit, and the six that answer a
+            // sanction (ADR 0056). The options bind above, validated.
             .AddScoped<OutboxProcessor>()
             .AddScoped<IntegrationEventDispatcher>()
             .AddScoped<IIntegrationEventHandler<TrainerCreatedIntegrationEvent>,
                 SendWelcomeEmailWhenTrainerCreatedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<TrainerContactEmailChangedIntegrationEvent>,
                 NotifyPreviousAddressWhenTrainerContactEmailChangedIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<TrainerSuspendedIntegrationEvent>,
+                SendSuspensionNoticeWhenTrainerSuspendedIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<TrainerSuspendedIntegrationEvent>,
+                HideCatalogueWhenTrainerSuspendedIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<TrainerReinstatedIntegrationEvent>,
+                SendReinstatementNoticeWhenTrainerReinstatedIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<TrainerReinstatedIntegrationEvent>,
+                ShowCatalogueWhenTrainerReinstatedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<TrainingCreatedIntegrationEvent>,
                 IndexTrainingWhenTrainingCreatedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<TrainingEditedIntegrationEvent>,
@@ -96,6 +107,10 @@ public static class ServiceCollectionExtensions
                 IndexTrainingWhenTrainingPublishedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<TrainingUnpublishedIntegrationEvent>,
                 RemoveTrainingFromIndexWhenTrainingUnpublishedIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<TrainingWithheldIntegrationEvent>,
+                SendWithholdingNoticeWhenTrainingWithheldIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<TrainingWithheldIntegrationEvent>,
+                RemoveTrainingFromIndexWhenTrainingWithheldIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<TrainingDeletedIntegrationEvent>,
                 RemoveTrainingFromIndexWhenTrainingDeletedIntegrationEventHandler>()
             .AddHostedService<OutboxDeliveryWorker>()

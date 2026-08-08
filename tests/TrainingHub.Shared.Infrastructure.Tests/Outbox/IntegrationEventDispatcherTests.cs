@@ -28,15 +28,18 @@ public sealed class IntegrationEventDispatcherTests
     [
         new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "John", "Doe", "john.doe@example.com"),
         new TrainerContactEmailChangedIntegrationEvent(Guid.NewGuid(), "old@example.com", "new@example.com"),
+        new TrainerSuspendedIntegrationEvent(Guid.NewGuid(), "Repeated breaches of the content policy."),
+        new TrainerReinstatedIntegrationEvent(Guid.NewGuid()),
         new TrainingCreatedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
         new TrainingEditedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
         new TrainingTransferredIntegrationEvent(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()),
         new TrainingPublishedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
         new TrainingUnpublishedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
+        new TrainingWithheldIntegrationEvent(Guid.NewGuid(), Guid.NewGuid(), "A withheld training", "Misleading claims."),
         new TrainingDeletedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
     ];
 
-    private static IntegrationEventDispatcher CreateSutWithoutConsumers() => new([], [], [], [], [], [], [], []);
+    private static IntegrationEventDispatcher CreateSutWithoutConsumers() => new([], [], [], [], [], [], [], [], [], [], []);
 
     private static Mock<IIntegrationEventHandler<TrainerCreatedIntegrationEvent>> CreateConsumer(string name)
     {
@@ -78,7 +81,7 @@ public sealed class IntegrationEventDispatcherTests
     {
         var first = CreateConsumer("First");
         var second = CreateConsumer("Second");
-        var sut = new IntegrationEventDispatcher([first.Object, second.Object], [], [], [], [], [], [], []);
+        var sut = new IntegrationEventDispatcher([first.Object, second.Object], [], [], [], [], [], [], [], [], [], []);
 
         var fact = new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "Ada", "Lovelace", "ada@example.com");
         var outcome = await sut.DispatchAsync(fact, NothingDeliveredYet, CancellationToken.None);
@@ -100,7 +103,7 @@ public sealed class IntegrationEventDispatcherTests
         first.Setup(h => h.HandleAsync(It.IsAny<TrainerCreatedIntegrationEvent>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(thrown);
         var second = CreateConsumer("Second");
-        var sut = new IntegrationEventDispatcher([first.Object, second.Object], [], [], [], [], [], [], []);
+        var sut = new IntegrationEventDispatcher([first.Object, second.Object], [], [], [], [], [], [], [], [], [], []);
 
         var fact = new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "Ada", "Lovelace", "ada@example.com");
         var outcome = await sut.DispatchAsync(fact, NothingDeliveredYet, CancellationToken.None);
@@ -121,7 +124,7 @@ public sealed class IntegrationEventDispatcherTests
     {
         var first = CreateConsumer("First");
         var second = CreateConsumer("Second");
-        var sut = new IntegrationEventDispatcher([first.Object, second.Object], [], [], [], [], [], [], []);
+        var sut = new IntegrationEventDispatcher([first.Object, second.Object], [], [], [], [], [], [], [], [], [], []);
 
         var fact = new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "Ada", "Lovelace", "ada@example.com");
         var outcome = await sut.DispatchAsync(fact, new HashSet<string> { "First" }, CancellationToken.None);

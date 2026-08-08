@@ -324,7 +324,7 @@ public sealed class Training : AggregateRoot<TrainingId>
 
         Status = TrainingStatus.Withheld;
         WithholdingReason = reason;
-        AddDomainEvent(new TrainingWithheldDomainEvent(Id, TrainerId, reason));
+        AddDomainEvent(new TrainingWithheldDomainEvent(Id, TrainerId, Title, reason));
 
         return Result.Success();
     }

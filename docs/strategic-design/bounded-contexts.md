@@ -261,10 +261,14 @@ Registration, authentication, token issuance, lockout.
   ([ADR 0031](../adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md)). The
   protocol is the boundary: only the infrastructure names the mail client, and a rule holds that
   line.
-- **Fed by:** the transactional outbox, end to end. Registration and address changes commit
-  `TrainerCreatedIntegrationEvent` and `TrainerContactEmailChangedIntegrationEvent` with the
-  change itself (ADR 0002, ADR 0024), and the delivery worker hands each fact to the consumer
-  that composes its `EmailMessage` — after the commit, at-least-once (ADR 0025).
+- **Fed by:** the transactional outbox, end to end. Registration, address changes and the
+  administration's decisions commit `TrainerCreatedIntegrationEvent`,
+  `TrainerContactEmailChangedIntegrationEvent`, `TrainerSuspendedIntegrationEvent`,
+  `TrainerReinstatedIntegrationEvent` and `TrainingWithheldIntegrationEvent` with the change
+  itself (ADR 0002, ADR 0024, ADR 0056), and the delivery worker hands each fact to the consumer
+  that composes its `EmailMessage` — after the commit, at-least-once (ADR 0025). The three
+  sanction notices go to the account's address rather than the published contact address, resolved
+  through `ITrainerAccountQuery` when the notice is sent.
 
 ---
 
@@ -272,23 +276,29 @@ Registration, authentication, token issuance, lockout.
 
 **Generic.** Keeping a read model in step with the writes.
 
-- **Language:** `IndexAsync(Guid trainingId, Guid trainerId)` and `RemoveAsync(Guid trainingId)`.
+- **Language:** `IndexAsync(Guid trainingId, Guid trainerId)`, `RemoveAsync(Guid trainingId)`,
+  `HideTrainerCatalogueAsync(Guid trainerId)` and `ShowTrainerCatalogueAsync(Guid trainerId)`.
   Note the primitives: the port speaks `Guid`, never `TrainingId`. Its own remark says so — *"the
   search engine sitting behind it knows nothing about the domain's typed identifiers."* That is a
   published language in miniature. The removal is what lets a withdrawn or deleted training leave
-  the index; without it ADR 0050 would have changed nothing a visitor could observe.
+  the index; without it ADR 0050 would have changed nothing a visitor could observe. The pair that
+  follows it says a trainer's standing in one call: public visibility is composed from two
+  aggregates and stored nowhere on the write side, so the read model composes it too (ADR 0056).
 - **Aggregates:** none.
 - **Status:** port only, one fake implementation that logs. It is nonetheless the seed of the
   public catalogue: the index this port maintains is what a search page would read.
-- **Fed by:** the transactional outbox, end to end. Creating, editing, handing over, publishing,
-  withdrawing or deleting a training commits `TrainingCreatedIntegrationEvent`,
+- **Fed by:** the transactional outbox, end to end. Every change that alters what a visitor
+  would be shown commits its own fact with it — `TrainingCreatedIntegrationEvent`,
   `TrainingEditedIntegrationEvent`, `TrainingTransferredIntegrationEvent`,
-  `TrainingPublishedIntegrationEvent`, `TrainingUnpublishedIntegrationEvent` or
-  `TrainingDeletedIntegrationEvent` with it (ADR 0002, ADR 0024), and the delivery worker replays
-  each fact into this port after the commit (ADR 0025) — the index only ever learns of trainings
-  the database accepted. A transfer is an indexing event like the others: what a public search
-  would show changes, because the training is filed under a different trainer. The last three
-  arrived with ADR 0050, and two of them remove rather than index.
+  `TrainingPublishedIntegrationEvent`, `TrainingUnpublishedIntegrationEvent`,
+  `TrainingDeletedIntegrationEvent`, `TrainingWithheldIntegrationEvent`,
+  `TrainerSuspendedIntegrationEvent` and `TrainerReinstatedIntegrationEvent` — and the delivery
+  worker replays each fact into this port after the commit (ADR 0002, ADR 0024, ADR 0025) — the
+  index only ever learns of trainings the database accepted. A transfer is an indexing event like
+  the others: what a public search would show changes, because the training is filed under a
+  different trainer. The last three are the sanctions (ADR 0056), and the two trainer facts are
+  why this port speaks about a catalogue at all: a suspension writes to no training, so the index
+  is told about its owner once instead of about each training in turn.
 
 ---
 
@@ -317,8 +327,9 @@ for it, and a reader should know that they are not accidents:
 - **`ITrainingSearchIndexer`** is the port a public search would read through, and the facts that
   will maintain its index — `TrainingCreatedIntegrationEvent`, `TrainingEditedIntegrationEvent`,
   `TrainingTransferredIntegrationEvent`, `TrainingPublishedIntegrationEvent`,
-  `TrainingUnpublishedIntegrationEvent`, `TrainingDeletedIntegrationEvent` — already land durably in
-  the outbox on every commit.
+  `TrainingUnpublishedIntegrationEvent`, `TrainingDeletedIntegrationEvent`,
+  `TrainingWithheldIntegrationEvent`, `TrainerSuspendedIntegrationEvent` and
+  `TrainerReinstatedIntegrationEvent` — already land durably in the outbox on every commit.
 - **`GET /Trainer/{id}/photo`** is the one read addressed by identifier rather than by `me`, with a
   year-long immutable cache and an `ETag` cut from the photo's identity. Making it public is
   `[AllowAnonymous]` and nothing else.

@@ -8,12 +8,11 @@ namespace TrainingHub.Shared.Application.EventHandlers;
 /// Writes an audit trail entry when a trainer is placed under sanction.
 /// </summary>
 /// <remarks>
-/// Journalisation rather than announcement, and deliberately so: ADR 0050 gives the suspension no
-/// integration event, because no surface raises it and no context consumes it, and building outbox
-/// plumbing for a fact nobody produces is anticipation. A sanction that left no trace at all would
-/// be worse than one that does, though — so the fact is written down where every other
-/// identity-affecting change is, beside
-/// <see cref="AuditWhenTrainerNameChangedEventHandler"/>.
+/// Journalisation, beside the announcement rather than instead of it. The sanction now leaves the
+/// context as an integration event too (ADR 0056), and the two answer different readers: the fact
+/// tells the trainer and the index what changed, this line tells whoever reads the logs of a
+/// running system, where every other identity-affecting change is written down —
+/// beside <see cref="AuditWhenTrainerNameChangedEventHandler"/>.
 /// <para>
 /// Dispatched inside the unit of work, before the transaction commits, so what this handler writes
 /// joins the same transaction as the change that raised the event.

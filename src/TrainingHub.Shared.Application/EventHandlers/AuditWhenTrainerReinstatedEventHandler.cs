@@ -9,9 +9,10 @@ namespace TrainingHub.Shared.Application.EventHandlers;
 /// </summary>
 /// <remarks>
 /// The other half of the trail: a log that records suspensions and not their lifting says a trainer
-/// is still under sanction long after they are not. Journalisation only — the reinstatement carries
-/// no integration event, for the reason
-/// <see cref="AuditWhenTrainerSuspendedEventHandler"/> gives.
+/// is still under sanction long after they are not. The lifting also travels outward, as
+/// <c>TrainerReinstatedIntegrationEvent</c> — the trainer is told and their catalogue returns to
+/// public view (ADR 0056) — and this line answers a different reader, the same way
+/// <see cref="AuditWhenTrainerSuspendedEventHandler"/> does.
 /// </remarks>
 public sealed class AuditWhenTrainerReinstatedEventHandler(
     ILogger<AuditWhenTrainerReinstatedEventHandler> logger)

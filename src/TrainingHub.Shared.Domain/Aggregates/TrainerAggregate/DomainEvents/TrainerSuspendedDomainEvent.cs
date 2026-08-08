@@ -8,9 +8,10 @@ namespace TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
 /// </summary>
 /// <remarks>
 /// Carries no list of trainings, because the suspension touches none: the catalogue leaves public
-/// view by being derived from its owner's standing. No integration event carries this outward yet —
-/// no surface raises the sanction and no context consumes it, and building outbox plumbing for a
-/// fact nobody produces is anticipation. See ADR 0050.
+/// view by being derived from its owner's standing. See ADR 0050. It now travels outward as
+/// <c>TrainerSuspendedIntegrationEvent</c>: the administrative endpoints raise the sanction and two
+/// consumers wait on it — the notice to the trainer, and the index hiding what they offer
+/// (ADR 0056).
 /// <para>
 /// It carries the reason so that the audit handler can name it. Who acted and when are already
 /// recoverable — ADR 0027's enricher stamps the caller on every line the request causes — and the
