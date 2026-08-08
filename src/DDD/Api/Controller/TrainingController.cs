@@ -42,6 +42,7 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     /// 409 Conflict when a training with the same title already exists for the trainer.
     /// 400 Bad Request with validation errors on failure.
     /// </returns>
+    [Authorize(Policy = ActiveTrainerPolicy.Name)]
     [HttpPost]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -125,6 +126,7 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     /// would be answered 400 by model validation instead of the 428 this endpoint owes it.
     /// </para>
     /// </remarks>
+    [Authorize(Policy = ActiveTrainerPolicy.Name)]
     [Authorize(Policy = TrainingOwnerPolicy.Name)]
     [HttpPut("{trainingId:guid}")]
     [ProducesEntityTag]
@@ -223,6 +225,7 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     /// 404 Not Found if the training does not exist.
     /// 400 Bad Request on validation errors.
     /// </returns>
+    [Authorize(Policy = ActiveTrainerPolicy.Name)]
     [Authorize(Policy = TrainingOwnerPolicy.Name)]
     [HttpDelete("{trainingId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -259,6 +262,7 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     /// 404 Not Found if the training does not exist.
     /// 409 Conflict when the recipient already has a training under the same title.
     /// </returns>
+    [Authorize(Policy = ActiveTrainerPolicy.Name)]
     [Authorize(Policy = TrainingOwnerPolicy.Name)]
     [HttpPost("{trainingId:guid}/transfer")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -300,6 +304,7 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     /// 404 Not Found if the training does not exist.
     /// 409 Conflict when the training was already published.
     /// </returns>
+    [Authorize(Policy = ActiveTrainerPolicy.Name)]
     [Authorize(Policy = TrainingOwnerPolicy.Name)]
     [HttpPost("{trainingId:guid}/publish")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -338,6 +343,7 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     /// 404 Not Found if the training does not exist.
     /// 409 Conflict when the training was already withdrawn.
     /// </returns>
+    [Authorize(Policy = ActiveTrainerPolicy.Name)]
     [Authorize(Policy = TrainingOwnerPolicy.Name)]
     [HttpPost("{trainingId:guid}/unpublish")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

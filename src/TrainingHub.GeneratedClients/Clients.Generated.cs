@@ -4244,6 +4244,19 @@ namespace TrainingHub.GeneratedClients
         [System.Text.Json.Serialization.JsonPropertyName("photoId")]
         public System.Guid? PhotoId { get; set; } = default!;
 
+        /// <summary>
+        /// Where the trainer stands: `Active` or `Suspended`.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("status")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Status { get; set; } = default!;
+
+        /// <summary>
+        /// Why the trainer was suspended, or `null` when they are not.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("suspensionReason")]
+        public string? SuspensionReason { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -4312,12 +4325,18 @@ namespace TrainingHub.GeneratedClients
         public string AcquiredSkills { get; set; } = default!;
 
         /// <summary>
-        /// Whether the training is offered to the public or withdrawn from it: `Published` or
-        /// <br/>`Unpublished`.
+        /// Where the training stands: `Published`, `Unpublished`, or `Withheld` when the
+        /// <br/>administration has taken it out of its owner's hands (ADR 0052).
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("status")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Status { get; set; } = default!;
+
+        /// <summary>
+        /// Why the training was withheld, or `null` when it was not.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("withholdingReason")]
+        public string? WithholdingReason { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

@@ -1,0 +1,35 @@
+@using TrainingHub.Blazor.Client.Infrastructure
+@implements IDisposable
+@inject ITrainerStandingSource StandingSource
+
+@if (_standing.IsSuspended)
+{
+    <MudAlert Severity="Severity.Warning" Class="mb-4" NoIcon="false">
+        <MudText Typo="Typo.subtitle2">Your account is suspended</MudText>
+        @* The administrator's words, shown as written. Two texts describing one sanction is how a
+           product ends up arguing with itself (ADR 0057). *@
+        <MudText Typo="Typo.body2" Class="mt-1">@_standing.Reason</MudText>
+        <MudText Typo="Typo.body2" Class="mt-2">
+            You can still read everything of yours; you cannot change anything while this lasts.
+            There is no appeal form — reply to the email we sent you if you believe this is a mistake.
+        </MudText>
+    </MudAlert>
+}
+
+@code {
+    private TrainerStanding _standing = TrainerStanding.Active;
+
+    protected override async Task OnInitializedAsync()
+    {
+        StandingSource.Changed += OnChanged;
+        _standing = await StandingSource.GetAsync();
+    }
+
+    private async void OnChanged()
+    {
+        _standing = await StandingSource.GetAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => StandingSource.Changed -= OnChanged;
+}

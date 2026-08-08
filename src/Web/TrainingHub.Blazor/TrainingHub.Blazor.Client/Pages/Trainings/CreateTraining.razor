@@ -5,7 +5,9 @@
 @using TrainingHub.GeneratedClients
 @inject ITrainingClient TrainingClient
 @inject NavigationManager NavigationManager
+@using TrainingHub.Blazor.Client.Infrastructure
 @inject ISnackbar Snackbar
+@inject ITrainerStandingSource StandingSource
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="my-4">
     <MudPaper Elevation="4" Class="pa-8">
@@ -102,7 +104,7 @@
                     </MudButton>
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
-                               Disabled="@(!_isValid || !HasSelectedTopics || _isLoading)"
+                               Disabled="@(!_isValid || !HasSelectedTopics || _isLoading || _standing.IsSuspended)"
                                OnClick="HandleSubmit">
                         @if (_isLoading)
                         {
@@ -121,6 +123,10 @@
 </MudContainer>
 
 @code {
+    // Read once per page through the shared source, so the layout's banner and these controls never
+    // disagree about the same sanction (ADR 0057).
+    private TrainerStanding _standing = TrainerStanding.Active;
+
     /// <summary>412, as the API answers an edit based on a version that is no longer current.</summary>
     private const int StatusPreconditionFailed = 412;
 
@@ -166,6 +172,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _standing = await StandingSource.GetAsync();
         if (!IsEditMode) return;
 
         _isLoadingData = true;

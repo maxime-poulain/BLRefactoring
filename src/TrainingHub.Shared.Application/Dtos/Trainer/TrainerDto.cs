@@ -50,4 +50,23 @@ public sealed class TrainerDto
     /// previous one out of its cache.
     /// </remarks>
     public Guid? PhotoId { get; init; }
+
+    /// <summary>
+    /// Where the trainer stands: <c>Active</c> or <c>Suspended</c>.
+    /// </summary>
+    /// <remarks>
+    /// Read by the trainer themselves and by nobody else — this model answers <c>/Trainer/me</c>.
+    /// It is here because a sanction the product will not name to the person it lands on is one
+    /// they can only discover by failing to do something (ADR 0053, ADR 0057).
+    /// </remarks>
+    public required string Status { get; init; }
+
+    /// <summary>
+    /// Why the trainer was suspended, or <see langword="null"/> when they are not.
+    /// </summary>
+    /// <remarks>
+    /// Present if and only if <see cref="Status"/> is <c>Suspended</c> — the invariant ADR 0052
+    /// states on the aggregate, carried out to the reader it is about.
+    /// </remarks>
+    public string? SuspensionReason { get; init; }
 }

@@ -40,6 +40,7 @@ public sealed class TrainingController(
     /// <summary>
     /// Creates a training owned by the calling trainer.
     /// </summary>
+    [Authorize(Policy = ActiveTrainerPolicy.Name)]
     [HttpPost]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -133,6 +134,7 @@ public sealed class TrainingController(
     /// endpoints, not a property of CQRS.
     /// </para>
     /// </remarks>
+    [Authorize(Policy = ActiveTrainerPolicy.Name)]
     [Authorize(Policy = TrainingOwnerPolicy.Name)]
     [HttpPut("{trainingId:guid}")]
     [ProducesEntityTag]
@@ -184,6 +186,7 @@ public sealed class TrainingController(
     /// <summary>
     /// Deletes a training the caller owns.
     /// </summary>
+    [Authorize(Policy = ActiveTrainerPolicy.Name)]
     [Authorize(Policy = TrainingOwnerPolicy.Name)]
     [HttpDelete("{trainingId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -219,6 +222,7 @@ public sealed class TrainingController(
     /// 404 Not Found if the training does not exist.
     /// 409 Conflict when the recipient already has a training under the same title.
     /// </returns>
+    [Authorize(Policy = ActiveTrainerPolicy.Name)]
     [Authorize(Policy = TrainingOwnerPolicy.Name)]
     [HttpPost("{trainingId:guid}/transfer")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -260,6 +264,7 @@ public sealed class TrainingController(
     /// 404 Not Found if the training does not exist.
     /// 409 Conflict when the training was already published.
     /// </returns>
+    [Authorize(Policy = ActiveTrainerPolicy.Name)]
     [Authorize(Policy = TrainingOwnerPolicy.Name)]
     [HttpPost("{trainingId:guid}/publish")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -299,6 +304,7 @@ public sealed class TrainingController(
     /// 404 Not Found if the training does not exist.
     /// 409 Conflict when the training was already withdrawn.
     /// </returns>
+    [Authorize(Policy = ActiveTrainerPolicy.Name)]
     [Authorize(Policy = TrainingOwnerPolicy.Name)]
     [HttpPost("{trainingId:guid}/unpublish")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

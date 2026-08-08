@@ -94,6 +94,37 @@ public sealed class PolicyRegistrationTests
             .GetServices<IAuthorizationHandler>()
             .Should().ContainSingle(handler => handler is TrainingOwnerAuthorizationHandler);
 
+    /// <summary>
+    /// The standing policy, carries the handler that decides it.
+    /// </summary>
+    /// <remarks>
+    /// The second policy whose question only the database can answer, and the second that fails
+    /// silently without its handler: a requirement nothing decides never succeeds, so every write of
+    /// the trainer surface would answer <c>403</c> to everybody (ADR 0053).
+    /// </remarks>
+    [Fact]
+    public void TheStandingPolicy_CarriesTheHandlerThatDecidesIt() =>
+        Services().BuildServiceProvider()
+            .GetServices<IAuthorizationHandler>()
+            .Should().ContainSingle(handler => handler is ActiveTrainerAuthorizationHandler);
+
+    /// <summary>
+    /// The standing policy, demands a trainer who is not suspended.
+    /// </summary>
+    [Fact]
+    public async Task TheStandingPolicy_DemandsATrainerWhoIsNotSuspended()
+    {
+        var policy = await PolicyProvider().GetPolicyAsync(ActiveTrainerPolicy.Name);
+
+        policy!.Requirements.Should().ContainSingle().Which.Should().BeOfType<ActiveTrainerRequirement>();
+    }
+
+    private sealed class StubTrainerStandingQuery : ITrainerStandingQuery
+    {
+        public Task<bool> IsSuspendedAsync(Guid trainerId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
+    }
+
     private static IAuthorizationPolicyProvider PolicyProvider() =>
         Services().BuildServiceProvider().GetRequiredService<IAuthorizationPolicyProvider>();
 
@@ -108,6 +139,7 @@ public sealed class PolicyRegistrationTests
             .AddLogging()
             .AddHttpContextAccessor()
             .AddSingleton<ITrainingOwnerQuery, StubTrainingOwnerQuery>()
+            .AddSingleton<ITrainerStandingQuery, StubTrainerStandingQuery>()
             .AddApiAuthorization();
 
     private sealed class StubTrainingOwnerQuery : ITrainingOwnerQuery

@@ -39,7 +39,9 @@ public static class ApplicationToHttpMappings
             Lastname = trainer.Lastname,
             ContactEmail = trainer.ContactEmail,
             Bio = trainer.Bio,
-            PhotoId = trainer.PhotoId
+            PhotoId = trainer.PhotoId,
+            Status = trainer.Status,
+            SuspensionReason = trainer.SuspensionReason
         };
     }
 
@@ -65,7 +67,8 @@ public static class ApplicationToHttpMappings
             Description = training.Description,
             Prerequisites = training.Prerequisites,
             AcquiredSkills = training.AcquiredSkills,
-            Status = training.Status
+            Status = training.Status,
+            WithholdingReason = training.WithholdingReason
         };
     }
 

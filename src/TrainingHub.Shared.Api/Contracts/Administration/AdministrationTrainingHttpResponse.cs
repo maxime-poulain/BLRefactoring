@@ -5,14 +5,14 @@ namespace TrainingHub.Shared.Api.Contracts.Administration;
 /// </summary>
 /// <remarks>
 /// Its own contract rather than <c>TrainingHttpResponse</c> with a field added (ADR 0055). It
-/// carries six members where that one carries nine, and they are not a subset: moderating a
+/// carries six members where that one carries ten, and they are not a subset: moderating a
 /// training is decided on the training itself, at its own address, not on a row of a list — but a
 /// row has to say whose training it is, which a trainer's own listing never needs to.
 /// <para>
-/// One consequence is worth stating rather than discovering. Because the withholding reason lives
-/// here and not on <c>TrainingHttpResponse</c>, a trainer whose training was withheld still cannot
-/// read why through their own listing — the consequence ADR 0052 named and this record leaves open.
-/// It closes when the trainer's own surface learns to show it.
+/// The consequence ADR 0055 left open here is closed, and by addition rather than by merging: the
+/// withholding reason lives on <c>TrainingHttpResponse</c> as well, so a trainer reads why their own
+/// training was taken down (ADR 0057). The two contracts still meet nowhere — this one lists
+/// everybody's trainings and that one answers about the caller's.
 /// </para>
 /// </remarks>
 public sealed class AdministrationTrainingHttpResponse

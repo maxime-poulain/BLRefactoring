@@ -11,17 +11,17 @@ namespace TrainingHub.Shared.Api.Extensions;
 public static class AuthorizationExtensions
 {
     /// <summary>
-    /// Registers the three policies both hosts publish, and the handler the first of them needs.
+    /// Registers the four policies both hosts publish, and the two handlers they need.
     /// </summary>
     /// <remarks>
-    /// Registering the requirement and its handler together is the point: a policy without its
+    /// Registering the requirements and their handlers together is the point: a policy without its
     /// handler never succeeds, and a handler without its policy is never consulted. Kept as one
-    /// call so a host cannot end up with half of the pair — and, now that there are three policies,
-    /// so it cannot end up with two of the three either.
+    /// call so a host cannot end up with half of a pair — nor with three of the four policies.
     /// <para>
-    /// Only <see cref="TrainingOwnerPolicy"/> needs a handler of its own, because ownership is a
-    /// question only the database can answer. The other two are decided from the token the caller
-    /// already presented, and the framework's own requirements read it.
+    /// Two of them need a handler of their own, because their questions are ones only the database
+    /// can answer: who owns a training, and whether a trainer is under suspension. The other two
+    /// are decided from the token the caller already presented, and the framework's own
+    /// requirements read it.
     /// </para>
     /// </remarks>
     public static IServiceCollection AddApiAuthorization(this IServiceCollection services)
@@ -29,11 +29,18 @@ public static class AuthorizationExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddScoped<IAuthorizationHandler, TrainingOwnerAuthorizationHandler>();
+        services.AddScoped<IAuthorizationHandler, ActiveTrainerAuthorizationHandler>();
 
         return services.AddAuthorization(options =>
         {
             options.AddPolicy(TrainingOwnerPolicy.Name, policy =>
                 policy.Requirements.Add(new TrainingOwnerRequirement()));
+
+            // Named at each write rather than carried by ApiControllerBase: a suspended trainer
+            // keeps every read, so a policy on the base would take their own profile and catalogue
+            // away from them — the alternative ADR 0053 rejected by name.
+            options.AddPolicy(ActiveTrainerPolicy.Name, policy =>
+                policy.Requirements.Add(new ActiveTrainerRequirement()));
 
             // The trainer surface, carried by ApiControllerBase rather than named at each action:
             // an account with no trainer — an administrator — must meet a 403 and not the 500 that

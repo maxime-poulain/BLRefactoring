@@ -51,4 +51,22 @@ public sealed class TrainerHttpResponse
     /// appends it to that address gets the new portrait instead of the one it already has.
     /// </remarks>
     public Guid? PhotoId { get; init; }
+
+    /// <summary>Where the trainer stands: <c>Active</c> or <c>Suspended</c>.</summary>
+    /// <remarks>
+    /// This contract answers <c>GET /Trainer/me</c>, so the only person who reads it is the trainer
+    /// it describes. That is what makes publishing their standing here a different thing from the
+    /// administration's listing, which reads everybody's (ADR 0055, ADR 0057).
+    /// </remarks>
+    public required string Status { get; init; }
+
+    /// <summary>
+    /// Why the trainer was suspended, or <see langword="null"/> when they are not.
+    /// </summary>
+    /// <remarks>
+    /// The administrator's own words, unedited. A product that sanctions somebody should be able to
+    /// tell them why itself, rather than leaving an email they may never have received as the only
+    /// account of the decision (ADR 0053).
+    /// </remarks>
+    public string? SuspensionReason { get; init; }
 }

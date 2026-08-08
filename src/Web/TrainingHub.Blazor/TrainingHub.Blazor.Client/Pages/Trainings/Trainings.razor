@@ -4,7 +4,9 @@
 @inject ITrainingClient TrainingClient
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
+@using TrainingHub.Blazor.Client.Infrastructure
 @inject ISnackbar Snackbar
+@inject ITrainerStandingSource StandingSource
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="my-4">
     <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
@@ -12,7 +14,8 @@
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    StartIcon="@Icons.Material.Filled.Add"
-                   Href="/trainings/create">
+                   Href="/trainings/create"
+                   Disabled="@_standing.IsSuspended">
             Create Training
         </MudButton>
     </MudStack>
@@ -38,7 +41,8 @@
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.Add"
-                       Href="/trainings/create">
+                       Href="/trainings/create"
+                   Disabled="@_standing.IsSuspended">
                 Create Training
             </MudButton>
         </MudPaper>
@@ -92,7 +96,8 @@
                                hide. *@
                             <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                            Color="Color.Primary"
-                                           Href="@($"/trainings/edit/{training.Id}")" />
+                                           Href="@($"/trainings/edit/{training.Id}")"
+                                           Disabled="@_standing.IsSuspended" />
                             @* Withdrawing replaced deleting here, and deleting is not offered at
                                all: it is still on the API, for the training created by mistake and
                                for erasure on request, but it is no longer the button a trainer
@@ -100,12 +105,14 @@
                             @if (IsPublished(training))
                             {
                                 <MudIconButton Icon="@Icons.Material.Filled.VisibilityOff"
+                                               Disabled="@_standing.IsSuspended"
                                                Color="Color.Warning"
                                                OnClick="@(() => OpenUnpublishDialog(training))" />
                             }
                             else
                             {
                                 <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                               Disabled="@_standing.IsSuspended"
                                                Color="Color.Success"
                                                OnClick="@(() => PublishTraining(training.Id))" />
                             }
@@ -127,6 +134,10 @@
 </MudContainer>
 
 @code {
+    // Read once per page through the shared source, so the layout's banner and these controls never
+    // disagree about the same sanction (ADR 0057).
+    private TrainerStanding _standing = TrainerStanding.Active;
+
     private const int StatusForbidden = 403;
     private const int StatusNotFound = 404;
 
@@ -160,6 +171,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _standing = await StandingSource.GetAsync();
         await LoadTrainings();
         StateHasChanged();
     }

@@ -258,11 +258,12 @@ public sealed class Training : AggregateRoot<TrainingId>
     /// Withdraws this training from public view.
     /// </summary>
     /// <remarks>
-    /// Takes no port, and that is a decision rather than an omission: withdrawing shrinks what the
-    /// public sees, so no rule about a trainer's standing or capacity can stand in its way. A
-    /// suspended trainer may unpublish, which is part of leaving them able to repair what earned
-    /// them the sanction (ADR 0050). The training keeps its title and its rows; what it gives up is
-    /// its place in the quota and its entry in the search index.
+    /// Takes no port, and that is still a decision rather than an omission — but no longer the same
+    /// one. Withdrawing shrinks what the public sees, so no rule about capacity can stand in its
+    /// way; a suspended trainer may not unpublish either, and that refusal is the boundary's rather
+    /// than this aggregate's (ADR 0053). The signature stays empty so the domain does not grow a
+    /// rule it would answer for one caller twice. The training keeps its title and its rows; what it
+    /// gives up is its place in the quota and its entry in the search index.
     /// </remarks>
     /// <returns>Success, or a refusal when the training was already withdrawn.</returns>
     public Result Unpublish()

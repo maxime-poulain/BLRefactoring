@@ -60,4 +60,14 @@ public sealed class TrainingDto
     /// this field (ADR 0050).
     /// </remarks>
     public required string Status { get; init; }
+
+    /// <summary>
+    /// Why the training was withheld, or <see langword="null"/> when it was not.
+    /// </summary>
+    /// <remarks>
+    /// Present if and only if <see cref="Status"/> is <c>Withheld</c>. Its owner reads it here:
+    /// a state the interface renders as merely "not published" would hide the one thing they need
+    /// to know (ADR 0052, ADR 0057).
+    /// </remarks>
+    public string? WithholdingReason { get; init; }
 }
