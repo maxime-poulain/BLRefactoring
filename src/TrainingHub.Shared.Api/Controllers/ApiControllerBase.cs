@@ -1,3 +1,4 @@
+using TrainingHub.Shared.Api.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -5,8 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace TrainingHub.Shared.Api.Controllers;
 
 /// <summary>
-/// Base class for the API controllers of both hosts: authenticated by default, on the
-/// conventional route, with the <c>[ApiController]</c> behaviours.
+/// Base class for the trainer-facing controllers of both hosts: authenticated by default, behind
+/// <see cref="TrainerPolicy"/>, on the conventional route, with the <c>[ApiController]</c>
+/// behaviours.
 /// </summary>
 /// <remarks>
 /// <see langword="abstract"/> on purpose. <c>[ApiController]</c> derives from
@@ -30,11 +32,19 @@ namespace TrainingHub.Shared.Api.Controllers;
 /// place of the 401. Every error body this API actually sends is declared explicitly as
 /// <c>ProblemDetails</c> at its own action, so nothing else relies on the default.
 /// </para>
+/// <para>
+/// The 403 joined it when the administrator did (ADR 0051). It used to be the answer of two
+/// actions — the ones the ownership policy guards — and is now the answer of every one of them: a
+/// caller whose token carries no <c>trainer_id</c> is refused here, before any action runs.
+/// Declared for the same reason as the 401, and bodiless for the same reason: the authorization
+/// middleware writes it, and it writes nothing.
+/// </para>
 /// </remarks>
-[Authorize]
+[Authorize(Policy = TrainerPolicy.Name)]
 [ApiController]
 [Route("[controller]")]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(StatusCodes.Status403Forbidden)]
 [ProducesErrorResponseType(typeof(void))]
 public abstract class ApiControllerBase : ControllerBase
 {

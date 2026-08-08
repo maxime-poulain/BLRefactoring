@@ -26,10 +26,13 @@ public sealed class CurrentUserService(IHttpContextAccessor httpContextAccessor)
     /// The trainer the caller is, read from the <c>trainer_id</c> claim.
     /// </summary>
     /// <exception cref="InvalidOperationException">
-    /// The request carries no <c>trainer_id</c> claim.
+    /// The request carries no <c>trainer_id</c> claim. Every route that reaches this is behind
+    /// <see cref="Authorization.TrainerPolicy"/>, which refuses a caller who is nobody's trainer
+    /// before an action runs, so the absence of the claim is a configuration fault rather than a
+    /// caller error — an administrator meets a <c>403</c>, not this.
     /// </exception>
     public Guid TrainerId =>
-        httpContextAccessor.HttpContext?.User.FindFirst("trainer_id")?.Value is { } trainerId
+        httpContextAccessor.HttpContext?.User.FindFirst(TrainerClaims.TrainerId)?.Value is { } trainerId
             ? Guid.Parse(trainerId)
             : throw new InvalidOperationException(
                 "The request carries no trainer_id claim, so there is no trainer to act as.");
