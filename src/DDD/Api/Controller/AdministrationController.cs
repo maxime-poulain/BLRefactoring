@@ -1,13 +1,20 @@
 using TrainingHub.DDD.Application.Services.TrainerServices;
 using TrainingHub.DDD.Application.Services.TrainingServices;
 using TrainingHub.Shared.Api.Contracts;
+using TrainingHub.Shared.Api.Contracts.Administration;
+using TrainingHub.Shared.Api.Contracts.Mappings;
+using TrainingHub.Shared.Api.Contracts.Pagination;
 using TrainingHub.Shared.Api.Contracts.Trainers;
 using TrainingHub.Shared.Api.Contracts.Trainings;
 using TrainingHub.Shared.Api.Controllers;
+using TrainingHub.Shared.Application.Dtos.Trainer;
+using TrainingHub.Shared.Application.Dtos.Training;
 using TrainingHub.Shared.Api.Http;
 using TrainingHub.Shared.Common.Errors;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
+using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 using Microsoft.AspNetCore.Mvc;
 
 namespace TrainingHub.DDD.Api.Controller;
@@ -31,6 +38,80 @@ public sealed class AdministrationController(
     ITrainingApplicationService trainingApplicationService)
     : AdministrationControllerBase
 {
+    /// <summary>
+    /// Lists trainers, newest first, narrowed by standing and by a term (ADR 0055).
+    /// </summary>
+    /// <remarks>
+    /// The read this API withdrew, given back to one role. <c>/Trainer/all</c> served every
+    /// trainer's name and contact address to any authenticated caller, enumerable; this serves the
+    /// same columns to the role that can suspend them, one bounded page at a time.
+    /// <para>
+    /// The status is resolved here rather than one layer in: an unknown name has already been
+    /// refused by <c>[KnownStatus]</c> at model binding, so what reaches
+    /// <c>TrainerStatus.FromName</c> is a name it knows.
+    /// </para>
+    /// </remarks>
+    /// <param name="filter">The standing and the term, from the query string.</param>
+    /// <param name="pagination">The page asked for.</param>
+    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
+    /// <returns>
+    /// 200 OK with one page of trainers.
+    /// 400 Bad Request when the status names nothing, the term is too long, or the page is out of range.
+    /// </returns>
+    [HttpGet("trainers")]
+    [ProducesResponseType(typeof(PagedHttpResponse<AdministrationTrainerHttpResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedHttpResponse<AdministrationTrainerHttpResponse>>> GetTrainersAsync(
+        [FromQuery] AdministrationTrainerFilterHttpRequest? filter,
+        [FromQuery] PaginationHttpRequest? pagination,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new AdministrationTrainerRequest
+        {
+            Status = string.IsNullOrWhiteSpace(filter?.Status) ? null : TrainerStatus.FromName(filter.Status),
+            Search = filter?.Search
+        };
+
+        var page = await trainerApplicationService.GetAdministeredPageAsync(
+            request, pagination.ToPageRequest(), cancellationToken);
+
+        return Ok(page.ToHttp(trainers => trainers.ToHttp()));
+    }
+
+    /// <summary>
+    /// Lists trainings across every trainer, newest first, narrowed by state and by a term
+    /// (ADR 0055).
+    /// </summary>
+    /// <remarks>
+    /// Asking for <c>Withheld</c> is what this exists for: nothing else in this API can find what
+    /// the administration has taken down.
+    /// </remarks>
+    /// <param name="filter">The state and the term, from the query string.</param>
+    /// <param name="pagination">The page asked for.</param>
+    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
+    /// <returns>
+    /// 200 OK with one page of trainings.
+    /// 400 Bad Request when the status names nothing, the term is too long, or the page is out of range.
+    /// </returns>
+    [HttpGet("trainings")]
+    [ProducesResponseType(typeof(PagedHttpResponse<AdministrationTrainingHttpResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedHttpResponse<AdministrationTrainingHttpResponse>>> GetTrainingsAsync(
+        [FromQuery] AdministrationTrainingFilterHttpRequest? filter,
+        [FromQuery] PaginationHttpRequest? pagination,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new AdministrationTrainingRequest
+        {
+            Status = string.IsNullOrWhiteSpace(filter?.Status) ? null : TrainingStatus.FromName(filter.Status)
+        };
+
+        var page = await trainingApplicationService.GetAdministeredPageAsync(
+            request, pagination.ToPageRequest(), cancellationToken);
+
+        return Ok(page.ToHttp(trainings => trainings.ToHttp()));
+    }
+
     /// <summary>
     /// Places a trainer under sanction: their catalogue leaves public view and cannot grow.
     /// </summary>

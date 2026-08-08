@@ -98,6 +98,13 @@ public sealed class TrainingStatus : ValueObject
     /// column this type was written to, so a value the domain does not know means the row is
     /// corrupt — which no caller can be asked to handle and none should silently read as
     /// <see cref="Published"/>.
+    /// <para>
+    /// The administrative filter is a second caller and does not change that (ADR 0055). It hands
+    /// over a name a <c>[KnownStatus]</c> annotation has already checked against
+    /// <see cref="GetStatuses"/> at model binding, so an unknown one is a <c>400</c> naming the
+    /// parameter and never reaches here. What would reach here is a caller who skipped the
+    /// boundary, and for that one throwing is still the right answer.
+    /// </para>
     /// </remarks>
     /// <param name="name">The persisted name.</param>
     /// <returns>The status that name spells.</returns>

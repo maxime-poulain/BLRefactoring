@@ -1,11 +1,13 @@
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Create;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Edit;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetAdministered;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetById;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Reinstate;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Suspend;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Create;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Delete;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Edit;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetAdministered;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetById;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetMine;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Publish;
@@ -13,6 +15,7 @@ using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Release;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Transfer;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Unpublish;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Withhold;
+using TrainingHub.Shared.Api.Contracts.Administration;
 using TrainingHub.Shared.Api.Contracts.Auth;
 using TrainingHub.Shared.Api.Contracts.Mappings;
 using TrainingHub.Shared.Api.Contracts.Pagination;
@@ -161,6 +164,31 @@ public static class HttpToApplicationMappings
 
     /// <summary>Builds the command lifting the interdiction on a withheld training (ADR 0052).</summary>
     public static ReleaseTrainingCommand ToReleaseTrainingCommand(Guid trainingId) => new(trainingId);
+
+    /// <summary>Builds the query reading one page of trainers for the administration (ADR 0055).</summary>
+    /// <remarks>
+    /// Two bound objects become one message. The filter and the paging arrive as separate
+    /// <c>[FromQuery]</c> contracts, because the page coordinates are the same everywhere and the
+    /// criteria are this endpoint's own; joining them is the mapping's job, exactly as it is for a
+    /// route identifier and a body.
+    /// </remarks>
+    public static GetAdministeredTrainersQuery ToQuery(
+        this AdministrationTrainerFilterHttpRequest? filter,
+        PaginationHttpRequest? pagination) => new()
+        {
+            Status = filter?.Status,
+            Search = filter?.Search,
+            Paging = pagination.ToPageRequest()
+        };
+
+    /// <summary>Builds the query reading one page of trainings for the administration (ADR 0055).</summary>
+    public static GetAdministeredTrainingsQuery ToQuery(
+        this AdministrationTrainingFilterHttpRequest? filter,
+        PaginationHttpRequest? pagination) => new()
+        {
+            Status = filter?.Status,
+            Paging = pagination.ToPageRequest()
+        };
 
     /// <summary>Builds the query reading one trainer.</summary>
     public static GetTrainerByIdQuery ToGetTrainerByIdQuery(Guid trainerId) => new(trainerId);

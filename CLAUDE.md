@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 54 architecture decision records.
+2. `docs/adr/README.md` — the index of 55 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 164 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 165 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -187,6 +187,26 @@ as long as the diff exists and is read by whoever arrives next. A repository who
 language according to who happened to ask for the change is one that has to be read twice. Translate
 at the boundary rather than writing across it: think in whichever language the discussion is in, and
 write the artefact in English.
+
+**Pushing a `claude/*` branch means opening its pull request, without being asked.** This paragraph
+is that request, made once and standing: work that is finished is work a reviewer can see, and a
+branch sitting on the remote with no pull request is finished work nobody has been told about. So
+the last step of the push is `gh pr create` — or the equivalent GitHub tool — against the default
+branch, every time, with no confirmation sought.
+
+Three things bound it, and they are what make a standing authorisation safe:
+
+- **One pull request per branch.** If the branch already has an open one, the push updates it —
+  including after a force-push — and the description is rewritten to describe what the branch now
+  contains. Opening a second is how a review ends up split across two threads.
+- **A merged pull request is finished.** Follow-up work restarts the branch from the default branch
+  and gets a *new* pull request; it is never stacked onto merged history.
+- **Opening is not following.** Do not subscribe to the pull request's activity, poll its checks or
+  schedule a check-in unless asked to. Opening it hands the work over; watching it is a separate
+  request.
+
+Everything else about the artefact still applies: English throughout, the title and description
+written to the conventions below, and a repository template filled in when there is one.
 
 **A pull request Claude Code owns carries one commit, and stays that way.** After every push to a
 `claude/*` branch, squash the branch back to a single commit against the base, force-push it, and

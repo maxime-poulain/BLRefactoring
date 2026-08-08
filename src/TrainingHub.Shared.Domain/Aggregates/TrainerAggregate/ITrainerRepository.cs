@@ -1,3 +1,6 @@
+using TrainingHub.Shared.Common.Pagination;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
+
 namespace TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 
 /// <summary>
@@ -45,6 +48,38 @@ public interface ITrainerRepository
     /// <param name="id">The identifier to look for.</param>
     /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     Task<bool> ExistsAsync(TrainerId id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reads one page of trainers, newest first, optionally narrowed to a standing and to a term.
+    /// </summary>
+    /// <remarks>
+    /// The first question here that carries criteria, and the one ADR 0055 exists to bound. The line
+    /// it draws is <em>named criteria, never a predicate</em>: a status the domain declares and a
+    /// term to look for, both of them parameters this method is free to ignore or reinterpret —
+    /// never an expression, a specification or a queryable, which would hand a caller the shape of
+    /// the query and make this a query surface rather than a question. ADR 0028 drew that line at
+    /// zero criteria; this record moves it and says where it now is.
+    /// <para>
+    /// The order is not among them. <c>NewestFirst</c> is the only order any paged read here uses,
+    /// which is what keeps the total order ADR 0001 requires and stops the two hosts paging
+    /// differently.
+    /// </para>
+    /// <para>
+    /// <paramref name="search"/> is matched against the trainer's first name, last name and contact
+    /// address. What that costs — a <c>LIKE '%term%'</c> no index can seek — is recorded in ADR 0055
+    /// rather than discovered, together with what replaces it when the catalogue outgrows it.
+    /// </para>
+    /// </remarks>
+    /// <param name="status">The standing to narrow to, or <see langword="null"/> for every trainer.</param>
+    /// <param name="search">The term to look for, or <see langword="null"/> or blank for no term.</param>
+    /// <param name="paging">The page asked for.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    /// <returns>The page, empty when nothing matches.</returns>
+    Task<PagedResult<Trainer>> GetPageAsync(
+        TrainerStatus? status,
+        string? search,
+        PageRequest paging,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Stages a new <see cref="Trainer"/> entity for insertion.

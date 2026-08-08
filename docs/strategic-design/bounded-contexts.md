@@ -146,7 +146,7 @@ holds a `Trainer` instance.
 |---|---|---|
 | **Trainer** | Everything in this context, and only to their own data | Implemented — `ICurrentUserService.TrainerId` |
 | **Visitor** | Register, then sign in | Implemented |
-| **Administrator** | Suspend and reinstate a trainer; withhold and release a training | Implemented — four endpoints under `/Administration`, behind the `Administrator` role (ADR 0051, ADR 0052). Removing a trainer is not among them: `Trainer.MarkForDeletion` states the rule and no command reaches it |
+| **Administrator** | Suspend and reinstate a trainer; withhold and release a training; list either, filtered by state | Implemented — six endpoints under `/Administration`, behind the `Administrator` role (ADR 0051, ADR 0052, ADR 0055). Removing a trainer is not among them: `Trainer.MarkForDeletion` states the rule and no command reaches it |
 
 The third row has said three different things in three commits, and the sequence is the point. It
 began by saying the permission was absent — no role was ever granted, so the rules it named could

@@ -662,7 +662,13 @@ answers to — worn by the aggregate as `Training.IsOwnedBy` — and
 `Training` aggregate enforces. What specifications are **not** here is a query DSL: they carry no
 ordering and no paging (ADR 0001), repository contracts expose named questions rather than
 specification-taking members, and the CQRS readers never touch one — their queries are SQL shaped
-for a screen, and three architecture rules hold each of those lines.
+for a screen, and four architecture rules hold each of those lines.
+
+A named question may now carry **named criteria** — the administrative listings filter by a state
+and by a term ([ADR 0055](docs/adr/0055-let-the-administration-read-what-the-catalogue-may-not.md))
+— and that is exactly where the fourth rule sits. A status is a value the adapter interprets; an
+`Expression<Func<T, bool>>` is a query the caller wrote, and refusing the bare shape is what keeps
+the line at *named criteria* from being the line at *anything*.
 
 ---
 
@@ -733,7 +739,7 @@ neither can end up holding two of the three:
 |---|---|---|
 | `TrainingOwner` | the caller owns the training the route names | five write actions |
 | `Trainer` | the caller is somebody's trainer | `ApiControllerBase`, so every trainer action |
-| `Administrator` | the `Administrator` role | `AdministrationControllerBase`, so the four administrative actions |
+| `Administrator` | the `Administrator` role | `AdministrationControllerBase`, so the six administrative actions |
 
 `TrainingOwner` checks ownership only: a training that does not exist lets the policy succeed so the
 action can answer `404` rather than `403` — what the caller learns is that no training of theirs
@@ -802,9 +808,11 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 | `POST` | `/Administration/trainers/{trainerId}/reinstate` | Administrator only. No body. `204`, `400`, `404`, `409` when the trainer was not under sanction |
 | `POST` | `/Administration/trainings/{trainingId}/withhold` | Administrator only. The body carries the reason. Takes the training out of public view where its owner cannot put it back (ADR 0052). `204`, `400`, `404`, `409` when it was already withheld |
 | `POST` | `/Administration/trainings/{trainingId}/release` | Administrator only. No body. Lifts the interdiction; the training lands on *unpublished*, and publishing is the owner's call again. `204`, `400`, `404`, `409` when it was not withheld |
+| `GET` | `/Administration/trainers` | Administrator only. One page of trainers, newest first. `?status=` (`Active`, `Suspended`), `?search=` on the name or the contact address, `?page=`, `?pageSize=`. `200`, `400` when the status names nothing or the page is out of range |
+| `GET` | `/Administration/trainings` | Administrator only. One page of trainings across every trainer, newest first. `?status=` (`Published`, `Unpublished`, `Withheld`), `?page=`, `?pageSize=`. No `?search=`: the title is a value-converted column EF Core cannot match a substring against, which [ADR 0055](docs/adr/0055-let-the-administration-read-what-the-catalogue-may-not.md) records. `200`, `400` |
 
-Nineteen endpoints, and not one of them lets a trainer reach what another trainer owns. The four
-under `/Administration` act on somebody else's aggregate by design and are the only four that do —
+Twenty-one endpoints, and not one of them lets a trainer reach what another trainer owns. The six
+under `/Administration` act on somebody else's aggregate by design and are the only six that do —
 behind a role that is granted by hand and by no endpoint at all (ADR 0051). They are grouped by the
 authority they exercise rather than by the resource they act on, which is what that record says an
 administrator is: a permission, not a context. There used to be
@@ -813,6 +821,14 @@ five more — `/Trainer/all`, `/Trainer/{id}`, `/Training/all`, `/Training/by-tr
 and bio to any authenticated caller, enumerable. Nothing in the application asked for them: the
 front end reads the signed-in trainer's profile and that trainer's own trainings. They were removed
 rather than restricted, because a catalogue read scoped to one caller is not a catalogue read.
+
+**Two of them have come back, and the difference is the audience rather than the shape**
+([ADR 0055](docs/adr/0055-let-the-administration-read-what-the-catalogue-may-not.md)). The two
+`/Administration` listings serve the same columns `/Trainer/all` served — a name, a contact address
+— to the one role that can act on them, and to nobody else: a trainer's token is answered `403` on
+both, which is the whole of what makes them a different read. They are paged under the same cap as
+every other list, filtered by a state the domain declares, and they exist because the four
+administrative decisions take an identifier that nothing else hands out.
 
 What could not be removed was locked instead. `GET /Training/{id}` is what the edit form loads and
 what a creation's `Location` points at, so it stays — with the owner written into the query rather

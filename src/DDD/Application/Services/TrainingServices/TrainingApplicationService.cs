@@ -103,6 +103,29 @@ public interface ITrainingApplicationService
     /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     /// <returns>Success, or a refusal when the training was not withheld.</returns>
     Task<Result> ReleaseAsync(Guid trainingId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reads one page of trainings across every trainer, as the administration sees them, newest
+    /// first (ADR 0055).
+    /// </summary>
+    /// <remarks>
+    /// <see cref="GetMineAsync"/> takes no trainer because it resolves the caller, and this one
+    /// takes none because it is about nobody in particular. That is the whole difference between the
+    /// read this API withdrew and the read it now has: not the columns, but who may ask.
+    /// <para>
+    /// The state arrives already resolved, for the reason the trainer service's sibling gives: a
+    /// name that no state answers to is refused at the boundary, where the parameter that carried it
+    /// can be named.
+    /// </para>
+    /// </remarks>
+    /// <param name="request">The state to narrow by.</param>
+    /// <param name="paging">The page asked for.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    /// <returns>The page, empty when nothing matches.</returns>
+    Task<PagedResult<AdministrationTrainingDto>> GetAdministeredPageAsync(
+        AdministrationTrainingRequest request,
+        PageRequest paging,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -374,6 +397,21 @@ public sealed class TrainingApplicationService(
                 return Result.Success();
             },
             onFailure: Result.FailureAsync);
+    }
+
+    /// <inheritdoc />
+    public async Task<PagedResult<AdministrationTrainingDto>> GetAdministeredPageAsync(
+        AdministrationTrainingRequest request,
+        PageRequest paging,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        // A page of aggregates from the repository, mapped here — the layered half of ADR 0029.
+        // Map carries the counts and the position across untouched.
+        var page = await trainingRepository.GetPageAsync(request.Status, paging, cancellationToken);
+
+        return page.Map(training => training.ToAdministrationDto());
     }
 
     /// <inheritdoc />

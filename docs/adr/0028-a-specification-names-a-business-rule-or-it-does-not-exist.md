@@ -1,6 +1,6 @@
 # 0028 — A specification names a business rule, or it does not exist
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0055](0055-let-the-administration-read-what-the-catalogue-may-not.md): a named question may carry named criteria, and the line this record drew at none moves to *never a predicate*
 - **Date:** 2026-08-04
 
 ## Context
