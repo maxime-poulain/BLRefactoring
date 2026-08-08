@@ -139,4 +139,37 @@ public sealed class TrainingRepository(TrainingContext trainingContext)
             .ToPagedResultAsync(paging, cancellationToken)
             .ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Reads one page of trainings across every trainer, newest first, narrowed by what is given.
+    /// </summary>
+    /// <remarks>
+    /// Every filter is composed onto the queryable <em>before</em> the page is taken, so the count
+    /// and the page describe the same set. Filtering afterwards would answer a short page with a
+    /// total about a different question, which is the defect a paged list hides best.
+    /// <para>
+    /// One criterion, where the trainers' question takes two. A title is mapped through a value
+    /// converter, and EF Core translates equality on one but cannot look inside it: both
+    /// <c>training.Title.Value.Contains(term)</c> and <c>EF.Property&lt;string&gt;</c> fail to
+    /// translate, the first as an untranslatable expression and the second as an invalid cast. That
+    /// was checked rather than assumed (ADR 0055).
+    /// </para>
+    /// </remarks>
+    public async Task<PagedResult<Training>> GetPageAsync(
+        TrainingStatus? status,
+        PageRequest paging,
+        CancellationToken cancellationToken = default)
+    {
+        var trainings = trainingContext.Trainings.AsQueryable();
+
+        if (status is not null)
+        {
+            trainings = trainings.Where(training => training.Status == status);
+        }
+
+        return await trainings
+            .NewestFirst<Training, TrainingId>()
+            .ToPagedResultAsync(paging, cancellationToken)
+            .ConfigureAwait(false);
+    }
 }

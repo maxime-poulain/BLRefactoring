@@ -38,4 +38,38 @@ public static class TrainerProjections
     /// Maps an aggregate already loaded in memory.
     /// </summary>
     public static TrainerDto ToDto(this Trainer trainer) => Compiled(trainer);
+
+    /// <summary>
+    /// The administration's mapping, in the form EF Core can translate.
+    /// </summary>
+    /// <remarks>
+    /// A second expression rather than a superset of the first, which is what ADR 0055's choice of
+    /// separate contracts costs and buys: the two are read by different audiences, so they are kept
+    /// apart here as well, where the columns are chosen. Both are declared beside each other on
+    /// purpose — a reader comparing them sees in one screen what the administration is shown and
+    /// what a trainer is, which no amount of prose about "the admin view" would convey.
+    /// <para>
+    /// The reason is read through a ternary for the same reason the bio is: null-conditional access
+    /// is not allowed in an expression tree.
+    /// </para>
+    /// </remarks>
+    public static readonly Expression<Func<Trainer, AdministrationTrainerDto>> ToAdministrationDtoExpression =
+        trainer => new AdministrationTrainerDto
+        {
+            Id = trainer.Id.Value,
+            Firstname = trainer.Name.Firstname,
+            Lastname = trainer.Name.Lastname,
+            ContactEmail = trainer.ContactEmail.FullAddress,
+            Status = trainer.Status.Name,
+            SuspensionReason = trainer.SuspensionReason == null ? null : trainer.SuspensionReason.Value
+        };
+
+    private static readonly Func<Trainer, AdministrationTrainerDto> CompiledAdministration =
+        ToAdministrationDtoExpression.Compile();
+
+    /// <summary>
+    /// Maps an aggregate already loaded in memory, for the administration.
+    /// </summary>
+    public static AdministrationTrainerDto ToAdministrationDto(this Trainer trainer) =>
+        CompiledAdministration(trainer);
 }

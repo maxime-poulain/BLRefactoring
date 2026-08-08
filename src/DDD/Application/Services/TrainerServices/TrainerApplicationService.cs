@@ -4,6 +4,7 @@ using TrainingHub.Shared.Application.Projections;
 using TrainingHub.Shared.Application.Dtos.Trainer;
 using TrainingHub.Shared.Application.Factories;
 using TrainingHub.Shared.Common.Errors;
+using TrainingHub.Shared.Common.Pagination;
 using TrainingHub.Shared.Common.Results;
 using TrainingHub.Shared.Domain;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
@@ -97,6 +98,30 @@ public interface ITrainerApplicationService
     /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     /// <returns>Success, or a refusal when the trainer was not under sanction.</returns>
     Task<Result> ReinstateAsync(Guid trainerId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reads one page of trainers as the administration sees them, newest first (ADR 0055).
+    /// </summary>
+    /// <remarks>
+    /// The one read on this service that is not about the caller and not about one named trainer.
+    /// It reads across every trainer, which this API withdrew when it deleted <c>/Trainer/all</c>
+    /// and ADR 0055 gives back to a single role — enforced at the boundary, as always, and never
+    /// asked about here.
+    /// <para>
+    /// The status arrives already resolved. Turning a name into a <c>TrainerStatus</c> is the
+    /// boundary's job, because the boundary is where an unknown name can be answered with the
+    /// parameter that carried it; by the time it reaches this method there is nothing left to
+    /// refuse, which is why this one answers a page rather than a <c>Result</c>.
+    /// </para>
+    /// </remarks>
+    /// <param name="request">The standing and the term to narrow by.</param>
+    /// <param name="paging">The page asked for.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    /// <returns>The page, empty when nothing matches.</returns>
+    Task<PagedResult<AdministrationTrainerDto>> GetAdministeredPageAsync(
+        AdministrationTrainerRequest request,
+        PageRequest paging,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -352,5 +377,23 @@ public sealed class TrainerApplicationService(
                 return Result.Success();
             },
             onFailure: Result.FailureAsync);
+    }
+
+    /// <inheritdoc />
+    public async Task<PagedResult<AdministrationTrainerDto>> GetAdministeredPageAsync(
+        AdministrationTrainerRequest request,
+        PageRequest paging,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        // The repository answers a page of aggregates and this layer maps it — the layered stack's
+        // half of ADR 0029, where the CQRS host projects columns instead. Map carries the counts and
+        // the position across untouched, which is what keeps the total and the items describing the
+        // same set once the mapping is done.
+        var page = await trainerRepository.GetPageAsync(
+            request.Status, request.Search, paging, cancellationToken);
+
+        return page.Map(trainer => trainer.ToAdministrationDto());
     }
 }

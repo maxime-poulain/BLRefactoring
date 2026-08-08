@@ -1,3 +1,4 @@
+using TrainingHub.Shared.Api.Contracts.Administration;
 using TrainingHub.Shared.Api.Contracts.Errors;
 using TrainingHub.Shared.Api.Contracts.Trainers;
 using TrainingHub.Shared.Api.Contracts.Trainings;
@@ -73,6 +74,58 @@ public static class ApplicationToHttpMappings
     /// </summary>
     public static List<TrainingHttpResponse> ToHttp(this IEnumerable<TrainingDto> trainings)
         => [.. trainings.Select(ToHttp)];
+
+    /// <summary>
+    /// Publishes a trainer as the administration reads them.
+    /// </summary>
+    /// <remarks>
+    /// A translation of its own rather than a widening of the one above, which is what ADR 0055's
+    /// separate contracts amount to at this layer: the two shapes meet nowhere, so nothing added to
+    /// one can reach the other.
+    /// </remarks>
+    public static AdministrationTrainerHttpResponse ToHttp(this AdministrationTrainerDto trainer)
+    {
+        ArgumentNullException.ThrowIfNull(trainer);
+
+        return new AdministrationTrainerHttpResponse
+        {
+            Id = trainer.Id,
+            Firstname = trainer.Firstname,
+            Lastname = trainer.Lastname,
+            ContactEmail = trainer.ContactEmail,
+            Status = trainer.Status,
+            SuspensionReason = trainer.SuspensionReason
+        };
+    }
+
+    /// <summary>
+    /// Publishes a page of them.
+    /// </summary>
+    public static List<AdministrationTrainerHttpResponse> ToHttp(
+        this IEnumerable<AdministrationTrainerDto> trainers) => [.. trainers.Select(ToHttp)];
+
+    /// <summary>
+    /// Publishes a training as the administration reads it.
+    /// </summary>
+    public static AdministrationTrainingHttpResponse ToHttp(this AdministrationTrainingDto training)
+    {
+        ArgumentNullException.ThrowIfNull(training);
+
+        return new AdministrationTrainingHttpResponse
+        {
+            Id = training.Id,
+            TrainerId = training.TrainerId,
+            Title = training.Title,
+            Status = training.Status,
+            WithholdingReason = training.WithholdingReason
+        };
+    }
+
+    /// <summary>
+    /// Publishes a page of them.
+    /// </summary>
+    public static List<AdministrationTrainingHttpResponse> ToHttp(
+        this IEnumerable<AdministrationTrainingDto> trainings) => [.. trainings.Select(ToHttp)];
 
     /// <summary>
     /// Publishes the errors an application call reported.

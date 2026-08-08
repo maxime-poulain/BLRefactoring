@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using TrainingHub.Architecture.Tests.Framework;
 using TrainingHub.Shared.Common.Specifications;
@@ -100,6 +101,67 @@ public sealed partial class SpecificationRules
                 "signature. A specification is how a rule is stated, not how a query is ordered — " +
                 "give the question a name on the contract and consume the rule inside the adapter")
             .ShouldHold();
+
+    /// <summary>
+    /// The shapes that would hand a caller the query rather than answer a question.
+    /// </summary>
+    /// <remarks>
+    /// Open generics, so <c>Expression&lt;Func&lt;Trainer, bool&gt;&gt;</c> and
+    /// <c>IQueryable&lt;Training&gt;</c> are caught whatever they are closed over.
+    /// <c>Func&lt;,&gt;</c> covers the compiled predicate somebody reaches for when the expression
+    /// is refused, and the two <c>IQueryable</c> forms cover handing the query out rather than in.
+    /// </remarks>
+    private static readonly Type[] QueryShapes =
+    [
+        typeof(Expression<>),
+        typeof(Func<,>),
+        typeof(IQueryable<>),
+        typeof(IOrderedQueryable<>)
+    ];
+
+    /// <summary>
+    /// No repository question, takes a predicate or an ordering.
+    /// </summary>
+    /// <remarks>
+    /// The sibling above refuses <c>ISpecification</c>, and this one refuses the shape somebody
+    /// writes once they have understood that a specification would be refused. It matters now in a
+    /// way it did not before: ADR 0028 drew the line at <em>no criteria at all</em>, and ADR 0055
+    /// moved it to <em>named criteria</em> so the administration could filter by standing and by a
+    /// term. A line at "named criteria" is only a line while nothing anonymous crosses it.
+    /// <para>
+    /// What the shapes have in common is that each hands the caller authorship of the query. A
+    /// status is a value the adapter is free to interpret, ignore or index; an
+    /// <c>Expression&lt;Func&lt;T, bool&gt;&gt;</c> is a fragment of SQL written by somebody who
+    /// cannot see the schema, and an <c>IOrderedQueryable</c> is the total order ADR 0001 requires
+    /// handed to whoever asks last.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0055",
+        "a repository question takes named criteria, never a predicate: a status and a term are values the adapter interprets, an expression is a query the caller wrote")]
+    public void NoRepositoryQuestion_TakesAPredicateOrAnOrdering() =>
+        Solution.Domain.DeclaredTypes()
+            .Where(type => type.IsInterface)
+            .SelectMany(contract => contract.GetMethods()
+                .SelectMany(method => method.GetParameters()
+                    .Select(parameter => (contract, method, parameter))))
+            .Selected("domain interface method parameter")
+            .Where(member => IsAQueryShape(member.parameter.ParameterType))
+            .Select(member =>
+                $"{member.contract.FullName}.{member.method.Name} takes " +
+                $"{member.parameter.ParameterType.Name} as '{member.parameter.Name}'. That hands the " +
+                "caller authorship of the query, which is what separates a named question from a " +
+                "query surface — name the criteria instead, and let the adapter decide how to ask " +
+                "(ADR 0055)")
+            .ShouldHold();
+
+    private static bool IsAQueryShape(Type type)
+    {
+        var definition = type.IsGenericType ? type.GetGenericTypeDefinition() : type;
+
+        return QueryShapes.Contains(definition)
+               || (type.IsGenericType && type.GetGenericArguments().Any(IsAQueryShape));
+    }
 
     private static bool Mentions(Type type)
     {

@@ -1,7 +1,9 @@
+using TrainingHub.Shared.Common.Pagination;
 using TrainingHub.Shared.Domain;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
+using TrainingHub.Shared.Infrastructure.Pagination;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -85,5 +87,48 @@ public sealed class TrainerRepository(TrainingContext trainingContext) : ITraine
     public void Delete(Trainer trainer)
     {
         trainingContext.Trainers.Remove(trainer);
+    }
+
+    /// <summary>
+    /// Reads one page of trainers, newest first, narrowed by what is given.
+    /// </summary>
+    /// <remarks>
+    /// Every filter is composed onto the queryable <em>before</em> the page is taken, so the count
+    /// and the page describe the same set. Filtering a materialised page instead would answer a
+    /// short page with a total about a different question — the defect a pager hides best, because
+    /// the numbers still look like numbers.
+    /// <para>
+    /// The term is matched against the two halves of the name and the contact address, and against
+    /// nothing else: a trainer is looked up by who they are, and their bio is prose that would turn
+    /// a bounded scan into an unbounded one for matches nobody asked for. A blank term is no term,
+    /// stated here as well as at the boundary so the method is total on its own.
+    /// </para>
+    /// </remarks>
+    public async Task<PagedResult<Trainer>> GetPageAsync(
+        TrainerStatus? status,
+        string? search,
+        PageRequest paging,
+        CancellationToken cancellationToken = default)
+    {
+        var trainers = trainingContext.Trainers.AsQueryable();
+
+        if (status is not null)
+        {
+            trainers = trainers.Where(trainer => trainer.Status == status);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            trainers = trainers.Where(trainer =>
+                trainer.Name.Firstname.Contains(term)
+                || trainer.Name.Lastname.Contains(term)
+                || trainer.ContactEmail.FullAddress.Contains(term));
+        }
+
+        return await trainers
+            .NewestFirst<Trainer, TrainerId>()
+            .ToPagedResultAsync(paging, cancellationToken)
+            .ConfigureAwait(false);
     }
 }

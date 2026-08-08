@@ -58,8 +58,15 @@ public sealed class TrainerStatus : ValueObject
     /// Resolves a status from the exact name stored beside it.
     /// </summary>
     /// <remarks>
-    /// Throws on an unknown name: the only caller is the ORM, and a column holding a word this
-    /// domain never wrote is a corrupt row rather than input to report back.
+    /// Throws on an unknown name, because a column holding a word this domain never wrote is a
+    /// corrupt row rather than input to report back.
+    /// <para>
+    /// The ORM was the only caller until the administration got a filter to page trainers by
+    /// standing (ADR 0055). That second caller hands over a name a <c>[KnownStatus]</c> annotation
+    /// has already checked against <see cref="GetStatuses"/> at model binding, so an unknown one is
+    /// a <c>400</c> naming the parameter and never arrives here — which is what lets this method go
+    /// on throwing rather than answering a result.
+    /// </para>
     /// </remarks>
     /// <param name="name">The persisted name.</param>
     /// <returns>The status that name spells.</returns>

@@ -54,4 +54,32 @@ public static class TrainingProjections
     /// Maps a sequence of aggregates already loaded in memory.
     /// </summary>
     public static List<TrainingDto> ToDtos(this IEnumerable<Training> trainings) => [.. trainings.Select(ToDto)];
+
+    /// <summary>
+    /// The administration's mapping, in the form EF Core can translate.
+    /// </summary>
+    /// <remarks>
+    /// A second expression rather than a superset of the first (ADR 0055): two audiences, two
+    /// shapes, and no column that crosses between them by accident. This one names five columns
+    /// where the other names nine — a moderation list does not read a training's content, and the
+    /// difference is worth seeing in the <c>SELECT</c> rather than only in the DTO.
+    /// </remarks>
+    public static readonly Expression<Func<Training, AdministrationTrainingDto>> ToAdministrationDtoExpression =
+        training => new AdministrationTrainingDto
+        {
+            Id = training.Id.Value,
+            TrainerId = training.TrainerId.Value,
+            Title = training.Title.Value,
+            Status = training.Status.Name,
+            WithholdingReason = training.WithholdingReason == null ? null : training.WithholdingReason.Value
+        };
+
+    private static readonly Func<Training, AdministrationTrainingDto> CompiledAdministration =
+        ToAdministrationDtoExpression.Compile();
+
+    /// <summary>
+    /// Maps an aggregate already loaded in memory, for the administration.
+    /// </summary>
+    public static AdministrationTrainingDto ToAdministrationDto(this Training training) =>
+        CompiledAdministration(training);
 }
