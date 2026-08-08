@@ -96,8 +96,11 @@ cleanup stays in the use case, after the commit.
 
 ### 🔴 Hotspots
 
-- **Nothing removes a trainer.** The rule exists (`Trainer.MarkForDeletion`), the event exists
-  (`TrainerDeletedDomainEvent`), the policy exists — and no actor can trigger any of it.
+- **Nothing removes a trainer, and nothing suspends one.** The rules exist
+  (`Trainer.MarkForDeletion`, `Trainer.Suspend`, `Trainer.Reinstate`), the events exist, the policy
+  exists — and no command reaches any of them. Half of this closed with ADR 0051: the actor exists
+  now, as a role, a policy and a token that needs no trainer. What is still missing is the use cases
+  that actor would issue, and they are what will close the rest.
 
 ---
 

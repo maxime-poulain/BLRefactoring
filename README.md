@@ -719,16 +719,34 @@ same `DuplicateEmail` code — so an account-enumeration oracle exists here by d
 accident. Closing it means changing what registration *says*, which is a decision of its own and
 has not been taken.
 
-The issued JWT carries the user's name, identifier and email, the trainer's first and last name,
-and a **`trainer_id`** claim that lets the API resolve the caller's trainer without a lookup.
-`ICurrentUserService` reads it.
+The issued JWT carries the user's name, identifier and email, the roles the account holds, and —
+when the account is somebody's trainer — the trainer's first and last name and a **`trainer_id`**
+claim that lets the API resolve the caller's trainer without a lookup. `ICurrentUserService` reads
+it.
 
-A single authorization policy, `TrainingOwner`, guards the training write endpoints. It checks
-ownership only: a training that does not exist lets the policy succeed so the action can answer
-`404` rather than `403`, since the existence of a training is not a secret — the collection is
-readable by any authenticated caller. The policy, its handler and its name are declared once in
-`TrainingHub.Shared.Api` and registered by both hosts through `AddTrainingOwnerAuthorization`,
-so neither can end up guarding an endpoint with a policy the other has since changed.
+**An administrator is an account, not a trainer** (ADR 0051), so those three claims are absent from
+their token rather than empty. Three authorization policies follow, declared once in
+`TrainingHub.Shared.Api` and registered by both hosts through a single `AddApiAuthorization`, so
+neither can end up holding two of the three:
+
+| Policy | Demands | Carried by |
+|---|---|---|
+| `TrainingOwner` | the caller owns the training the route names | five write actions |
+| `Trainer` | the caller is somebody's trainer | `ApiControllerBase`, so every trainer action |
+| `Administrator` | the `Administrator` role | the administrative endpoints, when they exist |
+
+`TrainingOwner` checks ownership only: a training that does not exist lets the policy succeed so the
+action can answer `404` rather than `403` — what the caller learns is that no training of theirs
+carries that identifier, which is what they asked. It is also the only one of the three with a
+handler of its own, ownership being a question only the database can answer; a role and a claim are
+already in the token.
+
+**The role is granted, never claimed.** There is deliberately no endpoint that grants one. In
+Development a start-up seeder creates the configured account if it is missing and grants it the
+role — `admin` / `admin` out of the box, and nobody's trainer, so its token carries no `trainer_id`.
+Everywhere else the grant is a database operation, the same shape ADR 0003 chose for applying
+migrations and for the same reason. See [the default administrator](#the-default-administrator) for
+why a known credential is a fixture rather than a hole.
 
 **The browser never holds that token.** The Blazor host is a backend for frontend: it signs the
 user in by calling the API itself, keeps the JWT inside an encrypted `HttpOnly` cookie, and forwards
@@ -740,11 +758,12 @@ answer. The reasoning, the alternatives — in-memory tokens, refresh tokens, Du
 this does *not* protect against are in
 [ADR 0009](docs/adr/0009-hold-the-access-token-in-the-bff-instead-of-the-browser.md).
 
-The trainer endpoints need no policy at all, because none of them takes an identifier and none of
-them destroys anything: reading and editing one's own profile are addressed as `/Trainer/me` and
-resolve the trainer from the `trainer_id` claim. There is nothing to tamper with. Deletion is
-absent by design — a trainer never deletes themselves, and the operation waits for a role that can
-legitimately perform it rather than being exposed under a weaker guard in the meantime.
+The trainer endpoints need no policy of their own beyond `Trainer`, because none of them takes an
+identifier and none of them destroys anything: reading and editing one's own profile are addressed
+as `/Trainer/me` and resolve the trainer from the `trainer_id` claim. There is nothing to tamper
+with. Deletion is absent by design — a trainer never deletes themselves, and the operation waits for
+a use case the administrator can reach rather than being exposed under a weaker guard in the
+meantime.
 
 ---
 
@@ -753,9 +772,10 @@ legitimately perform it rather than being exposed under a weaker guard in the me
 Both hosts expose the same routes. Authentication is required everywhere except registration and
 login.
 
-Every authenticated route answers `401` without a body when no valid token is presented, and the
-owner-only writes answer `403` the same way. Both are declared in the document; neither carries a
-problem document, because neither carries anything. See ADR 0011.
+Every authenticated route answers `401` without a body when no valid token is presented, and `403`
+the same way — to a caller who is nobody's trainer, and, on the owner-only writes, to a trainer who
+is not the owner. Both are declared in the document; neither carries a problem document, because
+neither carries anything. See ADR 0011.
 
 Every error that *does* carry a body carries the same one — an RFC 7807 problem document, served as
 `application/problem+json`. A failure that broke a field names it under `errors`; a failure that
@@ -976,6 +996,36 @@ deliberately ignore it, so a local override never changes what the tests prove.
 Supply keys through `appsettings.Local.json` (preferred), user secrets, or environment
 variables — the `docker compose` service passes them as `ConnectionStrings__TrainingContext`,
 `Jwt__Key` and so on.
+
+#### The default administrator
+
+There is one already, and it needs no setup:
+
+| | |
+|---|---|
+| Username | `admin` |
+| Password | `admin` |
+
+A start-up seeder creates the account if it is missing and grants it the `Administrator` role,
+reading `Administrator:Username` and `Administrator:Password` from the committed
+`appsettings.Development.json`. Name another username in `appsettings.Local.json` to override it; an
+account that already exists **keeps its password**, because this is a seeder and not a reset.
+
+**It is a fixture, not a secret, and the environment gate is the whole of its safety.** The seeder
+runs in **Development only** — the shape [ADR 0003](docs/adr/0003-apply-migrations-on-startup-in-development-only.md)
+chose for applying migrations, and for the same reason — and two independent things must both hold
+before it creates anything: the host runs as Development, and a configuration section that exists in
+no other committed file names a password. Everywhere else the grant is a documented database
+operation, and there is deliberately no endpoint that grants a role
+([ADR 0051](docs/adr/0051-give-the-administrator-authority-not-a-context.md)).
+
+It refuses nothing either: a password Identity rejects, or a username with no password to create it
+from, is reported in the log and the host starts anyway.
+
+**`admin` is nobody's trainer** — that is the point of it, not an omission. Its token carries no
+`trainer_id`, so the trainer endpoints answer it `403`. Until the administration screens exist it is
+therefore useful through the API, `/scalar/v1` in Development being the quickest way in; signing it
+into the Blazor front end reaches pages that have nothing to show it yet.
 
 #### Sending real email
 

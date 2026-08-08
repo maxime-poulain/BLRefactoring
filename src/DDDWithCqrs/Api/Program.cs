@@ -65,11 +65,11 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddValidatorsFromAssembly(typeof(CreateTrainerCommandValidator).Assembly);
 
-// Identity, JWT validation and the ownership policy are the same on both hosts, and are declared
-// once in TrainingHub.Shared.Api so neither can quietly lose a rule the other keeps.
+// Identity, JWT validation and the three authorization policies are the same on both hosts, and
+// are declared once in TrainingHub.Shared.Api so neither can quietly lose a rule the other keeps.
 builder.Services.AddApiIdentity(builder.Configuration);
 builder.Services.AddJwtBearerAuthentication(builder.Configuration);
-builder.Services.AddTrainingOwnerAuthorization();
+builder.Services.AddApiAuthorization();
 
 var app = builder.Build();
 
@@ -108,6 +108,11 @@ app.MapApiHealth();
 app.MapApiHealthDashboard();
 
 await app.EnsureDatabasesAreUpToDateAsync();
+
+// After the migrations, because the role is a row: Development only, and a no-op unless a
+// developer names their own account in appsettings.Local.json. See ADR 0051 — there is no endpoint
+// that grants a role, on either host.
+await app.EnsureAdministratorAsync();
 
 app.Run();
 

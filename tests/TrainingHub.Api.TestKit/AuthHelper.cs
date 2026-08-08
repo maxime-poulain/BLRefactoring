@@ -1,6 +1,9 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using TrainingHub.Shared.Api.Authorization;
 using TrainingHub.Shared.Api.Contracts.Auth;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace TrainingHub.Api.TestKit;
 
@@ -77,6 +80,86 @@ public static class AuthHelper
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         return client;
+    }
+
+    /// <summary>
+    /// An account that holds the administrator role and is nobody's trainer.
+    /// </summary>
+    /// <param name="Username">The account's username, for signing in.</param>
+    /// <param name="Password">The password it was created with.</param>
+    public sealed record AdministratorAccount(string Username, string Password);
+
+    /// <summary>
+    /// Creates an account with no trainer attached and grants it the administrator role.
+    /// </summary>
+    /// <remarks>
+    /// Through the host's own <see cref="UserManager{TUser}"/> rather than over HTTP, and that is
+    /// the point rather than a shortcut: <c>POST /Auth/register</c> creates a trainer along with
+    /// the account, so no route through the API produces the caller this exercises. There is
+    /// deliberately no endpoint that grants a role either (ADR 0051) — in Development a start-up
+    /// seeder does it, and everywhere else a database operation does.
+    /// </remarks>
+    /// <param name="factory">The suite's fixture.</param>
+    public static async Task<AdministratorAccount> CreateAdministratorAsync(IServiceScopeSource factory)
+    {
+        ArgumentNullException.ThrowIfNull(factory);
+
+        var id = Interlocked.Increment(ref _counter);
+        var account = new AdministratorAccount($"admin{id}", "pass");
+
+        using var scope = factory.CreateScope();
+
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+        if (!await roleManager.RoleExistsAsync(IdentityRoles.Administrator))
+        {
+            await roleManager.CreateAsync(new IdentityRole<Guid>(IdentityRoles.Administrator));
+        }
+
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser<Guid>>>();
+
+        var user = new IdentityUser<Guid>
+        {
+            UserName = account.Username,
+            Email = $"{account.Username}@example.com"
+        };
+
+        // Thrown rather than asserted: this is arrangement, and a failure here is a broken fixture
+        // rather than a failing claim — the same reason RegisterAsync's callers reach for
+        // EnsureSuccessStatusCode.
+        Succeeded(await userManager.CreateAsync(user, account.Password), "create the account");
+        Succeeded(await userManager.AddToRoleAsync(user, IdentityRoles.Administrator), "grant the role");
+
+        return account;
+    }
+
+    /// <summary>
+    /// Creates an administrator and hands back a client carrying their token.
+    /// </summary>
+    /// <typeparam name="TFactory">The suite's fixture, which must both lend a scope and hand out
+    /// clients — the account is made through the container and used over the wire.</typeparam>
+    /// <param name="factory">The suite's fixture.</param>
+    public static async Task<HttpClient> SignInAsAdministratorAsync<TFactory>(TFactory factory)
+        where TFactory : IServiceScopeSource, IHttpClientSource
+    {
+        ArgumentNullException.ThrowIfNull(factory);
+
+        var account = await CreateAdministratorAsync(factory);
+
+        var client = factory.CreateClient();
+        var token = await LoginAsync(client, account.Username, account.Password);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        return client;
+    }
+
+    private static void Succeeded(IdentityResult result, string what)
+    {
+        if (!result.Succeeded)
+        {
+            throw new InvalidOperationException(
+                $"The fixture could not {what}: " +
+                string.Join(", ", result.Errors.Select(error => error.Description)));
+        }
     }
 
     /// <summary>

@@ -144,10 +144,13 @@ holds a `Trainer` instance.
 |---|---|---|
 | **Trainer** | Everything in this context, and only to their own data | Implemented — `ICurrentUserService.TrainerId` |
 | **Visitor** | Register, then sign in | Implemented |
-| **Administrator** | Remove a trainer | **Named, not implemented.** `Trainer.MarkForDeletion` states the rule; no endpoint reaches it, because no role is entitled to it yet |
+| **Administrator** | Suspend and reinstate a trainer, remove one | **Entitled, not yet reachable.** The role, the policy and a token that needs no trainer exist (ADR 0051); `Trainer.Suspend`, `Reinstate` and `MarkForDeletion` state the rules; no endpoint calls them yet |
 
-The third row is a strategic statement, not an omission: the *rule* about deleting a trainer is
-modelled and tested, while the *permission* to trigger it is deliberately absent.
+The third row used to say the permission was absent — no role was ever granted, and none was seeded,
+so the rules it names could only be reached from a unit test. What is missing now is narrower and
+says so: the authority exists and the use cases that exercise it do not. An administrator is an
+**account, not a trainer**, which is why their token carries no `trainer_id` and why the trainer
+surface refuses them rather than raising on the missing claim.
 
 The first row's *only to their own data* has one deliberate exception, and it is worth naming
 because it looks like a leak and is not. Transferring a training reads two facts about the

@@ -32,6 +32,13 @@ public interface ITokenService
 /// accident, since <c>EpochTime.GetIntDate</c> converts a local kind before writing <c>exp</c>,
 /// and untestable on purpose by nobody. A token's lifetime is a security property; it should be
 /// possible to assert it without waiting.
+/// <para>
+/// An account with no trainer used to be refused a token outright. That guard clause was the one
+/// thing standing between this product and an administrator, who is an account and not a trainer
+/// (ADR 0051): they have no profile to publish, no bio and no contact address, and giving them one
+/// would be a lie in the data model. The three trainer claims are simply omitted, and the trainer
+/// surface refuses such a token at the boundary through <c>TrainerPolicy</c>.
+/// </para>
 /// </remarks>
 public sealed class TokenService(
     IConfiguration configuration,
@@ -58,22 +65,23 @@ public sealed class TokenService(
 
         var trainer = await trainerIdentityQuery.GetByUserIdAsync(user.Id, cancellationToken);
 
-        if (trainer is null)
-        {
-            throw new InvalidOperationException(
-                $"No trainer is attached to identity account {user.Id}, so no token can name one.");
-        }
-
         // Define the claims for the token, including user information and roles.
         var claims = new List<Claim>
         {
             new (ClaimTypes.Name, user.UserName!),
             new (ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new (ClaimTypes.Email, user.Email!),
-            new ("firstname", trainer.Firstname),
-            new ("lastname", trainer.Lastname),
-            new ("trainer_id", trainer.TrainerId.ToString())
+            new (ClaimTypes.Email, user.Email!)
         };
+
+        // Absent rather than empty when the account is nobody's trainer. An empty trainer_id would
+        // satisfy every claim check that only asks whether the claim is there, and then fail far
+        // away from here, inside a Guid.Parse.
+        if (trainer is not null)
+        {
+            claims.Add(new Claim("firstname", trainer.Firstname));
+            claims.Add(new Claim("lastname", trainer.Lastname));
+            claims.Add(new Claim(TrainerClaims.TrainerId, trainer.TrainerId.ToString()));
+        }
 
         // Add role claims for each role assigned to the user.
         foreach (var role in roles)

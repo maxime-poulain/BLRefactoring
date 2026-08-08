@@ -1,3 +1,4 @@
+using TrainingHub.Shared.Api.Identity;
 using TrainingHub.Shared.Application.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -37,7 +38,7 @@ public sealed class TrainingOwnerAuthorizationHandler(
             return;
         }
 
-        var trainerIdClaim = httpContext.User.FindFirst("trainer_id")?.Value;
+        var trainerIdClaim = httpContext.User.FindFirst(TrainerClaims.TrainerId)?.Value;
         if (trainerIdClaim is null || !Guid.TryParse(trainerIdClaim, out var trainerIdFromToken))
         {
             return;
@@ -46,8 +47,8 @@ public sealed class TrainingOwnerAuthorizationHandler(
         // This policy only guards ownership; existence is the action's concern.
         // A nonexistent training therefore succeeds the requirement so the
         // action can answer 404 — failing here would turn "not found" into an
-        // incorrect 403. Ownership of a training is not a secret anyway: every
-        // authenticated caller can list all trainings.
+        // incorrect 403. What the caller learns from the 404 is that no training
+        // of theirs has that identifier, which is what they asked.
         //
         // RequestAborted rather than nothing: this was the one database call in the solution that
         // did not propagate a token, so a caller who hung up left it running to completion — on
