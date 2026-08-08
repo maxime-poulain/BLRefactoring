@@ -61,11 +61,21 @@
                         <MudCardContent>
                             <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start" Class="mb-2">
                                 <MudText Typo="Typo.h6">@training.Title</MudText>
-                                @* Only the withdrawn state is shown. Published is what a training
-                                   is unless something happened to it, and a badge on every card
-                                   saying so would be noise that makes the one badge that matters
-                                   harder to see. *@
-                                @if (!IsPublished(training))
+                                @* Published is what a training is unless something happened to it,
+                                   so it wears no badge: one on every card would make the badge that
+                                   matters harder to see. The other two are not the same thing and
+                                   are not shown as one — withdrawn is a decision its owner took,
+                                   withheld is one taken from them (ADR 0052). *@
+                                @if (IsWithheld(training))
+                                {
+                                    <MudChip T="string"
+                                             Size="Size.Small"
+                                             Color="Color.Error"
+                                             Variant="Variant.Filled">
+                                        Withheld
+                                    </MudChip>
+                                }
+                                else if (!IsPublished(training))
                                 {
                                     <MudChip T="string"
                                              Size="Size.Small"
@@ -75,6 +85,19 @@
                                     </MudChip>
                                 }
                             </MudStack>
+                            @* The reason, on the card rather than behind a click. ADR 0052 asked
+                               for exactly this and left it open; a third state rendered without it
+                               tells its owner that something happened and not what. *@
+                            @if (IsWithheld(training))
+                            {
+                                <MudAlert Severity="Severity.Error" Dense="true" Class="mb-3">
+                                    <MudText Typo="Typo.body2">@training.WithholdingReason</MudText>
+                                    <MudText Typo="Typo.caption">
+                                        You cannot offer this training again yourself. Reply to the
+                                        email we sent you if you believe this is a mistake.
+                                    </MudText>
+                                </MudAlert>
+                            }
                             <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1">
                                 @foreach (var topic in training.Topics)
                                 {
@@ -102,7 +125,18 @@
                                all: it is still on the API, for the training created by mistake and
                                for erasure on request, but it is no longer the button a trainer
                                reaches for to stop offering a course. See ADR 0050. *@
-                            @if (IsPublished(training))
+                            @* A withheld training is offered no lifecycle button at all. Both doors
+                               are shut on the aggregate — PublishAsync and Unpublish each refuse it
+                               by name (ADR 0052) — so a button here could only ever answer 400.
+                               Editing stays: the domain does not refuse it, and a trainer asked to
+                               correct what was reported has to be able to. *@
+                            @if (IsWithheld(training))
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="pa-2">
+                                    Taken out of your hands by the administration.
+                                </MudText>
+                            }
+                            else if (IsPublished(training))
                             {
                                 <MudIconButton Icon="@Icons.Material.Filled.VisibilityOff"
                                                Disabled="@_standing.IsSuspended"
@@ -144,9 +178,13 @@
     // The word the API publishes, which is the domain's own (ADR 0050). Compared ordinally: this
     // is a protocol value, never something to fold with the viewer's culture.
     private const string PublishedStatus = "Published";
+    private const string WithheldStatus = "Withheld";
 
     private static bool IsPublished(TrainingHttpResponse training)
         => string.Equals(training.Status, PublishedStatus, StringComparison.Ordinal);
+
+    private static bool IsWithheld(TrainingHttpResponse training)
+        => string.Equals(training.Status, WithheldStatus, StringComparison.Ordinal);
 
     /// <remarks>
     /// A MudBlazor utility class rather than a colour of our own. There is no stylesheet in this
@@ -304,10 +342,20 @@
         }
         catch (ApiException ex) when (ex.StatusCode == StatusForbidden)
         {
-            // Still reachable with every row being the caller's own: this list was read at some
-            // point in the past, and ownership can have moved under it since. A 403 carries no
-            // body, so there is nothing to read out of it — hence a sentence of our own.
-            Snackbar.Add("That training belongs to another trainer.", Severity.Error);
+            // Two refusals wear this status now, and the commonest is the caller's own standing
+            // (ADR 0053). A 403 carries no body by design, so which one it is cannot be read out of
+            // the response — it is read back from the surface the sanction leaves open, which also
+            // raises the banner. Ownership moving under a list read some time ago is the other, and
+            // still the one worth naming when the caller is in good standing.
+            var standing = await StandingSource.RefreshAsync();
+            _standing = standing;
+
+            Snackbar.Add(
+                standing.IsSuspended
+                    ? TrainerStanding.WhyDisabled
+                    : "That training belongs to another trainer.",
+                Severity.Error);
+
             await LoadTrainings();
         }
         catch (ApiException ex)

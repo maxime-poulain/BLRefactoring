@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using MudBlazor;
 using TrainingHub.Blazor.Client.Pages.Trainings;
+using TrainingHub.Blazor.Client.Infrastructure;
 using TrainingHub.GeneratedClients;
 using Xunit;
 
@@ -393,6 +394,99 @@ public sealed class TrainingsTests : ComponentTest
             HasPreviousPage = page > 1
         };
 
+    /// <summary>
+    /// Publishing, refused because the caller was suspended, says that rather than blaming ownership.
+    /// </summary>
+    /// <remarks>
+    /// Two refusals wear this status now, and since ADR 0053 the commonest by far is the caller's
+    /// own standing. A <c>403</c> carries no body by design, so which one it is cannot be read out
+    /// of the response — it is read back from the surface the sanction leaves open. Telling a
+    /// suspended trainer that their own training belongs to somebody else is the wrong sentence
+    /// twice over.
+    /// </remarks>
+    [Fact]
+    public void Publishing_RefusedBecauseTheCallerWasSuspended_SaysThatRatherThanBlamingOwnership()
+    {
+        // Arrange
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 1,
+                WithdrawnTraining("Domain-Driven Design", "Programming")));
+
+        _trainings
+            .Setup(client => client.PublishTrainingAsync(It.IsAny<Guid>()))
+            .ThrowsAsync(new ApiException(
+                "Forbidden", 403, "", new Dictionary<string, IEnumerable<string>>(), null));
+
+        Standing
+            .Setup(source => source.RefreshAsync())
+            .ReturnsAsync(new TrainerStanding(IsSuspended: true, "Repeated breaches."));
+
+        var page = Render<Trainings>();
+
+        // Act
+        var buttons = page.FindAll("button");
+        buttons[buttons.Count - 1].Click();
+
+        // Assert
+        page.WaitForAssertion(() => Shown().Should().ContainSingle()
+            .Which.Message.Should().Be(TrainerStanding.WhyDisabled));
+    }
+
+    /// <summary>
+    /// Renders, a withheld training, names the state and the reason for it.
+    /// </summary>
+    /// <remarks>
+    /// The state ADR 0052 created and left mute on this surface. Rendered as "Unpublished" it told
+    /// its owner that something had happened and not what, and the two are not the same thing:
+    /// withdrawn is a decision they took, withheld is one taken from them.
+    /// </remarks>
+    [Fact]
+    public void Renders_AWithheldTraining_NamesTheStateAndTheReasonForIt()
+    {
+        // Arrange
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 1,
+                WithheldTraining("Domain-Driven Design", "Plagiarised material.")));
+
+        // Act
+        var page = Render<Trainings>();
+
+        // Assert
+        page.Markup.Should().Contain("Withheld").And.Contain("Plagiarised material.");
+        page.Markup.Should().NotContain("Unpublished");
+    }
+
+    /// <summary>
+    /// Renders, a withheld training, offers no lifecycle button and keeps the edit one.
+    /// </summary>
+    /// <remarks>
+    /// Both doors are shut on the aggregate — <c>PublishAsync</c> and <c>Unpublish</c> each refuse a
+    /// withheld training by name (ADR 0052) — so a lifecycle button here could only ever earn a
+    /// <c>400</c>. Editing stays, because the domain does not refuse it and a trainer asked to
+    /// correct what was reported has to be able to: taking that button away would be the interface
+    /// inventing a rule the model does not hold.
+    /// </remarks>
+    [Fact]
+    public void Renders_AWithheldTraining_OffersNoLifecycleButtonAndKeepsTheEditOne()
+    {
+        // Arrange
+        var withheld = WithheldTraining("Domain-Driven Design", "Plagiarised material.");
+
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 1, withheld));
+
+        // Act
+        var page = Render<Trainings>();
+
+        // Assert
+        page.Markup.Should().Contain($"/trainings/edit/{withheld.Id}");
+        page.Markup.Should().Contain("Taken out of your hands");
+        page.FindAll("button").Should().BeEmpty("a withheld training offers no action of its own");
+    }
+
     // MudBlazor's own utility for the theme's recessed surface, which resolves to
     // --mud-palette-background-gray and therefore follows the layout's dark mode toggle. Named
     // once so the page and its tests cannot drift onto two different words for one decision.
@@ -403,6 +497,17 @@ public sealed class TrainingsTests : ComponentTest
 
     private static TrainingHttpResponse WithdrawnTraining(string title, params string[] topics) =>
         WithStatus(title, "Unpublished", topics);
+
+    // Its own builder rather than a status passed in, for the reason the comment below gives about
+    // overload resolution — and because a withheld training without its reason is not a case this
+    // suite has any use for.
+    private static TrainingHttpResponse WithheldTraining(string title, string reason)
+    {
+        var training = WithStatus(title, "Withheld", []);
+        training.WithholdingReason = reason;
+
+        return training;
+    }
 
     // Not an overload of Training: two methods differing only by a leading string let overload
     // resolution bind the first topic as the status, and the test that caught it did so by
