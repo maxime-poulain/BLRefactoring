@@ -45,4 +45,13 @@ public static class TrainerErrorCodes
 
     /// <summary>The trainer is not under sanction, so there is nothing to lift.</summary>
     public static readonly ErrorCode NotSuspended = new("Trainer.NotSuspended");
+
+    /// <summary>
+    /// A suspension was asked for without saying why, which is what a suspended trainer most needs
+    /// to be told (ADR 0052).
+    /// </summary>
+    public static readonly ErrorCode SuspensionReasonEmpty = new("Trainer.SuspensionReasonEmpty");
+
+    /// <summary>The reason given for a suspension is longer than the field can hold.</summary>
+    public static readonly ErrorCode SuspensionReasonTooLong = new("Trainer.SuspensionReasonTooLong");
 }

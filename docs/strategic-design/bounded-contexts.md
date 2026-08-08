@@ -69,11 +69,13 @@ name in the code; that is the point of a ubiquitous language.
 | **TrainingPrerequisites** | What a participant needs beforehand | Required, at most 500 characters |
 | **AcquiredSkills** | What a participant leaves with | Required, at most 500 characters |
 | **Topic** | What a training is filed under | A **closed set of six**: Programming, Design, Marketing, Business, Personal Development, Leadership |
-| **TrainingStatus** | Whether a training is offered to the public or withdrawn from it | `Published` or `Unpublished`; born published, and reachable in both directions |
-| **TrainerStatus** | Whether a trainer is in good standing or under sanction | `Active` or `Suspended`; the whole of a suspension is this one field |
+| **TrainingStatus** | Whether a training is offered to the public, withdrawn by its owner, or kept back by the administration | `Published`, `Unpublished` or `Withheld`; born published, and only the owner's two states are the owner's to leave |
+| **TrainerStatus** | Whether a trainer is in good standing or under sanction | `Active` or `Suspended`; the whole of a suspension is this one field and its reason |
+| **WithholdingReason** | Why the administration kept a training back, in its own words | Required, at most 500 characters; present if and only if the training is `Withheld` |
+| **SuspensionReason** | Why a trainer was suspended, in the administration's own words | Required, at most 500 characters; present if and only if the trainer is `Suspended` |
 | **TrainingTransferDomainService** | Handing a training to another trainer, who becomes its owner | The recipient must be able to accept it; the giver keeps nothing |
 
-Four entries in that table are worth pausing on, because each encodes a business decision rather
+Five entries in that table are worth pausing on, because each encodes a business decision rather
 than a technical one.
 
 **A contact address is not a login.** `Trainer.ContactEmail` carries no uniqueness rule, and the
@@ -212,7 +214,7 @@ Establish who is making a request. Nothing else.
 | **User / account** | A set of credentials — username, email, password hash, lockout state |
 | **Username** | Unique. What one signs in with |
 | **Account email** | Unique. Not the same concept as a trainer's contact address |
-| **Role** | Modelled by the framework; none is granted yet |
+| **Role** | Modelled by the framework. One is granted: `Administrator`, seeded in Development and granted by hand elsewhere (ADR 0051) |
 | **Token** | A JWT, issued at sign-in, carrying the account and the trainer it maps to |
 
 ### Aggregates

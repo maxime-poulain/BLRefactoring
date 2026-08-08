@@ -3,14 +3,21 @@ using TrainingHub.Shared.Common;
 namespace TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 
 /// <summary>
-/// Where a training stands in its owner's catalogue: offered to the public, or withdrawn from it.
+/// Where a training stands in its owner's catalogue: offered to the public, withdrawn by its owner,
+/// or kept back by the administration.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Two states and no third. There is no <c>Draft</c> because there is no drafting — creation takes
-/// five required fields and produces a complete training in one call, so a state nothing can remain
-/// in is not a state. The pair is reachable in both directions, which is what makes this a lifecycle
-/// rather than a tombstone wearing an enum: see ADR 0050.
+/// Three states, and still no <c>Draft</c>: there is no drafting — creation takes five required
+/// fields and produces a complete training in one call, so a state nothing can remain in is not a
+/// state, and a training can remain withheld indefinitely. Every state is reachable, which is what
+/// makes this a lifecycle rather than a tombstone wearing an enum: see ADR 0050 and ADR 0052.
+/// </para>
+/// <para>
+/// The first two are the owner's, the third is not, and that difference is why it is a state at all.
+/// A rule about what is <em>permitted</em> belongs in a state rather than in a field beside one: an
+/// administration that only set <see cref="Unpublished"/> would be undone by the owner in one
+/// request to <c>POST /Training/{id}/publish</c>.
 /// </para>
 /// <para>
 /// A class rather than a C# <see langword="enum"/>, like <see cref="Topic"/> beside it: the
@@ -28,7 +35,29 @@ public sealed class TrainingStatus : ValueObject
     /// The training has been withdrawn by its owner. It keeps its title and frees its place in the
     /// catalogue's quota, and its owner may publish it again.
     /// </summary>
+    /// <remarks>
+    /// The only state that frees a slot, because it is the only one the owner chose. See
+    /// <see cref="Specifications.TrainingCountsTowardTheQuotaSpecification"/>.
+    /// </remarks>
     public static readonly TrainingStatus Unpublished = new("Unpublished");
+
+    /// <summary>
+    /// The training has been taken out of public view by the administration, with a reason its owner
+    /// can read. Only the administration can lift it, and the training keeps its place in the quota.
+    /// </summary>
+    /// <remarks>
+    /// <c>Withheld</c> and not <c>Suspended</c>: that word is the trainer's (ADR 0050), and one word
+    /// meaning two things across two aggregates is the confusion this model was built to avoid. Not
+    /// <c>Disabled</c> — ADR 0050 rejected it as "a word about systems" — nor <c>Archived</c>, which
+    /// "promises a retention policy that does not exist", nor <c>Moderated</c>, which names a process
+    /// rather than an outcome: reviewing a training and clearing it is also moderating it.
+    /// <para>
+    /// It is the publishing world's own word for a work kept back from distribution. It sits beside
+    /// the other two because all three are about the act of publishing, and it implies an actor
+    /// other than the owner without naming one.
+    /// </para>
+    /// </remarks>
+    public static readonly TrainingStatus Withheld = new("Withheld");
 
     /// <summary>
     /// Every status there is, in declaration order.
@@ -38,7 +67,7 @@ public sealed class TrainingStatus : ValueObject
     /// <see cref="Topic"/> records: a closed enumeration that discovers itself is a closed
     /// enumeration one caller can reopen.
     /// </remarks>
-    private static readonly IReadOnlyList<TrainingStatus> All = [Published, Unpublished];
+    private static readonly IReadOnlyList<TrainingStatus> All = [Published, Unpublished, Withheld];
 
     /// <summary>
     /// The status's name, as the domain spells it and as it is persisted.
@@ -72,7 +101,7 @@ public sealed class TrainingStatus : ValueObject
     /// </remarks>
     /// <param name="name">The persisted name.</param>
     /// <returns>The status that name spells.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">The name is not one of the two.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The name is not one of the three.</exception>
     public static TrainingStatus FromName(string name)
         => All.FirstOrDefault(status => status.Name.Equals(name, StringComparison.Ordinal))
            ?? throw new ArgumentOutOfRangeException(

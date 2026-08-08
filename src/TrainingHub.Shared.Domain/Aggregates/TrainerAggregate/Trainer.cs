@@ -59,6 +59,21 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     public TrainerStatus Status { get; private set; } = TrainerStatus.Active;
 
     /// <summary>
+    /// Why the trainer is suspended, or <see langword="null"/> when they are not.
+    /// </summary>
+    /// <remarks>
+    /// The invariant is stated in both directions: the reason is present <em>if and only if</em>
+    /// <see cref="Status"/> is <see cref="TrainerStatus.Suspended"/>. It holds by construction —
+    /// <see cref="Suspend"/> and <see cref="Reinstate"/> are the only writers, and each moves both
+    /// fields together (ADR 0052).
+    /// <para>
+    /// Persisted rather than left on the fact that announced it, because the trainer has to be able
+    /// to read it while the sanction lasts, and the outbox is swept (ADR 0033).
+    /// </para>
+    /// </remarks>
+    public SuspensionReason? SuspensionReason { get; private set; }
+
+    /// <summary>
     /// Private constructor used by the factories and by EF Core constructor
     /// binding (the parameter name matches the <see cref="Entity{TEntityId}.Id"/> property).
     /// </summary>
@@ -203,9 +218,12 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     /// entitled to it. The rule the aggregate states here holds whoever ends up triggering it.
     /// </para>
     /// </remarks>
+    /// <param name="reason">Why the trainer is being suspended.</param>
     /// <returns>Success, or a refusal when the trainer was already suspended.</returns>
-    public Result Suspend()
+    public Result Suspend(SuspensionReason reason)
     {
+        ArgumentNullException.ThrowIfNull(reason);
+
         if (Status == TrainerStatus.Suspended)
         {
             return Result.Failure(TrainerErrorCodes.AlreadySuspended,
@@ -213,7 +231,8 @@ public sealed class Trainer : AggregateRoot<TrainerId>
         }
 
         Status = TrainerStatus.Suspended;
-        AddDomainEvent(new TrainerSuspendedDomainEvent(Id));
+        SuspensionReason = reason;
+        AddDomainEvent(new TrainerSuspendedDomainEvent(Id, reason));
 
         return Result.Success();
     }
@@ -236,6 +255,7 @@ public sealed class Trainer : AggregateRoot<TrainerId>
         }
 
         Status = TrainerStatus.Active;
+        SuspensionReason = null;
         AddDomainEvent(new TrainerReinstatedDomainEvent(Id));
 
         return Result.Success();

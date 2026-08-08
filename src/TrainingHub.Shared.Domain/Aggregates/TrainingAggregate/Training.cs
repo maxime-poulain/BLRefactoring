@@ -79,6 +79,21 @@ public sealed class Training : AggregateRoot<TrainingId>
     public TrainingStatus Status { get; private set; } = TrainingStatus.Published;
 
     /// <summary>
+    /// Why the administration withheld this training, or <see langword="null"/> when it did not.
+    /// </summary>
+    /// <remarks>
+    /// The invariant is stated in both directions: the reason is present <em>if and only if</em>
+    /// <see cref="Status"/> is <see cref="TrainingStatus.Withheld"/>. That is what forbids an orphan
+    /// reason and a mute state alike, and it holds by construction — <see cref="Withhold"/> and
+    /// <see cref="Release"/> are the only writers, and each moves both fields together (ADR 0052).
+    /// <para>
+    /// It lives here rather than only on the fact that announced it, because the owner has to be
+    /// able to read it afterwards and the outbox is swept (ADR 0033).
+    /// </para>
+    /// </remarks>
+    public WithholdingReason? WithholdingReason { get; private set; }
+
+    /// <summary>
     /// Private constructor used by the factories and by EF Core constructor
     /// binding (parameter names match the <c>Id</c> and <c>TrainerId</c> properties).
     /// </summary>
@@ -211,6 +226,15 @@ public sealed class Training : AggregateRoot<TrainingId>
                 "This training is already published.");
         }
 
+        // The refusal the third state exists to produce, and the reason setting Unpublished would
+        // have been worth nothing: this endpoint is the owner's, so an administration that only
+        // withdrew a training would be undone by one request (ADR 0052).
+        if (Status == TrainingStatus.Withheld)
+        {
+            return Result.Failure(TrainingErrorCodes.Withheld,
+                "This training has been withheld and its owner cannot publish it.");
+        }
+
         if (await trainerStanding.IsSuspendedAsync(TrainerId, cancellationToken))
         {
             return Result.Failure(TrainingErrorCodes.TrainerSuspended,
@@ -249,8 +273,85 @@ public sealed class Training : AggregateRoot<TrainingId>
                 "This training is already unpublished.");
         }
 
+        // The owner cannot leave Withheld by any door, and this is the second one. Refusing only in
+        // PublishAsync would leave the interdiction liftable in two moves — unpublish, then publish
+        // — each of them through a check that passed, which is the shape of the bypass ADR 0050
+        // found in the quota.
+        if (Status == TrainingStatus.Withheld)
+        {
+            return Result.Failure(TrainingErrorCodes.Withheld,
+                "This training has been withheld and its owner cannot change that.");
+        }
+
         Status = TrainingStatus.Unpublished;
         AddDomainEvent(new TrainingUnpublishedDomainEvent(Id, TrainerId));
+
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Takes this training out of public view by administrative decision, with a reason its owner
+    /// can read.
+    /// </summary>
+    /// <remarks>
+    /// Accepts either starting state, and that is deliberate: prohibited content is prohibited
+    /// whether or not it is currently on offer, and withholding an already-withdrawn training is
+    /// precisely what stops its owner putting it back.
+    /// <para>
+    /// The training keeps its place in the quota. ADR 0050 made the ten count what the public can
+    /// see, on the grounds that a trainer who withdraws ten should not lose their catalogue for
+    /// ever — but that argument is about a <em>voluntary</em> withdrawal, and freeing a slot by
+    /// being moderated is a perverse incentive. See
+    /// <see cref="Specifications.TrainingCountsTowardTheQuotaSpecification"/>.
+    /// </para>
+    /// <para>
+    /// Who may call this is not the domain's business, exactly as <see cref="IsOwnedBy"/> answers a
+    /// question and leaves the caller to decide what refusing means. The role lives at the API
+    /// (ADR 0051).
+    /// </para>
+    /// </remarks>
+    /// <param name="reason">Why the training is being withheld.</param>
+    /// <returns>Success, or a refusal when the training was already withheld.</returns>
+    public Result Withhold(WithholdingReason reason)
+    {
+        ArgumentNullException.ThrowIfNull(reason);
+
+        if (Status == TrainingStatus.Withheld)
+        {
+            return Result.Failure(TrainingErrorCodes.AlreadyWithheld,
+                "This training is already withheld.");
+        }
+
+        Status = TrainingStatus.Withheld;
+        WithholdingReason = reason;
+        AddDomainEvent(new TrainingWithheldDomainEvent(Id, TrainerId, reason));
+
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Lifts the interdiction, leaving the training withdrawn rather than on offer.
+    /// </summary>
+    /// <remarks>
+    /// It lands on <see cref="TrainingStatus.Unpublished"/> and never on
+    /// <see cref="TrainingStatus.Published"/>, and no memory of the state before the withholding is
+    /// kept. The administration lifts an interdiction; it does not decide to put a training back in
+    /// the window. Restoring the prior state would need a second field, written on every
+    /// withholding and read once — the kind of field ADR 0050 refused when the behaviour can be had
+    /// without it (ADR 0052).
+    /// </remarks>
+    /// <returns>Success, or a refusal when there was nothing to lift.</returns>
+    public Result Release()
+    {
+        if (Status != TrainingStatus.Withheld)
+        {
+            return Result.Failure(TrainingErrorCodes.NotWithheld,
+                "This training is not withheld, so there is nothing to release.");
+        }
+
+        Status = TrainingStatus.Unpublished;
+        WithholdingReason = null;
+        AddDomainEvent(new TrainingReleasedDomainEvent(Id, TrainerId));
 
         return Result.Success();
     }

@@ -18,6 +18,13 @@ namespace TrainingHub.Shared.Domain.Tests.Aggregates.TrainerAggregate;
 public sealed class TrainerStandingTests
 {
     /// <summary>
+    /// A reason good enough for every fact here, since none of them is about the reason itself —
+    /// those live in <c>SuspensionReasonTests</c>.
+    /// </summary>
+    private static SuspensionReason AReason =>
+        SuspensionReason.Create("Repeated breaches of the content policy.").ShouldBeSuccess();
+
+    /// <summary>
     /// Create, a new trainer, is born active.
     /// </summary>
     [Fact]
@@ -37,7 +44,7 @@ public sealed class TrainerStandingTests
         var trainer = new TrainerBuilder().Build();
         trainer.ClearDomainEvents();
 
-        trainer.Suspend().ShouldBeSuccess();
+        trainer.Suspend(AReason).ShouldBeSuccess();
 
         trainer.Status.Should().Be(TrainerStatus.Suspended);
         trainer.DomainEvents.Should()
@@ -53,10 +60,10 @@ public sealed class TrainerStandingTests
     public void Suspend_AnAlreadySuspendedTrainer_IsRefusedAndAnnouncesNothing()
     {
         var trainer = new TrainerBuilder().Build();
-        trainer.Suspend().ShouldBeSuccess();
+        trainer.Suspend(AReason).ShouldBeSuccess();
         trainer.ClearDomainEvents();
 
-        var result = trainer.Suspend();
+        var result = trainer.Suspend(AReason);
 
         result.ShouldBeFailure().Should().ContainSingle()
             .Which.ErrorCode.Should().Be(TrainerErrorCodes.AlreadySuspended);
@@ -70,7 +77,7 @@ public sealed class TrainerStandingTests
     public void Reinstate_ASuspendedTrainer_LiftsTheSanctionAndAnnouncesTheFact()
     {
         var trainer = new TrainerBuilder().Build();
-        trainer.Suspend().ShouldBeSuccess();
+        trainer.Suspend(AReason).ShouldBeSuccess();
         trainer.ClearDomainEvents();
 
         trainer.Reinstate().ShouldBeSuccess();
@@ -106,10 +113,52 @@ public sealed class TrainerStandingTests
     {
         var trainer = new TrainerBuilder().Build();
 
-        trainer.Suspend().ShouldBeSuccess();
+        trainer.Suspend(AReason).ShouldBeSuccess();
         trainer.Reinstate().ShouldBeSuccess();
-        trainer.Suspend().ShouldBeSuccess();
+        trainer.Suspend(AReason).ShouldBeSuccess();
 
         trainer.Status.Should().Be(TrainerStatus.Suspended);
+    }
+
+    /// <summary>
+    /// The reason, is present exactly while the sanction is.
+    /// </summary>
+    /// <remarks>
+    /// Walked as one sequence rather than asserted twice, because the claim is about the pair
+    /// moving together: a mute sanction and an orphan reason are the two ways ADR 0052's invariant
+    /// can rot, and each of them is a step of this walk.
+    /// </remarks>
+    [Fact]
+    public void TheReason_IsPresentExactlyWhileTheSanctionIs()
+    {
+        var trainer = new TrainerBuilder().Build();
+
+        trainer.SuspensionReason.Should().BeNull("a trainer in good standing carries no reason");
+
+        trainer.Suspend(AReason).ShouldBeSuccess();
+        trainer.SuspensionReason.Should().Be(AReason);
+
+        trainer.Reinstate().ShouldBeSuccess();
+        trainer.SuspensionReason.Should().BeNull("lifting the sanction takes its reason with it");
+    }
+
+    /// <summary>
+    /// Suspend, announces the reason with the fact.
+    /// </summary>
+    /// <remarks>
+    /// The audit trail is the only record of who suspended whom and why (ADR 0027 stamps the actor,
+    /// ADR 0052 adds the motive), and it can only carry what the fact carries.
+    /// </remarks>
+    [Fact]
+    public void Suspend_AnnouncesTheReasonWithTheFact()
+    {
+        var trainer = new TrainerBuilder().Build();
+        trainer.ClearDomainEvents();
+
+        trainer.Suspend(AReason).ShouldBeSuccess();
+
+        trainer.DomainEvents.Should().ContainSingle()
+            .Which.Should().BeOfType<TrainerSuspendedDomainEvent>()
+            .Which.Reason.Should().Be(AReason);
     }
 }

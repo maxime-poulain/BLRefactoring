@@ -3,7 +3,7 @@
 ## Is this worth doing here?
 
 Event storming earns its keep in two ways: **discovering** a domain nobody has modelled yet, and
-**explaining** one that is already built. On a domain of two aggregates and twelve events, there is
+**explaining** one that is already built. On a domain of two aggregates and fourteen events, there is
 nothing left to discover — so this document makes no pretence of being a workshop record. It is here
 for the second reason, and one property of this codebase makes it unusually effective:
 
@@ -232,19 +232,27 @@ and only it can reach the aggregate's internal reassignment (ADR 0036).
 | Publish a training | `Training` | It is withdrawn; the owner is not suspended and publishes fewer than ten | `TrainingPublishedDomainEvent` | Commit `TrainingPublishedIntegrationEvent` to the outbox; the worker indexes it after the commit | `PublishIntegrationEventWhenTrainingPublishedEventHandler` |
 | *(no command yet)* | `Trainer` | The trainer is not already suspended | `TrainerSuspendedDomainEvent` | Record the sanction | `AuditWhenTrainerSuspendedEventHandler` |
 | *(no command yet)* | `Trainer` | The trainer is suspended | `TrainerReinstatedDomainEvent` | Record the lifting | `AuditWhenTrainerReinstatedEventHandler` |
+| *(no command yet)* | `Training` | It is not already withheld | `TrainingWithheldDomainEvent` | Record the decision and its reason | `AuditWhenTrainingWithheldEventHandler` |
+| *(no command yet)* | `Training` | It is withheld | `TrainingReleasedDomainEvent` | Record the lifting | `AuditWhenTrainingReleasedEventHandler` |
 
-Twelve events, twelve handlers, and two commands that raise nothing — both by decision. Publishing
-and removing a portrait are as informative as the twelve that do raise something: the bytes live in
-a store a rollback could not put back, so the aggregate says nothing and the caller cleans up after
-the commit. Of the twelve reactions, four act inside the transaction — the cascade and three audit
-lines, ADR 0002's *domain* side — and eight commit an integration event into the outbox, to be
-acted on after the commit.
+Fourteen events, fourteen handlers, and two commands that raise nothing — both by decision.
+Publishing and removing a portrait are as informative as the fourteen that do raise something: the
+bytes live in a store a rollback could not put back, so the aggregate says nothing and the caller
+cleans up after the commit. Of the fourteen reactions, six act inside the transaction — the cascade
+and five audit lines, ADR 0002's *domain* side — and eight commit an integration event into the
+outbox, to be acted on after the commit.
 
-Two rows carry *(no command yet)* for the same reason a third already did: suspending a trainer is
-an administrative decision and no role is entitled to it, so the rule is modelled and tested while
-the permission to trigger it is deliberately absent. Neither becomes an integration event — nothing
-raises them and nothing consumes them, and outbox plumbing for a fact nobody produces is the
-anticipation this repository refuses (ADR 0050).
+Four rows carry *(no command yet)* for the same reason a fifth already did: suspending a trainer and
+withholding a training are administrative decisions, and the use cases that issue them arrive with
+the commit that gives them endpoints — so the rules are modelled and tested while the commands are
+deliberately absent. None of the four becomes an integration event yet: nothing raises them and
+nothing consumes them, and outbox plumbing for a fact nobody produces is the anticipation this
+repository refuses (ADR 0050).
+
+**One of the four will never earn one, and that is a decision rather than a delay.** Withholding has
+consumers waiting — the owner to notify, the index entry to drop. Releasing has none: the training
+lands on `Unpublished`, where it was not indexed and where nobody was listening. Same test, opposite
+answer (ADR 0052).
 
 ## What the boards show that the code does not
 
