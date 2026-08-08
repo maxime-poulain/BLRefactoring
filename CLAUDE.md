@@ -169,6 +169,25 @@ session reference: no `Claude-Session` trailer, no session URL, not in the messa
 anything committed. Check the message and the staged diff for one before every commit. If you see
 a better design that no accepted record forbids, propose it before implementing it.
 
+**A commit carries exactly one co-author, and it is Claude.** Never a second `Co-Authored-By`
+trailer, whatever the reason offered for adding one. A co-authorship is a claim about who wrote the
+code, and the only honest one here names the assistant that helped write it.
+
+The trailer is not the only place a second name appears, and the other one is easy to introduce by
+accident. **The author and the committer must be the same identity** — the repository's own, the one
+the rest of the history uses. When the two differ GitHub prints both beside the co-author, which
+reads as a co-authorship nobody agreed to. `git commit --amend` is where this happens: it inherits
+the original author but takes the committer from `git config`, so a squashing amend has to set both
+on purpose rather than let one of them drift:
+
+```bash
+GIT_COMMITTER_NAME="<the author's name>" GIT_COMMITTER_EMAIL="<the author's address>" \
+  git commit --amend --no-edit --author="<the author's name> <the author's address>"
+```
+
+Verify it the way a reader will see it, before pushing: `git log -1 --format='%an <%ae>%n%cn <%ce>'`
+prints the same line twice, or the commit is not ready.
+
 **Everything written for Git or for GitHub is in English — the whole artefact, not its title.**
 There is no part of one where another language is acceptable, and *the title was in English* does
 not satisfy this rule. It covers, exhaustively:
