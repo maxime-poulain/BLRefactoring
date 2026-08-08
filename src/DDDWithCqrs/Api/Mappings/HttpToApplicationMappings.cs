@@ -1,14 +1,18 @@
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Create;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Edit;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetById;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Reinstate;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Suspend;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Create;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Delete;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Edit;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetById;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetMine;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Publish;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Release;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Transfer;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Unpublish;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Withhold;
 using TrainingHub.Shared.Api.Contracts.Auth;
 using TrainingHub.Shared.Api.Contracts.Mappings;
 using TrainingHub.Shared.Api.Contracts.Pagination;
@@ -135,6 +139,28 @@ public static class HttpToApplicationMappings
 
     /// <summary>Builds the command withdrawing a training from public view (ADR 0050).</summary>
     public static UnpublishTrainingCommand ToUnpublishTrainingCommand(Guid trainingId) => new(trainingId);
+
+    /// <summary>Builds the command placing a trainer under sanction (ADR 0052).</summary>
+    public static SuspendTrainerCommand ToCommand(this SuspendTrainerHttpRequest request, Guid trainerId)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        return new SuspendTrainerCommand(trainerId, request.Reason);
+    }
+
+    /// <summary>Builds the command lifting a trainer's sanction (ADR 0050).</summary>
+    public static ReinstateTrainerCommand ToReinstateTrainerCommand(Guid trainerId) => new(trainerId);
+
+    /// <summary>Builds the command taking a training out of public view (ADR 0052).</summary>
+    public static WithholdTrainingCommand ToCommand(this WithholdTrainingHttpRequest request, Guid trainingId)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        return new WithholdTrainingCommand(trainingId, request.Reason);
+    }
+
+    /// <summary>Builds the command lifting the interdiction on a withheld training (ADR 0052).</summary>
+    public static ReleaseTrainingCommand ToReleaseTrainingCommand(Guid trainingId) => new(trainingId);
 
     /// <summary>Builds the query reading one trainer.</summary>
     public static GetTrainerByIdQuery ToGetTrainerByIdQuery(Guid trainerId) => new(trainerId);

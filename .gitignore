@@ -751,3 +751,10 @@ src/DDD/Api/TrainingHub.DDD.Api.json
 # Each developer's private configuration overrides, loaded last by every host (ADR 0035). Never
 # versioned: in a public repository this file is where real credentials are allowed to exist.
 appsettings.Local.json
+
+# One folder per use case, and one of the use cases is called Release (ADR 0052). The build-results
+# block above ignores every directory named `Release/`, which is correct for `bin/Release` and
+# `obj/Release` and wrong here — it silently dropped four source files from a commit that built
+# perfectly on the machine that wrote them. Re-included by exact path rather than by wildcard, so
+# the exception stays as narrow as the collision that caused it.
+!src/DDDWithCqrs/Application/Features/Trainings/Release/

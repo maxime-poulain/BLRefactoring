@@ -733,7 +733,7 @@ neither can end up holding two of the three:
 |---|---|---|
 | `TrainingOwner` | the caller owns the training the route names | five write actions |
 | `Trainer` | the caller is somebody's trainer | `ApiControllerBase`, so every trainer action |
-| `Administrator` | the `Administrator` role | the administrative endpoints, when they exist |
+| `Administrator` | the `Administrator` role | `AdministrationControllerBase`, so the four administrative actions |
 
 `TrainingOwner` checks ownership only: a training that does not exist lets the policy succeed so the
 action can answer `404` rather than `403` — what the caller learns is that no training of theirs
@@ -798,8 +798,16 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 | `POST` | `/Training/{trainingId}/transfer` | Owner only. Hands the training to the recipient the body names when their catalogue allows it (ADR 0036). `204`, `400` (self, unknown, full or suspended recipient), `403`, `404`, `409` on the recipient's duplicate title |
 | `POST` | `/Training/{trainingId}/unpublish` | Owner only. Withdraws the training from public view; it stays in the owner's own listing (ADR 0050). No body, no `If-Match`. `204`, `400`, `403`, `404`, `409` when it was already withdrawn |
 | `POST` | `/Training/{trainingId}/publish` | Owner only. Offers a withdrawn training again. `204`, `400` when the owner is suspended or their catalogue is full, `403`, `404`, `409` when it was already published |
+| `POST` | `/Administration/trainers/{trainerId}/suspend` | Administrator only. The body carries the reason. `204`, `400` when the reason is empty or over 500 characters, `404`, `409` when the trainer was already suspended |
+| `POST` | `/Administration/trainers/{trainerId}/reinstate` | Administrator only. No body. `204`, `400`, `404`, `409` when the trainer was not under sanction |
+| `POST` | `/Administration/trainings/{trainingId}/withhold` | Administrator only. The body carries the reason. Takes the training out of public view where its owner cannot put it back (ADR 0052). `204`, `400`, `404`, `409` when it was already withheld |
+| `POST` | `/Administration/trainings/{trainingId}/release` | Administrator only. No body. Lifts the interdiction; the training lands on *unpublished*, and publishing is the owner's call again. `204`, `400`, `404`, `409` when it was not withheld |
 
-Fifteen endpoints, and not one of them serves a resource the caller does not own. There used to be
+Nineteen endpoints, and not one of them lets a trainer reach what another trainer owns. The four
+under `/Administration` act on somebody else's aggregate by design and are the only four that do —
+behind a role that is granted by hand and by no endpoint at all (ADR 0051). They are grouped by the
+authority they exercise rather than by the resource they act on, which is what that record says an
+administrator is: a permission, not a context. There used to be
 five more — `/Trainer/all`, `/Trainer/{id}`, `/Training/all`, `/Training/by-trainer/{id}` and
 `/Training/by-topic/{topic}` — and between them they handed out every trainer's name, contact email
 and bio to any authenticated caller, enumerable. Nothing in the application asked for them: the
@@ -829,8 +837,10 @@ nothing is being edited against a version the caller read, so a lost race answer
 a `412` no precondition was asked for.
 
 Trainers are created only through registration — there is no `POST /Trainer` — and no endpoint
-deletes one. Removing a trainer is an administrative decision, and no role is entitled to it yet,
-so nothing is exposed rather than something exposed to the wrong caller. The two endpoints acting
+deletes one. Removing a trainer is an administrative decision, and the role entitled to it now
+exists (ADR 0051) while the endpoint still does not: what the administration got is suspension,
+which is reversible, and a deletion is not. Nothing is exposed rather than something irreversible
+exposed early. The two endpoints acting
 on a trainer's own profile are addressed as `me` rather than by identifier, which is also where
 registration's `Location` now points: the address of what was created, from its creator's side.
 

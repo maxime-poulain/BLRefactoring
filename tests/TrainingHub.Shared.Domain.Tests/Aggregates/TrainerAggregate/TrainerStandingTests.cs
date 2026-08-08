@@ -11,9 +11,9 @@ namespace TrainingHub.Shared.Domain.Tests.Aggregates.TrainerAggregate;
 /// The sanction ADR 0050 gives a trainer: one field, both directions, and no trainings touched.
 /// </summary>
 /// <remarks>
-/// No endpoint reaches these methods, deliberately and for the reason <c>MarkForDeletion</c> gives:
-/// suspending is an administrative decision, and none exists until a role is entitled to it. What
-/// is proven here is the rule itself, which holds whoever ends up triggering it.
+/// Both stacks reach these methods now, through the administrative use cases. What is proven here
+/// is the rule itself rather than either route to it — the aggregate answers whether the change was
+/// allowed, and holds whoever triggers it.
 /// </remarks>
 public sealed class TrainerStandingTests
 {

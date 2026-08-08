@@ -73,6 +73,30 @@ public interface ITrainerApplicationService
     /// <param name="cancellationToken">Cancels the operation.</param>
     /// <returns>The photo, or <see langword="null"/> when there is none.</returns>
     Task<TrainerPhotoDto?> GetPhotoAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Places a trainer under sanction, with a stated reason (ADR 0052).
+    /// </summary>
+    /// <remarks>
+    /// The trainer is named rather than resolved from the caller, which is what separates this from
+    /// every other write on this service: those act on whoever is signed in, and this one acts on
+    /// somebody else. Who is entitled to do that is settled at the API boundary and nowhere else;
+    /// this layer never asks, and could not name the authority that answers without depending on
+    /// the API to do so (ADR 0051).
+    /// </remarks>
+    /// <param name="trainerId">The trainer being sanctioned.</param>
+    /// <param name="reason">Why, as the caller wrote it.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    /// <returns>Success, why the reason was refused, or why the trainer could not be suspended.</returns>
+    Task<Result> SuspendAsync(Guid trainerId, string reason, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lifts a trainer's sanction (ADR 0050).
+    /// </summary>
+    /// <param name="trainerId">The trainer coming back.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    /// <returns>Success, or a refusal when the trainer was not under sanction.</returns>
+    Task<Result> ReinstateAsync(Guid trainerId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -282,4 +306,51 @@ public sealed class TrainerApplicationService(
 
     private const string PhotoConcurrencyMessage =
         "The photo was changed by another request while this one was in flight. Try again.";
+
+    /// <inheritdoc />
+    public async Task<Result> SuspendAsync(Guid trainerId, string reason, CancellationToken cancellationToken = default)
+    {
+        var trainer = await trainerRepository.GetByIdAsync(TrainerId.Create(trainerId), cancellationToken);
+
+        if (trainer is null)
+        {
+            return Result.Failure(ErrorCodes.NotFound, $"Trainer with id `{trainerId}` could not be found.");
+        }
+
+        // The reason is judged before the trainer is asked anything: a sanction whose motive the
+        // domain refuses must leave no trace, and the aggregate takes a value object precisely so
+        // that this layer cannot hand it a sentence nobody vetted.
+        var reasonResult = SuspensionReason.Create(reason);
+
+        return await reasonResult.MatchAsync<Result>(
+            onSuccess: async suspensionReason => await trainer.Suspend(suspensionReason).MatchAsync(
+                onSuccess: async () =>
+                {
+                    trainerRepository.Update(trainer);
+                    await unitOfWork.SaveChangesAsync(cancellationToken);
+                    return Result.Success();
+                },
+                onFailure: Result.FailureAsync),
+            onFailure: Result.FailureAsync);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> ReinstateAsync(Guid trainerId, CancellationToken cancellationToken = default)
+    {
+        var trainer = await trainerRepository.GetByIdAsync(TrainerId.Create(trainerId), cancellationToken);
+
+        if (trainer is null)
+        {
+            return Result.Failure(ErrorCodes.NotFound, $"Trainer with id `{trainerId}` could not be found.");
+        }
+
+        return await trainer.Reinstate().MatchAsync(
+            onSuccess: async () =>
+            {
+                trainerRepository.Update(trainer);
+                await unitOfWork.SaveChangesAsync(cancellationToken);
+                return Result.Success();
+            },
+            onFailure: Result.FailureAsync);
+    }
 }

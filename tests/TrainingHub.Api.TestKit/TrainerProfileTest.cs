@@ -183,9 +183,9 @@ public abstract class TrainerProfileTest<TFactory>(TFactory factory) : Integrati
     [Fact]
     public async Task Delete_IsNotExposed_OnAnyRoute()
     {
-        // Removing a trainer is an administrative decision, and no role is entitled to it yet, so
-        // the API exposes nothing at all. Both `me` and an identifier used to answer 204, and this
-        // test is what keeps self-deletion from creeping back in.
+        // Removing a trainer is an administrative decision, and the administration got suspension
+        // rather than erasure — so the API exposes nothing at all here. Both `me` and an identifier
+        // used to answer 204, and this test is what keeps self-deletion from creeping back in.
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var me = (await client.GetFromJsonAsync<TrainerHttpResponse>("/Trainer/me"))!;
 

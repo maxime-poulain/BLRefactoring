@@ -213,9 +213,10 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     /// suspension hid from one the trainer had withdrawn themselves.
     /// </para>
     /// <para>
-    /// No use case reaches this, deliberately and for the reason <see cref="MarkForDeletion"/>
-    /// gives: suspending is an administrative decision, and no endpoint exposes it until a role is
-    /// entitled to it. The rule the aggregate states here holds whoever ends up triggering it.
+    /// Reached by the administrative use cases of both stacks, and by nothing else. Who is entitled
+    /// to call it is not the domain's business — this method answers whether the change was allowed,
+    /// exactly as <c>Training.IsOwnedBy</c> answers a question and leaves the caller to decide what
+    /// refusing means (ADR 0051).
     /// </para>
     /// </remarks>
     /// <param name="reason">Why the trainer is being suspended.</param>

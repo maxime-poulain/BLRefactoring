@@ -81,3 +81,4 @@ simpler from the outside.
 | [0051](0051-give-the-administrator-authority-not-a-context.md) | Give the administrator authority, not a context | Accepted |
 | [0052](0052-make-an-administrative-removal-a-state-of-its-own.md) | Make an administrative removal a state of its own | Accepted |
 | [0053](0053-a-suspended-trainer-reads-and-does-not-write.md) | A suspended trainer reads, and does not write | Proposed |
+| [0054](0054-give-the-administration-a-surface-of-its-own.md) | Give the administration a surface of its own | Accepted |

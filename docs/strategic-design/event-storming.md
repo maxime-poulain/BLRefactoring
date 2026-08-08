@@ -54,6 +54,15 @@ flowchart LR
     C3 --> AG1
     C3 --> X2["Media Storage context"]
 
+    A3(["👤 Administrator"]) --> C4["🔵 Suspend a trainer"]
+    A3 --> C5["🔵 Reinstate a trainer"]
+    C4 --> AG1
+    C5 --> AG1
+    AG1 --> E4["🟠 TrainerSuspendedDomainEvent"]
+    AG1 --> E5["🟠 TrainerReinstatedDomainEvent"]
+    E4 --> P4["🟣 Write an audit entry"]
+    E5 --> P5["🟣 Write an audit entry"]
+
     classDef event fill:#ff9d4d,stroke:#c2410c,color:#000
     classDef command fill:#7cb9ff,stroke:#1d4ed8,color:#000
     classDef aggregate fill:#ffe066,stroke:#b45309,color:#000
@@ -61,11 +70,11 @@ flowchart LR
     classDef actor fill:#fff3bf,stroke:#a16207,color:#000
     classDef external fill:#e5e7eb,stroke:#6b7280,color:#000
 
-    class E1,E2,E3 event
-    class C1,C2,C3 command
+    class E1,E2,E3,E4,E5 event
+    class C1,C2,C3,C4,C5 command
     class AG1 aggregate
-    class P1,P2,P3 policy
-    class A1,A2 actor
+    class P1,P2,P3,P4,P5 policy
+    class A1,A2,A3 actor
     class X1,X2,OB external
 ```
 
@@ -96,11 +105,12 @@ cleanup stays in the use case, after the commit.
 
 ### 🔴 Hotspots
 
-- **Nothing removes a trainer, and nothing suspends one.** The rules exist
-  (`Trainer.MarkForDeletion`, `Trainer.Suspend`, `Trainer.Reinstate`), the events exist, the policy
-  exists — and no command reaches any of them. Half of this closed with ADR 0051: the actor exists
-  now, as a role, a policy and a token that needs no trainer. What is still missing is the use cases
-  that actor would issue, and they are what will close the rest.
+- **Nothing removes a trainer.** `Trainer.MarkForDeletion` states the rule, the cascade that
+  answers it is tested, and no command reaches it. What used to sit here was larger — nothing
+  suspended a trainer either — and it closed in two halves: ADR 0051 gave the actor a role, a policy
+  and a token that needs no trainer, and the administrative endpoints gave that actor its commands.
+  Removal is the one that stayed, and it stayed on purpose: erasing a trainer is a right the account
+  holds, not a sanction the administration applies, and the two arrive by different doors.
 
 ---
 
@@ -153,6 +163,15 @@ flowchart LR
     TD["🟠 TrainerDeletedDomainEvent"] --> P3["🟣 Delete the trainer's trainings"]
     P3 --> AG
 
+    ADM(["👤 Administrator"]) --> C7["🔵 Withhold a training"]
+    ADM --> C8["🔵 Release a training"]
+    C7 --> AG
+    C8 --> AG
+    AG --> E8["🟠 TrainingWithheldDomainEvent"]
+    AG --> E9["🟠 TrainingReleasedDomainEvent"]
+    E8 --> P8["🟣 Write an audit entry"]
+    E9 --> P9["🟣 Write an audit entry"]
+
     classDef event fill:#ff9d4d,stroke:#c2410c,color:#000
     classDef command fill:#7cb9ff,stroke:#1d4ed8,color:#000
     classDef aggregate fill:#ffe066,stroke:#b45309,color:#000
@@ -162,11 +181,11 @@ flowchart LR
     classDef external fill:#e5e7eb,stroke:#6b7280,color:#000
     classDef invariant fill:#fecaca,stroke:#b91c1c,color:#000
 
-    class E1,E2,E4,TD event
-    class C1,C2,C3,C4 command
+    class E1,E2,E4,E8,E9,TD event
+    class C1,C2,C3,C4,C7,C8 command
     class AG,DS aggregate
-    class P1,P2,P3,P4 policy
-    class A,B actor
+    class P1,P2,P3,P4,P8,P9 policy
+    class A,B,ADM actor
     class RM readmodel
     class SI,OB external
     class INV,INV2 invariant
@@ -195,6 +214,14 @@ unpublishing are the everyday pair; deleting stays for the training created by m
 erasure. The three arrived together with ADR 0050, and it is the removal half that made the record
 worth building: an index that keeps serving a withdrawn training turns the status into a field the
 write side respects and every reader ignores.
+
+**The withheld state is the board's one closed door.** Every other transition on this board is
+reversible by the trainer who owns the training — publish and unpublish are a pair, and a deletion
+is final for everybody. `Withhold` is the only one that takes a decision away from the owner and
+gives it to somebody else: both of the owner's exits are refused by name, and only `Release`
+reopens them (ADR 0052). It is also why the board now has a second actor issuing commands rather
+than a second aggregate — the administration acts on `Training` through the same aggregate, with a
+permission the trainer does not hold (ADR 0051).
 
 **Deleting a trainer reaches into another aggregate.** `TrainerDeletedDomainEvent` is handled by a
 policy that deletes trainings *inside the same unit of work*. This is the strongest evidence that
@@ -230,10 +257,10 @@ and only it can reach the aggregate's internal reassignment (ADR 0036).
 | Delete a training | `Training` | Caller owns it | `TrainingDeletedDomainEvent` | Commit `TrainingDeletedIntegrationEvent` to the outbox; the worker removes it from the index after the commit | `PublishIntegrationEventWhenTrainingDeletedEventHandler` |
 | Unpublish a training | `Training` | It is not already withdrawn | `TrainingUnpublishedDomainEvent` | Commit `TrainingUnpublishedIntegrationEvent` to the outbox; the worker removes it from the index after the commit | `PublishIntegrationEventWhenTrainingUnpublishedEventHandler` |
 | Publish a training | `Training` | It is withdrawn; the owner is not suspended and publishes fewer than ten | `TrainingPublishedDomainEvent` | Commit `TrainingPublishedIntegrationEvent` to the outbox; the worker indexes it after the commit | `PublishIntegrationEventWhenTrainingPublishedEventHandler` |
-| *(no command yet)* | `Trainer` | The trainer is not already suspended | `TrainerSuspendedDomainEvent` | Record the sanction | `AuditWhenTrainerSuspendedEventHandler` |
-| *(no command yet)* | `Trainer` | The trainer is suspended | `TrainerReinstatedDomainEvent` | Record the lifting | `AuditWhenTrainerReinstatedEventHandler` |
-| *(no command yet)* | `Training` | It is not already withheld | `TrainingWithheldDomainEvent` | Record the decision and its reason | `AuditWhenTrainingWithheldEventHandler` |
-| *(no command yet)* | `Training` | It is withheld | `TrainingReleasedDomainEvent` | Record the lifting | `AuditWhenTrainingReleasedEventHandler` |
+| Suspend a trainer | `Trainer` | The trainer is not already suspended | `TrainerSuspendedDomainEvent` | Record the sanction | `AuditWhenTrainerSuspendedEventHandler` |
+| Reinstate a trainer | `Trainer` | The trainer is suspended | `TrainerReinstatedDomainEvent` | Record the lifting | `AuditWhenTrainerReinstatedEventHandler` |
+| Withhold a training | `Training` | It is not already withheld | `TrainingWithheldDomainEvent` | Record the decision and its reason | `AuditWhenTrainingWithheldEventHandler` |
+| Release a training | `Training` | It is withheld | `TrainingReleasedDomainEvent` | Record the lifting | `AuditWhenTrainingReleasedEventHandler` |
 
 Fourteen events, fourteen handlers, and two commands that raise nothing — both by decision.
 Publishing and removing a portrait are as informative as the fourteen that do raise something: the
@@ -242,12 +269,12 @@ cleans up after the commit. Of the fourteen reactions, six act inside the transa
 and five audit lines, ADR 0002's *domain* side — and eight commit an integration event into the
 outbox, to be acted on after the commit.
 
-Four rows carry *(no command yet)* for the same reason a fifth already did: suspending a trainer and
-withholding a training are administrative decisions, and the use cases that issue them arrive with
-the commit that gives them endpoints — so the rules are modelled and tested while the commands are
-deliberately absent. None of the four becomes an integration event yet: nothing raises them and
-nothing consumes them, and outbox plumbing for a fact nobody produces is the anticipation this
-repository refuses (ADR 0050).
+One row still carries *(no command yet)*, and four stopped: suspending a trainer, reinstating one,
+withholding a training and releasing it are administrative decisions, and they are now issued by the
+four endpoints under `/Administration`. What has not moved is that none of the four is an
+integration event: their consumers — the email to the trainer, the index entry to drop — arrive
+with the commit that writes them, and outbox plumbing for a fact nobody consumes is the anticipation
+this repository refuses (ADR 0050).
 
 **One of the four will never earn one, and that is a decision rather than a delay.** Withholding has
 consumers waiting — the owner to notify, the index entry to drop. Releasing has none: the training

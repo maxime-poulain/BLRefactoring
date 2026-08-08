@@ -2,10 +2,8 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using AwesomeAssertions;
-using TrainingHub.Shared;
+using TrainingHub.Shared.Api.Contracts.Trainings;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
-using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace TrainingHub.Api.TestKit;
@@ -73,10 +71,10 @@ public abstract class CatalogueCapacityTest<TFactory>(TFactory factory) : Integr
     /// otherwise being moderated would hand a trainer at the limit room for a replacement, which is
     /// a perverse incentive rather than a lifecycle.
     /// <para>
-    /// The withholding happens through a scope rather than over HTTP because no endpoint reaches it
-    /// yet: the administrative use cases arrive with the commit that gives them controllers. What
-    /// is under test here is the quota, and the quota does not care which caller moved the state —
-    /// the same reason <c>DomainEventPipelineTest</c> drives the cascade through the container.
+    /// The withholding goes through the administrative endpoint, by an administrator's own token.
+    /// It went through a scope while no endpoint reached it, which proved the quota and nothing
+    /// about the caller; now that the use cases exist, the whole chain is one run — two callers,
+    /// two tokens, and a rule neither of them can see.
     /// </para>
     /// </remarks>
     [Fact]
@@ -115,29 +113,17 @@ public abstract class CatalogueCapacityTest<TFactory>(TFactory factory) : Integr
     }
 
     /// <remarks>
-    /// Its own scope, as a separate request would be, and committed through the host's own unit of
-    /// work — so the count the next POST triggers reads a row rather than a change tracker.
+    /// A separate request by a separate caller, which is what makes the count the next POST triggers
+    /// read a committed row rather than a change tracker shared with it.
     /// </remarks>
     private async Task WithholdAsync(Guid trainingId)
     {
-        using var scope = Factory.CreateScope();
+        var administrator = await AuthHelper.SignInAsAdministratorAsync(Factory);
 
-        var trainings = scope.ServiceProvider.GetRequiredService<ITrainingRepository>();
-        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var withheld = await administrator.PostAsJsonAsync(
+            $"/Administration/trainings/{trainingId}/withhold",
+            new WithholdTrainingHttpRequest { Reason = "Withheld for the purposes of this proof." });
 
-        var training = await trainings.GetByIdAsync(TrainingId.Create(trainingId))
-            ?? throw new InvalidOperationException($"The fixture found no training {trainingId}.");
-
-        var reason = WithholdingReason.Create("Withheld for the purposes of this proof.")
-            .Match(value => value, _ => throw new InvalidOperationException(
-                "The fixture could not build a withholding reason."));
-
-        training.Withhold(reason).Switch(
-            () => { },
-            errors => throw new InvalidOperationException(
-                "The fixture could not withhold a training: "
-                + string.Join(", ", errors.Select(error => error.ErrorMessage))));
-
-        await unitOfWork.SaveChangesAsync();
+        withheld.EnsureSuccessStatusCode();
     }
 }
