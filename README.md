@@ -158,7 +158,7 @@ Twenty-seven projects: sixteen under `src/`, eleven under `tests/`. The backend 
 |---|---|
 | `TrainingHub.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, `PageRequest`/`PagedResult`, and the cross-cutting ports `IUnitOfWork`, `ICurrentUserService`, `ITrainingSearchIndexer`, plus the CQS marker interfaces |
 | `TrainingHub.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, and the fact ports `IUniquenessTitleChecker` and `ITrainingCounter` |
-| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the twelve domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the eight post-commit consumers — all shared by both stacks |
+| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the fourteen domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the eight post-commit consumers — all shared by both stacks |
 | `TrainingHub.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the paged-read extensions (`NewestFirst`, `ToPagedResultAsync`), the identity store, and the transactional outbox — publisher, delivery worker, dispatcher |
 | `TrainingHub.Shared.Api` | The HTTP boundary: the `*HttpRequest` and `*HttpResponse` contracts both hosts publish, their mappings to the application layer, the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, concurrency helpers |
 | `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService` |
@@ -386,7 +386,7 @@ aggregate states is the rule — a trainer does not disappear without their trai
 holds whoever ends up triggering it. The behaviour is covered by `DomainEventPipelineTests`, which
 drives it through the host's own services.
 
-Four of the twelve handlers act inside the transaction — ADR 0002's *domain reactions* — and eight
+Six of the fourteen handlers act inside the transaction — ADR 0002's *domain reactions* — and eight
 translate the domain event into an integration event and commit it to the transactional outbox
 (see [ADR 0024](docs/adr/0024-publish-facts-not-intents-and-version-them-in-the-envelope.md) and
 [the outbox section](#domain-events-and-the-unit-of-work)). After the commit, the outbox delivery
@@ -448,8 +448,8 @@ broken, and carries that aggregate's name.
 | Holder | Codes |
 |---|---|
 | `ErrorCodes` (kernel) | `Unspecified`, `NotFound`, `ConcurrencyConflict`, `Validation` |
-| `TrainingErrorCodes` | `Training.InvalidTitle`, `Training.DuplicateTitle`, `Training.InvalidDescription`, `Training.InvalidPrerequisites`, `Training.InvalidAcquiredSkills`, `Training.InvalidTopic`, `Training.CatalogueFull`, `Training.TransferToSelf`, `Training.RecipientCatalogueFull`, `Training.UnknownRecipient`, `Training.AlreadyPublished`, `Training.AlreadyUnpublished`, `Training.TrainerSuspended`, `Training.RecipientSuspended` |
-| `TrainerErrorCodes` | `Trainer.InvalidEmail`, `Trainer.InvalidFirstname`, `Trainer.InvalidLastname`, `Trainer.BioEmpty`, `Trainer.BioExceeds500Characters`, `Trainer.PhotoEmpty`, `Trainer.PhotoTooLarge`, `Trainer.PhotoFormatNotSupported`, `Trainer.PhotoContentMismatch`, `Trainer.AlreadySuspended`, `Trainer.NotSuspended` |
+| `TrainingErrorCodes` | `Training.InvalidTitle`, `Training.DuplicateTitle`, `Training.InvalidDescription`, `Training.InvalidPrerequisites`, `Training.InvalidAcquiredSkills`, `Training.InvalidTopic`, `Training.CatalogueFull`, `Training.TransferToSelf`, `Training.RecipientCatalogueFull`, `Training.UnknownRecipient`, `Training.AlreadyPublished`, `Training.AlreadyUnpublished`, `Training.TrainerSuspended`, `Training.RecipientSuspended`, `Training.AlreadyWithheld`, `Training.NotWithheld`, `Training.Withheld`, `Training.WithholdingReasonEmpty`, `Training.WithholdingReasonTooLong` |
+| `TrainerErrorCodes` | `Trainer.InvalidEmail`, `Trainer.InvalidFirstname`, `Trainer.InvalidLastname`, `Trainer.BioEmpty`, `Trainer.BioExceeds500Characters`, `Trainer.PhotoEmpty`, `Trainer.PhotoTooLarge`, `Trainer.PhotoFormatNotSupported`, `Trainer.PhotoContentMismatch`, `Trainer.AlreadySuspended`, `Trainer.NotSuspended`, `Trainer.SuspensionReasonEmpty`, `Trainer.SuspensionReasonTooLong` |
 
 `Validation` is the one the kernel declares for somebody else: the FluentValidation pipeline of the
 CQRS stack answers with it, and nothing in the domain ever does (ADR 0016).

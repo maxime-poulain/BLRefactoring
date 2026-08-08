@@ -71,6 +71,18 @@ public sealed class TrainingConfiguration : AggregateRootTypeConfiguration<Train
             .HasMaxLength(20)
             .IsRequired();
 
+        // Flattened beside the status it belongs to, and optional: a training nobody withheld has a
+        // null here. The pair carries an invariant the database cannot state — the reason is present
+        // if and only if the status is Withheld — which the aggregate holds instead, since it is the
+        // only writer of either (ADR 0052).
+        builder.ComplexProperty(training => training.WithholdingReason, reasonBuilder =>
+        {
+            reasonBuilder.IsRequired(false);
+            reasonBuilder.Property(reason => reason.Value)
+                .HasColumnName("WithholdingReason")
+                .HasMaxLength(WithholdingReason.MaximumLength);
+        });
+
         builder.OwnsMany(training => training.Topics, topicsBuilder =>
         {
             topicsBuilder.ToTable("TrainingTopic");

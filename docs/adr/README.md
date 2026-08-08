@@ -79,5 +79,5 @@ simpler from the outside.
 | [0049](0049-measure-duplication-where-repetition-is-a-defect.md) | Measure duplication where repetition is a defect | Accepted |
 | [0050](0050-retire-a-training-rather-than-delete-it.md) | Retire a training rather than delete it | Accepted |
 | [0051](0051-give-the-administrator-authority-not-a-context.md) | Give the administrator authority, not a context | Accepted |
-| [0052](0052-make-an-administrative-removal-a-state-of-its-own.md) | Make an administrative removal a state of its own | Proposed |
+| [0052](0052-make-an-administrative-removal-a-state-of-its-own.md) | Make an administrative removal a state of its own | Accepted |
 | [0053](0053-a-suspended-trainer-reads-and-does-not-write.md) | A suspended trainer reads, and does not write | Proposed |

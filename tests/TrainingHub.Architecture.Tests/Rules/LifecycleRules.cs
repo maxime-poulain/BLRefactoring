@@ -111,6 +111,73 @@ public sealed partial class LifecycleRules
                     "defect ADR 0050 exists to close"))
             .ShouldHold();
 
+    /// <summary>
+    /// The states that owe an explanation, each with the property that carries it.
+    /// </summary>
+    /// <remarks>
+    /// Two pairs today, and the shape rather than the list is what this rule is about: a third
+    /// sanction added tomorrow states itself here and is watched from its first line.
+    /// </remarks>
+    private static readonly (string State, string Reason)[] ReasonedStates =
+    [
+        ("Status = TrainingStatus.Withheld", "WithholdingReason"),
+        ("Status = TrainerStatus.Suspended", "SuspensionReason"),
+    ];
+
+    /// <summary>
+    /// Every reasoned state, is written with its reason.
+    /// </summary>
+    /// <remarks>
+    /// ADR 0052 states its invariant in both directions — the reason is present <em>if and only
+    /// if</em> the state is the one it motivates — and both directions are read here, because each
+    /// rots differently.
+    /// <para>
+    /// A member that enters the state without writing the reason leaves a <em>mute sanction</em>:
+    /// the training is unavailable and its owner is told nothing, which is the one thing the record
+    /// exists to prevent. A member that writes a reason without moving the status leaves an
+    /// <em>orphan reason</em>: a row explaining a decision nobody took.
+    /// </para>
+    /// <para>
+    /// Neither is a compile error and neither would fail a unit test that only checked the state, so
+    /// the pair is held here, by shape, at the one place both halves are visible at once — the
+    /// member that does the writing.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0052",
+        "the reason is present if and only if the state is the one it motivates, which is what " +
+        "forbids an orphan reason and a mute state alike")]
+    public void EveryReasonedState_IsWrittenWithItsReason() =>
+        DomainSourceFiles
+            .Selected("domain source file")
+            .SelectMany(file => MembersOf(file).SelectMany(member => ReasonedStates
+                .Select(pair => Violation(file, member, pair))
+                .Where(violation => violation is not null)
+                .Select(violation => violation!)))
+            .ShouldHold();
+
+    private static string? Violation(string file, string member, (string State, string Reason) pair)
+    {
+        var entersTheState = member.Contains(pair.State, StringComparison.Ordinal);
+        var writesTheReason = member.Contains($"{pair.Reason} =", StringComparison.Ordinal);
+
+        if (entersTheState && !writesTheReason)
+        {
+            return $"'{file}' enters '{pair.State}' in a member that never writes {pair.Reason}: " +
+                   $"'{FirstLineOf(member)}'. A state that owes an explanation and carries none is " +
+                   "a sanction the product cannot explain to the person it lands on (ADR 0052)";
+        }
+
+        if (writesTheReason && !StatusAssignment.IsMatch(member))
+        {
+            return $"'{file}' writes {pair.Reason} in a member that moves no status: " +
+                   $"'{FirstLineOf(member)}'. A reason that travels without its state is a row " +
+                   "explaining a decision nobody took (ADR 0052)";
+        }
+
+        return null;
+    }
+
     private static string FirstLineOf(string member) =>
         member.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim() ?? member;
 }

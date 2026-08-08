@@ -64,4 +64,26 @@ public static class TrainingErrorCodes
     /// different places (ADR 0015).
     /// </summary>
     public static readonly ErrorCode RecipientSuspended = new("Training.RecipientSuspended");
+
+    /// <summary>The training is already withheld, so withholding it changes nothing.</summary>
+    public static readonly ErrorCode AlreadyWithheld = new("Training.AlreadyWithheld");
+
+    /// <summary>The training is not withheld, so there is nothing to release.</summary>
+    public static readonly ErrorCode NotWithheld = new("Training.NotWithheld");
+
+    /// <summary>
+    /// The training was taken out of public view by the administration, and its owner cannot put it
+    /// back. This is the refusal the third state exists to produce (ADR 0052) — and the one a
+    /// trainer will actually meet, which is why it names the state and not the policy behind it.
+    /// </summary>
+    public static readonly ErrorCode Withheld = new("Training.Withheld");
+
+    /// <summary>
+    /// A training was withheld without saying why, which leaves its owner nothing to act on
+    /// (ADR 0052).
+    /// </summary>
+    public static readonly ErrorCode WithholdingReasonEmpty = new("Training.WithholdingReasonEmpty");
+
+    /// <summary>The reason given for withholding is longer than the field can hold.</summary>
+    public static readonly ErrorCode WithholdingReasonTooLong = new("Training.WithholdingReasonTooLong");
 }

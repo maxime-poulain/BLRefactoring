@@ -2,7 +2,10 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using AwesomeAssertions;
+using TrainingHub.Shared;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
+using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace TrainingHub.Api.TestKit;
@@ -21,7 +24,7 @@ namespace TrainingHub.Api.TestKit;
 /// </remarks>
 /// <typeparam name="TFactory">The suite's fixture.</typeparam>
 public abstract class CatalogueCapacityTest<TFactory>(TFactory factory) : IntegrationTest<TFactory>(factory)
-    where TFactory : IResettableDatabase, IHttpClientSource
+    where TFactory : IResettableDatabase, IHttpClientSource, IServiceScopeSource
 {
     /// <summary>
     /// A full catalogue, refuses the next training and no sooner.
@@ -58,5 +61,83 @@ public abstract class CatalogueCapacityTest<TFactory>(TFactory factory) : Integr
             .EnumerateArray()
             .Select(error => error.GetProperty("errorCode").GetString())
             .Should().Contain(TrainingErrorCodes.CatalogueFull.Value);
+    }
+
+    /// <summary>
+    /// A withheld training, still holds its place in the quota.
+    /// </summary>
+    /// <remarks>
+    /// The half of ADR 0052 that had to land in the same commit as the state itself, proven where
+    /// only this suite can prove it: the specification, the repository's real count and the
+    /// factory's refusal, over the wire. Withdrawing frees a slot and being moderated does not —
+    /// otherwise being moderated would hand a trainer at the limit room for a replacement, which is
+    /// a perverse incentive rather than a lifecycle.
+    /// <para>
+    /// The withholding happens through a scope rather than over HTTP because no endpoint reaches it
+    /// yet: the administrative use cases arrive with the commit that gives them controllers. What
+    /// is under test here is the quota, and the quota does not care which caller moved the state —
+    /// the same reason <c>DomainEventPipelineTest</c> drives the cascade through the container.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task AWithheldTraining_StillHoldsItsPlaceInTheQuota()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+
+        var first = Guid.Empty;
+
+        for (var published = 1; published <= Training.MaximumPerTrainer; published++)
+        {
+            var created = await client.PostAsJsonAsync(
+                "/Training", TrainingRequests.Valid($"Catalogue training {published:D2}"));
+
+            created.EnsureSuccessStatusCode();
+
+            if (published == 1)
+            {
+                first = await created.Content.ReadFromJsonAsync<Guid>();
+            }
+        }
+
+        await WithholdAsync(first);
+
+        var refused = await client.PostAsJsonAsync(
+            "/Training", TrainingRequests.Valid("The replacement moderation must not permit"));
+
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest,
+            "a slot freed by being moderated would reward the moderation");
+
+        var body = JsonDocument.Parse(await refused.Content.ReadAsStringAsync()).RootElement;
+        body.GetProperty("domainErrors")
+            .EnumerateArray()
+            .Select(error => error.GetProperty("errorCode").GetString())
+            .Should().Contain(TrainingErrorCodes.CatalogueFull.Value);
+    }
+
+    /// <remarks>
+    /// Its own scope, as a separate request would be, and committed through the host's own unit of
+    /// work — so the count the next POST triggers reads a row rather than a change tracker.
+    /// </remarks>
+    private async Task WithholdAsync(Guid trainingId)
+    {
+        using var scope = Factory.CreateScope();
+
+        var trainings = scope.ServiceProvider.GetRequiredService<ITrainingRepository>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+        var training = await trainings.GetByIdAsync(TrainingId.Create(trainingId))
+            ?? throw new InvalidOperationException($"The fixture found no training {trainingId}.");
+
+        var reason = WithholdingReason.Create("Withheld for the purposes of this proof.")
+            .Match(value => value, _ => throw new InvalidOperationException(
+                "The fixture could not build a withholding reason."));
+
+        training.Withhold(reason).Switch(
+            () => { },
+            errors => throw new InvalidOperationException(
+                "The fixture could not withhold a training: "
+                + string.Join(", ", errors.Select(error => error.ErrorMessage))));
+
+        await unitOfWork.SaveChangesAsync();
     }
 }

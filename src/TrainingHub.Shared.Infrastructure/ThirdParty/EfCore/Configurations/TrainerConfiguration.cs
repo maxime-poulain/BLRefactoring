@@ -87,6 +87,18 @@ public sealed class TrainerConfiguration : AggregateRootTypeConfiguration<Traine
             .HasMaxLength(20)
             .IsRequired();
 
+        // Flattened beside the status it belongs to, and optional in the same way Bio is: a trainer
+        // in good standing has a null here. The pair carries an invariant the database cannot state
+        // — the reason is present if and only if the status is Suspended — which the aggregate holds
+        // instead, since it is the only writer of either (ADR 0052).
+        builder.ComplexProperty(trainer => trainer.SuspensionReason, reasonBuilder =>
+        {
+            reasonBuilder.IsRequired(false);
+            reasonBuilder.Property(reason => reason.Value)
+                .HasColumnName("SuspensionReason")
+                .HasMaxLength(SuspensionReason.MaximumLength);
+        });
+
         builder.Property(p => p.UserId)
             .HasConversion(v => v.Value, v => UserId.Create(v))
             .HasColumnName("UserId")

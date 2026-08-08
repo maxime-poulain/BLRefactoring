@@ -1,10 +1,19 @@
 # 0052 — Make an administrative removal a state of its own
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-08-07
 
-**Why `Proposed`.** Nothing answers to it yet; it becomes `Accepted` in the commit that builds it,
-with the rules that defend it. Same treatment as ADR 0050, for the same reason.
+**This record was `Proposed` until the commit that built it**, the treatment ADR 0050 and ADR 0051
+both had and for the same reason: writing the decision down before the code is the point, and
+claiming the code already obeys it would be the lie this repository refuses everywhere else. It
+became `Accepted` together with `EveryReasonedState_IsWrittenWithItsReason`.
+
+**One thing the design did not say, and building it found.** The record names `PublishAsync` as the
+method that must refuse a withheld training — *"the owner cannot leave `Withheld`"* — and stops
+there. There are **two** doors out, not one: `Unpublish` would have taken a withheld training to
+`Unpublished`, from where its owner could publish it freely. Two moves, each through a check that
+passed, which is the exact shape of the quota bypass ADR 0050 found. Both are refused, and the
+second is the one a reader would not think to look for, so it has a fact of its own.
 
 ## Context
 
@@ -69,8 +78,9 @@ been delivered and swept cannot answer "why is my training unavailable".
   deliberately: the administration lifts an interdiction, it does not decide to put a training back
   in the window. Publishing is the owner's call again. Zero extra field, and the more honest reading
   of what releasing means.
-- **The owner cannot leave `Withheld`.** `PublishAsync` refuses it by name. That refusal is the
-  whole reason the state exists.
+- **The owner cannot leave `Withheld`, by either door.** `PublishAsync` refuses it by name, and so
+  does `Unpublish` — otherwise the interdiction lifts in two moves that each pass a check. That
+  refusal is the whole reason the state exists.
 - **A withheld training keeps its place in the quota.** ADR 0050 made the ten count published
   trainings, on the grounds that a trainer who withdraws ten should not lose their catalogue for
   ever. That argument is about a *voluntary* withdrawal. Freeing a slot by being moderated is a
@@ -134,14 +144,24 @@ rejected the cascade — a field that exists to remember something is the thing 
 behaviour can be had without it. Landing on `Unpublished` gives the decision back to the owner,
 which is also what lifting an interdiction means.
 
-## Verification *(when this is built)*
+## Verification
 
-- Every transition and every refused transition on the aggregate, including the one that matters
-  most: **the owner publishing a withheld training is refused by name**.
-- The invariant in both directions — reason without the state, and the state without a reason — each
-  watched failing.
-- The quota counting a withheld training, end to end: a trainer at the limit whose training is
-  withheld still cannot create an eleventh.
-- `EveryStatusTransition_AnnouncesItself` covers the two new transitions without being touched,
-  which is the point of having written it as a shape rather than a list.
-- Shared facts in `tests/TrainingHub.Api.TestKit/`, so both hosts answer them.
+- **Every transition and every refused transition on the aggregate**, including the two that matter
+  most: the owner publishing a withheld training is refused by name, and so is the owner
+  unpublishing one.
+- **`EveryReasonedState_IsWrittenWithItsReason`**, which reads the invariant off the source in both
+  directions, at the one place both halves are visible at once — the member doing the writing. A
+  member that enters the state without the reason leaves a *mute sanction*; a member that writes a
+  reason without moving the status leaves an *orphan reason*. Each direction was watched failing:
+  removing the assignment in `Withhold` named that method, and removing the status assignment in
+  `Release` named that one.
+- **`EveryStatusTransition_AnnouncesItself` covers the two new transitions without being touched**,
+  which is the point of having written it as a shape rather than a list. Verified rather than
+  assumed: removing the `AddDomainEvent` from `Withhold` failed that rule by name.
+- **The quota counting a withheld training, end to end**, in `CatalogueCapacityTest` so both hosts
+  answer it: a trainer at the limit whose training is withheld still cannot create an eleventh. The
+  withholding is driven through a scope, because the administrative endpoints arrive with the commit
+  that gives them controllers — the quota does not care which caller moved the state.
+- **The specification read twice**, in memory and as a compiled expression, which is the dual
+  evaluation ADR 0028 exists for: the aggregate's rule and the database's filter are one expression
+  and cannot drift.
