@@ -7,6 +7,7 @@ using TrainingHub.Shared.Common.Pagination;
 using TrainingHub.Shared.Common.Results;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
+using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 using TrainingHub.Shared.Application.Factories;
 
 namespace TrainingHub.DDD.Application.Services.TrainingServices;
@@ -77,6 +78,31 @@ public interface ITrainingApplicationService
     /// Withdraws a training from public view, keeping it in its owner's own listing (ADR 0050).
     /// </summary>
     Task<Result> UnpublishAsync(Guid trainingId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Takes a training out of public view by administrative decision, with a stated reason
+    /// (ADR 0052).
+    /// </summary>
+    /// <remarks>
+    /// Distinct from <see cref="UnpublishAsync"/> in what it *permits* rather than in who called it:
+    /// the owner can undo their own withdrawal and cannot undo this one, which is why the two land
+    /// on different states. Who is entitled to it is settled at the API boundary and nowhere else;
+    /// this layer never asks, and could not name the authority that answers without depending on
+    /// the API to do so (ADR 0051).
+    /// </remarks>
+    /// <param name="trainingId">The training being withheld.</param>
+    /// <param name="reason">Why, as the caller wrote it.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    /// <returns>Success, why the reason was refused, or why the training could not be withheld.</returns>
+    Task<Result> WithholdAsync(Guid trainingId, string reason, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lifts the interdiction on a withheld training, which lands on <c>Unpublished</c> (ADR 0052).
+    /// </summary>
+    /// <param name="trainingId">The training being released.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    /// <returns>Success, or a refusal when the training was not withheld.</returns>
+    Task<Result> ReleaseAsync(Guid trainingId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -292,6 +318,55 @@ public sealed class TrainingApplicationService(
         var result = training.Unpublish();
 
         return await result.MatchAsync(
+            onSuccess: async () =>
+            {
+                trainingRepository.Update(training);
+                await unitOfWork.SaveChangesAsync(cancellationToken);
+                return Result.Success();
+            },
+            onFailure: Result.FailureAsync);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> WithholdAsync(Guid trainingId, string reason, CancellationToken cancellationToken = default)
+    {
+        var training = await trainingRepository.GetByIdAsync(TrainingId.Create(trainingId), cancellationToken);
+        if (training is null)
+        {
+            return Result.Failure(
+                ErrorCodes.NotFound,
+                $"Training with id `{trainingId}` not found.");
+        }
+
+        // The reason is judged before the training is asked anything: a sanction whose motive the
+        // domain refuses must leave no trace, and the aggregate takes a value object precisely so
+        // that this layer cannot hand it a sentence nobody vetted.
+        var reasonResult = WithholdingReason.Create(reason);
+
+        return await reasonResult.MatchAsync<Result>(
+            onSuccess: async withholdingReason => await training.Withhold(withholdingReason).MatchAsync(
+                onSuccess: async () =>
+                {
+                    trainingRepository.Update(training);
+                    await unitOfWork.SaveChangesAsync(cancellationToken);
+                    return Result.Success();
+                },
+                onFailure: Result.FailureAsync),
+            onFailure: Result.FailureAsync);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> ReleaseAsync(Guid trainingId, CancellationToken cancellationToken = default)
+    {
+        var training = await trainingRepository.GetByIdAsync(TrainingId.Create(trainingId), cancellationToken);
+        if (training is null)
+        {
+            return Result.Failure(
+                ErrorCodes.NotFound,
+                $"Training with id `{trainingId}` not found.");
+        }
+
+        return await training.Release().MatchAsync(
             onSuccess: async () =>
             {
                 trainingRepository.Update(training);

@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 53 architecture decision records.
+2. `docs/adr/README.md` — the index of 54 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 163 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 164 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -168,6 +168,25 @@ AI-assisted commit keeps its `Co-Authored-By` trailer — always — but never c
 session reference: no `Claude-Session` trailer, no session URL, not in the message and not in
 anything committed. Check the message and the staged diff for one before every commit. If you see
 a better design that no accepted record forbids, propose it before implementing it.
+
+**Everything written for Git or for GitHub is in English — the whole artefact, not its title.**
+There is no part of one where another language is acceptable, and *the title was in English* does
+not satisfy this rule. It covers, exhaustively:
+
+- a commit's **subject line** and its **body**, trailers included;
+- a pull request's **title**, the **headings** of its description, and **every word of the
+  description itself** — prose, tables, bullet lists, quoted output, the comments inside a code
+  block, the technical explanation, the motivation, the verification section, the *what is next*;
+- anything else published beside one: an issue or pull-request **comment**, a **review** and its
+  inline remarks, a **reply to a reviewer**, a branch name, a release note.
+
+**The conversation is the exception, and the only one.** Answer the user in the language they wrote
+to you in — that costs nothing and belongs to them. What separates the two is permanence and
+audience: a chat is ephemeral and has one reader, while a description stays attached to the diff for
+as long as the diff exists and is read by whoever arrives next. A repository whose prose changes
+language according to who happened to ask for the change is one that has to be read twice. Translate
+at the boundary rather than writing across it: think in whichever language the discussion is in, and
+write the artefact in English.
 
 **A pull request Claude Code owns carries one commit, and stays that way.** After every push to a
 `claude/*` branch, squash the branch back to a single commit against the base, force-push it, and

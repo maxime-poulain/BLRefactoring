@@ -146,13 +146,16 @@ holds a `Trainer` instance.
 |---|---|---|
 | **Trainer** | Everything in this context, and only to their own data | Implemented — `ICurrentUserService.TrainerId` |
 | **Visitor** | Register, then sign in | Implemented |
-| **Administrator** | Suspend and reinstate a trainer, remove one | **Entitled, not yet reachable.** The role, the policy and a token that needs no trainer exist (ADR 0051); `Trainer.Suspend`, `Reinstate` and `MarkForDeletion` state the rules; no endpoint calls them yet |
+| **Administrator** | Suspend and reinstate a trainer; withhold and release a training | Implemented — four endpoints under `/Administration`, behind the `Administrator` role (ADR 0051, ADR 0052). Removing a trainer is not among them: `Trainer.MarkForDeletion` states the rule and no command reaches it |
 
-The third row used to say the permission was absent — no role was ever granted, and none was seeded,
-so the rules it names could only be reached from a unit test. What is missing now is narrower and
-says so: the authority exists and the use cases that exercise it do not. An administrator is an
-**account, not a trainer**, which is why their token carries no `trainer_id` and why the trainer
-surface refuses them rather than raising on the missing claim.
+The third row has said three different things in three commits, and the sequence is the point. It
+began by saying the permission was absent — no role was ever granted, so the rules it named could
+only be reached from a unit test. ADR 0051 gave the actor a role, a policy and a token that needs no
+trainer, and the row said the authority existed while the use cases did not. Those use cases are the
+four endpoints now, and what is left unclaimed is one line rather than a paragraph. An administrator
+is an **account, not a trainer**, which is why their token carries no `trainer_id`, why the trainer
+surface refuses them rather than raising on the missing claim, and why the administrative endpoints
+sit on a controller base of their own.
 
 The first row's *only to their own data* has one deliberate exception, and it is worth naming
 because it looks like a leak and is not. Transferring a training reads two facts about the

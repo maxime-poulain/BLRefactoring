@@ -20,9 +20,10 @@ namespace TrainingHub.Api.TestKit;
 /// the one that decays silently — a <c>500</c> where a <c>403</c> belongs still looks like a
 /// refusal from the outside.
 /// <para>
-/// The administrative endpoints themselves are not here, because there are none yet: they arrive
-/// with the use cases they serve, and the <see cref="AdministratorPolicy"/> is asserted meanwhile
-/// where it is registered.
+/// Both directions of <see cref="AdministratorPolicy"/> are here too, now that there are endpoints
+/// behind it: what the policy admits and what it refuses. A requirement nobody satisfies refuses
+/// everybody, which passes every test that only checks for refusals — so the pass matters as much
+/// as the two rejections. What those endpoints *do* is <see cref="ModerationTest{TFactory}"/>'s.
 /// </para>
 /// </remarks>
 /// <typeparam name="TFactory">The suite's fixture.</typeparam>
@@ -110,4 +111,50 @@ public abstract class AdministratorTest<TFactory>(TFactory factory) : Integratio
 
         (await client.GetAsync("/Trainer/me")).StatusCode.Should().Be(HttpStatusCode.OK);
     }
+
+    /// <summary>
+    /// A trainer, is refused the administrative surface.
+    /// </summary>
+    /// <remarks>
+    /// The other half of the split ADR 0051 forced, and the one worth watching: a trainer's token
+    /// is a perfectly good token, so nothing about it fails authentication. What refuses it is the
+    /// role it does not hold, which is why the answer is 403 and not 401.
+    /// <para>
+    /// A body that would be accepted, and a trainer that exists — their own — so the refusal cannot
+    /// be mistaken for a rejected payload or a missing row. Authorization runs before model binding
+    /// and before any handler, and a reader should not have to know that to trust the fact.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task ATrainer_IsRefusedTheAdministrativeSurface()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+
+        var profile = await client.GetAsync("/Trainer/me");
+        profile.EnsureSuccessStatusCode();
+        var trainerId = (await profile.Content.ReadFromJsonAsync<TrainerHttpResponse>())!.Id;
+
+        var suspension = new SuspendTrainerHttpRequest { Reason = "A reason the domain would accept." };
+
+        (await client.PostAsJsonAsync($"/Administration/trainers/{trainerId}/suspend", suspension))
+            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        (await client.PostAsync($"/Administration/trainers/{trainerId}/reinstate", content: null))
+            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    /// <summary>
+    /// An anonymous caller, is refused the administrative surface with unauthorized.
+    /// </summary>
+    /// <remarks>
+    /// The same regression as on the trainer surface, and it has to be asserted on this base
+    /// separately: the two carry different policies, and a policy that spelled out
+    /// <c>RequireAuthenticatedUser</c> would turn every unauthenticated call into a 403 and stop
+    /// clients knowing to sign in.
+    /// </remarks>
+    [Fact]
+    public async Task AnAnonymousCaller_IsRefusedTheAdministrativeSurfaceWithUnauthorized() =>
+        (await Factory.CreateClient().PostAsync(
+            $"/Administration/trainings/{Guid.NewGuid()}/release", content: null))
+            .StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 }

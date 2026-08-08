@@ -37,29 +37,36 @@ public sealed partial class HttpBoundaryRules
             .Select(action => (controller, action)));
 
     /// <summary>
-    /// Every controller, derives from one of the two shared bases.
+    /// Every controller, derives from one of the three shared bases.
     /// </summary>
+    /// <remarks>
+    /// Two until the administration got endpoints. The third exists because the second stopped being
+    /// neutral: <c>ApiControllerBase</c> carries <c>TrainerPolicy</c> since ADR 0051, and a policy on
+    /// an action is combined with its controller's rather than replacing it, so an administrative
+    /// action could not have been hosted there.
+    /// </remarks>
     [Fact]
     [ArchitectureRule("0011",
         "every controller inherits the same base, so what is true of one endpoint is true of all of them")]
-    public void EveryController_DerivesFromOneOfTheTwoSharedBases() =>
+    public void EveryController_DerivesFromOneOfTheThreeSharedBases() =>
         Controllers
             .Selected("controller")
-            .Where(controller => controller.BaseType?.Name is not ("ApiControllerBase" or "AuthControllerBase"))
+            .Where(controller => controller.BaseType?.Name is not
+                ("ApiControllerBase" or "AuthControllerBase" or "AdministrationControllerBase"))
             .Select(controller =>
                 $"{controller.FullName} derives from {controller.BaseType?.Name}, so it inherits none of " +
                 "the authorization, routing or error-shape decisions the bases carry")
             .ShouldHold();
 
     /// <summary>
-    /// Both controller bases, are abstract.
+    /// Every controller base, is abstract.
     /// </summary>
     [Fact]
     [ArchitectureRule("0011",
         "the controller bases are abstract, or MVC discovers them as controllers of their own")]
-    public void BothControllerBases_AreAbstract() =>
+    public void EveryControllerBase_IsAbstract() =>
         Solution.SharedApi.DeclaredTypes()
-            .Where(type => type.Name is "ApiControllerBase" or "AuthControllerBase")
+            .Where(type => type.Name.EndsWith("ControllerBase", StringComparison.Ordinal))
             .Selected("shared controller base")
             .Where(type => !type.IsAbstract)
             .Select(type =>

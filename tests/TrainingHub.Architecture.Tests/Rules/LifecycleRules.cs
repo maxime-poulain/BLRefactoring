@@ -90,9 +90,10 @@ public sealed partial class LifecycleRules
     /// went on serving all of them. The two halves of ADR 0050 need two rules — one for the
     /// transitions, one for the way out.
     /// <para>
-    /// Deliberately not restricted to trainings. No use case deletes a trainer today, the endpoint
-    /// having been withdrawn until a role is entitled to it; when one returns it will stage a
-    /// deletion through a repository like every other, and this rule will already be waiting for it.
+    /// Deliberately not restricted to trainings. No use case deletes a trainer today — the endpoint
+    /// was withdrawn, and what the administration got instead is a sanction it can lift; when a
+    /// deletion returns it will stage it through a repository like every other, and this rule will
+    /// already be waiting for it.
     /// </para>
     /// </remarks>
     [Fact]
