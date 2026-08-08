@@ -13,9 +13,10 @@ namespace TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 /// that had to destroy a catalogue to take effect could not be undone. See ADR 0050.
 /// </para>
 /// <para>
-/// A suspended trainer may not increase their public footprint — creating, publishing and
-/// transferring are refused — and may still edit and unpublish, which leaves them able to repair
-/// what earned them the sanction.
+/// A suspended trainer loses every write (ADR 0053). Three of those refusals live here, on the
+/// aggregate that owns the rule — creating, publishing and transferring, giving and receiving
+/// alike. The rest are refused at the boundary, before a use case runs, which is why this type
+/// answers fewer questions than the sanction implies.
 /// </para>
 /// </remarks>
 public sealed class TrainerStatus : ValueObject

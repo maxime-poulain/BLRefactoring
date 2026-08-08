@@ -14,4 +14,5 @@ public sealed class LoginHttpResponse
     /// The JWT token generated for the authenticated user.
     /// </summary>
     public required string Token { get; init; }
+
 }

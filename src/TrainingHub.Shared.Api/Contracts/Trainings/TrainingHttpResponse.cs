@@ -46,8 +46,8 @@ public sealed class TrainingHttpResponse
     public required string AcquiredSkills { get; init; }
 
     /// <summary>
-    /// Whether the training is offered to the public or withdrawn from it: <c>Published</c> or
-    /// <c>Unpublished</c>.
+    /// Where the training stands: <c>Published</c>, <c>Unpublished</c>, or <c>Withheld</c> when the
+    /// administration has taken it out of its owner's hands (ADR 0052).
     /// </summary>
     /// <remarks>
     /// Published as the word rather than a boolean, so that adding a state later is an additive
@@ -56,4 +56,15 @@ public sealed class TrainingHttpResponse
     /// not carry because the only caller who can read it is the owner themselves (ADR 0050).
     /// </remarks>
     public required string Status { get; init; }
+
+    /// <summary>
+    /// Why the training was withheld, or <see langword="null"/> when it was not.
+    /// </summary>
+    /// <remarks>
+    /// Present if and only if <see cref="Status"/> is <c>Withheld</c>. It is here so that the owner
+    /// reads the reason on the training itself: a third state rendered as merely "not published"
+    /// would hide the one thing they need to know, which is the consequence ADR 0052 named and
+    /// ADR 0057 closes.
+    /// </remarks>
+    public string? WithholdingReason { get; init; }
 }

@@ -77,10 +77,11 @@ simpler from the outside.
 | [0047](0047-verify-the-build-a-pull-request-delegates.md) | Verify the build a pull request delegates | Accepted |
 | [0048](0048-qualify-a-contract-before-naming-what-it-is.md) | Qualify a contract before naming what it is | Accepted |
 | [0049](0049-measure-duplication-where-repetition-is-a-defect.md) | Measure duplication where repetition is a defect | Accepted |
-| [0050](0050-retire-a-training-rather-than-delete-it.md) | Retire a training rather than delete it | Accepted — amended by [0056](0056-announce-the-sanction-and-let-the-index-compose-visibility.md): the suspension has a surface and consumers now, so it leaves the context as a fact, and the index composes a trainer's standing rather than forgetting their catalogue |
+| [0050](0050-retire-a-training-rather-than-delete-it.md) | Retire a training rather than delete it | Accepted — amended by [0056](0056-announce-the-sanction-and-let-the-index-compose-visibility.md): the suspension has a surface and consumers now, so it leaves the context as a fact, and the index composes a trainer's standing rather than forgetting their catalogue; amended by [0053](0053-a-suspended-trainer-reads-and-does-not-write.md): a suspended trainer loses every write, editing and unpublishing included |
 | [0051](0051-give-the-administrator-authority-not-a-context.md) | Give the administrator authority, not a context | Accepted |
 | [0052](0052-make-an-administrative-removal-a-state-of-its-own.md) | Make an administrative removal a state of its own | Accepted |
-| [0053](0053-a-suspended-trainer-reads-and-does-not-write.md) | A suspended trainer reads, and does not write | Proposed |
+| [0053](0053-a-suspended-trainer-reads-and-does-not-write.md) | A suspended trainer reads, and does not write | Accepted — amended by [0057](0057-the-trainers-own-surface-says-where-they-stand.md): the write controls a suspension forbids are shown disabled rather than removed |
 | [0054](0054-give-the-administration-a-surface-of-its-own.md) | Give the administration a surface of its own | Accepted |
 | [0055](0055-let-the-administration-read-what-the-catalogue-may-not.md) | Let the administration read what the catalogue may not | Accepted |
 | [0056](0056-announce-the-sanction-and-let-the-index-compose-visibility.md) | Announce the sanction, and let the index compose visibility | Accepted |
+| [0057](0057-the-trainers-own-surface-says-where-they-stand.md) | The trainer's own surface says where they stand | Accepted |

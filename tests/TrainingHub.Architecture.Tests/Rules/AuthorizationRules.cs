@@ -137,6 +137,98 @@ public sealed class AuthorizationRules
             .ShouldHold();
 
     /// <summary>
+    /// The verbs that change something. Everything else is a read, and a suspended trainer keeps it.
+    /// </summary>
+    private static readonly string[] WritingVerbs = ["POST", "PUT", "PATCH", "DELETE"];
+
+    /// <summary>
+    /// Every write of the trainer surface, is refused to a suspended trainer.
+    /// </summary>
+    /// <remarks>
+    /// The rule ADR 0053 needs in order to stay true after the commit that builds it. Its decision
+    /// is a table — every read kept, every write refused — and a table is exactly the kind of claim
+    /// that decays one endpoint at a time: the next write added to the trainer surface will be
+    /// written by somebody reading a neighbouring action, and the neighbour that gets copied is
+    /// whichever one they opened first.
+    /// <para>
+    /// Stated over the verb rather than over a list of route names, so that an endpoint added
+    /// tomorrow is covered the day it appears rather than the day somebody remembers this rule.
+    /// Read off the metadata for the same reason <c>NoAction_IsBehindBothAuthoritiesAtOnce</c> is:
+    /// the policy a write is held to is partly inherited, and neither file looks wrong alone.
+    /// </para>
+    /// <para>
+    /// The administrative surface is excluded because it is not the trainer's: an administrator is
+    /// nobody's trainer, carries no standing, and suspending one is not a thing this product can do.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0053",
+        "a suspended trainer keeps every read and loses every write, and the refusal is at the " +
+        "boundary rather than in the domain")]
+    public void EveryWriteOfTheTrainerSurface_IsRefusedToASuspendedTrainer() =>
+        Solution.Hosts
+            .SelectMany(host => host.DeclaredTypes())
+            .Where(type => typeof(ControllerBase).IsAssignableFrom(type) && !type.IsAbstract)
+            .SelectMany(controller => controller
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Select(action => (Controller: controller, Action: action, Verbs: Verbs(action)))
+                .Where(entry => entry.Verbs.Overlaps(WritingVerbs)))
+            .Selected("writing action")
+            .Select(entry => (entry.Controller, entry.Action, Policies: PoliciesInForce(entry.Controller, entry.Action)))
+            .Where(entry => entry.Policies.Contains(TrainerPolicy.Name)
+                            && !entry.Policies.Contains(ActiveTrainerPolicy.Name))
+            .Select(entry =>
+                $"{entry.Controller.Name}.{entry.Action.Name} writes on the trainer surface and is " +
+                $"not behind {ActiveTrainerPolicy.Name}. A suspended trainer would reach it, and the " +
+                "refusal ADR 0053 puts at the boundary would exist for every other write but this one")
+            .ShouldHold();
+
+    /// <summary>
+    /// No read, and no administrative action, is behind the standing policy.
+    /// </summary>
+    /// <remarks>
+    /// The other half of ADR 0053's sentence, and the half that is easy to lose by being helpful.
+    /// Moving the policy onto <c>ApiControllerBase</c> would guard every write in one line and take
+    /// the suspended trainer's own profile and catalogue away from them at the same time — the
+    /// alternative that record rejected by name, because "their trainings exist, they are theirs,
+    /// and hiding them from their owner serves nobody".
+    /// <para>
+    /// The administrative surface is refused it for a different reason: an administrator is nobody's
+    /// trainer and carries no standing, so the policy would be asking a question about them that has
+    /// no answer.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0053",
+        "keeping the reads is not a softening of the sanction; it is what makes the sanction " +
+        "accountable")]
+    public void NoReadOrAdministrativeAction_IsBehindTheStandingPolicy() =>
+        Solution.Hosts
+            .SelectMany(host => host.DeclaredTypes())
+            .Where(type => typeof(ControllerBase).IsAssignableFrom(type) && !type.IsAbstract)
+            .SelectMany(controller => controller
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Select(action => (Controller: controller, Action: action, Verbs: Verbs(action)))
+                .Where(entry => entry.Verbs.Count > 0))
+            .Selected("routed action")
+            .Select(entry => (entry.Controller, entry.Action, entry.Verbs,
+                Policies: PoliciesInForce(entry.Controller, entry.Action)))
+            .Where(entry => entry.Policies.Contains(ActiveTrainerPolicy.Name))
+            .Where(entry => !entry.Verbs.Overlaps(WritingVerbs)
+                            || entry.Policies.Contains(AdministratorPolicy.Name))
+            .Select(entry =>
+                $"{entry.Controller.Name}.{entry.Action.Name} is behind {ActiveTrainerPolicy.Name} " +
+                "and should not be: a suspended trainer keeps every read, and an administrator has " +
+                "no standing for the policy to ask about (ADR 0053)")
+            .ShouldHold();
+
+    /// <summary>The HTTP verbs an action answers to, its own and its route attribute's.</summary>
+    private static IReadOnlySet<string> Verbs(MethodInfo action) =>
+        action.GetCustomAttributes<HttpMethodAttribute>(inherit: true)
+            .SelectMany(attribute => attribute.HttpMethods)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Every policy an action is held to: its own, and every one it inherits from its controller.
     /// </summary>
     private static IReadOnlySet<string> PoliciesInForce(Type controller, MethodInfo action) =>

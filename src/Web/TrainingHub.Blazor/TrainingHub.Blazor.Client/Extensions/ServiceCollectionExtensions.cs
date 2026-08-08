@@ -65,6 +65,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<BffAuthenticationStateProvider>();
         services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<BffAuthenticationStateProvider>());
         services.AddScoped<IBffSessionClient, BffSessionClient>();
+
+        // Scoped, so the standing is read once and shared by the layout and every page that binds a
+        // control to it (ADR 0057).
+        services.AddScoped<ITrainerStandingSource, TrainerStandingSource>();
         services.AddTransient<RequestedWithHandler>();
         return services;
     }

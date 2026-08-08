@@ -38,7 +38,8 @@ public static class TrainingProjections
         Description = training.Description.Value,
         Prerequisites = training.Prerequisites.Value,
         AcquiredSkills = training.AcquiredSkills.Value,
-        Status = training.Status.Name
+        Status = training.Status.Name,
+        WithholdingReason = training.WithholdingReason == null ? null : training.WithholdingReason.Value
     };
 
     // Compiled once for the lifetime of the process: compilation is expensive enough that doing

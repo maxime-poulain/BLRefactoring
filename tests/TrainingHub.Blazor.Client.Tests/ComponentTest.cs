@@ -1,4 +1,6 @@
 using Bunit;
+using Moq;
+using TrainingHub.Blazor.Client.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 using MudBlazor.Services;
@@ -29,7 +31,16 @@ public abstract class ComponentTest : BunitContext, IAsyncLifetime
         JSInterop.Mode = JSRuntimeMode.Loose;
 
         Services.AddMudServices();
+
+        // Every page of the trainer's space now asks where its caller stands, and the layout's
+        // banner asks the same source (ADR 0057). Active by default, so a suite that is not about
+        // the sanction says nothing about it; the suites that are override this.
+        Standing.Setup(source => source.GetAsync()).ReturnsAsync(TrainerStanding.Active);
+        Services.AddSingleton(Standing.Object);
     }
+
+    /// <summary>The standing every page reads, substituted so a suite can suspend its caller.</summary>
+    protected Mock<ITrainerStandingSource> Standing { get; } = new();
 
     /// <summary>The messages the page raised, in the order it raised them.</summary>
     /// <remarks>

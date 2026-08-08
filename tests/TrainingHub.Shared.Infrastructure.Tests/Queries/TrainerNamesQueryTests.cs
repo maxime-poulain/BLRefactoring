@@ -2,7 +2,6 @@ using AwesomeAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using TrainingHub.Shared.Domain.Tests.Helpers;
 using TrainingHub.Shared.Infrastructure.Queries;
@@ -151,35 +150,5 @@ public sealed class TrainerNamesQueryTests : IAsyncLifetime
     {
         _context.Trainers.AddRange(trainers);
         await _context.SaveChangesAsync();
-    }
-
-    /// <summary>
-    /// Hands the concurrency token back to the application, for this suite only.
-    /// </summary>
-    /// <remarks>
-    /// <c>IsRowVersion</c> names a column SQL Server writes by itself, so EF leaves it out of every
-    /// insert. SQLite has no such column and no such generator, so the insert would offer nothing
-    /// for a column declared <c>NOT NULL</c>. Saying the value is never store-generated makes EF
-    /// send the empty array the aggregate already carries — which is all this suite needs, since it
-    /// asks a question and never competes for a row.
-    /// </remarks>
-    private sealed class RowVersionWrittenByTheTest(ModelCustomizerDependencies dependencies)
-        : ModelCustomizer(dependencies)
-    {
-        public override void Customize(ModelBuilder modelBuilder, DbContext context)
-        {
-            base.Customize(modelBuilder, context);
-
-            ArgumentNullException.ThrowIfNull(modelBuilder);
-
-            var rowVersions = modelBuilder.Model.GetEntityTypes()
-                .Select(entity => entity.FindProperty("RowVersion"))
-                .OfType<IMutableProperty>();
-
-            foreach (var rowVersion in rowVersions)
-            {
-                rowVersion.ValueGenerated = ValueGenerated.Never;
-            }
-        }
     }
 }

@@ -3,7 +3,9 @@
 @using TrainingHub.GeneratedClients
 @inject ITrainerClient TrainerClient
 @inject NavigationManager NavigationManager
+@using TrainingHub.Blazor.Client.Infrastructure
 @inject ISnackbar Snackbar
+@inject ITrainerStandingSource StandingSource
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="my-4">
     <MudPaper Elevation="4" Class="pa-8">
@@ -37,12 +39,12 @@
                                        Accept="@AcceptedTypes"
                                        MaximumFileCount="1"
                                        FilesChanged="HandlePhotoSelected"
-                                       Disabled="_isUploading">
+                                       Disabled="@(_isUploading || _standing.IsSuspended)">
                             <CustomContent Context="upload">
                                 <MudButton Variant="Variant.Filled"
                                            Color="Color.Primary"
                                            StartIcon="@Icons.Material.Filled.PhotoCamera"
-                                           Disabled="_isUploading"
+                                           Disabled="@(_isUploading || _standing.IsSuspended)"
                                            OnClick="@(() => upload.OpenFilePickerAsync())">
                                     @(_hasPhoto ? "Change photo" : "Add a photo")
                                 </MudButton>
@@ -54,7 +56,7 @@
                             <MudButton Variant="Variant.Text"
                                        Color="Color.Error"
                                        StartIcon="@Icons.Material.Filled.Delete"
-                                       Disabled="_isUploading"
+                                       Disabled="@(_isUploading || _standing.IsSuspended)"
                                        OnClick="HandlePhotoRemoved">
                                 Remove photo
                             </MudButton>
@@ -127,7 +129,7 @@
                     </MudButton>
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
-                               Disabled="@(!_isValid || _isSaving)"
+                               Disabled="@(!_isValid || _isSaving || _standing.IsSuspended)"
                                OnClick="HandleSubmit">
                         @if (_isSaving)
                         {
@@ -146,6 +148,10 @@
 </MudContainer>
 
 @code {
+    // Read once per page through the shared source, so the layout's banner and these controls never
+    // disagree about the same sanction (ADR 0057).
+    private TrainerStanding _standing = TrainerStanding.Active;
+
     /// <summary>412, as the API answers an edit based on a version that is no longer current.</summary>
     private const int StatusPreconditionFailed = 412;
 
@@ -197,7 +203,11 @@
             _firstname.Length > 0 ? _firstname[..1] : string.Empty,
             _lastname.Length > 0 ? _lastname[..1] : string.Empty);
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        _standing = await StandingSource.GetAsync();
+        await LoadAsync();
+    }
 
     private async Task LoadAsync()
     {

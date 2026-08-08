@@ -137,8 +137,10 @@ holds a `Trainer` instance.
   owner can see in their own listing and can republish, rename or delete, so the refusal names
   something actionable rather than something invisible.
 - A suspended trainer may not increase their public footprint: creating, publishing and
-  transferring — giving and receiving alike — are refused. Editing and unpublishing stay open, so a
-  trainer can repair what earned them the sanction.
+  transferring — giving and receiving alike — are refused by the domain. Every other write, editing
+  and unpublishing included, is refused at the boundary (ADR 0053): repairing means something only
+  if repairing leads somewhere, and no review loop exists. The trainer keeps every read, and reads
+  the reason on their own profile.
 
 ### Actors
 

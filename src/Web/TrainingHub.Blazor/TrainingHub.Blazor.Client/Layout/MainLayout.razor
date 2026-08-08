@@ -1,3 +1,4 @@
+@using TrainingHub.Blazor.Client.Components
 @inherits LayoutComponentBase
 @using TrainingHub.Blazor.Client.Infrastructure
 @inject IBffSessionClient SessionClient
@@ -48,6 +49,14 @@
         <MudIconButton Icon="@Icons.Material.Filled.Brightness4" Color="Color.Inherit" OnClick="@ToggleDarkMode" />
     </MudAppBar>
     <MudMainContent Class="pt-16 px-4">
+        @* Above every routed page, because a suspension is not a fact about one screen. It renders
+           nothing at all for a trainer in good standing, and nothing for an account that is nobody's
+           trainer (ADR 0057). *@
+        <AuthorizeView>
+            <Authorized>
+                <SuspensionBanner />
+            </Authorized>
+        </AuthorizeView>
         @Body
     </MudMainContent>
 </MudLayout>

@@ -1,11 +1,12 @@
 # 0053 — A suspended trainer reads, and does not write
 
-- **Status:** Proposed
+- **Status:** Accepted — amended by [0057](0057-the-trainers-own-surface-says-where-they-stand.md): the write controls a suspension forbids are shown disabled rather than removed
+- **Amends:** [0050](0050-retire-a-training-rather-than-delete-it.md)
 - **Date:** 2026-08-07
 
-**Why `Proposed`.** Nothing answers to it yet. It becomes `Accepted` in the commit that builds it,
-and that same commit is where it amends ADR 0050 — an amendment declared while nothing has changed
-would be a claim about code that still says the opposite.
+**This record was `Proposed` until the commit that built it**, which is also the commit in which it
+amends ADR 0050 — an amendment declared while nothing had changed would have been a claim about code
+that still said the opposite.
 
 ## Context
 
@@ -103,7 +104,7 @@ becomes true. It is the honest alternative and it is a much larger piece of work
 states, actors and a queue, which is the boundary signal that turns moderation into a context. Left
 for a record of its own, if and when somebody asks.
 
-## Verification *(when this is built)*
+## Verification
 
 - Shared facts in `tests/TrainingHub.Api.TestKit/`, so both hosts answer them: a suspended trainer
   receives `403` on every write of the trainer surface, and `200` on every read.

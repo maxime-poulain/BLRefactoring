@@ -3,6 +3,7 @@ using TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetPhoto;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.RemovePhoto;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.SetPhoto;
 using TrainingHub.Shared;
+using TrainingHub.Shared.Api.Authorization;
 using TrainingHub.Shared.Api.Contracts;
 using TrainingHub.Shared.Api.Contracts.Mappings;
 using TrainingHub.Shared.Api.Contracts.Trainers;
@@ -11,6 +12,7 @@ using TrainingHub.Shared.Api.Http;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 using TrainingHub.Shared.Common.Errors;
 using TrainingHub.Shared.CQS;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace TrainingHub.DDDWithCqrs.Api.Controller;
@@ -74,6 +76,7 @@ public sealed class TrainerController(
     /// this endpoint's 428 rather than model validation's 400. See ADR 0010.
     /// </para>
     /// </remarks>
+    [Authorize(Policy = ActiveTrainerPolicy.Name)]
     [HttpPut("me")]
     [ProducesEntityTag]
     [ProducesResponseType(typeof(TrainerHttpResponse), StatusCodes.Status200OK)]
@@ -166,6 +169,7 @@ public sealed class TrainerController(
     /// with an unbound file. A handler was written to publish 413 in this API's problem shape, and
     /// the integration suite proved it is never called.
     /// </remarks>
+    [Authorize(Policy = ActiveTrainerPolicy.Name)]
     [HttpPut("me/photo")]
     // Stated rather than inferred. Left to itself the document generator describes a bound model
     // carrying a file as application/x-www-form-urlencoded, and NSwag faithfully generates a client
@@ -207,6 +211,7 @@ public sealed class TrainerController(
     /// </summary>
     /// <param name="cancellationToken">Cancels the request.</param>
     /// <returns>Nothing, or why there was nothing to take down.</returns>
+    [Authorize(Policy = ActiveTrainerPolicy.Name)]
     [HttpDelete("me/photo")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]

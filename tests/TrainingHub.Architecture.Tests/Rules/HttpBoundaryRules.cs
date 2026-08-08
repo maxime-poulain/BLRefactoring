@@ -588,6 +588,64 @@ public sealed partial class HttpBoundaryRules
                 "appears to")
             .ShouldHold();
 
+    /// <summary>
+    /// Every state a published response can report, carries its reason.
+    /// </summary>
+    /// <remarks>
+    /// The boundary half of <c>EveryReasonedState_IsWrittenWithItsReason</c>. That rule holds the
+    /// pairing where the state is written, on the aggregate; this one holds it where the state is
+    /// read, on the contract the decision's subject actually opens. A sanction the domain records
+    /// with its reason and the API publishes without one is a mute sanction all the same — the
+    /// person it lands on cannot tell the difference (ADR 0057).
+    /// <para>
+    /// Both directions, because each fails differently. A state without a reason is a decision
+    /// nobody can account for; a reason without a state is a field whose meaning depends on knowing,
+    /// from somewhere else, when it is filled in.
+    /// </para>
+    /// <para>
+    /// Paired by name rather than by count, because the name says which state a reason explains —
+    /// which is why the withheld and the suspended vocabularies never merged into one
+    /// <c>Reason</c> (ADR 0015).
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0057",
+        "a trainer's own surface reports every state it can be in, with the reason for it")]
+    public void EveryStateAResponseReports_CarriesItsReason() =>
+        Solution.SharedApi
+            .DeclaredTypes()
+            .Where(type => type.Name.EndsWith("HttpResponse", StringComparison.Ordinal))
+            .Selected("published response")
+            .SelectMany(ReasonedStateViolations)
+            .ShouldHold();
+
+    /// <summary>The two ways the pairing breaks, stated apart because they read differently.</summary>
+    private static IEnumerable<string> ReasonedStateViolations(Type response)
+    {
+        var members = response.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+        var hasStatus = members.Any(member => member.Name == "Status");
+
+        var reasons = members
+            .Where(member => member.Name.EndsWith("Reason", StringComparison.Ordinal))
+            .Select(member => member.Name)
+            .ToList();
+
+        if (hasStatus && reasons.Count == 0)
+        {
+            yield return $"{response.Name} publishes a Status and no reason for it. A caller reading " +
+                "a state they did not choose has no account of it, which is the mute sanction " +
+                "ADR 0057 closes";
+        }
+
+        if (!hasStatus && reasons.Count > 0)
+        {
+            yield return $"{response.Name} publishes {string.Join(" and ", reasons)} and no Status. " +
+                "A reason belongs beside the state that gives it meaning (ADR 0052), on the boundary " +
+                "as much as on the aggregate";
+        }
+    }
+
     private static bool IsHttpContract(Type type)
     {
         var candidates = type.IsGenericType
