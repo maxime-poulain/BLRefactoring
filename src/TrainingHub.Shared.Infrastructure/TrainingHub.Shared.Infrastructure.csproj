@@ -38,8 +38,9 @@
 
     <!--
       Domain, for the aggregates this project maps and the repository interfaces it implements.
-      Application, for the read ports it answers: ITrainingOwnerQuery and ITrainerIdentityQuery are
-      declared where the projections live and implemented here, where the DbContext is. Infrastructure
+      Application, for the read ports it answers: ITrainingOwnerQuery, ITrainerIdentityQuery and
+      ITrainerAccountQuery are declared where the projections live and implemented here, where the
+      DbContexts are — the last of the three opens both of them. Infrastructure
       depending on Application is the direction Clean Architecture expects — the same edge
       TrainingHub.DDDWithCqrs.Infrastructure already carries for its query handlers — and it is the
       reason the API layer no longer holds a domain repository to answer a question about one column.

@@ -24,11 +24,14 @@ public static class IntegrationEventTypes
         {
             [typeof(TrainerCreatedIntegrationEvent)] = ("TrainerCreated", 1),
             [typeof(TrainerContactEmailChangedIntegrationEvent)] = ("TrainerContactEmailChanged", 1),
+            [typeof(TrainerSuspendedIntegrationEvent)] = ("TrainerSuspended", 1),
+            [typeof(TrainerReinstatedIntegrationEvent)] = ("TrainerReinstated", 1),
             [typeof(TrainingCreatedIntegrationEvent)] = ("TrainingCreated", 1),
             [typeof(TrainingEditedIntegrationEvent)] = ("TrainingEdited", 1),
             [typeof(TrainingTransferredIntegrationEvent)] = ("TrainingTransferred", 1),
             [typeof(TrainingPublishedIntegrationEvent)] = ("TrainingPublished", 1),
             [typeof(TrainingUnpublishedIntegrationEvent)] = ("TrainingUnpublished", 1),
+            [typeof(TrainingWithheldIntegrationEvent)] = ("TrainingWithheld", 1),
             [typeof(TrainingDeletedIntegrationEvent)] = ("TrainingDeleted", 1),
         };
 

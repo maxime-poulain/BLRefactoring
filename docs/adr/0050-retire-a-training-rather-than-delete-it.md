@@ -1,6 +1,6 @@
 # 0050 — Retire a training rather than delete it
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0056](0056-announce-the-sanction-and-let-the-index-compose-visibility.md): the suspension has a surface and consumers now, so it leaves the context as a fact, and the index composes a trainer's standing rather than forgetting their catalogue
 - **Date:** 2026-08-07
 
 **This record was `Proposed` for exactly one commit.** It was written before any code answered to

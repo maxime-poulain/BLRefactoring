@@ -16,11 +16,18 @@ namespace TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.DomainEvents;
 /// aggregate — the outbox is swept on a retention period (ADR 0033), so a fact that has been
 /// delivered and swept cannot answer "why is my training unavailable" later.
 /// </para>
+/// <para>
+/// It carries the title for the same audience and a narrower purpose: the notice sent to the owner
+/// has to say which training was taken down, and an owner with a dozen of them told that "a
+/// training" was withheld has been told nothing (ADR 0056).
+/// </para>
 /// </remarks>
 /// <param name="TrainingId">The identifier of the withheld training.</param>
 /// <param name="TrainerId">The identifier of the trainer owning the training.</param>
+/// <param name="Title">The training's title, as it stood when it was withheld.</param>
 /// <param name="Reason">Why it was withheld.</param>
 public sealed record TrainingWithheldDomainEvent(
     TrainingId TrainingId,
     TrainerId TrainerId,
+    TrainingTitle Title,
     WithholdingReason Reason) : IDomainEvent;

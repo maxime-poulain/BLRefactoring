@@ -22,11 +22,14 @@ public sealed class IntegrationEventSerializerTests
     [
         new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "John", "Doe", "john.doe@example.com"),
         new TrainerContactEmailChangedIntegrationEvent(Guid.NewGuid(), "old@example.com", "new@example.com"),
+        new TrainerSuspendedIntegrationEvent(Guid.NewGuid(), "Repeated breaches of the content policy."),
+        new TrainerReinstatedIntegrationEvent(Guid.NewGuid()),
         new TrainingCreatedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
         new TrainingEditedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
         new TrainingTransferredIntegrationEvent(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()),
         new TrainingPublishedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
         new TrainingUnpublishedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
+        new TrainingWithheldIntegrationEvent(Guid.NewGuid(), Guid.NewGuid(), "A withheld training", "Misleading claims."),
         new TrainingDeletedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
     ];
 

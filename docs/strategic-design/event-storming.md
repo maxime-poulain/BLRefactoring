@@ -62,6 +62,11 @@ flowchart LR
     AG1 --> E5["🟠 TrainerReinstatedDomainEvent"]
     E4 --> P4["🟣 Write an audit entry"]
     E5 --> P5["🟣 Write an audit entry"]
+    E4 --> P6["🟣 Publish TrainerSuspendedIntegrationEvent"]
+    E5 --> P7["🟣 Publish TrainerReinstatedIntegrationEvent"]
+    P6 --> OB
+    P7 --> OB
+    OB -->|"delivery worker, post-commit"| X3["Search Indexing context"]
 
     classDef event fill:#ff9d4d,stroke:#c2410c,color:#000
     classDef command fill:#7cb9ff,stroke:#1d4ed8,color:#000
@@ -73,9 +78,9 @@ flowchart LR
     class E1,E2,E3,E4,E5 event
     class C1,C2,C3,C4,C5 command
     class AG1 aggregate
-    class P1,P2,P3,P4,P5 policy
+    class P1,P2,P3,P4,P5,P6,P7 policy
     class A1,A2,A3 actor
-    class X1,X2,OB external
+    class X1,X2,X3,OB external
 ```
 
 ### What the board is really saying
@@ -171,6 +176,8 @@ flowchart LR
     AG --> E9["🟠 TrainingReleasedDomainEvent"]
     E8 --> P8["🟣 Write an audit entry"]
     E9 --> P9["🟣 Write an audit entry"]
+    E8 --> P10["🟣 Publish TrainingWithheldIntegrationEvent"]
+    P10 --> OB
 
     classDef event fill:#ff9d4d,stroke:#c2410c,color:#000
     classDef command fill:#7cb9ff,stroke:#1d4ed8,color:#000
@@ -184,7 +191,7 @@ flowchart LR
     class E1,E2,E4,E8,E9,TD event
     class C1,C2,C3,C4,C7,C8 command
     class AG,DS aggregate
-    class P1,P2,P3,P4,P8,P9 policy
+    class P1,P2,P3,P4,P8,P9,P10 policy
     class A,B,ADM actor
     class RM readmodel
     class SI,OB external
@@ -198,11 +205,13 @@ checks the same thing: a trainer may not list the same title twice. Creation is 
 an empty draft — which is why `Training.CreateAsync` is asynchronous while `Trainer.Create` is not.
 The trainer aggregate has no rule it cannot answer alone; the training aggregate has exactly one.
 
-**Six events, six facts, one future consumer.** `TrainingCreatedIntegrationEvent`,
+**Nine events, nine facts, one future consumer.** `TrainingCreatedIntegrationEvent`,
 `TrainingEditedIntegrationEvent`, `TrainingTransferredIntegrationEvent`,
-`TrainingPublishedIntegrationEvent`, `TrainingUnpublishedIntegrationEvent` and
-`TrainingDeletedIntegrationEvent` are six distinct integration events even though the indexer that
-consumes them upserts and removes, and could treat several of them alike. They are kept apart on
+`TrainingPublishedIntegrationEvent`, `TrainingUnpublishedIntegrationEvent`,
+`TrainingDeletedIntegrationEvent`, `TrainingWithheldIntegrationEvent`,
+`TrainerSuspendedIntegrationEvent` and `TrainerReinstatedIntegrationEvent` are nine distinct
+integration events even though the indexer that
+consumes them upserts, removes and hides, and could treat several of them alike. They are kept apart on
 the wire so the reactions can diverge — an edit might one day also invalidate a cache or notify
 subscribed students, a create never would, a transfer is the only one that changes which trainer
 the entry is filed under, and withdrawing is not deleting however identical the removal looks from
@@ -258,23 +267,26 @@ and only it can reach the aggregate's internal reassignment (ADR 0036).
 | Unpublish a training | `Training` | It is not already withdrawn | `TrainingUnpublishedDomainEvent` | Commit `TrainingUnpublishedIntegrationEvent` to the outbox; the worker removes it from the index after the commit | `PublishIntegrationEventWhenTrainingUnpublishedEventHandler` |
 | Publish a training | `Training` | It is withdrawn; the owner is not suspended and publishes fewer than ten | `TrainingPublishedDomainEvent` | Commit `TrainingPublishedIntegrationEvent` to the outbox; the worker indexes it after the commit | `PublishIntegrationEventWhenTrainingPublishedEventHandler` |
 | Suspend a trainer | `Trainer` | The trainer is not already suspended | `TrainerSuspendedDomainEvent` | Record the sanction | `AuditWhenTrainerSuspendedEventHandler` |
+| Suspend a trainer | `Trainer` | — | `TrainerSuspendedDomainEvent` | Commit `TrainerSuspendedIntegrationEvent` to the outbox; the worker notifies the account and hides the catalogue after the commit | `PublishIntegrationEventWhenTrainerSuspendedEventHandler` |
 | Reinstate a trainer | `Trainer` | The trainer is suspended | `TrainerReinstatedDomainEvent` | Record the lifting | `AuditWhenTrainerReinstatedEventHandler` |
+| Reinstate a trainer | `Trainer` | — | `TrainerReinstatedDomainEvent` | Commit `TrainerReinstatedIntegrationEvent` to the outbox; the worker notifies the account and shows the catalogue again after the commit | `PublishIntegrationEventWhenTrainerReinstatedEventHandler` |
 | Withhold a training | `Training` | It is not already withheld | `TrainingWithheldDomainEvent` | Record the decision and its reason | `AuditWhenTrainingWithheldEventHandler` |
+| Withhold a training | `Training` | — | `TrainingWithheldDomainEvent` | Commit `TrainingWithheldIntegrationEvent` to the outbox; the worker notifies the owner and removes the entry after the commit | `PublishIntegrationEventWhenTrainingWithheldEventHandler` |
 | Release a training | `Training` | It is withheld | `TrainingReleasedDomainEvent` | Record the lifting | `AuditWhenTrainingReleasedEventHandler` |
 
-Fourteen events, fourteen handlers, and two commands that raise nothing — both by decision.
+Fourteen events, seventeen handlers, and two commands that raise nothing — both by decision.
 Publishing and removing a portrait are as informative as the fourteen that do raise something: the
 bytes live in a store a rollback could not put back, so the aggregate says nothing and the caller
-cleans up after the commit. Of the fourteen reactions, six act inside the transaction — the cascade
-and five audit lines, ADR 0002's *domain* side — and eight commit an integration event into the
-outbox, to be acted on after the commit.
+cleans up after the commit. Of the seventeen reactions, six act inside the transaction — the
+cascade and five audit lines, ADR 0002's *domain* side — and eleven commit an integration event
+into the outbox, to be acted on after the commit.
 
 One row still carries *(no command yet)*, and four stopped: suspending a trainer, reinstating one,
-withholding a training and releasing it are administrative decisions, and they are now issued by the
-four endpoints under `/Administration`. What has not moved is that none of the four is an
-integration event: their consumers — the email to the trainer, the index entry to drop — arrive
-with the commit that writes them, and outbox plumbing for a fact nobody consumes is the anticipation
-this repository refuses (ADR 0050).
+withholding a training and releasing it are administrative decisions, and they are now issued by
+the four endpoints under `/Administration`. Three of the four have since earned an integration
+event as well (ADR 0056): the excuse ADR 0050 recorded — no surface raises the sanction, no context
+consumes it — was retired by those endpoints and by the consumers now waiting, the notice to the
+trainer and the index that has to stop offering what was taken down.
 
 **One of the four will never earn one, and that is a decision rather than a delay.** Withholding has
 consumers waiting — the owner to notify, the index entry to drop. Releasing has none: the training

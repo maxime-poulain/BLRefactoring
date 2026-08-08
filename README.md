@@ -158,7 +158,7 @@ Twenty-seven projects: sixteen under `src/`, eleven under `tests/`. The backend 
 |---|---|
 | `TrainingHub.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, `PageRequest`/`PagedResult`, and the cross-cutting ports `IUnitOfWork`, `ICurrentUserService`, `ITrainingSearchIndexer`, plus the CQS marker interfaces |
 | `TrainingHub.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, and the fact ports `IUniquenessTitleChecker` and `ITrainingCounter` |
-| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the fourteen domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the eight post-commit consumers — all shared by both stacks |
+| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the seventeen domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the fourteen post-commit consumers — all shared by both stacks |
 | `TrainingHub.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the paged-read extensions (`NewestFirst`, `ToPagedResultAsync`), the identity store, and the transactional outbox — publisher, delivery worker, dispatcher |
 | `TrainingHub.Shared.Api` | The HTTP boundary: the `*HttpRequest` and `*HttpResponse` contracts both hosts publish, their mappings to the application layer, the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, concurrency helpers |
 | `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService` |
@@ -386,14 +386,15 @@ aggregate states is the rule — a trainer does not disappear without their trai
 holds whoever ends up triggering it. The behaviour is covered by `DomainEventPipelineTests`, which
 drives it through the host's own services.
 
-Six of the fourteen handlers act inside the transaction — ADR 0002's *domain reactions* — and eight
+Six of the seventeen handlers act inside the transaction — ADR 0002's *domain reactions* — and eleven
 translate the domain event into an integration event and commit it to the transactional outbox
 (see [ADR 0024](docs/adr/0024-publish-facts-not-intents-and-version-them-in-the-envelope.md) and
 [the outbox section](#domain-events-and-the-unit-of-work)). After the commit, the outbox delivery
 worker hands each fact to its consumers — `IIntegrationEventHandler<TEvent>` implementations in
-the same application layer — which is where the welcome email, the address warning and the index
-updates now happen (ADR 0025). The two messages leave over real SMTP: `IEmailSender` is declared
-beside its consumers in `Shared.Application/Notifications/` and implemented by a MailKit adapter
+the same application layer — which is where the welcome email, the address warning, the three
+sanction notices and the index updates now happen (ADR 0025, ADR 0056). The messages leave over
+real SMTP: `IEmailSender` is declared beside its consumers in
+`Shared.Application/Notifications/` and implemented by a MailKit adapter
 pointed at whatever relay the `Smtp` section names — a Mailpit container locally (see
 [ADR 0031](docs/adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md)).
 `ITrainingSearchIndexer` remains a kernel port with a fake implementation that only writes to the
@@ -1126,7 +1127,7 @@ The two filters are exact inverses, so between them every test runs exactly once
 | Project | Scope |
 |---|---|
 | `TrainingHub.Shared.Domain.Tests` | Aggregates, value objects, typed identifiers, `Result`, specifications, the page vocabulary's bounds and arithmetic |
-| `TrainingHub.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers — including the eight that translate a domain event into an integration event — and the eight post-commit consumers |
+| `TrainingHub.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers — including the eleven that translate a domain event into an integration event — and the fourteen post-commit consumers |
 | `TrainingHub.DDDWithCqrs.Tests` | Command handlers, validators, pipeline behaviours |
 | `TrainingHub.Shared.Api.Tests` | Entity-tag encoding and parsing, the guard that keeps client generation away from a database, what the unhandled-exception handler is allowed to tell a caller, and the transformer that describes an uploaded file inline so a client generator recognises it as one |
 | `TrainingHub.Shared.Infrastructure.Tests` | The auditable-entities interceptor — that it stamps, and reads the clock once per entity —, the outbox publisher observed through the change tracker, the serializer's round trip for every registered event, the dispatcher held to its routing table, the envelope's state transitions, and the bucket bootstrapper, mostly for when it does nothing |

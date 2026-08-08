@@ -37,4 +37,35 @@ public interface ITrainingSearchIndexer
     /// <param name="trainingId">The identifier of the training to remove.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     Task RemoveAsync(Guid trainingId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Takes everything a trainer offers out of public view, without forgetting it.
+    /// </summary>
+    /// <remarks>
+    /// The index composes public visibility the way the domain does — a training is offered when it
+    /// is published <em>and</em> its owner is in good standing (ADR 0050) — so a sanction is one
+    /// call about a trainer rather than one call per training. Hiding rather than removing is what
+    /// makes <see cref="ShowTrainerCatalogueAsync"/> cost a call too: an index that had deleted the
+    /// entries would need the catalogue read back to rebuild them, for a sanction that wrote to
+    /// none of them (ADR 0056).
+    /// <para>
+    /// Hiding what is already hidden, or a trainer the index has never heard of, is not an error:
+    /// a committed fact may be delivered again after a lapsed lease.
+    /// </para>
+    /// </remarks>
+    /// <param name="trainerId">The identifier of the trainer whose catalogue leaves public view.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    Task HideTrainerCatalogueAsync(Guid trainerId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Puts a trainer's catalogue back in public view, exactly as it was.
+    /// </summary>
+    /// <remarks>
+    /// The counterpart of <see cref="HideTrainerCatalogueAsync"/>, and the reason that one hides
+    /// instead of removing. Each training's own state is untouched by either call, so what comes
+    /// back is what was published, never what was merely written (ADR 0056).
+    /// </remarks>
+    /// <param name="trainerId">The identifier of the trainer whose catalogue returns to public view.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    Task ShowTrainerCatalogueAsync(Guid trainerId, CancellationToken cancellationToken = default);
 }

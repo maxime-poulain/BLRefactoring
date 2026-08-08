@@ -101,11 +101,17 @@ Subject, Body)` — three strings, no domain type. The notifier cannot develop a
 trainers because it is never shown one.
 
 **The seam:** `Shared.Application/Notifications/IEmailSender.cs` — and, since the outbox landed, the facts that feed it:
-`TrainerCreatedIntegrationEvent` and `TrainerContactEmailChangedIntegrationEvent`, committed to the
-outbox by two policies in `Shared.Application/EventHandlers/` (ADR 0002, ADR 0024).
+`TrainerCreatedIntegrationEvent`, `TrainerContactEmailChangedIntegrationEvent`,
+`TrainerSuspendedIntegrationEvent`, `TrainerReinstatedIntegrationEvent` and
+`TrainingWithheldIntegrationEvent`, committed to the
+outbox by five policies in `Shared.Application/EventHandlers/` (ADR 0002, ADR 0024, ADR 0056).
+A second port sits beside the sender for the three sanction notices, `ITrainerAccountQuery` —
+one of the three read ports in `Shared.Application/Queries/`, and the only one that opens two
+stores. Those notices are addressed to the account rather than to the published contact address,
+and it answers where that is when the notice is sent rather than when the decision committed.
 
 **State:** real, since [ADR 0031](../adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md):
-the two facts land durably with the changes that justify them, the delivery worker (ADR 0025)
+the facts land durably with the changes that justify them, the delivery worker (ADR 0025)
 hands them to the policies that compose the `EmailMessage`s, and a MailKit adapter sends each one
 over SMTP — to a Mailpit container locally, to whatever relay the `Smtp` section names elsewhere.
 Choosing a provider was, as promised, a registration in the composition root; the integration
@@ -125,10 +131,14 @@ domain model; passing `Guid` keeps the contract translatable.
 **The seam:** `Shared/ITrainingSearchIndexer.cs` — and the facts that feed it:
 `TrainingCreatedIntegrationEvent`, `TrainingEditedIntegrationEvent`,
 `TrainingTransferredIntegrationEvent`, `TrainingPublishedIntegrationEvent`,
-`TrainingUnpublishedIntegrationEvent` and `TrainingDeletedIntegrationEvent`, committed to the outbox
-by six policies (ADR 0002, ADR 0024). The port answers two operations, not one: `RemoveAsync` is
-what the last two facts call, and its absence is what used to leave a deleted training in the index
-for ever (ADR 0050).
+`TrainingUnpublishedIntegrationEvent`, `TrainingDeletedIntegrationEvent`,
+`TrainingWithheldIntegrationEvent`, `TrainerSuspendedIntegrationEvent` and
+`TrainerReinstatedIntegrationEvent`, committed to the outbox
+by nine policies (ADR 0002, ADR 0024, ADR 0056). The port answers four operations, not one:
+`RemoveAsync` is what a withdrawal, a deletion and a withholding call, and its absence is what used
+to leave a deleted training in the index for ever (ADR 0050); `HideTrainerCatalogueAsync` and
+`ShowTrainerCatalogueAsync` are what a sanction calls, one call about a trainer rather than one per
+training, because a suspension writes to none of them.
 
 **State:** one fake implementation, fed by the outbox's consumers after each commit: the delivery
 worker (ADR 0025) replays the committed facts into this port, so the index only ever learns of
@@ -185,17 +195,20 @@ it, and a reader who does not know that will read them as over-engineering.
 
 | Already there | For |
 |---|---|
-| `ITrainingSearchIndexer`, maintained on every create, edit, transfer, publication and withdrawal, and cleared on deletion | The search index a public page would read |
+| `ITrainingSearchIndexer`, maintained on every create, edit, transfer, publication and withdrawal, cleared on deletion, and told a trainer's standing in one call | The search index a public page would read |
 | `GET /Trainer/{id}/photo`, addressed by identifier, immutable cache, `ETag` from the photo's identity | A portrait served publicly, behind a CDN |
 | A CQRS query side that projects into DTOs without loading aggregates | A read model that does not pay for the write model |
 
 **What is not decided:** whether discovery gets its own store, or reads a projection of the same
 database. The facts it would subscribe to are now durable — `TrainingCreatedIntegrationEvent`,
 `TrainingEditedIntegrationEvent`, `TrainingTransferredIntegrationEvent`,
-`TrainingPublishedIntegrationEvent`, `TrainingUnpublishedIntegrationEvent` and
-`TrainingDeletedIntegrationEvent` land in the transactional outbox with every commit (ADR 0024) —
+`TrainingPublishedIntegrationEvent`, `TrainingUnpublishedIntegrationEvent`,
+`TrainingDeletedIntegrationEvent`, `TrainingWithheldIntegrationEvent`,
+`TrainerSuspendedIntegrationEvent` and `TrainerReinstatedIntegrationEvent` land in the
+transactional outbox with every commit (ADR 0024, ADR 0056) —
 but the subscriber still does not exist. What ADR 0050 added to that list is the ability to express
-what a public catalogue must *not* show, which is what makes this context buildable rather than
+what a public catalogue must *not* show, and ADR 0056 the ability to express it about a trainer
+rather than about each of their trainings — which is what makes this context buildable rather than
 merely announced.
 
 ---

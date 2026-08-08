@@ -31,4 +31,24 @@ public sealed class FakeTrainingSearchIndexer(ILogger<FakeTrainingSearchIndexer>
 
         return Task.CompletedTask;
     }
+
+    /// <inheritdoc />
+    public Task HideTrainerCatalogueAsync(Guid trainerId, CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation(
+            "Hiding the catalogue of trainer `{TrainerId}` from the search index.",
+            trainerId);
+
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task ShowTrainerCatalogueAsync(Guid trainerId, CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation(
+            "Restoring the catalogue of trainer `{TrainerId}` to the search index.",
+            trainerId);
+
+        return Task.CompletedTask;
+    }
 }

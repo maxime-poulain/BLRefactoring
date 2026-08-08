@@ -142,10 +142,10 @@ public sealed partial class DocumentationRules
     private static readonly (string Document, string Anchor, string Subject, Func<IReadOnlySet<string>> Truth)[] NamedLists =
     [
         (StrategicDesign + "bounded-contexts.md",
-            @"Registration and address changes commit (?<list>.+?) with the change itself",
+            @"administration's decisions commit (?<list>.+?) with the change itself",
             "the facts that feed Notification", () => FactsFeeding(EmailPort)),
         (StrategicDesign + "bounded-contexts.md",
-            @"a training commits (?<list>.+?) with it",
+            @"commits its own fact with it — (?<list>.+?) — and the delivery",
             "the facts that feed Search Indexing", () => FactsFeeding(IndexerPort)),
         (StrategicDesign + "bounded-contexts.md",
             @"the facts that will maintain its index — (?<list>.+?) — already land durably",

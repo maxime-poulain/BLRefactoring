@@ -14,18 +14,21 @@ namespace TrainingHub.Shared.Infrastructure.Outbox;
 /// injection: the container already knows every consumer of every fact, so the dispatcher asks for
 /// them in its constructor like any other dependency instead of going shopping with a service
 /// locator. The set of integration events is closed and explicit in
-/// <see cref="IntegrationEventTypes"/>; a dispatcher that lists the same four lines is not
+/// <see cref="IntegrationEventTypes"/>; a dispatcher that lists the same events again is not
 /// duplication, it is the same decision stated where the routing happens — and a unit test holds
 /// the two lists together, exactly as one holds the serializer to the registry.
 /// </remarks>
 public sealed class IntegrationEventDispatcher(
     IEnumerable<IIntegrationEventHandler<TrainerCreatedIntegrationEvent>> trainerCreatedConsumers,
     IEnumerable<IIntegrationEventHandler<TrainerContactEmailChangedIntegrationEvent>> contactEmailChangedConsumers,
+    IEnumerable<IIntegrationEventHandler<TrainerSuspendedIntegrationEvent>> trainerSuspendedConsumers,
+    IEnumerable<IIntegrationEventHandler<TrainerReinstatedIntegrationEvent>> trainerReinstatedConsumers,
     IEnumerable<IIntegrationEventHandler<TrainingCreatedIntegrationEvent>> trainingCreatedConsumers,
     IEnumerable<IIntegrationEventHandler<TrainingEditedIntegrationEvent>> trainingEditedConsumers,
     IEnumerable<IIntegrationEventHandler<TrainingTransferredIntegrationEvent>> trainingTransferredConsumers,
     IEnumerable<IIntegrationEventHandler<TrainingPublishedIntegrationEvent>> trainingPublishedConsumers,
     IEnumerable<IIntegrationEventHandler<TrainingUnpublishedIntegrationEvent>> trainingUnpublishedConsumers,
+    IEnumerable<IIntegrationEventHandler<TrainingWithheldIntegrationEvent>> trainingWithheldConsumers,
     IEnumerable<IIntegrationEventHandler<TrainingDeletedIntegrationEvent>> trainingDeletedConsumers)
 {
     /// <summary>
@@ -44,11 +47,14 @@ public sealed class IntegrationEventDispatcher(
         {
             TrainerCreatedIntegrationEvent fact => HandleAllAsync(trainerCreatedConsumers, fact, alreadyDelivered, cancellationToken),
             TrainerContactEmailChangedIntegrationEvent fact => HandleAllAsync(contactEmailChangedConsumers, fact, alreadyDelivered, cancellationToken),
+            TrainerSuspendedIntegrationEvent fact => HandleAllAsync(trainerSuspendedConsumers, fact, alreadyDelivered, cancellationToken),
+            TrainerReinstatedIntegrationEvent fact => HandleAllAsync(trainerReinstatedConsumers, fact, alreadyDelivered, cancellationToken),
             TrainingCreatedIntegrationEvent fact => HandleAllAsync(trainingCreatedConsumers, fact, alreadyDelivered, cancellationToken),
             TrainingEditedIntegrationEvent fact => HandleAllAsync(trainingEditedConsumers, fact, alreadyDelivered, cancellationToken),
             TrainingTransferredIntegrationEvent fact => HandleAllAsync(trainingTransferredConsumers, fact, alreadyDelivered, cancellationToken),
             TrainingPublishedIntegrationEvent fact => HandleAllAsync(trainingPublishedConsumers, fact, alreadyDelivered, cancellationToken),
             TrainingUnpublishedIntegrationEvent fact => HandleAllAsync(trainingUnpublishedConsumers, fact, alreadyDelivered, cancellationToken),
+            TrainingWithheldIntegrationEvent fact => HandleAllAsync(trainingWithheldConsumers, fact, alreadyDelivered, cancellationToken),
             TrainingDeletedIntegrationEvent fact => HandleAllAsync(trainingDeletedConsumers, fact, alreadyDelivered, cancellationToken),
             _ => throw new InvalidOperationException(
                 $"{integrationEvent.GetType().Name} has no route in {nameof(IntegrationEventDispatcher)}. " +
