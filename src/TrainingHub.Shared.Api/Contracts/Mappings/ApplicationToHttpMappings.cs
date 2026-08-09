@@ -1,8 +1,10 @@
 using TrainingHub.Shared.Api.Contracts.Administration;
 using TrainingHub.Shared.Api.Contracts.Catalogue;
 using TrainingHub.Shared.Api.Contracts.Errors;
+using TrainingHub.Shared.Api.Contracts.Outbox;
 using TrainingHub.Shared.Api.Contracts.Trainers;
 using TrainingHub.Shared.Api.Contracts.Trainings;
+using TrainingHub.Shared.Application.Dtos.Outbox;
 using TrainingHub.Shared.Application.Dtos.Trainer;
 using TrainingHub.Shared.Application.Dtos.Training;
 using TrainingHub.Shared.Common.Errors;
@@ -152,6 +154,32 @@ public static class ApplicationToHttpMappings
     /// </summary>
     public static List<CatalogueTrainingHttpResponse> ToHttp(
         this IEnumerable<CatalogueTrainingDto> trainings) => [.. trainings.Select(ToHttp)];
+
+    /// <summary>
+    /// Publishes one message the outbox gave up on (ADR 0061).
+    /// </summary>
+    public static PoisonedMessageHttpResponse ToHttp(this PoisonedMessageDto message)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+
+        return new PoisonedMessageHttpResponse
+        {
+            Id = message.Id,
+            Name = message.Name,
+            Version = message.Version,
+            OccurredOnUtc = message.OccurredOnUtc,
+            Attempts = message.Attempts,
+            Error = message.Error,
+            RequeuedOnUtc = message.RequeuedOnUtc,
+            DeliveredConsumers = message.DeliveredConsumers
+        };
+    }
+
+    /// <summary>
+    /// Publishes a page of them.
+    /// </summary>
+    public static List<PoisonedMessageHttpResponse> ToHttp(
+        this IEnumerable<PoisonedMessageDto> messages) => [.. messages.Select(ToHttp)];
 
     /// <summary>
     /// Publishes the errors an application call reported.

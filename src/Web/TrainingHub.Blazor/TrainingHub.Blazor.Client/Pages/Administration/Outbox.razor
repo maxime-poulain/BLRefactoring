@@ -1,0 +1,179 @@
+@page "/administration/outbox"
+@attribute [Authorize(Roles = "Administrator")]
+@using System.Globalization
+@using TrainingHub.Blazor.Client.Infrastructure
+@using TrainingHub.GeneratedClients
+@inject IOutboxClient OutboxClient
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="my-4">
+    <MudText Typo="Typo.h4" Class="mb-2">Outbox</MudText>
+    @* The screen says what a poison row is, because nothing else in this front end does and an
+       operator arriving here for the first time is arriving because something broke (ADR 0061). *@
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+        Facts this system recorded and then failed to announce. Each one spent its retry budget and
+        will not be tried again until somebody asks. Requeueing runs only the consumers still owed.
+    </MudText>
+
+    @if (_isLoading)
+    {
+        <MudStack AlignItems="AlignItems.Center" Class="my-8">
+            <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+        </MudStack>
+    }
+    else if (_page is null || _page.Items.Count == 0)
+    {
+        @* The empty state is the good one here, which is the opposite of every other listing in
+           this front end — so it is worded as reassurance rather than as an absence of matches. *@
+        <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center">
+            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Style="font-size: 6rem;" Class="mb-4" />
+            <MudText Typo="Typo.h6">Nothing was given up on</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Every recorded fact has been delivered.</MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudTable Items="@_page.Items" Hover="true" Elevation="1" T="PoisonedMessageHttpResponse">
+            <HeaderContent>
+                <MudTh>Event</MudTh>
+                <MudTh>Recorded</MudTh>
+                <MudTh>Attempts</MudTh>
+                <MudTh>Already delivered to</MudTh>
+                <MudTh />
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Event">
+                    <MudText Typo="Typo.body2">@context.Name</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">v@(context.Version)</MudText>
+                </MudTd>
+                <MudTd DataLabel="Recorded">
+                    <MudText Typo="Typo.body2">@context.OccurredOnUtc.ToString("u", CultureInfo.InvariantCulture)</MudText>
+                    @if (context.RequeuedOnUtc is not null)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            Requeued @context.RequeuedOnUtc.Value.ToString("u", CultureInfo.InvariantCulture)
+                        </MudText>
+                    }
+                </MudTd>
+                <MudTd DataLabel="Attempts">
+                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">
+                        @context.Attempts
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Already delivered to">
+                    @* What a requeue will not run again. Shown per row because it is the difference
+                       between "retry this" and "send everything twice" (ADR 0034). *@
+                    @if (context.DeliveredConsumers.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary"><em>Nobody</em></MudText>
+                    }
+                    else
+                    {
+                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1">
+                            @foreach (var consumer in context.DeliveredConsumers)
+                            {
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@consumer</MudChip>
+                            }
+                        </MudStack>
+                    }
+                </MudTd>
+                <MudTd>
+                    <MudButton Size="Size.Small"
+                               Color="Color.Primary"
+                               Variant="Variant.Text"
+                               OnClick="@(() => RequeueAsync(context))">
+                        Requeue
+                    </MudButton>
+                </MudTd>
+            </RowTemplate>
+            <ChildRowContent>
+                @if (!string.IsNullOrWhiteSpace(context.Error))
+                {
+                    <MudTr>
+                        <td colspan="5" class="pa-0">
+                            <MudExpansionPanels Elevation="0">
+                                <MudExpansionPanel Text="Last failure">
+                                    @* Pre-formatted and scrollable: this is an exception with its
+                                       stack, and wrapping it would make it unreadable. *@
+                                    <MudText Typo="Typo.caption">
+                                        <pre style="white-space: pre-wrap; overflow-x: auto; margin: 0;">@context.Error</pre>
+                                    </MudText>
+                                </MudExpansionPanel>
+                            </MudExpansionPanels>
+                        </td>
+                    </MudTr>
+                }
+            </ChildRowContent>
+        </MudTable>
+
+        @if (_page.TotalPages > 1)
+        {
+            <MudStack AlignItems="AlignItems.Center" Class="mt-6">
+                <MudPagination Count="@_page.TotalPages"
+                               Selected="@_currentPage"
+                               SelectedChanged="OnPageSelectedAsync" />
+            </MudStack>
+        }
+    }
+</MudContainer>
+
+@code {
+    private PagedHttpResponseOfPoisonedMessageHttpResponse? _page;
+    private int _currentPage = 1;
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        StateHasChanged();
+    }
+
+    private async Task OnPageSelectedAsync(int page)
+    {
+        _currentPage = page;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _page = await OutboxClient.GetPoisonAsync(_currentPage, null);
+
+            // A requeue empties a page from under the caller, so the same correction the other
+            // listings make applies here and is reached more often.
+            if (_page.TotalPages > 0 && _currentPage > _page.TotalPages)
+            {
+                _currentPage = _page.TotalPages;
+                _page = await OutboxClient.GetPoisonAsync(_currentPage, null);
+            }
+        }
+        catch (Exception exception)
+        {
+            AdministrationFailures.Report(Snackbar, exception, "The outbox could not be read.");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task RequeueAsync(PoisonedMessageHttpResponse message)
+    {
+        // No confirmation dialog, unlike withholding a training: this takes nothing away from
+        // anybody, and pressing it twice is safe by construction — the ledger keeps its rows across
+        // a requeue, so the retry skips whatever already succeeded (ADR 0034).
+        var outcome = await AdministrationFailures.RunAsync(
+            Snackbar,
+            () => OutboxClient.RequeueAsync(message.Id),
+            "Requeued. The worker will try it again on its next poll.",
+            "requeued",
+            "message");
+
+        if (outcome is not AdministrationOutcome.Unreachable)
+        {
+            await LoadAsync();
+        }
+    }
+}

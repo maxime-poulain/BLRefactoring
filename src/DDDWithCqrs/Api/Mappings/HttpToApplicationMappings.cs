@@ -1,4 +1,6 @@
 using TrainingHub.DDDWithCqrs.Application.Features.Catalogue.Search;
+using TrainingHub.DDDWithCqrs.Application.Features.Outbox.GetPoisoned;
+using TrainingHub.DDDWithCqrs.Application.Features.Outbox.Requeue;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Create;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Edit;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetAdministered;
@@ -205,6 +207,19 @@ public static class HttpToApplicationMappings
             Term = search?.Term,
             Paging = pagination.ToPageRequest()
         };
+
+    /// <summary>Builds the query reading one page of the outbox's poison (ADR 0061).</summary>
+    /// <remarks>
+    /// One bound object rather than two, because this listing has no criteria of its own: what is
+    /// poison is settled by the configured retry budget, not by anything a caller may ask for.
+    /// </remarks>
+    public static GetPoisonedMessagesQuery ToPoisonedMessagesQuery(PaginationHttpRequest? pagination) => new()
+    {
+        Paging = pagination.ToPageRequest()
+    };
+
+    /// <summary>Builds the command handing one poison message back to the worker (ADR 0061).</summary>
+    public static RequeueOutboxMessageCommand ToRequeueOutboxMessageCommand(Guid messageId) => new(messageId);
 
     /// <summary>Builds the query reading one trainer.</summary>
     public static GetTrainerByIdQuery ToGetTrainerByIdQuery(Guid trainerId) => new(trainerId);

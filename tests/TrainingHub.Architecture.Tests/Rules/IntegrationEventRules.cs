@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using TrainingHub.Architecture.Tests.Framework;
 using TrainingHub.Shared.Application.IntegrationEvents;
+using TrainingHub.Shared.Application.Outbox;
 using Xunit;
 
 namespace TrainingHub.Architecture.Tests.Rules;
@@ -305,6 +306,47 @@ public sealed partial class IntegrationEventRules
     /// <summary>A file declaring an implementation of the consumer contract.</summary>
     [GeneratedRegex(@":\s*IIntegrationEventHandler<")]
     private static partial Regex ConsumerImplementation { get; }
+
+    /// <summary>
+    /// The operator's surface, offers no way to forget a message.
+    /// </summary>
+    /// <remarks>
+    /// The port is held to exactly two operations because the third is the dangerous one. A poison
+    /// row is the evidence of a fact the system committed and then failed to announce; the sweep
+    /// already refuses to touch it — <em>"deleting it would be the mechanism destroying its own
+    /// crime scene"</em> — and a surface that offered a discard would hand that same deletion to a
+    /// person, one click away from the listing that shows how noisy the backlog is.
+    /// <para>
+    /// A closed set rather than a name check, on the mould of <c>IObjectStore</c>'s: what matters is
+    /// not that nothing is called <c>Delete</c> but that nothing else is offered at all.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0061",
+        "the operator may retry a poison message or leave it, and nothing offers to forget one")]
+    public void TheOperatorsSurface_OffersNoWayToForgetAMessage()
+    {
+        string[] expected = ["GetPoisonedAsync", "RequeueAsync"];
+
+        var declared = typeof(IOutboxOperations)
+            .GetMethods()
+            .Select(method => method.Name)
+            .ToArray();
+
+        declared
+            .Selected("operation on IOutboxOperations")
+            .Where(operation => !expected.Contains(operation, StringComparer.Ordinal))
+            .Select(operation =>
+                $"IOutboxOperations declares '{operation}'. An operator reads what delivery gave up " +
+                "on and hands one message back; anything else either deletes the evidence or " +
+                "belongs to the worker that owns the table")
+            .Concat(expected
+                .Where(operation => !declared.Contains(operation, StringComparer.Ordinal))
+                .Select(operation =>
+                    $"IOutboxOperations no longer declares '{operation}', so this rule is now " +
+                    "guarding a port that has moved out from under it"))
+            .ShouldHold();
+    }
 
     /// <summary>The shape the ledger identity must take: an expression-bodied string literal.</summary>
     [GeneratedRegex("ConsumerName\\s*=>\\s*\"[^\"]+\"\\s*;")]

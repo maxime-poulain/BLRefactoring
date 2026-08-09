@@ -1,6 +1,6 @@
 # 0037 — Answer for the host's health at two endpoints
 
-- **Status:** Accepted — amended by [0045](0045-fail-readiness-while-a-migration-is-pending.md): a fifth probe answers for the schema, so every "four probes" below now reads five
+- **Status:** Accepted — amended by [0045](0045-fail-readiness-while-a-migration-is-pending.md): a fifth probe answers for the schema, so every "four probes" below now reads five; the dead-letter surface it deferred is built by [0061](0061-give-the-poison-a-url-and-an-operator-a-way-back-in.md)
 - **Date:** 2026-08-05
 
 ## Context

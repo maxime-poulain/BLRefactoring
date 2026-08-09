@@ -737,6 +737,16 @@ public sealed partial class HttpBoundaryRules
         return instance;
     }
 
+    /// <summary>The generic shapes a published list may be declared as.</summary>
+    private static readonly Type[] ListLike =
+    [
+        typeof(List<>),
+        typeof(IReadOnlyList<>),
+        typeof(IReadOnlyCollection<>),
+        typeof(ICollection<>),
+        typeof(IEnumerable<>)
+    ];
+
     private static object SomethingUnlike(Type type)
     {
         var bare = Nullable.GetUnderlyingType(type) ?? type;
@@ -756,9 +766,27 @@ public sealed partial class HttpBoundaryRules
             return new byte[] { 1 };
         }
 
-        if (bare.IsGenericType && bare.GetGenericTypeDefinition() == typeof(List<>))
+        // A date, because default(DateTime) is what an unassigned one looks like and the arithmetic
+        // conversion below cannot produce one. The first contract to carry a date is ADR 0061's,
+        // and the rule could not fill it — it threw rather than reporting, which is a rule that
+        // stops checking the moment it meets a member type nobody had used yet.
+        if (bare == typeof(DateTime))
         {
-            var list = (System.Collections.IList)Activator.CreateInstance(bare)!;
+            return new DateTime(2001, 2, 3, 4, 5, 6, DateTimeKind.Utc);
+        }
+
+        if (bare == typeof(DateTimeOffset))
+        {
+            return new DateTimeOffset(2001, 2, 3, 4, 5, 6, TimeSpan.Zero);
+        }
+
+        // A list, however it is declared. A contract may publish one as List<T> or behind one of the
+        // read-only interfaces, and both look identical to LooksUntouched — so both have to be
+        // fillable, or a member declared the second way is silently exempt from the rule.
+        if (bare.IsGenericType && ListLike.Contains(bare.GetGenericTypeDefinition()))
+        {
+            var list = (System.Collections.IList)Activator.CreateInstance(
+                typeof(List<>).MakeGenericType(bare.GetGenericArguments()[0]))!;
             list.Add(SomethingUnlike(bare.GetGenericArguments()[0]));
 
             return list;

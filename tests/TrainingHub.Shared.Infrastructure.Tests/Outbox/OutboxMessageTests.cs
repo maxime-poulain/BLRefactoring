@@ -5,7 +5,8 @@ using Xunit;
 namespace TrainingHub.Shared.Infrastructure.Tests.Outbox;
 
 /// <summary>
-/// The envelope's two state transitions: delivered, and failed-with-a-schedule.
+/// The envelope's three state transitions — delivered, failed-with-a-schedule, requeued — and the
+/// question the processor asks it before reading the delivery ledger.
 /// </summary>
 public sealed class OutboxMessageTests
 {
@@ -78,5 +79,61 @@ public sealed class OutboxMessageTests
         message.Error.Should().Be("second reason", "only the latest failure is worth an operator's time");
         message.NextAttemptOnUtc.Should().Be(
             later + (RetryDelay * 2), "the schedule doubles with each spent attempt");
+    }
+
+    /// <summary>
+    /// Requeue, gives back the budget, the schedule, and keeps the reason it was retried for.
+    /// </summary>
+    [Fact]
+    public void Requeue_GivesBackTheBudget_AndKeepsTheReasonItWasRetriedFor()
+    {
+        var message = CreateMessage();
+        message.RecordFailure("the reason an operator read", Now, RetryDelay);
+        message.RecordFailure("the reason an operator read", Now.AddMinutes(1), RetryDelay);
+
+        message.Requeue(Now.AddHours(1));
+
+        message.Attempts.Should().Be(0, "a requeue is a fresh budget, not one more attempt");
+        message.NextAttemptOnUtc.Should().BeNull("an operator asking for a retry means now");
+        message.ClaimedUntil.Should().BeNull();
+        message.RequeuedOnUtc.Should().Be(Now.AddHours(1));
+        message.Error.Should().Be(
+            "the reason an operator read", "the evidence outlives the decision taken because of it");
+    }
+
+    /// <summary>
+    /// May have settled consumers, is false for a message nothing has tried.
+    /// </summary>
+    [Fact]
+    public void MayHaveSettledConsumers_IsFalse_ForAMessageNothingHasTried()
+    {
+        var message = CreateMessage();
+
+        message.MayHaveSettledConsumers.Should().BeFalse(
+            "no attempt has run a consumer, so the ledger cannot name one");
+    }
+
+    /// <summary>
+    /// May have settled consumers, survives the requeue that resets the counter.
+    /// </summary>
+    /// <remarks>
+    /// The fact this whole property exists for. The processor used to read <c>Attempts == 0</c>
+    /// directly, which was exact for as long as nothing could put the counter back — and a requeue
+    /// is exactly that. Answering <see langword="false"/> here makes the processor skip the ledger
+    /// and re-run consumers that already succeeded: a second welcome email for one operator's
+    /// retry, which is the guarantee ADR 0034 exists to give (ADR 0061).
+    /// </remarks>
+    [Fact]
+    public void MayHaveSettledConsumers_SurvivesTheRequeue_ThatResetsTheCounter()
+    {
+        var message = CreateMessage();
+        message.RecordFailure("a consumer that failed after its neighbour succeeded", Now, RetryDelay);
+
+        message.Requeue(Now.AddHours(1));
+
+        message.Attempts.Should().Be(0);
+        message.MayHaveSettledConsumers.Should().BeTrue(
+            "the ledger keeps its rows across a requeue, so the question the counter answered is no " +
+            "longer one the counter can answer");
     }
 }

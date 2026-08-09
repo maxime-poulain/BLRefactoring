@@ -52,6 +52,9 @@ public static class ServiceCollectionExtensions
         // Generated since the administrative endpoints landed and registered only now, because
         // nothing in the browser could reach them until there was a screen to ask from.
         services.AddHttpClient<IAdministrationClient, AdministrationClient>(HttpClientNames.Api);
+        // The operator surface over the outbox, behind the same role and the same URL space
+        // (ADR 0061).
+        services.AddHttpClient<IOutboxClient, OutboxClient>(HttpClientNames.Api);
 
         return services;
     }
