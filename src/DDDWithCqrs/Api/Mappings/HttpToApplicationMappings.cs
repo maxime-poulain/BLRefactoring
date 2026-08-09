@@ -1,3 +1,4 @@
+using TrainingHub.DDDWithCqrs.Application.Features.Catalogue.Search;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Create;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Edit;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetAdministered;
@@ -16,6 +17,7 @@ using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Transfer;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Unpublish;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Withhold;
 using TrainingHub.Shared.Api.Contracts.Administration;
+using TrainingHub.Shared.Api.Contracts.Catalogue;
 using TrainingHub.Shared.Api.Contracts.Auth;
 using TrainingHub.Shared.Api.Contracts.Mappings;
 using TrainingHub.Shared.Api.Contracts.Pagination;
@@ -187,6 +189,19 @@ public static class HttpToApplicationMappings
         PaginationHttpRequest? pagination) => new()
         {
             Status = filter?.Status,
+            Paging = pagination.ToPageRequest()
+        };
+
+    /// <summary>Builds the query searching the public catalogue (ADR 0059).</summary>
+    /// <remarks>
+    /// The same two-bound-objects-into-one-message shape as the administrative listings above, for
+    /// the endpoint that has no status to carry: the index holds only what may be shown.
+    /// </remarks>
+    public static SearchCatalogueQuery ToQuery(
+        this CatalogueSearchHttpRequest? search,
+        PaginationHttpRequest? pagination) => new()
+        {
+            Term = search?.Term,
             Paging = pagination.ToPageRequest()
         };
 

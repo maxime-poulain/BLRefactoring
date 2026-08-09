@@ -40,22 +40,29 @@ public sealed partial class HttpBoundaryRules
             .Select(action => (controller, action)));
 
     /// <summary>
-    /// Every controller, derives from one of the three shared bases.
+    /// Every controller, derives from one of the four shared bases.
     /// </summary>
     /// <remarks>
     /// Two until the administration got endpoints. The third exists because the second stopped being
     /// neutral: <c>ApiControllerBase</c> carries <c>TrainerPolicy</c> since ADR 0051, and a policy on
     /// an action is combined with its controller's rather than replacing it, so an administrative
     /// action could not have been hosted there.
+    /// <para>
+    /// The fourth arrived with the public catalogue (ADR 0059), and for the same mechanical reason
+    /// read the other way round: an anonymous action hosted on either of those two would inherit a
+    /// policy it cannot satisfy. It is the one base that declares no 401 and no 403, because it can
+    /// answer neither.
+    /// </para>
     /// </remarks>
     [Fact]
     [ArchitectureRule("0011",
         "every controller inherits the same base, so what is true of one endpoint is true of all of them")]
-    public void EveryController_DerivesFromOneOfTheThreeSharedBases() =>
+    public void EveryController_DerivesFromOneOfTheFourSharedBases() =>
         Controllers
             .Selected("controller")
             .Where(controller => controller.BaseType?.Name is not
-                ("ApiControllerBase" or "AuthControllerBase" or "AdministrationControllerBase"))
+                ("ApiControllerBase" or "AuthControllerBase" or "AdministrationControllerBase"
+                 or "CatalogueControllerBase"))
             .Select(controller =>
                 $"{controller.FullName} derives from {controller.BaseType?.Name}, so it inherits none of " +
                 "the authorization, routing or error-shape decisions the bases carry")

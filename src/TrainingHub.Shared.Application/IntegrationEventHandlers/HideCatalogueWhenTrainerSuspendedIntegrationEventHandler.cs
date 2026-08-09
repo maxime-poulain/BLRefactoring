@@ -1,4 +1,5 @@
 using TrainingHub.Shared.Application.IntegrationEvents;
+using TrainingHub.Shared.Application.Search;
 
 namespace TrainingHub.Shared.Application.IntegrationEventHandlers;
 

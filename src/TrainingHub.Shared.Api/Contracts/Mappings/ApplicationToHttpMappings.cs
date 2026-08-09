@@ -1,4 +1,5 @@
 using TrainingHub.Shared.Api.Contracts.Administration;
+using TrainingHub.Shared.Api.Contracts.Catalogue;
 using TrainingHub.Shared.Api.Contracts.Errors;
 using TrainingHub.Shared.Api.Contracts.Trainers;
 using TrainingHub.Shared.Api.Contracts.Trainings;
@@ -130,6 +131,27 @@ public static class ApplicationToHttpMappings
     /// </summary>
     public static List<AdministrationTrainingHttpResponse> ToHttp(
         this IEnumerable<AdministrationTrainingDto> trainings) => [.. trainings.Select(ToHttp)];
+
+    /// <summary>
+    /// Publishes a training as the public catalogue reads it.
+    /// </summary>
+    public static CatalogueTrainingHttpResponse ToHttp(this CatalogueTrainingDto training)
+    {
+        ArgumentNullException.ThrowIfNull(training);
+
+        return new CatalogueTrainingHttpResponse
+        {
+            Id = training.Id,
+            TrainerId = training.TrainerId,
+            Title = training.Title
+        };
+    }
+
+    /// <summary>
+    /// Publishes a page of them.
+    /// </summary>
+    public static List<CatalogueTrainingHttpResponse> ToHttp(
+        this IEnumerable<CatalogueTrainingDto> trainings) => [.. trainings.Select(ToHttp)];
 
     /// <summary>
     /// Publishes the errors an application call reported.

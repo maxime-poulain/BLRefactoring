@@ -156,9 +156,9 @@ Twenty-seven projects: sixteen under `src/`, eleven under `tests/`. The backend 
 
 | Project | Responsibility |
 |---|---|
-| `TrainingHub.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, `PageRequest`/`PagedResult`, and the cross-cutting ports `IUnitOfWork`, `ICurrentUserService`, `ITrainingSearchIndexer`, plus the CQS marker interfaces |
+| `TrainingHub.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, `PageRequest`/`PagedResult`, and the cross-cutting ports `IUnitOfWork` and `ICurrentUserService`, plus the CQS marker interfaces |
 | `TrainingHub.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, and the fact ports `IUniquenessTitleChecker` and `ITrainingCounter` |
-| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the seventeen domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the fourteen post-commit consumers — all shared by both stacks |
+| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the search ports, the seventeen domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the fourteen post-commit consumers — all shared by both stacks |
 | `TrainingHub.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the paged-read extensions (`NewestFirst`, `ToPagedResultAsync`), the identity store, and the transactional outbox — publisher, delivery worker, dispatcher |
 | `TrainingHub.Shared.Api` | The HTTP boundary: the `*HttpRequest` and `*HttpResponse` contracts both hosts publish, their mappings to the application layer, the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, concurrency helpers |
 | `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService` |
@@ -397,8 +397,13 @@ real SMTP: `IEmailSender` is declared beside its consumers in
 `Shared.Application/Notifications/` and implemented by a MailKit adapter
 pointed at whatever relay the `Smtp` section names — a Mailpit container locally (see
 [ADR 0031](docs/adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md)).
-`ITrainingSearchIndexer` remains a kernel port with a fake implementation that only writes to the
-log, so the project still depends on no search engine.
+`ITrainingSearchIndexer` is no longer a fake either. It moved out of the kernel to
+`Shared.Application/Search/`, beside the query half the same record opened, and behind it sits a
+real inverted index in two tables of this database: one entry per training and one row per word of
+its title, so that a search seeks along an index instead of scanning with a leading wildcard. The
+project still depends on no search engine, which is the point rather than a shortcut — what a
+search index *is* stays legible in this repository (see
+[ADR 0059](docs/adr/0059-give-the-search-index-a-body-and-a-query-surface.md)).
 
 ### Use cases
 
@@ -430,6 +435,12 @@ The read paths differ by design: the layered stack loads aggregates through repo
 them, while the CQRS stack projects straight from `TrainingContext` into DTOs with
 `IQueryable` expressions, under a pipeline behaviour that switches change tracking off for
 queries and restores it afterwards.
+
+The one read where they do not differ is the public catalogue search. `CatalogueApplicationService`
+and `SearchCatalogueQueryHandler` both call `ITrainingSearchQuery`, because what usually separates
+the two stacks is how each drives the write model — and that search reads a read model the write
+model has nothing to say about
+([ADR 0059](docs/adr/0059-give-the-search-index-a-body-and-a-query-surface.md)).
 
 ---
 
@@ -702,6 +713,9 @@ EF Core maps the model without letting persistence concerns leak into it:
 | `AddOutboxLease` | Lease columns on `OutboxMessage`, so one worker delivers at a time |
 | `AddOutboxBackoffAndRetention` | `NextAttemptOnUtc` and the delivered-rows index: the retry schedule, and the sweep's seek |
 | `AddOutboxConsumerLedger` | The per-consumer delivery ledger: which consumers a message has reached, riding the envelope's lifecycle by cascade |
+| `AddLifecycleStatuses` | `Status` on both aggregates: a training is published or not, a trainer is in good standing or not |
+| `AddModerationReasons` | `SuspensionReason` on `Trainer` and `WithholdingReason` on `Training`: a reasoned state is written with its reason |
+| `AddTrainingSearchIndex` | The search index's own two tables — an entry per training, a row per token — with the term-leading index a search seeks through |
 
 ASP.NET Identity lives in its own `DbContext` with its own migration.
 
@@ -810,13 +824,17 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 | `POST` | `/Administration/trainings/{trainingId}/withhold` | Administrator only. The body carries the reason. Takes the training out of public view where its owner cannot put it back (ADR 0052). `204`, `400`, `404`, `409` when it was already withheld |
 | `POST` | `/Administration/trainings/{trainingId}/release` | Administrator only. No body. Lifts the interdiction; the training lands on *unpublished*, and publishing is the owner's call again. `204`, `400`, `404`, `409` when it was not withheld |
 | `GET` | `/Administration/trainers` | Administrator only. One page of trainers, newest first. `?status=` (`Active`, `Suspended`), `?search=` on the name or the contact address, `?page=`, `?pageSize=`. `200`, `400` when the status names nothing or the page is out of range |
-| `GET` | `/Administration/trainings` | Administrator only. One page of trainings across every trainer, newest first. `?status=` (`Published`, `Unpublished`, `Withheld`), `?page=`, `?pageSize=`. No `?search=`: the title is a value-converted column EF Core cannot match a substring against, which [ADR 0055](docs/adr/0055-let-the-administration-read-what-the-catalogue-may-not.md) records. `200`, `400` |
+| `GET` | `/Administration/trainings` | Administrator only. One page of trainings across every trainer, newest first. `?status=` (`Published`, `Unpublished`, `Withheld`), `?page=`, `?pageSize=`. No `?search=`: the title is a value-converted column EF Core cannot match a substring against, which [ADR 0055](docs/adr/0055-let-the-administration-read-what-the-catalogue-may-not.md) records — and the search index cannot answer it either, since it holds none of the states a moderator is looking for ([ADR 0059](docs/adr/0059-give-the-search-index-a-body-and-a-query-surface.md)). `200`, `400` |
+| `GET` | `/Catalogue/trainings` | **Anonymous.** One page of the offered catalogue, by title. `?term=` matched against the words of a title, each by prefix, through the search index rather than the trainings table; `?page=`, `?pageSize=`. `200`, `400` when the term is longer than a title or the page is out of range (ADR 0059) |
 
-Twenty-one endpoints, and not one of them lets a trainer reach what another trainer owns. The six
+Twenty-two endpoints, and not one of them lets a trainer reach what another trainer owns. The six
 under `/Administration` act on somebody else's aggregate by design and are the only six that do —
 behind a role that is granted by hand and by no endpoint at all (ADR 0051). They are grouped by the
 authority they exercise rather than by the resource they act on, which is what that record says an
-administrator is: a permission, not a context. There used to be
+administrator is: a permission, not a context. The twenty-second is the only one nobody has to sign
+in for, and it reads no aggregate at all: the search index holds what a visitor may be shown, which
+is what makes an anonymous read of it a different thing from the catalogue reads below. There used
+to be
 five more — `/Trainer/all`, `/Trainer/{id}`, `/Training/all`, `/Training/by-trainer/{id}` and
 `/Training/by-topic/{topic}` — and between them they handed out every trainer's name, contact email
 and bio to any authenticated caller, enumerable. Nothing in the application asked for them: the

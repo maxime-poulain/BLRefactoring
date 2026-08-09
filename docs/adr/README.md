@@ -82,7 +82,8 @@ simpler from the outside.
 | [0052](0052-make-an-administrative-removal-a-state-of-its-own.md) | Make an administrative removal a state of its own | Accepted |
 | [0053](0053-a-suspended-trainer-reads-and-does-not-write.md) | A suspended trainer reads, and does not write | Accepted — amended by [0057](0057-the-trainers-own-surface-says-where-they-stand.md): the write controls a suspension forbids are shown disabled rather than removed |
 | [0054](0054-give-the-administration-a-surface-of-its-own.md) | Give the administration a surface of its own | Accepted |
-| [0055](0055-let-the-administration-read-what-the-catalogue-may-not.md) | Let the administration read what the catalogue may not | Accepted |
+| [0055](0055-let-the-administration-read-what-the-catalogue-may-not.md) | Let the administration read what the catalogue may not | Accepted — amended by [0059](0059-give-the-search-index-a-body-and-a-query-surface.md): the search index settles the public training search and not the administration's, which needs the states the index refuses to hold |
 | [0056](0056-announce-the-sanction-and-let-the-index-compose-visibility.md) | Announce the sanction, and let the index compose visibility | Accepted |
 | [0057](0057-the-trainers-own-surface-says-where-they-stand.md) | The trainer's own surface says where they stand | Accepted |
 | [0058](0058-a-translation-to-a-published-contract-is-total.md) | A translation to a published contract is total | Accepted |
+| [0059](0059-give-the-search-index-a-body-and-a-query-surface.md) | Give the search index a body, and a query surface | Accepted |

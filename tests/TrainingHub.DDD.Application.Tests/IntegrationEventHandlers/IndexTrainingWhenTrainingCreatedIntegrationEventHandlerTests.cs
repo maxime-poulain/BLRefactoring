@@ -1,4 +1,4 @@
-using TrainingHub.Shared;
+using TrainingHub.Shared.Application.Search;
 using TrainingHub.Shared.Application.IntegrationEventHandlers;
 using TrainingHub.Shared.Application.IntegrationEvents;
 using Moq;
