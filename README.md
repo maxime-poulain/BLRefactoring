@@ -436,11 +436,15 @@ them, while the CQRS stack projects straight from `TrainingContext` into DTOs wi
 `IQueryable` expressions, under a pipeline behaviour that switches change tracking off for
 queries and restores it afterwards.
 
-The one read where they do not differ is the public catalogue search. `CatalogueApplicationService`
+The two reads where they do not differ are the public catalogue's. `CatalogueApplicationService`
 and `SearchCatalogueQueryHandler` both call `ITrainingSearchQuery`, because what usually separates
 the two stacks is how each drives the write model — and that search reads a read model the write
 model has nothing to say about
-([ADR 0059](docs/adr/0059-give-the-search-index-a-body-and-a-query-surface.md)).
+([ADR 0059](docs/adr/0059-give-the-search-index-a-body-and-a-query-surface.md)). The catalogue's
+reading of one training arrives at `ICatalogueDetailQuery` from both stacks for the same reason,
+and that port is where the interesting decision lives rather than in either host: the index says
+whether a visitor may see the training, and the write model says what it is
+([ADR 0062](docs/adr/0062-let-the-proxy-forward-one-family-of-paths-without-a-token.md)).
 
 ---
 
@@ -836,10 +840,11 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 | `GET` | `/Administration/trainers` | Administrator only. One page of trainers, newest first. `?status=` (`Active`, `Suspended`), `?search=` on the name or the contact address, `?page=`, `?pageSize=`. `200`, `400` when the status names nothing or the page is out of range |
 | `GET` | `/Administration/trainings` | Administrator only. One page of trainings across every trainer, newest first. `?status=` (`Published`, `Unpublished`, `Withheld`), `?search=` on the title, `?page=`, `?pageSize=`. The term is a `LIKE '%term%'` over the write model, which the title had to stop being a value-converted column to allow ([ADR 0060](docs/adr/0060-look-inside-the-column-a-search-has-to-read.md)); the search that seeks is the catalogue's, and it cannot answer this one. `200`, `400` when the status names nothing, the term is too long, or the page is out of range |
 | `GET` | `/Catalogue/trainings` | **Anonymous.** One page of the offered catalogue, by title. `?term=` matched against the words of a title, each by prefix, through the search index rather than the trainings table; `?page=`, `?pageSize=`. `200`, `400` when the term is longer than a title or the page is out of range (ADR 0059) |
+| `GET` | `/Catalogue/trainings/{id:guid}` | **Anonymous.** One offered training in full: its title, its topics, its description, its prerequisites, its acquired skills, and the name of the trainer who offers it. Whether it may be shown comes from the search index; what it says comes from the write model, read now rather than copied — no fact carries a trainer's rename, so an indexed name would be one nothing refreshes. `200`, `404` for a training that does not exist **and** for one that is no longer on offer, which are deliberately the same answer ([ADR 0062](docs/adr/0062-let-the-proxy-forward-one-family-of-paths-without-a-token.md)) |
 | `GET` | `/Administration/Outbox/poison` | Administrator only. One page of the integration events delivery gave up on, oldest fact first, each with its last error and the consumers a retry would skip. The payload is deliberately not published. `?page=`, `?pageSize=`. `200`, `400` when the page is out of range ([ADR 0061](docs/adr/0061-give-the-poison-a-url-and-an-operator-a-way-back-in.md)) |
 | `POST` | `/Administration/Outbox/poison/{messageId}/requeue` | Administrator only. No body. Hands one poison message back to the delivery worker with a fresh budget; the delivery ledger is untouched, so the retry runs only the consumers still owed (ADR 0034). `204`, `400`, `404`, `409` when the message is still owed or was already delivered |
 
-Twenty-four endpoints, and not one of them lets a trainer reach what another trainer owns. The eight
+Twenty-five endpoints, and not one of them lets a trainer reach what another trainer owns. The eight
 under `/Administration` act on something that is not the caller's by design and are the only eight
 that do — behind a role that is granted by hand and by no endpoint at all (ADR 0051). They are
 grouped by the authority they exercise rather than by the resource they act on, which is what that

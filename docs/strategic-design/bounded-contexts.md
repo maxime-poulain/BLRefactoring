@@ -292,8 +292,10 @@ Registration, authentication, token issuance, lockout.
 - **Status:** built (ADR 0059). An inverted index in two tables of the same database: one entry per
   training, holding the title and the two facts public visibility is composed of, and one row per
   word of that title so that a search seeks instead of scanning. One adapter writes it, the query
-  port reads it, and `GET /Catalogue/trainings` is its first reader — the only anonymous endpoint of
-  this API.
+  port reads it, and `GET /Catalogue/trainings` is its first reader. Since ADR 0062 it has a second,
+  `GET /Catalogue/trainings/{id}`, which asks this index one question only — is this training on
+  offer — and reads the write model for everything it then shows. Those two are the whole anonymous
+  surface of this API.
 - **Fed by:** the transactional outbox, end to end. Every change that alters what a visitor
   would be shown commits its own fact with it — `TrainingCreatedIntegrationEvent`,
   `TrainingEditedIntegrationEvent`, `TrainingTransferredIntegrationEvent`,
@@ -325,11 +327,13 @@ Registration, authentication, token issuance, lockout.
 
 ## Context — Catalogue Discovery
 
-**Emerging, and already prepared for.** The public site: search trainings, browse by topic, read a
+**Emerging, and now partly visible.** The public site: search trainings, browse by topic, read a
 trainer's profile.
 
-This context does not exist yet. It is documented here because three things in the model were built
-for it — one of them since built in full — and a reader should know that they are not accidents:
+This context still does not exist as a context — it owns no store of its own, and what a visitor
+reads is served by Training Catalogue over Search Indexing's index. What changed with ADR 0062 is
+that the reading exists at all: two anonymous endpoints and two screens above them. A reader should
+know which of the things below were built for a context that may never be extracted:
 
 - **The search index** exists and answers (ADR 0059), through `ITrainingSearchQuery`, and the facts
   that maintain it — `TrainingCreatedIntegrationEvent`, `TrainingEditedIntegrationEvent`,
@@ -337,16 +341,26 @@ for it — one of them since built in full — and a reader should know that the
   `TrainingUnpublishedIntegrationEvent`, `TrainingDeletedIntegrationEvent`,
   `TrainingWithheldIntegrationEvent`, `TrainerSuspendedIntegrationEvent` and
   `TrainerReinstatedIntegrationEvent` — already land durably in the outbox on every commit.
+- **The catalogue's two reads** exist and are anonymous (ADR 0062): a paged title search over the
+  index, and a reading of one offered training that takes its *visibility* from the index and its
+  *content* — description, prerequisites, acquired skills, topics, and the trainer's name — from the
+  write model, live. Two screens sit above them, `/catalogue` and `/catalogue/{id}`, behind no
+  session at all.
 - **`GET /Trainer/{id}/photo`** is the one read addressed by identifier rather than by `me`, with a
-  year-long immutable cache and an `ETag` cut from the photo's identity. Making it public is
-  `[AllowAnonymous]` and nothing else.
+  year-long immutable cache and an `ETag` cut from the photo's identity. It stays behind the token,
+  and ADR 0062 records why: a portrait taken on a phone carries the coordinates of where it was
+  taken, nothing here strips them, and ADR 0021 named that before there was a public page to
+  publish them on. Stripping the metadata is the named precondition, not `[AllowAnonymous]`.
 - **The CQRS query side** already projects straight into DTOs without loading aggregates, which is
   the shape a public read model wants.
 
 **Expected relationship:** downstream of Training Catalogue, fed by the integration events the
 outbox already stores, with its own read model. It would own no aggregate — a discovery context
-reads, it does not decide. What is missing is no longer a store: ADR 0059 built one and gave it a
-title search. What is missing is the experience above it.
+reads, it does not decide. What is missing is no longer a store, and no longer the experience
+either: ADR 0059 built the one and ADR 0062 the other. What is missing is the reason to extract a
+context — facets, a trainer's public page, a store shaped by how a visitor browses rather than by
+how a trainer writes. Until one of those is wanted, a page over the same database is the honest
+size of it.
 
 **Expected language:** *catalogue*, *search result*, *facet*, *listing* — deliberately different
 words from the write side, because a search result is not a `Training`.

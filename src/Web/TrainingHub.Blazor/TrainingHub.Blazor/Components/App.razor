@@ -20,11 +20,16 @@
     interactive MudBlazor controls, which a prerendered pass renders inert: a login form the
     user can see and type into but that silently drops the click until WebAssembly boots. The
     pages that load data do so in OnInitializedAsync, which prerendering runs twice — once
-    server-side, for a first paint that is replaced moments later. The application is entirely
-    behind authentication, so there is no SEO to gain either.
+    server-side, for a first paint that is replaced moments later.
 
-    Turning it on is now a real option rather than a blocked one, and it is a decision about
-    perceived performance, to be made against a measurement. It is not made here.
+    A second reason used to sit beside it — the application was entirely behind authentication,
+    so there was no SEO to gain. ADR 0062 makes that half false: /catalogue and /catalogue/{id}
+    are public, and a public catalogue is exactly the kind of page a crawler is meant to read.
+    The half that decided is untouched, and it is the one above.
+
+    So the question is genuinely open now, and narrower than it was: prerendering these two
+    routes and no others. It is a decision about perceived performance and discoverability, to
+    be made against a measurement. It is not made here.
 *@
     <HeadOutlet @rendermode="new InteractiveWebAssemblyRenderMode(prerender: false)"/>
 </head>

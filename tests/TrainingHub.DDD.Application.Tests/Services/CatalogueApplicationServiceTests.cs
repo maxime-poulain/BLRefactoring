@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Moq;
 using TrainingHub.DDD.Application.Services.CatalogueServices;
+using TrainingHub.Shared.Application.Catalogue;
 using TrainingHub.Shared.Application.Dtos.Training;
 using TrainingHub.Shared.Application.Search;
 using TrainingHub.Shared.Common.Pagination;
@@ -19,6 +20,7 @@ namespace TrainingHub.DDD.Application.Tests.Services;
 public sealed class CatalogueApplicationServiceTests
 {
     private readonly Mock<ITrainingSearchQuery> _trainingSearch = new();
+    private readonly Mock<ICatalogueDetailQuery> _catalogueDetail = new();
 
     /// <summary>
     /// Search async, a term and a page, asks the index for exactly those.
@@ -32,7 +34,7 @@ public sealed class CatalogueApplicationServiceTests
             .Setup(search => search.SearchAsync(It.IsAny<string?>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PagedResult<CatalogueTrainingDto>([], 2, 10, 0));
 
-        var sut = new CatalogueApplicationService(_trainingSearch.Object);
+        var sut = new CatalogueApplicationService(_trainingSearch.Object, _catalogueDetail.Object);
 
         await sut.SearchAsync("domain", paging);
 
@@ -61,10 +63,55 @@ public sealed class CatalogueApplicationServiceTests
             .Setup(search => search.SearchAsync(It.IsAny<string?>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(answered);
 
-        var sut = new CatalogueApplicationService(_trainingSearch.Object);
+        var sut = new CatalogueApplicationService(_trainingSearch.Object, _catalogueDetail.Object);
 
         var page = await sut.SearchAsync(term: null, new PageRequest());
 
         page.Should().BeSameAs(answered);
+    }
+
+    /// <summary>
+    /// Find offered async, an identifier, asks the detail port for exactly it.
+    /// </summary>
+    /// <remarks>
+    /// And asks the <em>detail</em> port rather than the search one. The two questions look alike
+    /// enough to be answered from one place, and the whole of ADR 0062 is the argument that they
+    /// must not be: a search reads the index, a reading composes the index and the write model.
+    /// </remarks>
+    [Fact]
+    public async Task FindOfferedAsync_AnIdentifier_AsksTheDetailPortForExactlyIt()
+    {
+        var trainingId = Guid.CreateVersion7();
+
+        var sut = new CatalogueApplicationService(_trainingSearch.Object, _catalogueDetail.Object);
+
+        await sut.FindOfferedAsync(trainingId);
+
+        _catalogueDetail.Verify(
+            detail => detail.FindOfferedAsync(trainingId, It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _trainingSearch.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
+    /// Find offered async, nothing on offer, hands the nothing back.
+    /// </summary>
+    /// <remarks>
+    /// The absence travels rather than becoming a refusal here: what a missing training means to a
+    /// caller is the action's decision, and it answers 404 (ADR 0055).
+    /// </remarks>
+    [Fact]
+    public async Task FindOfferedAsync_NothingOnOffer_HandsTheNothingBack()
+    {
+        _catalogueDetail
+            .Setup(detail => detail.FindOfferedAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CatalogueTrainingDetailDto?)null);
+
+        var sut = new CatalogueApplicationService(_trainingSearch.Object, _catalogueDetail.Object);
+
+        var offered = await sut.FindOfferedAsync(Guid.CreateVersion7());
+
+        offered.Should().BeNull();
     }
 }
