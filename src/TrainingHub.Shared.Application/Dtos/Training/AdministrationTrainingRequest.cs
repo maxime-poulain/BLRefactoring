@@ -10,13 +10,18 @@ namespace TrainingHub.Shared.Application.Dtos.Training;
 /// that a layered signature say which boundary it is on, and it says so through the names of the
 /// types it takes.
 /// <para>
-/// One criterion where its sibling has two. A title is value-converted, and EF Core cannot look
-/// inside a converted property, so a substring match on it does not translate — a persistence fact
-/// recorded in ADR 0055 rather than a field somebody forgot.
+/// Two criteria, like its sibling. It carried one until ADR 0060, and the missing half was a
+/// persistence fact rather than a field somebody forgot: a converted title is one EF Core cannot
+/// look inside. Remapping it as a complex property is what closed the asymmetry ADR 0055 recorded.
 /// </para>
 /// </remarks>
 public sealed class AdministrationTrainingRequest
 {
     /// <summary>The state to narrow to, or <see langword="null"/> for every training.</summary>
     public TrainingStatus? Status { get; init; }
+
+    /// <summary>
+    /// The term to look for in a title, or <see langword="null"/> or blank for none.
+    /// </summary>
+    public string? Search { get; init; }
 }

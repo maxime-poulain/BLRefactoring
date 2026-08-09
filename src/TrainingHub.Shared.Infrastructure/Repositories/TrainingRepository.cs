@@ -148,15 +148,19 @@ public sealed class TrainingRepository(TrainingContext trainingContext)
     /// and the page describe the same set. Filtering afterwards would answer a short page with a
     /// total about a different question, which is the defect a paged list hides best.
     /// <para>
-    /// One criterion, where the trainers' question takes two. A title is mapped through a value
-    /// converter, and EF Core translates equality on one but cannot look inside it: both
-    /// <c>training.Title.Value.Contains(term)</c> and <c>EF.Property&lt;string&gt;</c> fail to
-    /// translate, the first as an untranslatable expression and the second as an invalid cast. That
-    /// was checked rather than assumed (ADR 0055).
+    /// The term reaches the title and nothing else, and it only reaches it at all since ADR 0060:
+    /// <c>training.Title.Value.Contains(term)</c> answered "could not be translated" for as long as
+    /// the title was a converted column, and translates now that it is a complex property. That was
+    /// checked rather than assumed, in both directions.
+    /// </para>
+    /// <para>
+    /// A blank term is no term, stated here as well as at the boundary so the method is total on its
+    /// own — the same reading its sibling on the trainers' side gives.
     /// </para>
     /// </remarks>
     public async Task<PagedResult<Training>> GetPageAsync(
         TrainingStatus? status,
+        string? search,
         PageRequest paging,
         CancellationToken cancellationToken = default)
     {
@@ -165,6 +169,12 @@ public sealed class TrainingRepository(TrainingContext trainingContext)
         if (status is not null)
         {
             trainings = trainings.Where(training => training.Status == status);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            trainings = trainings.Where(training => training.Title.Value.Contains(term));
         }
 
         return await trainings

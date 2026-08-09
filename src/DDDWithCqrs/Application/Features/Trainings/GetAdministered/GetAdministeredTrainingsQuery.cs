@@ -18,9 +18,10 @@ namespace TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetAdministered
 /// its sender put in it, and a string is what a validator can refuse.
 /// </para>
 /// <para>
-/// It carries no term, where the trainers' query does. A title is mapped through a value converter
-/// that EF Core cannot look inside, so a substring match does not translate — a persistence fact
-/// recorded in ADR 0055 rather than a criterion somebody forgot.
+/// It carries a term since ADR 0060, and carried none before it — for a reason that was never a
+/// choice: a title mapped through a value converter is one EF Core cannot look inside, so a
+/// substring match did not translate. Remapping it as a complex property is what closed the
+/// asymmetry ADR 0055 recorded between the two administrative listings.
 /// </para>
 /// </remarks>
 public sealed class GetAdministeredTrainingsQuery : IQuery<PagedResult<AdministrationTrainingDto>>
@@ -29,6 +30,11 @@ public sealed class GetAdministeredTrainingsQuery : IQuery<PagedResult<Administr
     /// The state to narrow to, or <see langword="null"/> for every training.
     /// </summary>
     public string? Status { get; init; }
+
+    /// <summary>
+    /// The term to look for in a title, or <see langword="null"/> for every training.
+    /// </summary>
+    public string? Search { get; init; }
 
     /// <summary>
     /// The page asked for; the default page when none was.

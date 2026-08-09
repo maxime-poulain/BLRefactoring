@@ -32,7 +32,7 @@ public sealed class TrainingsTests : ComponentTest
 
         _administration
             .Setup(client => client.GetTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
             .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 0));
     }
 
@@ -50,7 +50,7 @@ public sealed class TrainingsTests : ComponentTest
         Render<Trainings>();
 
         // Assert
-        _administration.Verify(client => client.GetTrainingsAsync(null, 1, null), Times.Once);
+        _administration.Verify(client => client.GetTrainingsAsync(null, null, 1, null), Times.Once);
     }
 
     /// <summary>
@@ -69,7 +69,7 @@ public sealed class TrainingsTests : ComponentTest
 
         _administration
             .Setup(client => client.GetTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
             .ReturnsAsync(Page(1, 1, 1, training));
 
         // Act
@@ -96,7 +96,7 @@ public sealed class TrainingsTests : ComponentTest
 
         _administration
             .Setup(client => client.GetTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
             .ReturnsAsync(Page(1, 1, 1, training));
 
         // Act
@@ -116,7 +116,7 @@ public sealed class TrainingsTests : ComponentTest
         // Arrange
         _administration
             .Setup(client => client.GetTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
             .ReturnsAsync(Page(1, 1, 1, Withheld("Domain-Driven Design", "Plagiarised material.")));
 
         // Act
@@ -146,7 +146,7 @@ public sealed class TrainingsTests : ComponentTest
 
         // Assert
         page.WaitForAssertion(() =>
-            _administration.Verify(client => client.GetTrainingsAsync("Withheld", 1, null), Times.Once));
+            _administration.Verify(client => client.GetTrainingsAsync("Withheld", null, 1, null), Times.Once));
     }
 
     /// <summary>
@@ -158,7 +158,7 @@ public sealed class TrainingsTests : ComponentTest
         // Arrange
         _administration
             .Setup(client => client.GetTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
             .ReturnsAsync(Page(1, 1, 1, Published("Domain-Driven Design", "Ada Lovelace")));
 
         // Act
@@ -177,7 +177,7 @@ public sealed class TrainingsTests : ComponentTest
         // Arrange
         _administration
             .Setup(client => client.GetTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
             .ReturnsAsync(Page(1, 3, 45, Published("Domain-Driven Design", "Ada Lovelace")));
 
         var page = Render<Trainings>();
@@ -187,7 +187,7 @@ public sealed class TrainingsTests : ComponentTest
 
         // Assert
         page.WaitForAssertion(() =>
-            _administration.Verify(client => client.GetTrainingsAsync(null, 2, null), Times.Once));
+            _administration.Verify(client => client.GetTrainingsAsync(null, null, 2, null), Times.Once));
     }
 
     /// <summary>
@@ -206,7 +206,7 @@ public sealed class TrainingsTests : ComponentTest
 
         _administration
             .Setup(client => client.GetTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
             .ReturnsAsync(Page(1, 1, 1, training));
 
         Answering("Plagiarised material.");
@@ -233,7 +233,7 @@ public sealed class TrainingsTests : ComponentTest
         // Arrange
         _administration
             .Setup(client => client.GetTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
             .ReturnsAsync(Page(1, 1, 1, Published("Domain-Driven Design", "Ada Lovelace")));
 
         Answering(reason: null);
@@ -265,7 +265,7 @@ public sealed class TrainingsTests : ComponentTest
 
         _administration
             .Setup(client => client.GetTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
             .ReturnsAsync(Page(1, 1, 1, training));
 
         var page = Render<Trainings>();
@@ -292,7 +292,7 @@ public sealed class TrainingsTests : ComponentTest
         // Arrange
         _administration
             .Setup(client => client.GetTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
             .ThrowsAsync(Unreachable());
 
         // Act
@@ -316,7 +316,7 @@ public sealed class TrainingsTests : ComponentTest
         // Arrange
         _administration
             .Setup(client => client.GetTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
             .ReturnsAsync(Page(1, 1, 1, Published("Domain-Driven Design", "Ada Lovelace")));
 
         _administration
@@ -356,6 +356,37 @@ public sealed class TrainingsTests : ComponentTest
             .Setup(service => service.ShowAsync<ReasonDialog>(
                 It.IsAny<string>(), It.IsAny<DialogParameters<ReasonDialog>>(), It.IsAny<DialogOptions>()))
             .ReturnsAsync(reference.Object);
+    }
+
+    /// <summary>
+    /// Searching while standing on a later page, asks for the first page of the new question.
+    /// </summary>
+    /// <remarks>
+    /// The twin of the trainers' screen, and it could not exist until ADR 0060 gave this listing a
+    /// term. A term narrows the set, so the page number the caller was standing on describes
+    /// something else once it changes: keeping it would show them page three of a list that may not
+    /// have one, which the server answers by clamping — an empty screen for a search that matched.
+    /// </remarks>
+    [Fact]
+    public async Task SearchingWhileStandingOnALaterPage_AsksForTheFirstPageOfTheNewQuestion()
+    {
+        // Arrange
+        _administration
+            .Setup(client => client.GetTrainingsAsync(
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(1, 3, 45, Published("Domain-Driven Design", "Ada Lovelace")));
+
+        var page = Render<Trainings>();
+        page.FindAll("button").Single(button => button.TextContent.Trim() == "2").Click();
+
+        var search = page.FindComponent<MudTextField<string>>();
+
+        // Act
+        await page.InvokeAsync(() => search.Instance.ValueChanged.InvokeAsync("design"));
+
+        // Assert
+        page.WaitForAssertion(() => _administration.Verify(
+            client => client.GetTrainingsAsync(null, "design", 1, null), Times.Once));
     }
 
     private static ApiException Unreachable() => new(

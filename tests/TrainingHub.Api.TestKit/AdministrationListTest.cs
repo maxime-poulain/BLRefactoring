@@ -6,6 +6,7 @@ using TrainingHub.Shared.Api.Contracts.Administration;
 using TrainingHub.Shared.Api.Contracts.Pagination;
 using TrainingHub.Shared.Api.Contracts.Trainers;
 using TrainingHub.Shared.Api.Contracts.Trainings;
+using TrainingHub.Shared.Common.Pagination;
 using Xunit;
 
 namespace TrainingHub.Api.TestKit;
@@ -54,6 +55,67 @@ public abstract class AdministrationListTest<TFactory>(TFactory factory) : Integ
         row.WithholdingReason.Should().Be("Reported for misleading claims.");
         row.TrainerId.Should().NotBeEmpty();
         page.Items.Should().NotContain(item => item.Id == kept);
+    }
+
+    /// <summary>
+    /// A withheld training, is findable by a word of its title, and the two criteria compose.
+    /// </summary>
+    /// <remarks>
+    /// The listing carried a state and no term until ADR 0060 remapped the title, so this is the
+    /// first fact that puts a substring match on a title through the whole stack — and the only one
+    /// that runs it against SQL Server rather than SQLite.
+    /// <para>
+    /// The two criteria are asked together, then the term alone, because a filter that replaced its
+    /// neighbour instead of composing with it answers plausibly for either one on its own. The
+    /// second call is what tells them apart: it must find the training the state filter excluded.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task AWithheldTraining_IsFindableByAWordOfItsTitle_AndTheTwoCriteriaCompose()
+    {
+        var owner = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        var taken = await CreateTrainingAsync(owner, "Hexagonal architecture explained");
+        var kept = await CreateTrainingAsync(owner, "Hexagonal architecture applied");
+
+        var administrator = await AuthHelper.SignInAsAdministratorAsync(Factory);
+
+        (await administrator.PostAsJsonAsync(
+            $"/Administration/trainings/{taken}/withhold",
+            new WithholdTrainingHttpRequest { Reason = "Reported for misleading claims." }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var narrowed = await ReadTrainingsAsync(administrator, "?status=Withheld&search=explained");
+
+        narrowed.Items.Should().ContainSingle(
+            "the state and the term compose rather than replace one another").Subject
+            .Id.Should().Be(taken);
+
+        var byTermAlone = await ReadTrainingsAsync(administrator, "?search=hexagonal");
+
+        byTermAlone.Items.Select(item => item.Id).Should().Contain([taken, kept]);
+    }
+
+    /// <summary>
+    /// A term nothing answers to, empties the page of trainings without emptying the envelope.
+    /// </summary>
+    /// <remarks>
+    /// The sibling of the trainers' fact, and the same distinction: an empty page is an answer, and
+    /// a caller reading `page` and `pageSize` back gets what they asked for rather than zeroes.
+    /// </remarks>
+    [Fact]
+    public async Task ATermNoTrainingAnswersTo_EmptiesThePageWithoutEmptyingTheEnvelope()
+    {
+        var owner = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        await CreateTrainingAsync(owner, "A training with an ordinary title");
+
+        var administrator = await AuthHelper.SignInAsAdministratorAsync(Factory);
+
+        var page = await ReadTrainingsAsync(administrator, "?search=nothingiscalledthis");
+
+        page.Items.Should().BeEmpty();
+        page.TotalCount.Should().Be(0);
+        page.Page.Should().Be(1);
+        page.PageSize.Should().Be(PageRequest.DefaultPageSize);
     }
 
     /// <summary>

@@ -127,6 +127,73 @@ public sealed partial class PersistenceRules
     }
 
     /// <summary>
+    /// The uniqueness the model cannot express, is still created by a migration.
+    /// </summary>
+    /// <remarks>
+    /// A rule that exists because a guarantee moved out of the model and into the database, and
+    /// nothing fast was left watching it. "A trainer cannot have two trainings with the same title"
+    /// is enforced by a unique index on <c>(TrainerId, Title)</c>; EF Core 10 cannot declare an
+    /// index over a scalar nested in a complex type, and the title became one so that a substring
+    /// match would translate (ADR 0060). So <c>TrainingConfiguration</c> stopped describing the
+    /// index, and only the migration creates it.
+    /// <para>
+    /// What that costs is a hole a refactoring falls into silently: delete the <c>CreateIndex</c>
+    /// while squashing history, or write a <c>Down</c> nobody re-applies, and the pre-check in
+    /// <c>IUniquenessTitleChecker</c> goes on answering while two concurrent creations both win.
+    /// The only other defence is <c>Create_DuplicateTitleForSameTrainer_Returns409</c>, which runs
+    /// in the integration workflow the fast one excludes.
+    /// </para>
+    /// <para>
+    /// Read off the migrations' source rather than the model, which is the whole point: the model
+    /// is where the claim no longer is.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0060",
+        "a unique index the model cannot declare is still created by a migration, or the rule it " +
+        "enforces holds nowhere")]
+    public void TheUniquenessTheModelCannotExpress_IsStillCreatedByAMigration() =>
+        Migrations()
+            .Selected("migration")
+            .Where(CreatesTheUniqueTitleIndex)
+            .Select(_ => (string?)null)
+            .DefaultIfEmpty(
+                "no migration creates the unique index on (TrainerId, Title). Since ADR 0060 the " +
+                "model cannot declare it — EF Core 10 refuses an index over a complex type's " +
+                "member — so the migration is the only place that rule exists. Without it two " +
+                "concurrent creations of the same title both succeed, and the pre-check in " +
+                "IUniquenessTitleChecker answers for a race it cannot see")
+            .OfType<string>()
+            .ShouldHold();
+
+    /// <summary>
+    /// Whether a migration's source creates the unique index the title rule rests on.
+    /// </summary>
+    /// <remarks>
+    /// Matched on the two column names and the uniqueness together, in one <c>CreateIndex</c> call:
+    /// an index over the same pair that had lost <c>unique: true</c> would read almost identically
+    /// and enforce nothing.
+    /// </remarks>
+    private static bool CreatesTheUniqueTitleIndex(string path)
+    {
+        var text = SourceTree.ReadText(path);
+
+        var index = text.IndexOf("\"TrainerId\", \"Title\"", StringComparison.Ordinal);
+
+        return index >= 0
+               && text.IndexOf("unique: true", index, StringComparison.Ordinal) >= 0;
+    }
+
+    private static IEnumerable<string> Migrations() =>
+        SourceTree.SourceFiles
+            .Select(SourceTree.Relative)
+            .Where(path => path.StartsWith(
+                "src/TrainingHub.Shared.Infrastructure/ThirdParty/EfCore/Migrations/",
+                StringComparison.Ordinal))
+            .Where(path => !path.EndsWith(".Designer.cs", StringComparison.Ordinal))
+            .Select(path => Path.Combine(SourceTree.RepositoryRoot, path.Replace('/', Path.DirectorySeparatorChar)));
+
+    /// <summary>
     /// Whether a member name is one of the moments this model stores: the audit pair every
     /// aggregate carries, and the outbox's own instants.
     /// </summary>

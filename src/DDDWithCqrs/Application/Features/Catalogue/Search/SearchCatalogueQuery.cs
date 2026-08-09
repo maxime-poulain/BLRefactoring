@@ -12,10 +12,9 @@ namespace TrainingHub.DDDWithCqrs.Application.Features.Catalogue.Search;
 /// question and project columns out of it; this one asks the search index, which is a read model
 /// maintained after the commit by nine consumers of the outbox (ADR 0025, ADR 0056).
 /// <para>
-/// It carries a term where <c>GetAdministeredTrainingsQuery</c> carries none, and the asymmetry has
-/// swapped sides rather than disappeared: a title is value-converted in the write model and
-/// searchable in the index, so the search this record adds is the public one — a moderator still
-/// needs the states the index refuses to hold.
+/// Its sibling <c>GetAdministeredTrainingsQuery</c> carries a term too since ADR 0060, and the two
+/// remain different questions: this one seeks along an inverted index and serves anybody, that one
+/// scans the write model for one authority and can find the states this index refuses to hold.
 /// </para>
 /// <para>
 /// No status, and nothing that names a caller. What may be shown is composed when the index is

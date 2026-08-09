@@ -119,7 +119,7 @@ public interface ITrainingApplicationService
     /// can be named.
     /// </para>
     /// </remarks>
-    /// <param name="request">The state to narrow by.</param>
+    /// <param name="request">The state and the term to narrow by.</param>
     /// <param name="paging">The page asked for.</param>
     /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     /// <returns>The page, empty when nothing matches.</returns>
@@ -411,7 +411,8 @@ public sealed class TrainingApplicationService(
 
         // A page of aggregates from the repository, mapped here — the layered half of ADR 0029.
         // Map carries the counts and the position across untouched.
-        var page = await trainingRepository.GetPageAsync(request.Status, paging, cancellationToken);
+        var page = await trainingRepository.GetPageAsync(
+            request.Status, request.Search, paging, cancellationToken);
 
         // The one column the aggregates cannot answer: a Training knows its owner's identifier and
         // has never known their name, which is what makes them two aggregates. One question for the

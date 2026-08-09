@@ -189,6 +189,7 @@ public static class HttpToApplicationMappings
         PaginationHttpRequest? pagination) => new()
         {
             Status = filter?.Status,
+            Search = filter?.Search,
             Paging = pagination.ToPageRequest()
         };
 

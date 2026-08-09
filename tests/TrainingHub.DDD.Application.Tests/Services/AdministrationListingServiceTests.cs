@@ -86,6 +86,38 @@ public sealed class AdministrationListingServiceTests
     }
 
     /// <summary>
+    /// Get administered page async, a state and a term, asks the repository for exactly those.
+    /// </summary>
+    /// <remarks>
+    /// The trainings' half of what this suite claims to pin, and it was missing while the trainings'
+    /// question took no term at all — so the claim held for one aggregate and not the other. Both
+    /// criteria are asserted by value, because a service that dropped the term would still answer a
+    /// plausible page.
+    /// </remarks>
+    [Fact]
+    public async Task GetAdministeredPageAsync_AStateAndATerm_AsksTheRepositoryForExactlyThose()
+    {
+        _trainings.TrainingRepository
+            .Setup(repository => repository.GetPageAsync(
+                It.IsAny<TrainingStatus?>(),
+                It.IsAny<string?>(),
+                It.IsAny<PageRequest>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PagedResult<Training>([], 1, 20, 0));
+
+        var paging = new PageRequest { Page = 3, PageSize = 5 };
+
+        await _trainings.CreateSut().GetAdministeredPageAsync(
+            new AdministrationTrainingRequest { Status = TrainingStatus.Withheld, Search = "design" },
+            paging);
+
+        _trainings.TrainingRepository.Verify(
+            repository => repository.GetPageAsync(
+                TrainingStatus.Withheld, "design", paging, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>
     /// Get administered page async, a page of trainings, names the owner it could only identify.
     /// </summary>
     /// <remarks>
@@ -101,7 +133,10 @@ public sealed class AdministrationListingServiceTests
 
         _trainings.TrainingRepository
             .Setup(repository => repository.GetPageAsync(
-                It.IsAny<TrainingStatus?>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
+                It.IsAny<TrainingStatus?>(),
+                It.IsAny<string?>(),
+                It.IsAny<PageRequest>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PagedResult<Training>([withheld], 1, 20, 1));
 
         _trainings.TrainerNames
@@ -131,7 +166,10 @@ public sealed class AdministrationListingServiceTests
 
         _trainings.TrainingRepository
             .Setup(repository => repository.GetPageAsync(
-                It.IsAny<TrainingStatus?>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
+                It.IsAny<TrainingStatus?>(),
+                It.IsAny<string?>(),
+                It.IsAny<PageRequest>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PagedResult<Training>([orphaned], 1, 20, 1));
 
         var page = await _trainings.CreateSut().GetAdministeredPageAsync(
@@ -157,7 +195,10 @@ public sealed class AdministrationListingServiceTests
 
         _trainings.TrainingRepository
             .Setup(repository => repository.GetPageAsync(
-                It.IsAny<TrainingStatus?>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
+                It.IsAny<TrainingStatus?>(),
+                It.IsAny<string?>(),
+                It.IsAny<PageRequest>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PagedResult<Training>([withheld], 1, 20, 1));
 
         var page = await _trainings.CreateSut().GetAdministeredPageAsync(
@@ -181,7 +222,10 @@ public sealed class AdministrationListingServiceTests
     {
         _trainings.TrainingRepository
             .Setup(repository => repository.GetPageAsync(
-                It.IsAny<TrainingStatus?>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
+                It.IsAny<TrainingStatus?>(),
+                It.IsAny<string?>(),
+                It.IsAny<PageRequest>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PagedResult<Training>([], 1, 20, 0));
 
         var page = await _trainings.CreateSut().GetAdministeredPageAsync(

@@ -47,19 +47,21 @@ namespace TrainingHub.GeneratedClients
         System.Threading.Tasks.Task<PagedHttpResponseOfAdministrationTrainerHttpResponse> GetTrainersAsync(string? status, string? search, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken);
 
         /// <param name="status">Only trainings in this state, or all of them when it is absent.</param>
+        /// <param name="search">Only trainings whose title contains this, or all of them when it is absent.</param>
         /// <param name="page">The page to return, counted from 1.</param>
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedHttpResponseOfAdministrationTrainingHttpResponse> GetTrainingsAsync(string? status, int? page, int? pageSize);
+        System.Threading.Tasks.Task<PagedHttpResponseOfAdministrationTrainingHttpResponse> GetTrainingsAsync(string? status, string? search, int? page, int? pageSize);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="status">Only trainings in this state, or all of them when it is absent.</param>
+        /// <param name="search">Only trainings whose title contains this, or all of them when it is absent.</param>
         /// <param name="page">The page to return, counted from 1.</param>
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedHttpResponseOfAdministrationTrainingHttpResponse> GetTrainingsAsync(string? status, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<PagedHttpResponseOfAdministrationTrainingHttpResponse> GetTrainingsAsync(string? status, string? search, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken);
 
         /// <returns>No Content</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
@@ -258,22 +260,24 @@ namespace TrainingHub.GeneratedClients
         }
 
         /// <param name="status">Only trainings in this state, or all of them when it is absent.</param>
+        /// <param name="search">Only trainings whose title contains this, or all of them when it is absent.</param>
         /// <param name="page">The page to return, counted from 1.</param>
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<PagedHttpResponseOfAdministrationTrainingHttpResponse> GetTrainingsAsync(string? status, int? page, int? pageSize)
+        public virtual System.Threading.Tasks.Task<PagedHttpResponseOfAdministrationTrainingHttpResponse> GetTrainingsAsync(string? status, string? search, int? page, int? pageSize)
         {
-            return GetTrainingsAsync(status, page, pageSize, System.Threading.CancellationToken.None);
+            return GetTrainingsAsync(status, search, page, pageSize, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="status">Only trainings in this state, or all of them when it is absent.</param>
+        /// <param name="search">Only trainings whose title contains this, or all of them when it is absent.</param>
         /// <param name="page">The page to return, counted from 1.</param>
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedHttpResponseOfAdministrationTrainingHttpResponse> GetTrainingsAsync(string? status, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<PagedHttpResponseOfAdministrationTrainingHttpResponse> GetTrainingsAsync(string? status, string? search, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -292,6 +296,10 @@ namespace TrainingHub.GeneratedClients
                     if (status != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("Status")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(status, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (search != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("Search")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(search, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (page != null)
                     {
