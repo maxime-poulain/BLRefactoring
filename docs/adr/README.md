@@ -59,7 +59,7 @@ simpler from the outside.
 | [0029](0029-answer-a-list-the-same-way-on-both-hosts.md) | Answer a list the same way on both hosts | Accepted |
 | [0030](0030-bring-the-fact-to-the-aggregate-not-the-decision-to-a-service.md) | Bring the fact to the aggregate, not the decision to a service | Accepted — narrowed by 0036: a decision with no home is a recorded domain service |
 | [0031](0031-send-email-over-smtp-and-prove-it-against-a-real-server.md) | Send email over SMTP, and prove it against a real server | Accepted |
-| [0032](0032-flatten-a-value-object-as-a-complex-property-not-an-owned-entity.md) | Flatten a value object as a complex property, not an owned entity | Accepted |
+| [0032](0032-flatten-a-value-object-as-a-complex-property-not-an-owned-entity.md) | Flatten a value object as a complex property, not an owned entity | Accepted — amended by [0060](0060-look-inside-the-column-a-search-has-to-read.md): one scalar converts, unless the column has to be looked inside — a converted `TrainingTitle` is one no substring match can translate against |
 | [0033](0033-back-off-between-retries-log-the-poison-and-sweep-the-delivered-history.md) | Back off between retries, log the poison, and sweep the delivered history | Accepted — the per-consumer isolation it left out arrives in 0034; the poison gains a pollable gauge in 0037 |
 | [0034](0034-deliver-once-per-consumer-not-once-per-message.md) | Deliver once per consumer, not once per message | Accepted |
 | [0035](0035-give-every-developer-a-git-ignored-local-overrides-file.md) | Give every developer a git-ignored local overrides file | Accepted |
@@ -87,3 +87,4 @@ simpler from the outside.
 | [0057](0057-the-trainers-own-surface-says-where-they-stand.md) | The trainer's own surface says where they stand | Accepted |
 | [0058](0058-a-translation-to-a-published-contract-is-total.md) | A translation to a published contract is total | Accepted |
 | [0059](0059-give-the-search-index-a-body-and-a-query-surface.md) | Give the search index a body, and a query surface | Accepted |
+| [0060](0060-look-inside-the-column-a-search-has-to-read.md) | Look inside the column a search has to read | Accepted |

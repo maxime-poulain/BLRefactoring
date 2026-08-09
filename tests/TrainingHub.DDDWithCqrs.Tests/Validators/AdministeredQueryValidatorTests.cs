@@ -66,6 +66,20 @@ public sealed class AdministeredQueryValidatorTests
             .IsValid.Should().BeTrue();
 
     /// <summary>
+    /// Validate, a term of any shape, is not the trainings validator's business either.
+    /// </summary>
+    /// <remarks>
+    /// The twin of the fact below, and it arrived with the term itself (ADR 0060). Its bound belongs
+    /// to the boundary, where a caller can be told which parameter was too long, and its meaning
+    /// belongs to the repository, where blank is no filter.
+    /// </remarks>
+    [Fact]
+    public void Validate_ATermOfAnyShape_IsNotTheTrainingsValidatorsBusinessEither() =>
+        new GetAdministeredTrainingsQueryValidator()
+            .Validate(new GetAdministeredTrainingsQuery { Search = new string('x', 5_000) })
+            .IsValid.Should().BeTrue();
+
+    /// <summary>
     /// Validate, a term of any shape, is not the validator's business.
     /// </summary>
     /// <remarks>

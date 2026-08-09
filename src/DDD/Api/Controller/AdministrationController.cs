@@ -103,7 +103,8 @@ public sealed class AdministrationController(
     {
         var request = new AdministrationTrainingRequest
         {
-            Status = string.IsNullOrWhiteSpace(filter?.Status) ? null : TrainingStatus.FromName(filter.Status)
+            Status = string.IsNullOrWhiteSpace(filter?.Status) ? null : TrainingStatus.FromName(filter.Status),
+            Search = filter?.Search
         };
 
         var page = await trainingApplicationService.GetAdministeredPageAsync(

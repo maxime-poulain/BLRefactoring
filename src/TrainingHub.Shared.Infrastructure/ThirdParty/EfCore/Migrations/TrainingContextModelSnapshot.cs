@@ -160,13 +160,19 @@ namespace TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<Guid>("TrainerId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Title", "TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.Training.Title#TrainingTitle", b1 =>
+                        {
+                            b1.IsRequired();
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)")
+                                .HasColumnName("Title");
+                        });
 
                     b.ComplexProperty(typeof(Dictionary<string, object>), "WithholdingReason", "TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.Training.WithholdingReason#WithholdingReason", b1 =>
                         {
@@ -178,9 +184,6 @@ namespace TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Migrations
                         });
 
                     b.HasKey("Id");
-
-                    b.HasIndex("TrainerId", "Title")
-                        .IsUnique();
 
                     b.ToTable("Training", (string)null);
                 });

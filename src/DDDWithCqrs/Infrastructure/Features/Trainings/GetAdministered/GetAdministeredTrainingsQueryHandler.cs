@@ -24,8 +24,9 @@ namespace TrainingHub.DDDWithCqrs.Infrastructure.Features.Trainings.GetAdministe
 /// no specification touched (ADR 0028).
 /// </para>
 /// <para>
-/// One filter, where the trainers' reader has two. A title is value-converted, and EF Core cannot
-/// look inside a converted property — checked, not assumed (ADR 0055).
+/// Two filters, like the trainers' reader. The second arrived with ADR 0060: a converted title is
+/// one EF Core cannot look inside, a complex property is one it can — checked in both directions
+/// rather than assumed.
 /// </para>
 /// <para>
 /// The owner's name is read in the same statement, by a correlated sub-select the projection can
@@ -53,6 +54,12 @@ public sealed class GetAdministeredTrainingsQueryHandler(TrainingContext trainin
         {
             var status = TrainingStatus.FromName(request.Status);
             trainings = trainings.Where(training => training.Status == status);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var term = request.Search.Trim();
+            trainings = trainings.Where(training => training.Title.Value.Contains(term));
         }
 
         var trainers = trainingContext.Trainers;

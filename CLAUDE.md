@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 59 architecture decision records.
+2. `docs/adr/README.md` — the index of 60 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 172 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 173 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 

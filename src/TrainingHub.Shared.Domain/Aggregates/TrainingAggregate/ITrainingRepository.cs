@@ -81,7 +81,7 @@ public interface ITrainingRepository
 
     /// <summary>
     /// Reads one page of trainings across every trainer, newest first, optionally narrowed to a
-    /// state.
+    /// state and to a term.
     /// </summary>
     /// <remarks>
     /// The sibling above is scoped to one trainer and this one is not, which is the whole difference
@@ -94,21 +94,28 @@ public interface ITrainingRepository
     /// it is the total order ADR 0001 requires, and the caller does not choose it.
     /// </para>
     /// <para>
-    /// <strong>No term.</strong> The trainers' listing is searchable by name and this one is not,
-    /// and the asymmetry is a persistence fact rather than a choice: <c>Title</c> is mapped through
-    /// a value converter, which EF Core can compare for equality and cannot look inside, so a
-    /// substring match does not translate. Making it searchable means remapping the title as a
-    /// complex property, and that column carries the unique index enforcing title uniqueness — a
-    /// migration, and a decision of its own. ADR 0055 records it rather than leaving the next
-    /// reader to rediscover it.
+    /// <c>search</c> is matched against the title and against nothing else: a description and a set
+    /// of prerequisites are prose, and searching them turns a bounded scan into an unbounded one for
+    /// matches nobody asked for — the argument ADR 0055 makes for keeping a bio out of the trainers'
+    /// term. This question carried no term at all until ADR 0060, for a reason that was never a
+    /// choice: a title mapped through a value converter is one EF Core cannot look inside, and
+    /// remapping it as a complex property is what made a substring match translate.
+    /// </para>
+    /// <para>
+    /// What the term costs — a <c>LIKE '%term%'</c> no index can seek — is recorded in ADR 0055 for
+    /// the trainers and is unchanged here. The search that seeks is the public catalogue's, over an
+    /// index of its own (ADR 0059), and it cannot answer this one: it holds none of the states a
+    /// moderator is looking for.
     /// </para>
     /// </remarks>
     /// <param name="status">The state to narrow to, or <see langword="null"/> for every training.</param>
+    /// <param name="search">The term to look for, or <see langword="null"/> or blank for no term.</param>
     /// <param name="paging">The page asked for.</param>
     /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     /// <returns>The page, empty when nothing matches.</returns>
     Task<PagedResult<Training>> GetPageAsync(
         TrainingStatus? status,
+        string? search,
         PageRequest paging,
         CancellationToken cancellationToken = default);
 }

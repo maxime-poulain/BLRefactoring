@@ -10,21 +10,36 @@
     <MudText Typo="Typo.h4" Class="mb-4">Trainings</MudText>
 
     <MudPaper Elevation="0" Class="pa-4 mb-4">
-        @* One filter where the trainers' screen has two. A title is value-converted, so EF Core
-           cannot look inside it and the API publishes no term for this list (ADR 0055). A search
-           box that went nowhere would be worse than its absence. *@
-        <MudSelect T="string"
-                   Label="State"
-                   Value="@_status"
-                   ValueChanged="OnStatusChangedAsync"
-                   Clearable="true"
-                   Variant="Variant.Outlined"
-                   Dense="true"
-                   Style="max-width: 16rem;">
-            <MudSelectItem T="string" Value="@PublishedStatus">Published</MudSelectItem>
-            <MudSelectItem T="string" Value="@UnpublishedStatus">Unpublished</MudSelectItem>
-            <MudSelectItem T="string" Value="@WithheldStatus">Withheld</MudSelectItem>
-        </MudSelect>
+        <MudStack Row="true" Spacing="4" AlignItems="AlignItems.Center">
+            @* Two filters, like the trainers' screen. This one had a state and no term until the
+               title stopped being a value-converted column EF Core could not look inside
+               (ADR 0060). *@
+            <MudSelect T="string"
+                       Label="State"
+                       Value="@_status"
+                       ValueChanged="OnStatusChangedAsync"
+                       Clearable="true"
+                       Variant="Variant.Outlined"
+                       Dense="true"
+                       Style="max-width: 16rem;">
+                <MudSelectItem T="string" Value="@PublishedStatus">Published</MudSelectItem>
+                <MudSelectItem T="string" Value="@UnpublishedStatus">Unpublished</MudSelectItem>
+                <MudSelectItem T="string" Value="@WithheldStatus">Withheld</MudSelectItem>
+            </MudSelect>
+
+            <MudTextField T="string"
+                          Label="Search"
+                          Value="@_search"
+                          ValueChanged="OnSearchChangedAsync"
+                          DebounceInterval="400"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Clearable="true"
+                          MaxLength="SearchMaxLength"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          HelperText="Title" />
+        </MudStack>
     </MudPaper>
 
     @if (_isLoading)
@@ -127,8 +142,13 @@
     private const string UnpublishedStatus = "Unpublished";
     private const string WithheldStatus = "Withheld";
 
+    // The bound the contract publishes. Typing past it would be answered 400 by the server, so the
+    // field refuses it here instead — the same reading the trainers' screen gives.
+    private const int SearchMaxLength = 100;
+
     private PagedHttpResponseOfAdministrationTrainingHttpResponse? _page;
     private string? _status;
+    private string? _search;
     private int _currentPage = 1;
     private bool _isLoading = true;
 
@@ -151,6 +171,13 @@
         await LoadAsync();
     }
 
+    private async Task OnSearchChangedAsync(string? search)
+    {
+        _search = search;
+        _currentPage = 1;
+        await LoadAsync();
+    }
+
     private async Task OnPageSelectedAsync(int page)
     {
         _currentPage = page;
@@ -162,12 +189,12 @@
         _isLoading = true;
         try
         {
-            _page = await AdministrationClient.GetTrainingsAsync(_status, _currentPage, null);
+            _page = await AdministrationClient.GetTrainingsAsync(_status, _search, _currentPage, null);
 
             if (_currentPage > _page.TotalPages)
             {
                 _currentPage = _page.TotalPages;
-                _page = await AdministrationClient.GetTrainingsAsync(_status, _currentPage, null);
+                _page = await AdministrationClient.GetTrainingsAsync(_status, _search, _currentPage, null);
             }
         }
         catch (Exception exception)

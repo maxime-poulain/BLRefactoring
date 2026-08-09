@@ -1,6 +1,6 @@
 # 0032 — Flatten a value object as a complex property, not an owned entity
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0060](0060-look-inside-the-column-a-search-has-to-read.md): one scalar converts, unless the column has to be looked inside — a converted `TrainingTitle` is one no substring match can translate against
 - **Date:** 2026-08-05
 
 ## Context
