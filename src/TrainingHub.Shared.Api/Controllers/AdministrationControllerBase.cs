@@ -17,11 +17,13 @@ namespace TrainingHub.Shared.Api.Controllers;
 /// declared on an action is combined with the class's rather than replacing it, so an administrative
 /// action hosted on a trainer-facing controller would demand both and be reachable by nobody.
 /// <para>
-/// One controller for two aggregates, which is the one place this API groups by authority rather
-/// than by resource — and deliberately, because that is what ADR 0051 says an administrator is. The
-/// administration gets a URL space, not a model: no aggregate of its own, no vocabulary of its own,
-/// and the four actions drive <c>Trainer</c> and <c>Training</c> through the same application layer
-/// as everything else.
+/// This is the one place this API groups by authority rather than by resource — and deliberately,
+/// because that is what ADR 0051 says an administrator is. The administration gets a URL space, not
+/// a model: no aggregate of its own and no vocabulary of its own. <c>AdministrationController</c>
+/// holds the six actions that drive <c>Trainer</c> and <c>Training</c> through the same application
+/// layer as everything else; <c>OutboxController</c> holds the two that drive no aggregate at all,
+/// because what they administer is the platform's own delivery table (ADR 0061). Both sit under
+/// <c>/Administration</c>, and the segment after it says which.
 /// </para>
 /// <para>
 /// <see langword="abstract"/>, the 401, the 403 and <c>[ProducesErrorResponseType(typeof(void))]</c>

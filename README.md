@@ -462,9 +462,15 @@ broken, and carries that aggregate's name.
 | `ErrorCodes` (kernel) | `Unspecified`, `NotFound`, `ConcurrencyConflict`, `Validation` |
 | `TrainingErrorCodes` | `Training.InvalidTitle`, `Training.DuplicateTitle`, `Training.InvalidDescription`, `Training.InvalidPrerequisites`, `Training.InvalidAcquiredSkills`, `Training.InvalidTopic`, `Training.CatalogueFull`, `Training.TransferToSelf`, `Training.RecipientCatalogueFull`, `Training.UnknownRecipient`, `Training.AlreadyPublished`, `Training.AlreadyUnpublished`, `Training.TrainerSuspended`, `Training.RecipientSuspended`, `Training.AlreadyWithheld`, `Training.NotWithheld`, `Training.Withheld`, `Training.WithholdingReasonEmpty`, `Training.WithholdingReasonTooLong` |
 | `TrainerErrorCodes` | `Trainer.InvalidEmail`, `Trainer.InvalidFirstname`, `Trainer.InvalidLastname`, `Trainer.BioEmpty`, `Trainer.BioExceeds500Characters`, `Trainer.PhotoEmpty`, `Trainer.PhotoTooLarge`, `Trainer.PhotoFormatNotSupported`, `Trainer.PhotoContentMismatch`, `Trainer.AlreadySuspended`, `Trainer.NotSuspended`, `Trainer.SuspensionReasonEmpty`, `Trainer.SuspensionReasonTooLong` |
+| `OutboxErrorCodes` | `Outbox.NotPoison` |
 
 `Validation` is the one the kernel declares for somebody else: the FluentValidation pipeline of the
 CQRS stack answers with it, and nothing in the domain ever does (ADR 0016).
+
+`OutboxErrorCodes` is the one holder that names no aggregate, and the exception is argued rather
+than an oversight: the outbox is the platform's own table, so the refusal is about a row's delivery
+state and there is no aggregate to own it. It still carries a prefix, because the point of ADR 0015
+is that two owners never collide (ADR 0061).
 
 `ErrorCode` is a value object over a string. The set is open — any holder can declare one — so
 `ErrorVocabularyRules` keeps it honest: nothing constructs a code at a call site, every code is
@@ -558,8 +564,12 @@ the envelope, counts one attempt, and books the next try one doubling further ou
 then 120 — so a downstream outage is ridden out rather than burned through (ADR 0033). A message
 whose budget in `OutboxOptions.MaxAttempts` is spent is poison: kept, no longer claimed, its last
 error beside it, announced once at Error in the log — and its ledger shows the operator exactly
-which consumers are owed. Delivered rows older than `OutboxOptions.RetentionPeriod` are swept
-after each drain, their ledger rows cascading with them — poison never is. Delivery is
+which consumers are owed. An administrator reads that backlog at `GET /Administration/Outbox/poison`
+and hands one row back to the worker with `POST …/requeue`, which gives it a fresh budget and leaves
+the ledger untouched, so the retry runs only what is still owed
+([ADR 0061](docs/adr/0061-give-the-poison-a-url-and-an-operator-a-way-back-in.md)). Delivered rows
+older than `OutboxOptions.RetentionPeriod` are swept after each drain, their ledger rows cascading
+with them — poison never is. Delivery is
 at-least-once and eventual by a few seconds; the ledger dedups by the envelope's id, and the
 residual lapsed-lease window is narrowed to the consumers not yet settled.
 
@@ -826,15 +836,18 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 | `GET` | `/Administration/trainers` | Administrator only. One page of trainers, newest first. `?status=` (`Active`, `Suspended`), `?search=` on the name or the contact address, `?page=`, `?pageSize=`. `200`, `400` when the status names nothing or the page is out of range |
 | `GET` | `/Administration/trainings` | Administrator only. One page of trainings across every trainer, newest first. `?status=` (`Published`, `Unpublished`, `Withheld`), `?search=` on the title, `?page=`, `?pageSize=`. The term is a `LIKE '%term%'` over the write model, which the title had to stop being a value-converted column to allow ([ADR 0060](docs/adr/0060-look-inside-the-column-a-search-has-to-read.md)); the search that seeks is the catalogue's, and it cannot answer this one. `200`, `400` when the status names nothing, the term is too long, or the page is out of range |
 | `GET` | `/Catalogue/trainings` | **Anonymous.** One page of the offered catalogue, by title. `?term=` matched against the words of a title, each by prefix, through the search index rather than the trainings table; `?page=`, `?pageSize=`. `200`, `400` when the term is longer than a title or the page is out of range (ADR 0059) |
+| `GET` | `/Administration/Outbox/poison` | Administrator only. One page of the integration events delivery gave up on, oldest fact first, each with its last error and the consumers a retry would skip. The payload is deliberately not published. `?page=`, `?pageSize=`. `200`, `400` when the page is out of range ([ADR 0061](docs/adr/0061-give-the-poison-a-url-and-an-operator-a-way-back-in.md)) |
+| `POST` | `/Administration/Outbox/poison/{messageId}/requeue` | Administrator only. No body. Hands one poison message back to the delivery worker with a fresh budget; the delivery ledger is untouched, so the retry runs only the consumers still owed (ADR 0034). `204`, `400`, `404`, `409` when the message is still owed or was already delivered |
 
-Twenty-two endpoints, and not one of them lets a trainer reach what another trainer owns. The six
-under `/Administration` act on somebody else's aggregate by design and are the only six that do —
-behind a role that is granted by hand and by no endpoint at all (ADR 0051). They are grouped by the
-authority they exercise rather than by the resource they act on, which is what that record says an
-administrator is: a permission, not a context. The twenty-second is the only one nobody has to sign
-in for, and it reads no aggregate at all: the search index holds what a visitor may be shown, which
-is what makes an anonymous read of it a different thing from the catalogue reads below. There used
-to be
+Twenty-four endpoints, and not one of them lets a trainer reach what another trainer owns. The eight
+under `/Administration` act on something that is not the caller's by design and are the only eight
+that do — behind a role that is granted by hand and by no endpoint at all (ADR 0051). They are
+grouped by the authority they exercise rather than by the resource they act on, which is what that
+record says an administrator is: a permission, not a context. Six of them drive `Trainer` and
+`Training`; the last two drive no aggregate at all and administer the platform's own delivery table
+(ADR 0061). One endpoint is the only one nobody has to sign in for, and it too reads no aggregate:
+the search index holds what a visitor may be shown, which is what makes an anonymous read of it a
+different thing from the catalogue reads below. There used to be
 five more — `/Trainer/all`, `/Trainer/{id}`, `/Training/all`, `/Training/by-trainer/{id}` and
 `/Training/by-topic/{topic}` — and between them they handed out every trainer's name, contact email
 and bio to any authenticated caller, enumerable. Nothing in the application asked for them: the
@@ -902,7 +915,9 @@ body carries nothing worth one:
   contexts — and answers `{ "status": …, "checks": [{ "name": …, "status": … }] }`. Names and
   statuses, nothing else: no description, no exception, no duration ever leaves on this route, and
   a unit test holds the writer to that. `Degraded` means poison messages are waiting for an
-  operator while the host still serves; the failure of any other probe is `Unhealthy`.
+  operator while the host still serves; the failure of any other probe is `Unhealthy`. The gauge says
+  *how many*, and `/Administration/Outbox/poison` says *which* — the listing an operator acts on
+  (ADR 0061).
 
   The schema probe is what makes ADR 0003 enforceable rather than merely logged: outside
   Development a host applies no migration, and one whose database is behind now stops receiving

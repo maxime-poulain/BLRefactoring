@@ -84,6 +84,24 @@ public sealed class OutboxMessage
     public DateTime? ClaimedUntil { get; private set; }
 
     /// <summary>
+    /// When an operator last put this message back in the pool; <see langword="null"/> for a
+    /// message no operator has touched (ADR 0061).
+    /// </summary>
+    public DateTime? RequeuedOnUtc { get; private set; }
+
+    /// <summary>
+    /// Whether the delivery ledger may already name consumers for this message — the question the
+    /// processor asks before paying for the ledger's read.
+    /// </summary>
+    /// <remarks>
+    /// The counter alone used to answer it, and stopped being able to the moment a requeue could
+    /// set it back to zero: the ledger's rows outlive the budget on purpose, so that a retry
+    /// re-runs only what is still owed (ADR 0034). Asked here rather than at the call site because
+    /// it is a statement about this row's history, and a row is the only thing that knows its own.
+    /// </remarks>
+    public bool MayHaveSettledConsumers => Attempts > 0 || RequeuedOnUtc is not null;
+
+    /// <summary>
     /// Records a successful delivery: the message is done, no lease needs to outlive it, and a
     /// delivered message schedules nothing.
     /// </summary>
@@ -109,5 +127,23 @@ public sealed class OutboxMessage
         Error = error;
         ClaimedUntil = null;
         NextAttemptOnUtc = failedOnUtc + (retryDelay * Math.Pow(2, Attempts - 1));
+    }
+
+    /// <summary>
+    /// Hands a poison message back to the pool: the budget is fresh, the schedule is now, and no
+    /// worker holds it (ADR 0061).
+    /// </summary>
+    /// <remarks>
+    /// The last error is deliberately kept. It is what an operator was looking at when they decided
+    /// to retry, and the next attempt overwrites it by itself — clearing it here would erase the
+    /// evidence one moment before finding out whether it was still true.
+    /// </remarks>
+    /// <param name="requeuedOnUtc">When the operator asked for the retry, in UTC.</param>
+    public void Requeue(DateTime requeuedOnUtc)
+    {
+        Attempts = 0;
+        ClaimedUntil = null;
+        NextAttemptOnUtc = null;
+        RequeuedOnUtc = requeuedOnUtc;
     }
 }

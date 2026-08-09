@@ -14,10 +14,11 @@ namespace TrainingHub.Shared.Api.Health;
 /// The pollable half of ADR 0033's log line: poison is operator evidence that halts nothing, so
 /// this check never answers Unhealthy — the host still serves, and failing readiness over it would
 /// take traffic away from a process that is fine. Degraded is what makes the evidence reachable by
-/// a poll instead of a log search; the dead-letter surface with a URL — a list, a requeue — stays
-/// deferred exactly as ADRs 0025 and 0033 left it (ADR 0037). The count travels in the result's
-/// description for a debugger attached to the report, and nowhere else: the response writer emits
-/// names and statuses only.
+/// a poll instead of a log search. It stays a gauge: <em>how much</em> is a number an orchestrator
+/// polls, and <em>which</em> is a listing an administrator reads — the surface ADR 0037 said this
+/// was not, and which ADR 0061 built at <c>/Administration/Outbox/poison</c>. The count travels in
+/// the result's description for a debugger attached to the report, and nowhere else: the response
+/// writer emits names and statuses only.
 /// </remarks>
 internal sealed class OutboxPoisonHealthCheck(
     TrainingContext trainingContext,

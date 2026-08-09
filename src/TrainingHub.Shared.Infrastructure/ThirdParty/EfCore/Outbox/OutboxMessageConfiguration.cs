@@ -61,6 +61,14 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
         builder.Property(message => message.NextAttemptOnUtc)
             .HasPrecision(7);
 
+        builder.Property(message => message.RequeuedOnUtc)
+            .HasPrecision(7);
+
+        // Computed from two columns that are mapped, so it is a question rather than a fact and has
+        // no column of its own. Said out loud because this configuration declares everything: an
+        // unmapped member here is a decision, not a member somebody forgot.
+        builder.Ignore(message => message.MayHaveSettledConsumers);
+
         // The worker's one question — "what is owed, oldest first" — answered by an index that
         // holds only the owed rows: delivered messages fall out of it, so it stays small no matter
         // how much history the table accumulates.

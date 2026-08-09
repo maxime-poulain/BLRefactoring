@@ -37,6 +37,15 @@
                                    Href="/administration/trainings">
                             Moderate trainings
                         </MudButton>
+                        @* The third link administers the platform rather than the domain: the
+                           messages delivery gave up on, and the one way back in (ADR 0061). Same
+                           role, same URL space, and deliberately last — an operator reaches for it
+                           when something is wrong, not on their way to anything else. *@
+                        <MudButton Variant="Variant.Text"
+                                   Color="Color.Inherit"
+                                   Href="/administration/outbox">
+                            Outbox
+                        </MudButton>
                     </Authorized>
                 </AuthorizeView>
                 <MudText Typo="Typo.body1" Class="mx-4">@context.User.Identity?.Name</MudText>

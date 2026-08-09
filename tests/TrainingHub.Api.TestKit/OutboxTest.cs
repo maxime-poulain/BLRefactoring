@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using AwesomeAssertions;
 using TrainingHub.Shared;
 using TrainingHub.Shared.Application.IntegrationEvents;
@@ -124,6 +125,32 @@ public abstract class OutboxTest<TFactory>(TFactory factory) : IntegrationTest<T
         poisoned.Error.Should().Contain("No integration event is registered");
         poisoned.NextAttemptOnUtc.Should().NotBeNull(
             "every failed attempt books the next one — the schedule was written before the budget ran out");
+
+        // The half of this test's name that nothing used to assert. "Left alone" is a claim about
+        // what happens next, so it is checked after the worker has had several more polls: the
+        // counter stops at the budget, and the claim query is what has to keep it there.
+        await Task.Delay(TimeSpan.FromSeconds(1));
+
+        using (var scope = Factory.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<TrainingContext>();
+            var stillPoisoned = await context.Set<OutboxMessage>()
+                .SingleAsync(message => message.Id == messageId);
+
+            stillPoisoned.Attempts.Should().Be(2,
+                "a spent budget is not tried again — a counter that kept climbing would mean the " +
+                "claim query stopped excluding poison, and the row would be retried forever");
+        }
+
+        // The gauge ADR 0037 built over exactly this state, observed in the state it exists for.
+        // Every other fact about it sees it healthy, which proves only that it does not throw.
+        var readiness = await Factory.CreateClient().GetAsync("/health/ready");
+        using (var report = JsonDocument.Parse(await readiness.Content.ReadAsStringAsync()))
+        {
+            report.RootElement.GetProperty("status").GetString().Should().Be("Degraded",
+                "poison is operator evidence that halts nothing, so readiness reports it without " +
+                "taking the host out of rotation");
+        }
 
         // The transition was announced: one Error line, naming the message, reached the host's
         // sinks — the smallest dead-letter surface ADR 0025 deferred, delivered by ADR 0033.

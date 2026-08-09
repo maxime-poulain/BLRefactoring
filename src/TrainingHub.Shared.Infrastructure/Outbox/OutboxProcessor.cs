@@ -111,15 +111,21 @@ OUTPUT inserted.*")
     }
 
     /// <summary>
-    /// The ledger's answer for one message: which consumers it already reached. A first attempt
-    /// skips the query — the ledger commits in the same save as the failure that would make a
-    /// second attempt exist, so no attempts means no rows.
+    /// The ledger's answer for one message: which consumers it already reached. A message with no
+    /// history skips the query — the ledger commits in the same save as the failure that would make
+    /// a second attempt exist, so a row nothing has touched has no ledger rows.
     /// </summary>
+    /// <remarks>
+    /// The envelope answers whether it has a history, rather than this method reading its attempt
+    /// counter. The counter was exact until an operator could put it back to zero, and a requeue
+    /// does exactly that: asking it directly would skip the ledger for a message the ledger knows
+    /// about, and re-run consumers that already succeeded (ADR 0034, ADR 0061).
+    /// </remarks>
     private async Task<IReadOnlySet<string>> DeliveredConsumersOfAsync(
         OutboxMessage message,
         CancellationToken cancellationToken)
     {
-        if (message.Attempts == 0)
+        if (!message.MayHaveSettledConsumers)
         {
             return new HashSet<string>();
         }
@@ -146,7 +152,8 @@ OUTPUT inserted.*")
         if (message.Attempts >= configured.MaxAttempts)
         {
             // Error, once, at the transition: this is the moment the system gives up on a
-            // committed fact, and the smallest dead-letter surface ADR 0025 deferred.
+            // committed fact. It was the whole of the dead-letter surface until ADR 0061, and is
+            // still the only half that reaches a log aggregator rather than a screen.
             logger.LogError(
                 exception,
                 "Outbox message {MessageId} ({Name} v{Version}) is poison after {Attempts} attempts; it stays in the table for an operator.",

@@ -1,5 +1,6 @@
 using TrainingHub.Shared.Application.IntegrationEventHandlers;
 using TrainingHub.Shared.Application.IntegrationEvents;
+using TrainingHub.Shared.Application.Outbox;
 using TrainingHub.Shared.Application.Queries;
 using TrainingHub.Shared.Application.Search;
 using TrainingHub.Shared.Common;
@@ -145,6 +146,9 @@ public static class ServiceCollectionExtensions
             // same commit. Scoped rather than singleton, now that the index is two tables of this
             // database and the adapter holds the session that writes them.
             .AddScoped<ITrainingSearchIndexer, TrainingSearchIndexer>()
-            .AddScoped<ITrainingSearchQuery, TrainingSearchQuery>();
+            .AddScoped<ITrainingSearchQuery, TrainingSearchQuery>()
+            // The outbox's operator surface (ADR 0061). Scoped for the same reason: it reads and
+            // writes the delivery table through the request's own session.
+            .AddScoped<IOutboxOperations, OutboxOperations>();
     }
 }

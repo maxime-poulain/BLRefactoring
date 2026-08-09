@@ -52,7 +52,7 @@ simpler from the outside.
 | [0022](0022-name-the-repository-after-the-domain-it-serves.md) | Name the repository after the domain it serves | Accepted |
 | [0023](0023-document-the-strategic-design-and-hold-it-to-the-model.md) | Document the strategic design, and hold it to the model | Accepted |
 | [0024](0024-publish-facts-not-intents-and-version-them-in-the-envelope.md) | Publish facts, not intents, and version them in the envelope | Accepted — the email half of "the ports remain fakes" is dated by 0031; the search half stays true; the retry contract gains its schedule in 0033; the per-consumer half of its at-least-once promise is made true by 0034 |
-| [0025](0025-deliver-the-outbox-with-a-hosted-service-in-each-host.md) | Deliver the outbox with a hosted service in each host | Accepted — the email half of "they remain fakes" is dated by 0031; the search half stays true; the retry cadence, the poison's silence and the table's growth are hardened by 0033; delivery is settled per consumer by 0034 |
+| [0025](0025-deliver-the-outbox-with-a-hosted-service-in-each-host.md) | Deliver the outbox with a hosted service in each host | Accepted — the email half of "they remain fakes" is dated by 0031; the search half stays true; the retry cadence, the poison's silence and the table's growth are hardened by 0033; delivery is settled per consumer by 0034; the dead-letter surface it deferred is built by 0061 |
 | [0026](0026-log-with-serilog-to-console-and-files-through-typed-options.md) | Log with Serilog to console and files, through typed options | Accepted |
 | [0027](0027-stamp-the-callers-identity-on-every-log-line.md) | Stamp the caller's identity on every log line | Accepted |
 | [0028](0028-a-specification-names-a-business-rule-or-it-does-not-exist.md) | A specification names a business rule, or it does not exist | Accepted — amended by [0055](0055-let-the-administration-read-what-the-catalogue-may-not.md): a named question may carry named criteria, and the line this record drew at none moves to *never a predicate* |
@@ -60,11 +60,11 @@ simpler from the outside.
 | [0030](0030-bring-the-fact-to-the-aggregate-not-the-decision-to-a-service.md) | Bring the fact to the aggregate, not the decision to a service | Accepted — narrowed by 0036: a decision with no home is a recorded domain service |
 | [0031](0031-send-email-over-smtp-and-prove-it-against-a-real-server.md) | Send email over SMTP, and prove it against a real server | Accepted |
 | [0032](0032-flatten-a-value-object-as-a-complex-property-not-an-owned-entity.md) | Flatten a value object as a complex property, not an owned entity | Accepted — amended by [0060](0060-look-inside-the-column-a-search-has-to-read.md): one scalar converts, unless the column has to be looked inside — a converted `TrainingTitle` is one no substring match can translate against |
-| [0033](0033-back-off-between-retries-log-the-poison-and-sweep-the-delivered-history.md) | Back off between retries, log the poison, and sweep the delivered history | Accepted — the per-consumer isolation it left out arrives in 0034; the poison gains a pollable gauge in 0037 |
+| [0033](0033-back-off-between-retries-log-the-poison-and-sweep-the-delivered-history.md) | Back off between retries, log the poison, and sweep the delivered history | Accepted — the per-consumer isolation it left out arrives in 0034; the poison gains a pollable gauge in 0037; the dead-letter surface it deferred is built by 0061 |
 | [0034](0034-deliver-once-per-consumer-not-once-per-message.md) | Deliver once per consumer, not once per message | Accepted |
 | [0035](0035-give-every-developer-a-git-ignored-local-overrides-file.md) | Give every developer a git-ignored local overrides file | Accepted |
 | [0036](0036-model-the-decision-that-has-no-home-as-a-domain-service.md) | Model the decision that has no home as a domain service | Accepted |
-| [0037](0037-answer-for-the-hosts-health-at-two-endpoints.md) | Answer for the host's health at two endpoints | Accepted — amended by [0045](0045-fail-readiness-while-a-migration-is-pending.md): a fifth probe answers for the schema, so every "four probes" below now reads five |
+| [0037](0037-answer-for-the-hosts-health-at-two-endpoints.md) | Answer for the host's health at two endpoints | Accepted — amended by [0045](0045-fail-readiness-while-a-migration-is-pending.md): a fifth probe answers for the schema, so every "four probes" below now reads five; the dead-letter surface it deferred is built by 0061 |
 | [0038](0038-derive-every-counted-claim-from-the-code.md) | Derive every counted claim from the code | Accepted |
 | [0039](0039-hold-the-record-and-its-index-to-the-same-status.md) | Hold the record and its index to the same status | Accepted |
 | [0040](0040-register-the-trainer-and-the-account-in-one-transaction.md) | Register the trainer and the account in one transaction | Accepted |
@@ -88,3 +88,4 @@ simpler from the outside.
 | [0058](0058-a-translation-to-a-published-contract-is-total.md) | A translation to a published contract is total | Accepted |
 | [0059](0059-give-the-search-index-a-body-and-a-query-surface.md) | Give the search index a body, and a query surface | Accepted |
 | [0060](0060-look-inside-the-column-a-search-has-to-read.md) | Look inside the column a search has to read | Accepted |
+| [0061](0061-give-the-poison-a-url-and-an-operator-a-way-back-in.md) | Give the poison a URL, and an operator a way back in | Accepted |
