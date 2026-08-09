@@ -1,5 +1,8 @@
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Reflection;
+using TrainingHub.Shared.Api.Contracts.Mappings;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using TrainingHub.Architecture.Tests.Framework;
 using TrainingHub.Shared.Api.Contracts;
@@ -645,6 +648,127 @@ public sealed partial class HttpBoundaryRules
                 "as much as on the aggregate";
         }
     }
+
+    /// <summary>
+    /// Every mapping to a published contract, assigns every member of it.
+    /// </summary>
+    /// <remarks>
+    /// The defect this exists for happened twice in eight pull requests, and silently both times: a
+    /// member was added to a read model and to the contract beside it, and the translation between
+    /// them compiled without copying it. **A member that is not <c>required</c> is not missed by an
+    /// object initialiser** — so the compiler is content, the tests pass, and the API serves a
+    /// <see langword="null"/> on the column the change existed to add.
+    /// <para>
+    /// Stated by running the mapping rather than by reading it. The suite carries no Roslyn, and a
+    /// regex over an initialiser would be a claim about how the code is punctuated rather than about
+    /// what it does: this fills the source with values that are nothing like a default, invokes the
+    /// translation, and asks whether anything came out still at one. A forgotten member is exactly a
+    /// member left at its default, whichever way the mapping is written.
+    /// </para>
+    /// <para>
+    /// The population takes itself from the signatures: a public static method of the mapping class
+    /// taking one read model and answering one published contract. A translation added tomorrow
+    /// joins it by existing, which is the direction that fails safely.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0058",
+        "a translation to a published contract is total: a member the mapping forgets is a null the " +
+        "API serves and nobody asked for")]
+    public void EveryMappingToAPublishedContract_AssignsEveryMember() =>
+        typeof(ApplicationToHttpMappings)
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Where(IsATranslationToAContract)
+            .Selected("translation to a published contract")
+            .SelectMany(UnassignedMembers)
+            .ShouldHold();
+
+    /// <summary>One read model in, one published contract out.</summary>
+    private static bool IsATranslationToAContract(MethodInfo method)
+    {
+        var parameters = method.GetParameters();
+
+        return parameters.Length == 1
+            && parameters[0].ParameterType.Name.EndsWith("Dto", StringComparison.Ordinal)
+            && method.ReturnType.Name.EndsWith("HttpResponse", StringComparison.Ordinal);
+    }
+
+    private static IEnumerable<string> UnassignedMembers(MethodInfo translation)
+    {
+        var source = Filled(translation.GetParameters()[0].ParameterType);
+        var published = translation.Invoke(obj: null, [source])!;
+
+        return published.GetType()
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(member => LooksUntouched(member.GetValue(published)))
+            .Select(member =>
+                $"{translation.DeclaringType!.Name}.{translation.Name}" +
+                $"({translation.GetParameters()[0].ParameterType.Name}) leaves " +
+                $"{published.GetType().Name}.{member.Name} at its default, from a source where " +
+                "nothing was. A member the translation forgets is a null the API serves and nobody " +
+                "asked for (ADR 0058)");
+    }
+
+    /// <summary>
+    /// An instance whose every member is something no mapping could have produced by accident.
+    /// </summary>
+    /// <remarks>
+    /// Uninitialised rather than constructed, because a read model's members are <c>required</c> and
+    /// <c>init</c>: the first refuses an object initialiser this cannot write, and the second is
+    /// settable by reflection all the same.
+    /// </remarks>
+    private static object Filled(Type readModel)
+    {
+        var instance = RuntimeHelpers.GetUninitializedObject(readModel);
+
+        foreach (var member in readModel.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                     .Where(member => member.CanWrite))
+        {
+            member.SetValue(instance, SomethingUnlike(member.PropertyType));
+        }
+
+        return instance;
+    }
+
+    private static object SomethingUnlike(Type type)
+    {
+        var bare = Nullable.GetUnderlyingType(type) ?? type;
+
+        if (bare == typeof(string))
+        {
+            return "a value no default would produce";
+        }
+
+        if (bare == typeof(Guid))
+        {
+            return Guid.Parse("11111111-1111-1111-1111-111111111111");
+        }
+
+        if (bare == typeof(byte[]))
+        {
+            return new byte[] { 1 };
+        }
+
+        if (bare.IsGenericType && bare.GetGenericTypeDefinition() == typeof(List<>))
+        {
+            var list = (System.Collections.IList)Activator.CreateInstance(bare)!;
+            list.Add(SomethingUnlike(bare.GetGenericArguments()[0]));
+
+            return list;
+        }
+
+        return bare == typeof(bool) ? true : Convert.ChangeType(1, bare, CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>Whether a member of the published contract came out looking like nothing happened.</summary>
+    private static bool LooksUntouched(object? value) => value switch
+    {
+        null => true,
+        string text => text.Length == 0,
+        Guid identifier => identifier == Guid.Empty,
+        System.Collections.ICollection collection => collection.Count == 0,
+        _ => value.Equals(Activator.CreateInstance(value.GetType()))
+    };
 
     private static bool IsHttpContract(Type type)
     {

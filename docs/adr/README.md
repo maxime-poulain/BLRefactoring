@@ -85,3 +85,4 @@ simpler from the outside.
 | [0055](0055-let-the-administration-read-what-the-catalogue-may-not.md) | Let the administration read what the catalogue may not | Accepted |
 | [0056](0056-announce-the-sanction-and-let-the-index-compose-visibility.md) | Announce the sanction, and let the index compose visibility | Accepted |
 | [0057](0057-the-trainers-own-surface-says-where-they-stand.md) | The trainer's own surface says where they stand | Accepted |
+| [0058](0058-a-translation-to-a-published-contract-is-total.md) | A translation to a published contract is total | Accepted |
