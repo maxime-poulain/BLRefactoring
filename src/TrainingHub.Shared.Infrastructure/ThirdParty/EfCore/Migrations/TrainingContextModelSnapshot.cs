@@ -259,6 +259,52 @@ namespace TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Migrations
                     b.ToTable("OutboxMessageConsumer", (string)null);
                 });
 
+            modelBuilder.Entity("TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Search.TrainingSearchEntry", b =>
+                {
+                    b.Property<Guid>("TrainingId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsTrainerHidden")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("TrainerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("TrainingId");
+
+                    b.HasIndex("TrainerId");
+
+                    b.HasIndex("IsPublished", "IsTrainerHidden", "Title", "TrainingId")
+                        .HasDatabaseName("IX_TrainingSearchEntry_Offered");
+
+                    b.ToTable("TrainingSearchEntry", (string)null);
+                });
+
+            modelBuilder.Entity("TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Search.TrainingSearchTerm", b =>
+                {
+                    b.Property<Guid>("TrainingId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Term")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("TrainingId", "Term");
+
+                    b.HasIndex("Term", "TrainingId")
+                        .HasDatabaseName("IX_TrainingSearchTerm_Term");
+
+                    b.ToTable("TrainingSearchTerm", (string)null);
+                });
+
             modelBuilder.Entity("TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.Training", b =>
                 {
                     b.OwnsMany("TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects.Topic", "Topics", b1 =>
@@ -295,6 +341,20 @@ namespace TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Migrations
                         .HasForeignKey("MessageId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Search.TrainingSearchTerm", b =>
+                {
+                    b.HasOne("TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Search.TrainingSearchEntry", null)
+                        .WithMany("Terms")
+                        .HasForeignKey("TrainingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Search.TrainingSearchEntry", b =>
+                {
+                    b.Navigation("Terms");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,12 +1,19 @@
 using TrainingHub.Shared.Common;
+using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Search;
 
 namespace TrainingHub.Shared.Infrastructure.Pagination;
 
 /// <summary>
-/// The order every paged read uses, defined once for every aggregate.
+/// The orders every paged read uses, each defined once and named for what a caller gets.
 /// </summary>
 /// <remarks>
-/// Newest first, which is what a list of content is expected to show, and then by identifier.
+/// One for the aggregates and one for the search index, and no third without an argument: a total
+/// order is a correctness property rather than a preference, so the way to add one is to explain
+/// why the existing one does not fit.
+/// <para>
+/// The aggregates' is newest first, which is what a list of content is expected to show, and then
+/// by identifier.
+/// </para>
 /// <para>
 /// That second key is not decoration, and stamping each entity from its own clock reading does not
 /// make it redundant. <c>TimeProvider.GetUtcNow</c> reads the system clock, which advances at the
@@ -67,5 +74,35 @@ public static class QueryableOrderingExtensions
         return source
             .OrderByDescending(aggregate => aggregate.CreatedOn)
             .ThenBy(aggregate => aggregate.Id);
+    }
+
+    /// <summary>
+    /// Orders search index entries by title, ties broken by identifier.
+    /// </summary>
+    /// <remarks>
+    /// The second order in this repository, and the exception is argued rather than assumed. The
+    /// index is not made of aggregates: it holds no <c>CreatedOn</c>, because the day a document was
+    /// written into a read model is a fact about the read model rather than about the training, and
+    /// a catalogue sorted by when the indexer happened to reach a row would reshuffle itself after
+    /// every replay. A title is what a visitor scans, so a title is what it sorts on.
+    /// <para>
+    /// The tie-break is the same decision <see cref="NewestFirst{TAggregate,TEntityId}"/> makes and
+    /// matters more here: two trainers may legitimately offer the same title — the uniqueness index
+    /// is per trainer — so ties are ordinary rather than a clock accident.
+    /// </para>
+    /// <para>
+    /// One definition, for the same reason as the other: both stacks page this index, and two
+    /// endpoints ordering differently would page the same data inconsistently (ADR 0001, ADR 0029).
+    /// </para>
+    /// </remarks>
+    /// <param name="source">The query to order, already filtered.</param>
+    public static IOrderedQueryable<TrainingSearchEntry> AlphabeticallyByTitle(
+        this IQueryable<TrainingSearchEntry> source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        return source
+            .OrderBy(entry => entry.Title)
+            .ThenBy(entry => entry.TrainingId);
     }
 }

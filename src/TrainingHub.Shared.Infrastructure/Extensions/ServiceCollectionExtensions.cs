@@ -1,13 +1,14 @@
 using TrainingHub.Shared.Application.IntegrationEventHandlers;
 using TrainingHub.Shared.Application.IntegrationEvents;
 using TrainingHub.Shared.Application.Queries;
+using TrainingHub.Shared.Application.Search;
 using TrainingHub.Shared.Common;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
 using TrainingHub.Shared.Infrastructure.Outbox;
 using TrainingHub.Shared.Infrastructure.Queries;
 using TrainingHub.Shared.Infrastructure.Repositories;
-using TrainingHub.Shared.Infrastructure.Services;
+using TrainingHub.Shared.Infrastructure.Search;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Interceptors;
 using Microsoft.EntityFrameworkCore;
@@ -140,8 +141,10 @@ public static class ServiceCollectionExtensions
             // The system clock, injected so the audit stamps can be driven by a test.
             .AddSingleton(TimeProvider.System)
             .AddSingleton<AuditableEntitiesInterceptor>()
-            // The search port, consumed the same way, is still a fake that writes to the log:
-            // choosing an indexer stays a one-line change here.
-            .AddSingleton<ITrainingSearchIndexer, FakeTrainingSearchIndexer>();
+            // The search port's real adapter (ADR 0059), called by the same consumers after the
+            // same commit. Scoped rather than singleton, now that the index is two tables of this
+            // database and the adapter holds the session that writes them.
+            .AddScoped<ITrainingSearchIndexer, TrainingSearchIndexer>()
+            .AddScoped<ITrainingSearchQuery, TrainingSearchQuery>();
     }
 }

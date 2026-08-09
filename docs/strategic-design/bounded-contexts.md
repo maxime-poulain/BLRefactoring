@@ -14,7 +14,7 @@ because it decides where effort goes.
 | Training Catalogue | **Core** | The reason the system exists: a trainer describes what they teach. Every rule that is specific to this business is here. | `src/TrainingHub.Shared.Domain/` |
 | Identity & Access | Supporting | Necessary, not distinctive. Bought rather than modelled — ASP.NET Core Identity, unmodified. | `Shared.Infrastructure/ThirdParty/Identity/` |
 | Notification | Generic | Sending an email is the same problem for everybody. | `IEmailSender` in `Shared.Application/Notifications/`, a MailKit adapter behind it — see [ADR 0031](../adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md) |
-| Search Indexing | Generic | Keeping a read model in step with writes. | `ITrainingSearchIndexer`, one fake implementation |
+| Search Indexing | Generic | Keeping a read model in step with writes. | `ITrainingSearchIndexer` and `ITrainingSearchQuery`, over an inverted index |
 | Media Storage | Generic | Bytes under a key. Solved by an industry protocol. | `IObjectStore`, S3 adapter — see [ADR 0021](../adr/0021-store-a-photo-beside-the-row-that-names-it.md) |
 
 The core subdomain is the only one this repository models. The other four are consumed through
@@ -286,9 +286,14 @@ Registration, authentication, token issuance, lockout.
   the index; without it ADR 0050 would have changed nothing a visitor could observe. The pair that
   follows it says a trainer's standing in one call: public visibility is composed from two
   aggregates and stored nowhere on the write side, so the read model composes it too (ADR 0056).
+  Since ADR 0059 the language has a read half as well — `SearchAsync(term, paging)` — which is the
+  query surface ADR 0055 refused to open before there was an index to answer it.
 - **Aggregates:** none.
-- **Status:** port only, one fake implementation that logs. It is nonetheless the seed of the
-  public catalogue: the index this port maintains is what a search page would read.
+- **Status:** built (ADR 0059). An inverted index in two tables of the same database: one entry per
+  training, holding the title and the two facts public visibility is composed of, and one row per
+  word of that title so that a search seeks instead of scanning. One adapter writes it, the query
+  port reads it, and `GET /Catalogue/trainings` is its first reader — the only anonymous endpoint of
+  this API.
 - **Fed by:** the transactional outbox, end to end. Every change that alters what a visitor
   would be shown commits its own fact with it — `TrainingCreatedIntegrationEvent`,
   `TrainingEditedIntegrationEvent`, `TrainingTransferredIntegrationEvent`,
@@ -324,10 +329,10 @@ Registration, authentication, token issuance, lockout.
 trainer's profile.
 
 This context does not exist yet. It is documented here because three things in the model were built
-for it, and a reader should know that they are not accidents:
+for it — one of them since built in full — and a reader should know that they are not accidents:
 
-- **`ITrainingSearchIndexer`** is the port a public search would read through, and the facts that
-  will maintain its index — `TrainingCreatedIntegrationEvent`, `TrainingEditedIntegrationEvent`,
+- **The search index** exists and answers (ADR 0059), through `ITrainingSearchQuery`, and the facts
+  that maintain it — `TrainingCreatedIntegrationEvent`, `TrainingEditedIntegrationEvent`,
   `TrainingTransferredIntegrationEvent`, `TrainingPublishedIntegrationEvent`,
   `TrainingUnpublishedIntegrationEvent`, `TrainingDeletedIntegrationEvent`,
   `TrainingWithheldIntegrationEvent`, `TrainerSuspendedIntegrationEvent` and
@@ -340,7 +345,8 @@ for it, and a reader should know that they are not accidents:
 
 **Expected relationship:** downstream of Training Catalogue, fed by the integration events the
 outbox already stores, with its own read model. It would own no aggregate — a discovery context
-reads, it does not decide.
+reads, it does not decide. What is missing is no longer a store: ADR 0059 built one and gave it a
+title search. What is missing is the experience above it.
 
 **Expected language:** *catalogue*, *search result*, *facet*, *listing* — deliberately different
 words from the write side, because a search result is not a `Training`.

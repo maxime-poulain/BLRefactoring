@@ -1,6 +1,6 @@
 # 0055 — Let the administration read what the catalogue may not
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0059](0059-give-the-search-index-a-body-and-a-query-surface.md): the search index settles the public training search and not the administration's, which needs the states the index refuses to hold
 - **Amends:** [0028](0028-a-specification-names-a-business-rule-or-it-does-not-exist.md)
 - **Date:** 2026-08-08
 

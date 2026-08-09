@@ -1,4 +1,4 @@
-namespace TrainingHub.Shared;
+namespace TrainingHub.Shared.Application.Search;
 
 /// <summary>
 /// Outbound port keeping a read-side search index in sync with the trainings,

@@ -13,10 +13,7 @@ flowchart TB
         IA["<b>Identity &amp; Access</b><br/>supporting · off the shelf"]
         MS["<b>Media Storage</b><br/>generic · S3 protocol"]
         NT["<b>Notification</b><br/>generic · SMTP"]
-    end
-
-    subgraph ports ["Declared as a port, not implemented"]
-        SI["<b>Search Indexing</b><br/>generic"]
+        SI["<b>Search Indexing</b><br/>generic · inverted index"]
     end
 
     subgraph planned ["Announced"]
@@ -39,7 +36,7 @@ flowchart TB
 | Identity & Access | Supporting | Built — off the shelf |
 | Media Storage | Generic | Built |
 | Notification | Generic | Built |
-| Search Indexing | Generic | Port only |
+| Search Indexing | Generic | Built |
 | Catalogue Discovery | Core (read side) | Announced |
 
 Each has its own section in [bounded-contexts.md](bounded-contexts.md), and an architecture rule
@@ -128,7 +125,12 @@ the decision: *"the search engine sitting behind it knows nothing about the doma
 identifiers."* Passing `TrainingId` would have made the index a downstream *conformist* of the
 domain model; passing `Guid` keeps the contract translatable.
 
-**The seam:** `Shared/ITrainingSearchIndexer.cs` — and the facts that feed it:
+The language now has a read half as well, `ITrainingSearchQuery`, which
+[ADR 0055](../adr/0055-let-the-administration-read-what-the-catalogue-may-not.md) refused to open
+until there was an index behind it and
+[ADR 0059](../adr/0059-give-the-search-index-a-body-and-a-query-surface.md) opens now that there is.
+
+**The seam:** `Shared.Application/Search/ITrainingSearchIndexer.cs` — and the facts that feed it:
 `TrainingCreatedIntegrationEvent`, `TrainingEditedIntegrationEvent`,
 `TrainingTransferredIntegrationEvent`, `TrainingPublishedIntegrationEvent`,
 `TrainingUnpublishedIntegrationEvent`, `TrainingDeletedIntegrationEvent`,
@@ -140,18 +142,25 @@ to leave a deleted training in the index for ever (ADR 0050); `HideTrainerCatalo
 `ShowTrainerCatalogueAsync` are what a sanction calls, one call about a trainer rather than one per
 training, because a suspension writes to none of them.
 
-**State:** one fake implementation, fed by the outbox's consumers after each commit: the delivery
-worker (ADR 0025) replays the committed facts into this port, so the index only ever learns of
-trainings the database accepted. The index's consumer is Catalogue Discovery, which does not
-exist.
+**State:** built (ADR 0059). Two tables of this database — one entry per training, one row per word
+of its title — written by a single adapter and read through the port's query half. The write side is
+unchanged: the delivery worker (ADR 0025) replays the committed facts into this port after each
+commit, so the index only ever learns of trainings the database accepted, and it learns of them
+eventually rather than at once. The port carries no document, so the adapter reads back the one
+training a fact spoke about; a public visibility composed from two aggregates and stored nowhere on
+the write side (ADR 0050, ADR 0056) is stored here, which is what a read model is for.
 
-**Why a transfer is one of the six.** Nothing about the training's content changes when it
+Its first reader is `GET /Catalogue/trainings`, the one anonymous endpoint of this API. That is the
+*query surface* ADR 0055 named, not a catalogue page: Catalogue Discovery — facets, listings, a
+store of its own — still does not exist.
+
+**Why a transfer is one of the nine.** Nothing about the training's content changes when it
 changes hands, which is why it looks like an ownership detail and is not: the index is what a
 public catalogue would read, and the trainer a training is filed under is part of what that page
 shows. A seam described as fed by *create and edit* is a seam that would serve the wrong author
 ([ADR 0036](../adr/0036-model-the-decision-that-has-no-home-as-a-domain-service.md)).
 
-**Why withdrawal and deletion are two of them, and not one.** Both call `RemoveAsync`, and merging
+**Why withdrawal and deletion are two of the nine, and not one.** Both call `RemoveAsync`, and merging
 them would look like a simplification. It would cost the index the only distinction that matters
 downstream: a withdrawn training is one its owner can offer again, and a deleted one is gone. A
 consumer that will one day do more than remove — retain a tombstone, keep a redirect, count what a
@@ -195,7 +204,7 @@ it, and a reader who does not know that will read them as over-engineering.
 
 | Already there | For |
 |---|---|
-| `ITrainingSearchIndexer`, maintained on every create, edit, transfer, publication and withdrawal, cleared on deletion, and told a trainer's standing in one call | The search index a public page would read |
+| A real search index, maintained on every create, edit, transfer, publication and withdrawal, cleared on deletion, told a trainer's standing in one call, and readable through `ITrainingSearchQuery` (ADR 0059) | The search a public page would read, already answering at `GET /Catalogue/trainings` |
 | `GET /Trainer/{id}/photo`, addressed by identifier, immutable cache, `ETag` from the photo's identity | A portrait served publicly, behind a CDN |
 | A CQRS query side that projects into DTOs without loading aggregates | A read model that does not pay for the write model |
 
@@ -209,7 +218,9 @@ transactional outbox with every commit (ADR 0024, ADR 0056) —
 but the subscriber still does not exist. What ADR 0050 added to that list is the ability to express
 what a public catalogue must *not* show, and ADR 0056 the ability to express it about a trainer
 rather than about each of their trainings — which is what makes this context buildable rather than
-merely announced.
+merely announced. ADR 0059 went one step further and built the index those facts maintain, so what
+is missing here is no longer a store: it is a page, its facets, its ordering by anything other than
+a title, and whatever else a discovery experience turns out to be.
 
 ---
 

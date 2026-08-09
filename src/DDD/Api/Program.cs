@@ -1,3 +1,4 @@
+using TrainingHub.DDD.Application.Services.CatalogueServices;
 using TrainingHub.DDD.Application.Services.TrainerServices;
 using TrainingHub.DDD.Application.Services.TrainingServices;
 using TrainingHub.Shared.Api.Extensions;
@@ -43,6 +44,10 @@ builder.Services.AddApiHealthDashboard(builder.Environment);
 
 builder.Services.AddTransient<ITrainingApplicationService, TrainingApplicationService>();
 builder.Services.AddTransient<ITrainerApplicationService, TrainerApplicationService>();
+
+// The one application service that drives no aggregate: it reads the search index through the
+// query half of that context's published language (ADR 0059).
+builder.Services.AddTransient<ICatalogueApplicationService, CatalogueApplicationService>();
 
 builder.Services.AddInfrastructure(builder.Configuration);
 

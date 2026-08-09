@@ -205,7 +205,7 @@ checks the same thing: a trainer may not list the same title twice. Creation is 
 an empty draft — which is why `Training.CreateAsync` is asynchronous while `Trainer.Create` is not.
 The trainer aggregate has no rule it cannot answer alone; the training aggregate has exactly one.
 
-**Nine events, nine facts, one future consumer.** `TrainingCreatedIntegrationEvent`,
+**Nine events, nine facts, one real consumer.** `TrainingCreatedIntegrationEvent`,
 `TrainingEditedIntegrationEvent`, `TrainingTransferredIntegrationEvent`,
 `TrainingPublishedIntegrationEvent`, `TrainingUnpublishedIntegrationEvent`,
 `TrainingDeletedIntegrationEvent`, `TrainingWithheldIntegrationEvent`,
