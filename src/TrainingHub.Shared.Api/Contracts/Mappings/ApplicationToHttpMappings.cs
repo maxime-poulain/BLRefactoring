@@ -156,6 +156,26 @@ public static class ApplicationToHttpMappings
         this IEnumerable<CatalogueTrainingDto> trainings) => [.. trainings.Select(ToHttp)];
 
     /// <summary>
+    /// Publishes one offered training in full, for the visitor who followed a search result
+    /// (ADR 0062).
+    /// </summary>
+    public static CatalogueTrainingDetailHttpResponse ToHttp(this CatalogueTrainingDetailDto training)
+    {
+        ArgumentNullException.ThrowIfNull(training);
+
+        return new CatalogueTrainingDetailHttpResponse
+        {
+            Id = training.Id,
+            Title = training.Title,
+            TrainerName = training.TrainerName,
+            Topics = training.Topics,
+            Description = training.Description,
+            Prerequisites = training.Prerequisites,
+            AcquiredSkills = training.AcquiredSkills
+        };
+    }
+
+    /// <summary>
     /// Publishes one message the outbox gave up on (ADR 0061).
     /// </summary>
     public static PoisonedMessageHttpResponse ToHttp(this PoisonedMessageDto message)

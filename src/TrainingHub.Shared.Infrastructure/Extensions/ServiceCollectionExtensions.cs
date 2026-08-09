@@ -1,3 +1,4 @@
+using TrainingHub.Shared.Application.Catalogue;
 using TrainingHub.Shared.Application.IntegrationEventHandlers;
 using TrainingHub.Shared.Application.IntegrationEvents;
 using TrainingHub.Shared.Application.Outbox;
@@ -147,6 +148,9 @@ public static class ServiceCollectionExtensions
             // database and the adapter holds the session that writes them.
             .AddScoped<ITrainingSearchIndexer, TrainingSearchIndexer>()
             .AddScoped<ITrainingSearchQuery, TrainingSearchQuery>()
+            // The catalogue's read by identifier: visibility from the index, content from the write
+            // model, and the two never confused (ADR 0062).
+            .AddScoped<ICatalogueDetailQuery, CatalogueDetailQuery>()
             // The outbox's operator surface (ADR 0061). Scoped for the same reason: it reads and
             // writes the delivery table through the request's own session.
             .AddScoped<IOutboxOperations, OutboxOperations>();

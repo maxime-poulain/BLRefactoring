@@ -150,9 +150,12 @@ eventually rather than at once. The port carries no document, so the adapter rea
 training a fact spoke about; a public visibility composed from two aggregates and stored nowhere on
 the write side (ADR 0050, ADR 0056) is stored here, which is what a read model is for.
 
-Its first reader is `GET /Catalogue/trainings`, the one anonymous endpoint of this API. That is the
-*query surface* ADR 0055 named, not a catalogue page: Catalogue Discovery — facets, listings, a
-store of its own — still does not exist.
+Its readers are the two anonymous endpoints of this API, `GET /Catalogue/trainings` and
+`GET /Catalogue/trainings/{id}`, with a screen above each since ADR 0062. The second reads this
+index for one thing only — whether the training is on offer — and reads the write model for what it
+says, which is the shape a title-only index leaves: a description copied here would go stale on the
+next edit, and a trainer's name copied here would go stale on a rename no fact carries. Catalogue
+Discovery as a *context* — facets, a store of its own, a language of its own — still does not exist.
 
 **Why a transfer is one of the nine.** Nothing about the training's content changes when it
 changes hands, which is why it looks like an ownership detail and is not: the index is what a

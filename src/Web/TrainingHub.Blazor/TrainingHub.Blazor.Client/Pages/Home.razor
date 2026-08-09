@@ -28,12 +28,27 @@
             </MudPaper>
         </Authorized>
         <NotAuthorized>
-            <MudPaper Elevation="2" Class="pa-6">
-                <MudText Typo="Typo.h6" GutterBottom="true">Sign in to continue</MudText>
+            @* This panel used to say that everything past this page required an account, which
+               stopped being true the day the catalogue got a face (ADR 0062). What an account is
+               for is publishing, not looking. *@
+            <MudPaper Elevation="2" Class="pa-6 mb-4">
+                <MudText Typo="Typo.h6" GutterBottom="true">Browse the catalogue</MudText>
                 <MudText Typo="Typo.body2" Class="mb-4">
-                    Everything past this page requires an account: a trainer sees and manages
-                    only their own trainings, and a training can only be edited by the trainer
-                    who published it.
+                    Every training currently on offer, searchable by title. No account needed.
+                </MudText>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Href="/catalogue"
+                           StartIcon="@Icons.Material.Filled.School">
+                    Browse trainings
+                </MudButton>
+            </MudPaper>
+            <MudPaper Elevation="2" Class="pa-6">
+                <MudText Typo="Typo.h6" GutterBottom="true">Sign in to publish</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">
+                    An account is what lets you offer a training of your own: a trainer sees and
+                    manages only their own trainings, and a training can only be edited by the
+                    trainer who published it.
                 </MudText>
                 <MudStack Row="true" Spacing="2">
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/login">

@@ -1,3 +1,4 @@
+using TrainingHub.DDDWithCqrs.Application.Features.Catalogue.GetOffered;
 using TrainingHub.DDDWithCqrs.Application.Features.Catalogue.Search;
 using TrainingHub.DDDWithCqrs.Application.Features.Outbox.GetPoisoned;
 using TrainingHub.DDDWithCqrs.Application.Features.Outbox.Requeue;
@@ -207,6 +208,13 @@ public static class HttpToApplicationMappings
             Term = search?.Term,
             Paging = pagination.ToPageRequest()
         };
+
+    /// <summary>Builds the query reading one offered training in full (ADR 0062).</summary>
+    /// <remarks>
+    /// No bound object at all: the only thing this endpoint carries is the identifier the route
+    /// names, and a visitor has nothing else to say.
+    /// </remarks>
+    public static GetOfferedTrainingQuery ToGetOfferedTrainingQuery(Guid trainingId) => new(trainingId);
 
     /// <summary>Builds the query reading one page of the outbox's poison (ADR 0061).</summary>
     /// <remarks>

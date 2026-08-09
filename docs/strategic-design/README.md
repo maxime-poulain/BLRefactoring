@@ -59,7 +59,7 @@ Read them in that order. Each is self-contained; together they take about fiftee
 
 ## An honest note on scale
 
-This is a small domain: two aggregates, fourteen domain events, twenty-three use cases. A strategic-design
+This is a small domain: two aggregates, fourteen domain events, twenty-four use cases. A strategic-design
 document for a system this size risks being longer than the model it describes, and risks inventing
 boundaries to fill the page.
 

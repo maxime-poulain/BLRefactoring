@@ -45,6 +45,24 @@ public static class BffExtensions
     private const string RouteAndClusterId = "api";
 
     /// <summary>
+    /// The segment under the prefix that the proxy forwards without a session (ADR 0062).
+    /// </summary>
+    /// <remarks>
+    /// Public because it is a claim two places have to agree on: this file opens the path, and the
+    /// API serves it from a controller that declares no 401 and no 403. An architecture rule reads
+    /// both and refuses one widening without the other.
+    /// </remarks>
+    public const string AnonymousSegment = "Catalogue";
+
+    private const string AnonymousRouteId = "catalogue";
+
+    // YARP's own AuthorizationConstants are internal, so the policies are named by their literals
+    // here — as the authenticated route has always done. The comparison is case-insensitive.
+    private const string DefaultPolicy = "default";
+
+    private const string AnonymousPolicy = "anonymous";
+
+    /// <summary>
     /// Registers cookie authentication and the reverse proxy that fronts the API.
     /// </summary>
     public static IServiceCollection AddBff(this IServiceCollection services, IConfiguration configuration)
@@ -165,13 +183,32 @@ public static class BffExtensions
 
     private static IReadOnlyList<RouteConfig> BuildRoutes() =>
     [
+        // The public catalogue, and nothing else. Ordered first because both matches are
+        // catch-alls: leaving the choice to route precedence would make the narrower path's
+        // priority an accident of the framework rather than a decision (ADR 0062).
+        new RouteConfig
+        {
+            RouteId = AnonymousRouteId,
+            ClusterId = RouteAndClusterId,
+            Order = 0,
+            // No policy to satisfy, and none needed: what sits behind this path is the one
+            // controller base that declares no 401 and no 403, so the API is the authority on who
+            // may read it. The token transform below is unchanged and simply adds no header when
+            // there is no session — a signed-in visitor's catalogue call still carries their token.
+            AuthorizationPolicy = AnonymousPolicy,
+            Match = new RouteMatch { Path = $"{ApiPrefix}/{AnonymousSegment}/{{**catch-all}}" }
+        }
+        .WithTransformPathRemovePrefix(ApiPrefix),
+
         new RouteConfig
         {
             RouteId = RouteAndClusterId,
             ClusterId = RouteAndClusterId,
-            // Authorization is required here, not left to the API: an anonymous call would be
-            // forwarded without a token and answered 401 anyway, one network hop later.
-            AuthorizationPolicy = "default",
+            Order = 1,
+            // Authorization is required here rather than left to the API: for everything but the
+            // catalogue, an anonymous call would be forwarded without a token and answered 401
+            // anyway, one network hop later.
+            AuthorizationPolicy = DefaultPolicy,
             Match = new RouteMatch { Path = $"{ApiPrefix}/{{**catch-all}}" }
         }
         .WithTransformPathRemovePrefix(ApiPrefix)

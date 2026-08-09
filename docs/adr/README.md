@@ -89,3 +89,4 @@ simpler from the outside.
 | [0059](0059-give-the-search-index-a-body-and-a-query-surface.md) | Give the search index a body, and a query surface | Accepted |
 | [0060](0060-look-inside-the-column-a-search-has-to-read.md) | Look inside the column a search has to read | Accepted |
 | [0061](0061-give-the-poison-a-url-and-an-operator-a-way-back-in.md) | Give the poison a URL, and an operator a way back in | Accepted |
+| [0062](0062-let-the-proxy-forward-one-family-of-paths-without-a-token.md) | Let the proxy forward one family of paths without a token | Accepted |

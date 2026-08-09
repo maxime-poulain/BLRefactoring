@@ -1,3 +1,4 @@
+using TrainingHub.Shared.Application.Catalogue;
 using TrainingHub.Shared.Application.Dtos.Training;
 using TrainingHub.Shared.Application.Search;
 using TrainingHub.Shared.Common.Pagination;
@@ -25,6 +26,21 @@ public interface ICatalogueApplicationService
         string? term,
         PageRequest paging,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// One offered training in full, or <see langword="null"/> when there is none a visitor may see.
+    /// </summary>
+    /// <remarks>
+    /// The second read of this service, and the first that is not a search — which is why it goes
+    /// to a port of its own rather than to <c>ITrainingSearchQuery</c>. What makes it safe is the
+    /// same thing that makes the search safe: the index decides what is on offer, and this service
+    /// never asks the write model that question (ADR 0062).
+    /// </remarks>
+    /// <param name="trainingId">The training the visitor asked for.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    Task<CatalogueTrainingDetailDto?> FindOfferedAsync(
+        Guid trainingId,
+        CancellationToken cancellationToken = default);
 }
 
 /// <inheritdoc />
@@ -35,7 +51,9 @@ public interface ICatalogueApplicationService
 /// the one question it answers, so both arrive at the same port, and inventing a second reading of
 /// the same rows to make the halves look different would be the duplication ADR 0049 measures.
 /// </remarks>
-public sealed class CatalogueApplicationService(ITrainingSearchQuery trainingSearch)
+public sealed class CatalogueApplicationService(
+    ITrainingSearchQuery trainingSearch,
+    ICatalogueDetailQuery catalogueDetail)
     : ICatalogueApplicationService
 {
     /// <inheritdoc />
@@ -44,4 +62,10 @@ public sealed class CatalogueApplicationService(ITrainingSearchQuery trainingSea
         PageRequest paging,
         CancellationToken cancellationToken = default) =>
         await trainingSearch.SearchAsync(term, paging, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<CatalogueTrainingDetailDto?> FindOfferedAsync(
+        Guid trainingId,
+        CancellationToken cancellationToken = default) =>
+        await catalogueDetail.FindOfferedAsync(trainingId, cancellationToken);
 }

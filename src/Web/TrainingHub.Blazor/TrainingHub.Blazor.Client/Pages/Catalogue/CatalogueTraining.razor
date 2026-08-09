@@ -1,0 +1,117 @@
+@page "/catalogue/{TrainingId:guid}"
+@using TrainingHub.GeneratedClients
+@inject ICatalogueClient CatalogueClient
+@inject ISnackbar Snackbar
+
+@* No [Authorize] either, for the same reason as the listing it is reached from (ADR 0062). *@
+
+<PageTitle>@(_training?.Title ?? "Training") — TrainingHub</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="my-4">
+    <MudButton Variant="Variant.Text"
+               Color="Color.Primary"
+               Href="/catalogue"
+               StartIcon="@Icons.Material.Filled.ArrowBack"
+               Class="mb-4">
+        Back to the catalogue
+    </MudButton>
+
+    @if (_isLoading)
+    {
+        <MudStack AlignItems="AlignItems.Center" Class="my-8">
+            <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+        </MudStack>
+    }
+    else if (_isUnreachable)
+    {
+        @* Kept apart from the panel below on purpose: "we could not ask" and "the answer is no"
+           are different things to be told, and merging them would make an outage look like a
+           withdrawn training. *@
+        <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center">
+            <MudIcon Icon="@Icons.Material.Filled.CloudOff" Style="font-size: 6rem;" Class="mb-4" />
+            <MudText Typo="Typo.h6">The catalogue could not be reached</MudText>
+        </MudPaper>
+    }
+    else if (_training is null)
+    {
+        @* One panel for "no such training" and for "no longer on offer", because the API answers
+           404 to both and a visitor is owed no more than that. Telling them a training exists but
+           has been taken down is the administration's read (ADR 0055). *@
+        <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center">
+            <MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size: 6rem;" Class="mb-4" />
+            <MudText Typo="Typo.h6" GutterBottom="true">This training is not on offer</MudText>
+            <MudText Typo="Typo.body2">It may never have existed, or it may have been withdrawn.</MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudPaper Elevation="1" Class="pa-6">
+            <MudText Typo="Typo.h4" GutterBottom="true">@_training.Title</MudText>
+
+            @* The name, and it is the whole reason this endpoint reads the write model rather than
+               the index: no integration event carries a rename, so a stored copy would show whoever
+               this trainer used to be. *@
+            <MudText Typo="Typo.subtitle1" Class="mb-4">Offered by @_training.TrainerName</MudText>
+
+            @if (_training.Topics.Count > 0)
+            {
+                <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mb-6">
+                    @foreach (var topic in _training.Topics)
+                    {
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@topic</MudChip>
+                    }
+                </MudStack>
+            }
+
+            <MudText Typo="Typo.h6" GutterBottom="true">About</MudText>
+            <MudText Typo="Typo.body1" Class="mb-6">@_training.Description</MudText>
+
+            <MudText Typo="Typo.h6" GutterBottom="true">Prerequisites</MudText>
+            <MudText Typo="Typo.body1" Class="mb-6">@_training.Prerequisites</MudText>
+
+            <MudText Typo="Typo.h6" GutterBottom="true">What you leave with</MudText>
+            <MudText Typo="Typo.body1">@_training.AcquiredSkills</MudText>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    private const int StatusNotFound = 404;
+
+    /// <summary>The training the route names.</summary>
+    [Parameter]
+    public Guid TrainingId { get; set; }
+
+    private CatalogueTrainingDetailHttpResponse? _training;
+    private bool _isLoading = true;
+    private bool _isUnreachable;
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+        _isUnreachable = false;
+        try
+        {
+            _training = await CatalogueClient.GetOfferedTrainingAsync(TrainingId);
+        }
+        catch (ApiException exception) when (exception.StatusCode == StatusNotFound)
+        {
+            // Not an error to report: a URL somebody kept is allowed to stop working, and the panel
+            // above says so in the visitor's terms rather than the transport's.
+            _training = null;
+        }
+        catch (Exception)
+        {
+            // The message is ours rather than the server's: what an exception carries is for a log,
+            // and a visitor learns nothing from a stack of it.
+            _training = null;
+            _isUnreachable = true;
+            Snackbar.Add("The training could not be loaded.", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

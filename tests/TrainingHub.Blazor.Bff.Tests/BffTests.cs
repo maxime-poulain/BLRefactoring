@@ -29,6 +29,7 @@ public sealed class BffTests : IDisposable
     private const string UserPath = "bff/user";
     private const string LogoutPath = "bff/logout";
     private const string ForwardedPath = "api/Trainer/me";
+    private const string AnonymousPath = "api/Catalogue/trainings";
 
     private readonly BffFactory _factory = new();
     private readonly HttpClient _browser;
@@ -247,13 +248,80 @@ public sealed class BffTests : IDisposable
     /// <summary>
     /// A forwarded call without a session never reaches the api.
     /// </summary>
+    /// <remarks>
+    /// The reason narrowed when the catalogue became reachable: it is no longer true of every path
+    /// that the API would refuse an anonymous call anyway. It is still true of this one, and of
+    /// everything the catch-all route matches, which is what this fact pins (ADR 0062).
+    /// </remarks>
     [Fact]
     public async Task A_forwarded_call_without_a_session_never_reaches_the_api()
     {
         var response = await SendAsync(HttpMethod.Get, ForwardedPath);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized,
-            "an anonymous call would be forwarded without a token and refused anyway, one hop later");
+            "outside the catalogue an anonymous call would be forwarded without a token and " +
+            "refused anyway, one hop later");
+        _factory.ProxiedApi.Requests.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// The catalogue is forwarded without a session, and without a token.
+    /// </summary>
+    /// <remarks>
+    /// The one path this proxy carries for a visitor who has never signed in. Two assertions rather
+    /// than one: that it arrives at all, and that it arrives <em>bare</em> — the token transform is
+    /// untouched and simply finds nothing in the cookie, so an anonymous read cannot borrow anybody
+    /// else's credential (ADR 0062).
+    /// </remarks>
+    [Fact]
+    public async Task The_catalogue_is_forwarded_without_a_session_and_without_a_token()
+    {
+        var response = await SendAsync(HttpMethod.Get, AnonymousPath);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var forwarded = _factory.ProxiedApi.Requests.Should().ContainSingle().Subject;
+
+        forwarded.Uri!.AbsolutePath.Should().Be("/Catalogue/trainings",
+            "the prefix is dropped on this route as on the other one");
+        forwarded.Authorization.Should().BeNull(
+            "there is no session to take a token from, and the transform adds nothing rather than failing");
+    }
+
+    /// <summary>
+    /// The catalogue carries the token of a visitor who has one.
+    /// </summary>
+    /// <remarks>
+    /// Anonymous means "no policy to satisfy", not "stripped". A signed-in visitor browsing the
+    /// public catalogue reaches the API as themselves, which is what keeps one route from behaving
+    /// like two different proxies.
+    /// </remarks>
+    [Fact]
+    public async Task The_catalogue_carries_the_token_of_a_visitor_who_has_one()
+    {
+        await SignInAsync();
+
+        var response = await SendAsync(HttpMethod.Get, AnonymousPath);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        _factory.ProxiedApi.Requests.Should().ContainSingle()
+            .Which.Authorization.Should().Be($"Bearer {_token}");
+    }
+
+    /// <summary>
+    /// The catalogue without the application header is refused like everything else.
+    /// </summary>
+    /// <remarks>
+    /// The safety argument of the whole change. Opening a path to anonymous callers does not open
+    /// the proxy: the forgery guard runs on the prefix, before authentication, and knows nothing
+    /// about routes — so an anonymous route is reachable by this application and by nothing else.
+    /// </remarks>
+    [Fact]
+    public async Task The_catalogue_without_the_application_header_is_refused()
+    {
+        var response = await _browser.GetAsync(AnonymousPath);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         _factory.ProxiedApi.Requests.Should().BeEmpty();
     }
 

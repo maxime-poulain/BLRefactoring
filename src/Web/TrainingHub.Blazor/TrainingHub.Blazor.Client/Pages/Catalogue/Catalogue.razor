@@ -1,0 +1,136 @@
+@page "/catalogue"
+@using TrainingHub.GeneratedClients
+@inject ICatalogueClient CatalogueClient
+@inject ISnackbar Snackbar
+
+@* No [Authorize], and it is the only routed page here without one. ADR 0059 built the index and
+   gave it an anonymous endpoint; ADR 0062 gave the endpoint a face and taught the proxy to forward
+   this one family of paths without a token. A visitor arrives with no session and stays that way. *@
+
+<PageTitle>Catalogue — TrainingHub</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="my-4">
+    <MudText Typo="Typo.h4" Class="mb-2">Trainings on offer</MudText>
+    <MudText Typo="Typo.body1" Class="mb-4">
+        Every training a trainer currently publishes. No account needed to look.
+    </MudText>
+
+    <MudPaper Elevation="0" Class="pa-4 mb-4">
+        @* One criterion, because the index answers one question. Every word of the term is matched
+           against the words of a title, each by prefix (ADR 0059). *@
+        <MudTextField T="string"
+                      Label="Search"
+                      Value="@_term"
+                      ValueChanged="OnTermChangedAsync"
+                      DebounceInterval="400"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Clearable="true"
+                      MaxLength="TermMaxLength"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      HelperText="Title" />
+    </MudPaper>
+
+    @if (_isLoading)
+    {
+        <MudStack AlignItems="AlignItems.Center" Class="my-8">
+            <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+        </MudStack>
+    }
+    else if (_page is null || _page.Items.Count == 0)
+    {
+        <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center">
+            <MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size: 6rem;" Class="mb-4" />
+            <MudText Typo="Typo.h6">No training matches</MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudTable Items="@_page.Items" Hover="true" Elevation="1" T="CatalogueTrainingHttpResponse">
+            <HeaderContent>
+                <MudTh>Title</MudTh>
+                <MudTh />
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Title">@context.Title</MudTd>
+                <MudTd>
+                    @* A title is all a search result holds, so the row leads somewhere rather than
+                       trying to say more: the description, the topics and the trainer's name are on
+                       the other side of this link (ADR 0062). *@
+                    <MudButton Size="Size.Small"
+                               Color="Color.Primary"
+                               Variant="Variant.Text"
+                               Href="@($"/catalogue/{context.Id}")">
+                        Read more
+                    </MudButton>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+
+        @if (_page.TotalPages > 1)
+        {
+            <MudStack AlignItems="AlignItems.Center" Class="mt-6">
+                <MudPagination Count="@_page.TotalPages"
+                               Selected="@_currentPage"
+                               SelectedChanged="OnPageSelectedAsync" />
+            </MudStack>
+        }
+    }
+</MudContainer>
+
+@code {
+    // The bound the contract publishes. Typing past it would be answered 400 by the server, so the
+    // field refuses it here instead — the same reading the administrative screens give.
+    private const int TermMaxLength = 100;
+
+    private PagedHttpResponseOfCatalogueTrainingHttpResponse? _page;
+    private string? _term;
+    private int _currentPage = 1;
+    private bool _isLoading = true;
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        StateHasChanged();
+    }
+
+    private async Task OnTermChangedAsync(string? term)
+    {
+        _term = term;
+        _currentPage = 1;
+        await LoadAsync();
+    }
+
+    private async Task OnPageSelectedAsync(int page)
+    {
+        _currentPage = page;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _page = await CatalogueClient.SearchTrainingsAsync(_term, _currentPage, null);
+
+            if (_currentPage > _page.TotalPages)
+            {
+                _currentPage = _page.TotalPages;
+                _page = await CatalogueClient.SearchTrainingsAsync(_term, _currentPage, null);
+            }
+        }
+        catch (Exception)
+        {
+            // The message is ours rather than the server's: what an exception carries is for a log,
+            // and a visitor who cannot reach the catalogue learns nothing from a stack of it.
+            Snackbar.Add("The catalogue could not be loaded.", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}
