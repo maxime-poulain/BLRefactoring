@@ -94,7 +94,7 @@ public sealed class ProjectGraphRules
     /// Neither stack, references the other.
     /// </summary>
     [Fact]
-    [ArchitectureRule("README#two-stacks-one-domain",
+    [ArchitectureRule("README#what-this-project-is",
         "the two stacks are a comparison, so neither may lean on the other")]
     public void NeitherStack_ReferencesTheOther() =>
         ProjectGraph.Projects

@@ -157,11 +157,11 @@ Twenty-seven projects: sixteen under `src/`, eleven under `tests/`. The backend 
 | Project | Responsibility |
 |---|---|
 | `TrainingHub.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, `PageRequest`/`PagedResult`, and the cross-cutting ports `IUnitOfWork` and `ICurrentUserService`, plus the CQS marker interfaces |
-| `TrainingHub.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, and the fact ports `IUniquenessTitleChecker` and `ITrainingCounter` |
+| `TrainingHub.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, and the fact ports `IUniquenessTitleChecker`, `ITrainingCounter`, `ITrainerStanding` and `ITrainerPhotoStore` |
 | `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the search ports, the seventeen domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the fourteen post-commit consumers — all shared by both stacks |
 | `TrainingHub.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the paged-read extensions (`NewestFirst`, `ToPagedResultAsync`), the identity store, and the transactional outbox — publisher, delivery worker, dispatcher |
 | `TrainingHub.Shared.Api` | The HTTP boundary: the `*HttpRequest` and `*HttpResponse` contracts both hosts publish, their mappings to the application layer, the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, concurrency helpers |
-| `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService` |
+| `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService`, `CatalogApplicationService`, `OutboxApplicationService` |
 | `DDD.Api` | REST host for the layered stack — controllers, composition root |
 | `DDDWithCqrs.Application` | Commands, command handlers, FluentValidation validators |
 | `DDDWithCqrs.Infrastructure` | **Query handlers**, Mediator dispatchers, pipeline behaviors |
@@ -272,17 +272,20 @@ public static Task<Result<Training>> CreateAsync(
     TrainingPrerequisites prerequisites, AcquiredSkills acquiredSkills,
     IReadOnlyCollection<Topic> topics,
     IUniquenessTitleChecker titleChecker, ITrainingCounter trainingCounter,
+    ITrainerStanding trainerStanding,
     CancellationToken cancellationToken = default);
 
-public Task<Result> EditAsync(/* the same, without the identifiers and the counter */);
+public Task<Result> EditAsync(/* the same, with the title checker as its only port */);
 ```
 
 Here the result **is** a `Result`, for the rules the aggregate cannot settle on its own — each
 one a fact in rows it cannot see, brought to the factory through a port named after its question
 (ADR 0030). A title must be unique among the trainings of the same trainer, asked through
-`IUniquenessTitleChecker`; and a trainer publishes at most `Training.MaximumPerTrainer` (ten)
-trainings, asked through `ITrainingCounter` at creation only — editing changes a training, never
-how many there are — answering `Training.CatalogFull` when the catalog is full. Creation and
+`IUniquenessTitleChecker`; a trainer publishes at most `Training.MaximumPerTrainer` (ten)
+trainings, asked through `ITrainingCounter` at creation and publication — editing changes a
+training, never how many there are — answering `Training.CatalogFull` when the catalog is full;
+and a suspended trainer may not grow their public footprint, asked through `ITrainerStanding`
+and answering `Training.TrainerSuspended` (ADR 0053). Creation and
 edition share a private `ApplyEditionAsync` that checks the title rule first and **mutates
 nothing when it fails** — so a rejected edition never leaves the aggregate half-changed. The
 uniqueness lookup only runs when the title actually changed. Topics are de-duplicated and fully
@@ -298,12 +301,15 @@ data-returning methods pins it by name, so the next question has to arrive with 
 own. See ADR 0028.
 
 Both aggregates carry a lifecycle
-([ADR 0050](docs/adr/0050-retire-a-training-rather-than-delete-it.md)). A training is `Published` or
-`Unpublished`, a trainer `Active` or `Suspended`, and public visibility is composed from the two
-rather than stored — so suspending a trainer writes one column and touches none of their trainings,
-which is what makes the sanction liftable. Both pairs are reachable in both directions and every
-move announces itself, which is what separates this from a soft delete wearing an enum; a rule
-holds that last part. Deleting survives and changes role: withdrawing is the everyday act, and
+([ADR 0050](docs/adr/0050-retire-a-training-rather-than-delete-it.md)). A training is `Published`,
+`Unpublished` or — by the administration's hand, with the reason written beside the state —
+`Withheld` ([ADR 0052](docs/adr/0052-make-an-administrative-removal-a-state-of-its-own.md)); a
+trainer is `Active` or `Suspended`; and public visibility is composed from trainer and training
+rather than stored — so suspending a trainer writes one column and touches none of their
+trainings, which is what makes the sanction liftable. Every move announces itself, which is what
+separates this from a soft delete wearing an enum; a rule holds that part. The owner's pair runs
+in both directions, while `Withheld` is one-way for its owner — only the administration releases
+what it withheld. Deleting survives and changes role: withdrawing is the everyday act, and
 `DELETE` answers the training created by mistake and a trainer's right to have their data removed.
 
 ### Value objects
@@ -323,7 +329,7 @@ nothing to refuse.
 | `TrainingPrerequisites` | Non-empty, at most 500 characters | `InvalidPrerequisites` |
 | `AcquiredSkills` | Non-empty, at most 500 characters | `InvalidAcquiredSkills` |
 | `Topic` | Closed set of six values, resolved by name | `InvalidTopic` |
-| `TrainingStatus` | Closed set of two: `Published`, `Unpublished` | — |
+| `TrainingStatus` | Closed set of three: `Published`, `Unpublished`, `Withheld` | — |
 | `TrainerStatus` | Closed set of two: `Active`, `Suspended` | — |
 | `TrainerPhoto` | Non-empty, at most 5 MiB, PNG/JPEG/WebP — and the bytes must be what the content type declares | `PhotoEmpty`, `PhotoTooLarge`, `PhotoFormatNotSupported`, `PhotoContentMismatch` |
 
@@ -333,7 +339,7 @@ Three behaviors are worth knowing:
   same title, which is what makes the uniqueness rule meaningful.
 - **`Topic` is a closed enumeration**, not free text: Programming, Design, Marketing, Business,
   Personal Development, Leadership. `Topic.TryFromName` resolves a name without throwing — an
-  unrecognised name is a validation error produced by the application layer, never an exception.
+  unrecognized name is a validation error produced by the application layer, never an exception.
 - **The two statuses resolve by name and throw**, unlike `Topic`, and the asymmetry is the point:
   a topic name arrives from a client and is reported back with everything else that was wrong,
   while a status name arrives from the column the domain wrote it to. A word the domain does not
@@ -614,8 +620,8 @@ failed `Result` carrying `ErrorCodes.Validation` rather than throwing, so the re
 through the single place a business failure becomes a body and is published under `domainErrors`.
 It used to throw, and the same endpoint then published two error shapes depending on which rule the
 caller broke — a malformed email as a field map, a bio too long as domain codes. Queries still throw:
-they answer with the data they read and have no failed state to return, so their three identifier
-guards remain the one path into `ValidationExceptionHandler`. See
+they answer with the data they read and have no failed state to return, so their identifier
+guards — five validators today — remain the one path into `ValidationExceptionHandler`. See
 [ADR 0016](docs/adr/0016-let-a-rejected-command-fail-like-every-other-command.md).
 
 ### Optimistic concurrency
@@ -1274,7 +1280,7 @@ session, and signing out revokes access rather than merely forgetting it.
 
 | Workflow | Trigger | What it runs |
 |---|---|---|
-| `ci.yml` | Push on `master` and on `claude/**`, pull request on `master` | Regenerate and commit the HTTP client, build in Release, unit tests |
+| `ci.yml` | Push on `master` and on `claude/**`, pull request on `master` | Regenerate and commit the HTTP client, build in Release, unit tests, the three container images with their layer cache |
 | `integration-tests.yml` | Push on `claude/**`, manual dispatch, nightly at 03:17 UTC | The integration tests, naming every failed test as an annotation and publishing the TRX report as an artifact |
 | `sonar.yml` | Push on `master`, pull request on `master` | Static analysis and coverage, reported to SonarQube Cloud |
 
@@ -1283,14 +1289,17 @@ no longer compiles fails the pipeline even when its tests are not run. `integrat
 declares `permissions: contents: read`; `ci.yml` needs `contents: write` for one step, and one
 only — the client commit described below.
 
-**One run per commit.** A branch of this repository fires both `push` and `pull_request` for the
-same commit once a pull request is open, and the two land in different concurrency groups, so
-neither cancels the other: the same build was being paid for twice to answer the same question.
-`ci.yml` therefore skips its pull-request run when the head branch belongs to this repository —
-the push run has already built that commit and posted the check. What the `pull_request` trigger is
-kept for is the one case `push` cannot reach: **a fork**, whose pushes fire nothing here. The other
-two workflows never doubled — `sonar.yml` pushes only on `master`, and `integration-tests.yml` has
-no pull-request trigger at all.
+**One run per commit.** A `claude/**` branch fires both `push` and `pull_request` for the same
+commit once a pull request is open, and the two land in different concurrency groups, so neither
+cancels the other: the same build was being paid for twice to answer the same question. The
+pull-request run of such a commit therefore builds nothing itself — the job always runs, looks up
+the push run for the same SHA, waits for its conclusion and adopts it as its own verdict, so the
+check is always produced by something that ran (ADR 0047). Everything else is built by its
+pull-request run: **a fork**, whose pushes fire nothing here, and any other branch of this
+repository, whose pushes fire nothing either — `push` triggers only on `master` and `claude/**`,
+and the delegation is scoped the same way, because a wider scope once let a `feature/*` branch
+merge built by nobody. The other two workflows never doubled — `sonar.yml` pushes only on
+`master`, and `integration-tests.yml` has no pull-request trigger at all.
 
 **CI writes the HTTP client.** On a push it regenerates the client from the API's own OpenAPI
 document and commits the result, so a controller change carries its client with it. The API is the

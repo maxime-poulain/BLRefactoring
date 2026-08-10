@@ -30,8 +30,8 @@ jobs:
   build-and-test:
     name: Build & Test
     runs-on: ubuntu-latest
-    # Thirty rather than twenty since this job also builds the three images (ADR 0065). They are
-    # built without a layer cache, so each pays for its own restore and publish.
+    # Thirty rather than twenty since this job also builds the three images (ADR 0065). The layer
+    # cache below (ADR 0067) trims that, but a cold key still pays for its own restore and publish.
     timeout-minutes: 30
 
     # This job used to carry a job-level `if` that skipped it outright for a same-repo `claude/**`
@@ -86,7 +86,7 @@ jobs:
 
           echo "Waiting for the push run that builds $HEAD_SHA."
 
-          # Fifteen minutes, under the job's twenty. A push run normally appears within seconds and
+          # Fifteen minutes, under the job's thirty. A push run normally appears within seconds and
           # finishes in about two minutes; the wait exists for the day it does not, and ending it
           # red is the honest answer to "no build has concluded for this commit".
           for _ in $(seq 1 60); do
@@ -230,17 +230,18 @@ jobs:
       # builder is a `run` line and `type=local` writes to a directory this very action already
       # knows how to carry between runs. See ADR 0067.
       #
-      # Keyed on what decides the restore stage — the project files and the central package
-      # versions — rather than on the source, which changes every commit and would make every key a
-      # miss. The prefix fallback keeps a near miss useful instead of starting from nothing.
+      # Keyed on what decides the restore stage — the Dockerfiles, the solution and project files
+      # and the central package versions — rather than on the source, which changes every commit
+      # and would make every key a miss. The prefix fallback keeps a near miss useful instead of
+      # starting from nothing.
       - name: Cache the image layers
         if: steps.delegation.outputs.build == 'true'
         uses: actions/cache@v4
         with:
           path: ~/.cache/traininghub-images
           key: >-
-            images-${{ runner.os }}-${{ hashFiles('**/Dockerfile', 'Directory.Build.props',
-            'Directory.Packages.props', '**/*.csproj') }}
+            images-${{ runner.os }}-${{ hashFiles('**/Dockerfile', 'TrainingHub.slnx',
+            'Directory.Build.props', 'Directory.Packages.props', '**/*.csproj') }}
           restore-keys: images-${{ runner.os }}-
 
       - name: Images

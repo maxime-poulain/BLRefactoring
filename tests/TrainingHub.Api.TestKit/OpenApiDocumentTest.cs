@@ -177,7 +177,7 @@ public abstract class OpenApiDocumentTest<TFactory>(TFactory factory) : Integrat
 
         // The half that is easy to get wrong. [ApiController] types every unstated error response
         // as ProblemDetails, and the 401 is written by the authentication middleware with no body:
-        // a client told to expect one deserialises nothing and throws about the nothing, instead of
+        // a client told to expect one deserializes nothing and throws about the nothing, instead of
         // reporting the 401 it was handed.
         unauthorized.TryGetProperty("content", out _).Should().BeFalse(
             "the 401 the middleware writes carries no body");

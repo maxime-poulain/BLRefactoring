@@ -47,7 +47,7 @@ public static class Portraits
     }
 
     /// <summary>
-    /// A JPEG carrying an EXIF block whose description holds a recognisable marker.
+    /// A JPEG carrying an EXIF block whose description holds a recognizable marker.
     /// </summary>
     /// <param name="marker">The text written into the description tag.</param>
     /// <returns>The encoded bytes, with the segment where a camera puts it.</returns>

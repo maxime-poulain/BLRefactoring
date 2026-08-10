@@ -126,7 +126,7 @@ public abstract class SuspendedTrainerTest<TFactory>(TFactory factory) : Integra
     [Fact]
     public async Task AWithheldTraining_TellsItsOwnerWhy()
     {
-        var motive = $"Plagiarised material, case {Guid.NewGuid()}.";
+        var motive = $"Plagiarized material, case {Guid.NewGuid()}.";
 
         var trainer = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
         var trainingId = await CreateTrainingAsync(trainer);

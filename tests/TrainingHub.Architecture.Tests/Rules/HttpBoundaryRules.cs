@@ -88,7 +88,7 @@ public sealed partial class HttpBoundaryRules
     /// No controller, takes a repository or a db context.
     /// </summary>
     [Fact]
-    [ArchitectureRule("README#http-is-a-boundary",
+    [ArchitectureRule("README#the-dependency-rule",
         "a controller talks to the application layer; it never opens the database itself")]
     public void NoController_TakesARepositoryOrADbContext() =>
         Controllers
@@ -108,7 +108,7 @@ public sealed partial class HttpBoundaryRules
     /// No controller, depends on infrastructure.
     /// </summary>
     [Fact]
-    [ArchitectureRule("README#http-is-a-boundary",
+    [ArchitectureRule("README#the-dependency-rule",
         "the hosts reach infrastructure from their composition root, and from nowhere else")]
     public void NoController_DependsOnInfrastructure()
     {
@@ -147,7 +147,7 @@ public sealed partial class HttpBoundaryRules
     /// Every http contract, lives in a contracts namespace.
     /// </summary>
     [Fact]
-    [ArchitectureRule("README#http-is-a-boundary",
+    [ArchitectureRule("README#the-dependency-rule",
         "the HTTP contracts are the boundary's own vocabulary, and they stay on it")]
     public void EveryHttpContract_LivesInAContractsNamespace() =>
         Solution.Backend
@@ -261,7 +261,7 @@ public sealed partial class HttpBoundaryRules
     /// No inner layer, names an http contract.
     /// </summary>
     [Fact]
-    [ArchitectureRule("README#http-is-a-boundary",
+    [ArchitectureRule("README#the-dependency-rule",
         "commands, queries and application DTOs stop at the boundary: the layers below never see a contract")]
     public void NoInnerLayer_NamesAnHttpContract()
     {
@@ -378,7 +378,7 @@ public sealed partial class HttpBoundaryRules
     /// names mean the same thing. The distinction is not hypothetical: for as long as only the
     /// CQRS host paged, both hosts published <c>Training_GetMine</c> while one answered a bare
     /// array and the other a page envelope — and the client generated from the layered document
-    /// could not deserialise the CQRS host's answer. Same names over different bodies is a parity
+    /// could not deserialize the CQRS host's answer. Same names over different bodies is a parity
     /// no client can use.
     /// </remarks>
     [Fact]

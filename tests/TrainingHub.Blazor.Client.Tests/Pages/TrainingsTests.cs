@@ -448,13 +448,13 @@ public sealed class TrainingsTests : ComponentTest
         _trainings
             .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
             .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 1,
-                WithheldTraining("Domain-Driven Design", "Plagiarised material.")));
+                WithheldTraining("Domain-Driven Design", "Plagiarized material.")));
 
         // Act
         var page = Render<Trainings>();
 
         // Assert
-        page.Markup.Should().Contain("Withheld").And.Contain("Plagiarised material.");
+        page.Markup.Should().Contain("Withheld").And.Contain("Plagiarized material.");
         page.Markup.Should().NotContain("Unpublished");
     }
 
@@ -472,7 +472,7 @@ public sealed class TrainingsTests : ComponentTest
     public void Renders_AWithheldTraining_OffersNoLifecycleButtonAndKeepsTheEditOne()
     {
         // Arrange
-        var withheld = WithheldTraining("Domain-Driven Design", "Plagiarised material.");
+        var withheld = WithheldTraining("Domain-Driven Design", "Plagiarized material.");
 
         _trainings
             .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))

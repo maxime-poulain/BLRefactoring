@@ -21,9 +21,9 @@ namespace TrainingHub.Api.TestKit;
 /// them are gone; these two are what remain, and both are asserted.
 /// </para>
 /// <para>
-/// The assertions are made on the raw body rather than on a deserialised type, and deliberately.
+/// The assertions are made on the raw body rather than on a deserialized type, and deliberately.
 /// They state a claim about leakage, and leakage does not care which property it travels in: a
-/// title anywhere in the response is a leak, and deserialising would narrow the search to the
+/// title anywhere in the response is a leak, and deserializing would narrow the search to the
 /// fields the type happens to declare. Both hosts answer the same page envelope since ADR 0029 —
 /// <c>PaginationTest</c> holds the shared paging assertions — but these stay on the string,
 /// because absence from the whole body is the stronger claim.

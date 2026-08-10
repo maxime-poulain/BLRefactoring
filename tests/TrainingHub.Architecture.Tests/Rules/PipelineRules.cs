@@ -47,7 +47,8 @@ public sealed partial class PipelineRules
     /// </summary>
     [Fact]
     [ArchitectureRule("README#continuous-integration",
-        "one run per commit: a branch of this repository is built by its push, a fork by its pull request")]
+        "one run per commit: a claude/** branch stands on its push run's verdict, and everything " +
+        "else is built by its pull-request run")]
     public void TheBuild_DoesNotRunTwiceForOneCommit()
     {
         // ci.yml by name rather than every workflow, because the defect is an overlap between two
@@ -71,7 +72,7 @@ public sealed partial class PipelineRules
                 !text.Contains(Delegation, StringComparison.Ordinal))
             .Select(file =>
                 $"'{file}' fires on both push and pull_request without deciding which of the two " +
-                "builds the commit. A branch of this repository triggers each once a pull request " +
+                "builds the commit. A claude/** branch triggers each once a pull request " +
                 "is open, and the two runs land in different concurrency groups, so neither cancels " +
                 "the other and one build is paid for twice")
             .ShouldHold();
@@ -221,7 +222,7 @@ public sealed partial class PipelineRules
     {
         var text = SourceTree.ReadText(Workflow);
         var exempt = Excluded(text, "sonar.cpd.exclusions");
-        var unanalysed = Excluded(text, "sonar.exclusions");
+        var unanalyzed = Excluded(text, "sonar.exclusions");
 
         var hosts = HostProjects.Selected("host the API is written in");
 
@@ -233,7 +234,7 @@ public sealed partial class PipelineRules
                 "same operations and the same shapes — so the gate would fail on any change touching " +
                 "both hosts, for repetition this repository decided on")
             .Concat(hosts
-                .Where(host => unanalysed.Contains(host, StringComparison.Ordinal))
+                .Where(host => unanalyzed.Contains(host, StringComparison.Ordinal))
                 .Select(host =>
                     $"'{host}' is named in sonar.exclusions, which removes it from the analysis " +
                     "altogether. What ADR 0049 exempts is the duplication measure alone: bugs, " +

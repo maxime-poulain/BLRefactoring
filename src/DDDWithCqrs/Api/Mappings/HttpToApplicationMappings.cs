@@ -36,7 +36,7 @@ namespace TrainingHub.DDDWithCqrs.Api.Mappings;
 /// <remarks>
 /// Every command a controller used to receive from model binding is now built here, from a
 /// request contract plus whatever the route, the token and the headers supply. That is what
-/// removes the two habits this refactoring set out to end: an application message deserialised
+/// removes the two habits this refactoring set out to end: an application message deserialized
 /// straight off the wire, and a controller assigning fields to it afterwards.
 /// <para>
 /// The queries taking nothing but a route value are mapped here too. The indirection is thin, but
