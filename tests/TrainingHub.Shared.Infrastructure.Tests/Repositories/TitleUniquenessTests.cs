@@ -147,7 +147,7 @@ public sealed class TitleUniquenessTests : IAsyncLifetime
         var withheld = await GivenTrainingAsync(trainer, "Domain Driven Design");
         await GivenTrainingAsync(trainer, "Domain Modeling");
 
-        withheld.Withhold(WithholdingReason.Create("Plagiarised material.").ShouldBeSuccess())
+        withheld.Withhold(WithholdingReason.Create("Plagiarized material.").ShouldBeSuccess())
             .ShouldBeSuccess();
         await _context.SaveChangesAsync();
 

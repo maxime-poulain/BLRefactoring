@@ -78,7 +78,7 @@ public sealed class Topic : ValueObject
     /// </summary>
     /// <remarks>
     /// The only way in. A throwing <c>FromName</c> used to sit beside it, called from nowhere but
-    /// the tests: an unrecognised name is a validation error the application layer reports along
+    /// the tests: an unrecognized name is a validation error the application layer reports along
     /// with everything else that was wrong, never an exception.
     /// </remarks>
     /// <param name="name">The topic name to resolve.</param>

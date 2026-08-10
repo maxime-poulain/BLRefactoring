@@ -151,7 +151,7 @@ public sealed partial class MessagingRules
     /// Every command, has exactly one validator.
     /// </summary>
     [Fact]
-    [ArchitectureRule("README#validation",
+    [ArchitectureRule("README#a-write-end-to-end",
         "every command has exactly one validator, which the pipeline demands at dispatch")]
     public void EveryCommand_HasExactlyOneValidator()
     {
@@ -177,7 +177,7 @@ public sealed partial class MessagingRules
     /// Every query taking an identifier, has a validator.
     /// </summary>
     [Fact]
-    [ArchitectureRule("README#validation",
+    [ArchitectureRule("README#a-write-end-to-end",
         "a query that takes an identifier validates it; one that takes a page is already bounded by the contract")]
     public void EveryQueryTakingAnIdentifier_HasAValidator()
     {
@@ -245,7 +245,7 @@ public sealed partial class MessagingRules
     /// Every validator, lives where the scan looks.
     /// </summary>
     [Fact]
-    [ArchitectureRule("README#validation",
+    [ArchitectureRule("README#a-write-end-to-end",
         "validators are discovered by scanning one assembly, so a validator outside it never runs")]
     public void EveryValidator_LivesWhereTheScanLooks() =>
         Validators

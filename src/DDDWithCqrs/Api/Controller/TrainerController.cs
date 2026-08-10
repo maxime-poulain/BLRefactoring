@@ -141,7 +141,7 @@ public sealed class TrainerController(
     [HttpGet("{id:guid}/photo")]
     // byte[], which the document generator renders as `type: string, format: binary` — the schema
     // for "this response is a file". Naming a FileResult here instead described the body as a JSON
-    // object with that name, and the generated client dutifully offered to deserialise a portrait.
+    // object with that name, and the generated client dutifully offered to deserialize a portrait.
     [Produces(TrainerPhoto.PngContentType, TrainerPhoto.JpegContentType, TrainerPhoto.WebpContentType)]
     [ProducesResponseType(typeof(byte[]), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status304NotModified)]

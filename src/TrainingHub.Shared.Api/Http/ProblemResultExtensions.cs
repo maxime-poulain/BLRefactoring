@@ -96,7 +96,7 @@ public static class ProblemResultExtensions
     /// a map of field name to messages. The two shapes were arriving under one name:
     /// <c>PUT /Trainer/me</c> with a malformed email answered <c>errors: {"ContactEmail": [...]}</c>
     /// on one host and <c>errors: [{errorCode, errorMessage}]</c> on the other, so a client that
-    /// deserialised <c>errors</c> worked against one host and threw against the other.
+    /// deserialized <c>errors</c> worked against one host and threw against the other.
     /// <para>
     /// Renaming the domain half is the cheaper of the two fixes and the more honest one: the field
     /// map is the standard's meaning of <c>errors</c>, and these codes are ours.

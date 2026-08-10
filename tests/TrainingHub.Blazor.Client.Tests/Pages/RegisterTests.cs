@@ -163,7 +163,7 @@ public sealed class RegisterTests : ComponentTest
 
         if (errors is not null)
         {
-            // Deserialised rather than parsed from a JsonDocument: a document's RootElement stops
+            // Deserialized rather than parsed from a JsonDocument: a document's RootElement stops
             // being readable the moment the document is disposed, and the page reads it later.
             problem.AdditionalProperties["errors"] = JsonSerializer.Deserialize<JsonElement>(errors);
         }

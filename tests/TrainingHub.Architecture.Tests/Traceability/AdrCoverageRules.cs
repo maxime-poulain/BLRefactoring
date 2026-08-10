@@ -15,11 +15,16 @@ namespace TrainingHub.Architecture.Tests.Traceability;
 /// </remarks>
 public sealed partial class AdrCoverageRules
 {
+    private const string ReadmeAnchorPrefix = "README#";
+
     [GeneratedRegex(@"\[(?<number>\d{4})\]\((?<file>[^)]+)\)")]
     private static partial Regex IndexRow { get; }
 
     private static IReadOnlySet<string> Excused { get; } =
         UnguardedRecords.All.Select(excuse => excuse.Record).ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>The anchors the README's headings answer to, the way GitHub derives them.</summary>
+    private static IReadOnlySet<string> ReadmeAnchors { get; } = ReadReadmeAnchors();
 
     /// <summary>
     /// Every record in force, is defended by a rule, or says why it cannot be.
@@ -75,11 +80,53 @@ public sealed partial class AdrCoverageRules
     public void EveryRuleNamesSomethingThatExists() =>
         RuleIndex.Rules
             .Selected("rule")
-            .Where(rule => !rule.Declaration.Record.StartsWith("README#", StringComparison.Ordinal))
-            .Where(rule => AdrCatalog.Find(rule.Declaration.Record) is null)
-            .Select(rule =>
-                $"{rule.Name} defends ADR {rule.Declaration.Record}, and no record carries that number")
+            .Where(rule => !Resolves(rule.Declaration.Record))
+            .Select(rule => rule.Declaration.Record.StartsWith(ReadmeAnchorPrefix, StringComparison.Ordinal)
+                ? $"{rule.Name} answers to {rule.Declaration.Record}, and no README heading yields that anchor"
+                : $"{rule.Name} defends ADR {rule.Declaration.Record}, and no record carries that number")
             .ShouldHold();
+
+    /// <summary>Whether a rule's declaration points at a record, or a README heading, that exists.</summary>
+    private static bool Resolves(string record) =>
+        record.StartsWith(ReadmeAnchorPrefix, StringComparison.Ordinal)
+            ? ReadmeAnchors.Contains(record[ReadmeAnchorPrefix.Length..].ToUpperInvariant())
+            : AdrCatalog.Find(record) is not null;
+
+    /// <summary>
+    /// Reads the README's headings and derives their anchors, skipping fenced code blocks so a
+    /// shell comment never mints one.
+    /// </summary>
+    private static IReadOnlySet<string> ReadReadmeAnchors()
+    {
+        var anchors = new HashSet<string>(StringComparer.Ordinal);
+        var insideFence = false;
+
+        foreach (var line in SourceTree.ReadLines(Path.Combine(SourceTree.RepositoryRoot, "README.md")))
+        {
+            if (line.StartsWith("```", StringComparison.Ordinal))
+            {
+                insideFence = !insideFence;
+                continue;
+            }
+
+            if (!insideFence && line.StartsWith('#'))
+            {
+                anchors.Add(Anchor(line.TrimStart('#').Trim()));
+            }
+        }
+
+        return anchors;
+    }
+
+    /// <summary>
+    /// A heading's anchor, the way GitHub derives it: punctuation dropped, spaces become hyphens.
+    /// GitHub lowercases; this folds to uppercase instead (CA1308), and the lookup folds with it,
+    /// so the comparison is case-blind either way.
+    /// </summary>
+    private static string Anchor(string heading) =>
+        new([.. heading.ToUpperInvariant()
+            .Where(character => char.IsAsciiLetterOrDigit(character) || character is ' ' or '-')
+            .Select(character => character == ' ' ? '-' : character)]);
 
     /// <summary>
     /// Every record, is listed in the index.

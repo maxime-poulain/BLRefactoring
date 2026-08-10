@@ -117,13 +117,13 @@ public sealed class TrainingsTests : ComponentTest
         _administration
             .Setup(client => client.GetTrainingsAsync(
                 It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
-            .ReturnsAsync(Page(1, 1, 1, Withheld("Domain-Driven Design", "Plagiarised material.")));
+            .ReturnsAsync(Page(1, 1, 1, Withheld("Domain-Driven Design", "Plagiarized material.")));
 
         // Act
         var page = Render<Trainings>();
 
         // Assert
-        page.Markup.Should().Contain("Plagiarised material.");
+        page.Markup.Should().Contain("Plagiarized material.");
         page.Markup.Should().Contain("Withheld");
     }
 
@@ -209,7 +209,7 @@ public sealed class TrainingsTests : ComponentTest
                 It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
             .ReturnsAsync(Page(1, 1, 1, training));
 
-        Answering("Plagiarised material.");
+        Answering("Plagiarized material.");
 
         var page = Render<Trainings>();
 
@@ -220,7 +220,7 @@ public sealed class TrainingsTests : ComponentTest
         page.WaitForAssertion(() => _administration.Verify(
             client => client.WithholdTrainingAsync(
                 training.Id,
-                It.Is<WithholdTrainingHttpRequest>(body => body.Reason == "Plagiarised material.")),
+                It.Is<WithholdTrainingHttpRequest>(body => body.Reason == "Plagiarized material.")),
             Times.Once));
     }
 
@@ -261,7 +261,7 @@ public sealed class TrainingsTests : ComponentTest
     public void Releasing_AsksForNoReasonAtAll()
     {
         // Arrange
-        var training = Withheld("Domain-Driven Design", "Plagiarised material.");
+        var training = Withheld("Domain-Driven Design", "Plagiarized material.");
 
         _administration
             .Setup(client => client.GetTrainingsAsync(
@@ -324,7 +324,7 @@ public sealed class TrainingsTests : ComponentTest
                 It.IsAny<Guid>(), It.IsAny<WithholdTrainingHttpRequest>()))
             .ThrowsAsync(Refused("This training is already withheld."));
 
-        Answering("Plagiarised material.");
+        Answering("Plagiarized material.");
 
         var page = Render<Trainings>();
 

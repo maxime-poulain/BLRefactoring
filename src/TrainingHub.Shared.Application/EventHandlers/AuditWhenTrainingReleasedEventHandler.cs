@@ -8,7 +8,7 @@ namespace TrainingHub.Shared.Application.EventHandlers;
 /// Writes an audit trail entry when the administration lifts the interdiction on a training.
 /// </summary>
 /// <remarks>
-/// This one is journalisation for good, not merely for now, and the difference is worth stating.
+/// This one is journaling for good, not merely for now, and the difference is worth stating.
 /// Withholding has consumers waiting — the owner to notify, the index entry to drop — while
 /// releasing has none: the training lands on <c>Unpublished</c>, where it was not indexed and where
 /// nobody was listening. That is ADR 0050's own test, <em>nothing produces it, nothing consumes

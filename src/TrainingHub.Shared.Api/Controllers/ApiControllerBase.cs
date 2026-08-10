@@ -28,7 +28,7 @@ namespace TrainingHub.Shared.Api.Controllers;
 /// is not stated, which is right for the failures this API writes itself and wrong for the two it
 /// does not: 401 and 403 are written by the authentication middleware, with no body at all. Left to
 /// the default, the document promised a problem document there and the generated client obeyed it —
-/// deserialising an empty body and throwing <c>"Response was null which was not expected."</c> in
+/// deserializing an empty body and throwing <c>"Response was null which was not expected."</c> in
 /// place of the 401. Every error body this API actually sends is declared explicitly as
 /// <c>ProblemDetails</c> at its own action, so nothing else relies on the default.
 /// </para>

@@ -63,7 +63,7 @@ public sealed class PhotoSanitizationRules
     }
 
     /// <summary>
-    /// No unsanitised portrait, is published.
+    /// No unsanitized portrait, is published.
     /// </summary>
     /// <remarks>
     /// The precondition ADR 0062 named, made executable. What the public catalog serves is bytes
@@ -87,7 +87,7 @@ public sealed class PhotoSanitizationRules
     [Fact]
     [ArchitectureRule("0063",
         "what nothing can prove was stripped is not published, so the reader that serves a portrait consults the stamp")]
-    public void NoUnsanitisedPortrait_IsPublished()
+    public void NoUnsanitizedPortrait_IsPublished()
     {
         var path = Path.Combine(SourceTree.RepositoryRoot, CatalogReader);
 

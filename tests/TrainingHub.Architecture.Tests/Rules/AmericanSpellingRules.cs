@@ -61,6 +61,8 @@ public sealed partial class AmericanSpellingRules
             ["RECOGNISES"] = "recognizes",
             ["RECOGNISED"] = "recognized",
             ["RECOGNISING"] = "recognizing",
+            ["RECOGNISABLE"] = "recognizable",
+            ["UNRECOGNISED"] = "unrecognized",
             ["INITIALISE"] = "initialize",
             ["INITIALISES"] = "initializes",
             ["INITIALISED"] = "initialized",
@@ -74,6 +76,11 @@ public sealed partial class AmericanSpellingRules
             ["SERIALISING"] = "serializing",
             ["SERIALISER"] = "serializer",
             ["SERIALISATION"] = "serialization",
+            ["DESERIALISE"] = "deserialize",
+            ["DESERIALISES"] = "deserializes",
+            ["DESERIALISED"] = "deserialized",
+            ["DESERIALISING"] = "deserializing",
+            ["DESERIALISATION"] = "deserialization",
             ["SANITISE"] = "sanitize",
             ["SANITISES"] = "sanitizes",
             ["SANITISED"] = "sanitized",
@@ -81,6 +88,7 @@ public sealed partial class AmericanSpellingRules
             ["SANITISER"] = "sanitizer",
             ["SANITISERS"] = "sanitizers",
             ["SANITISATION"] = "sanitization",
+            ["UNSANITISED"] = "unsanitized",
             ["CATEGORISE"] = "categorize",
             ["CATEGORISED"] = "categorized",
             ["PRIORITISE"] = "prioritize",
@@ -149,6 +157,11 @@ public sealed partial class AmericanSpellingRules
             ["APOLOGISE"] = "apologize",
             ["MEMORISE"] = "memorize",
             ["PUBLICISE"] = "publicize",
+            ["PLAGIARISE"] = "plagiarize",
+            ["PLAGIARISED"] = "plagiarized",
+            ["PLAGIARISING"] = "plagiarizing",
+            // French that drifted into an English sentence; the English word is "journaling".
+            ["JOURNALISATION"] = "journaling",
 
             // -yse -> -yze. The verb only; "analysis" is already American.
             ["ANALYSE"] = "analyze",
@@ -157,6 +170,7 @@ public sealed partial class AmericanSpellingRules
             ["ANALYSING"] = "analyzing",
             ["ANALYSER"] = "analyzer",
             ["ANALYSERS"] = "analyzers",
+            ["UNANALYSED"] = "unanalyzed",
             ["PARALYSE"] = "paralyze",
             ["PARALYSED"] = "paralyzed",
             ["CATALYSE"] = "catalyze",
@@ -422,6 +436,7 @@ public sealed partial class AmericanSpellingRules
     private static IEnumerable<string> GovernedFiles() =>
         SourceTree.AllFiles
             .Where(IsRead)
+            .Where(path => !IsDeclaredUnread(path))
             .Where(path => !SourceTree.IsGenerated(path))
             .Where(path => SourceTree.Relative(path) != ThisRule)
             .Where(path => !IsRecordFromBeforeThisConvention(SourceTree.Relative(path)));

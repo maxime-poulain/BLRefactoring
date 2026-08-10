@@ -8,7 +8,7 @@ namespace TrainingHub.Shared.Application.EventHandlers;
 /// Writes an audit trail entry when a trainer is placed under sanction.
 /// </summary>
 /// <remarks>
-/// Journalisation, beside the announcement rather than instead of it. The sanction now leaves the
+/// Journaling, beside the announcement rather than instead of it. The sanction now leaves the
 /// context as an integration event too (ADR 0056), and the two answer different readers: the fact
 /// tells the trainer and the index what changed, this line tells whoever reads the logs of a
 /// running system, where every other identity-affecting change is written down —

@@ -117,7 +117,7 @@ public sealed class CatalogController(IQueryDispatcher queryDispatcher) : Catalo
     [HttpGet("trainings/{trainingId:guid}/photo/{photoId:guid}")]
     // byte[] rather than a FileResult, for the reason GET /Trainer/{id}/photo gives at length: it is
     // what the document generator renders as a binary body, and naming the result type instead had
-    // the generated client offering to deserialise a portrait as JSON.
+    // the generated client offering to deserialize a portrait as JSON.
     [Produces(TrainerPhoto.PngContentType, TrainerPhoto.JpegContentType, TrainerPhoto.WebpContentType)]
     [ProducesResponseType(typeof(byte[]), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status304NotModified)]

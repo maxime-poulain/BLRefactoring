@@ -36,7 +36,7 @@ public sealed class DomainModelingRules
     /// No aggregate, has a public constructor.
     /// </summary>
     [Fact]
-    [ArchitectureRule("README#the-domain",
+    [ArchitectureRule("README#domain-model",
         "an aggregate is created through its own factory, never by a caller with a constructor")]
     public void NoAggregate_HasAPublicConstructor() =>
         AggregateRoots
@@ -51,7 +51,7 @@ public sealed class DomainModelingRules
     /// Every aggregate, is sealed.
     /// </summary>
     [Fact]
-    [ArchitectureRule("README#the-domain",
+    [ArchitectureRule("README#domain-model",
         "an aggregate is sealed: its invariants are its own, and inheritance would let someone else hold them")]
     public void EveryAggregate_IsSealed() =>
         AggregateRoots
@@ -80,7 +80,7 @@ public sealed class DomainModelingRules
     /// No aggregate, returns data.
     /// </summary>
     [Fact]
-    [ArchitectureRule("README#the-domain",
+    [ArchitectureRule("README#domain-model",
         "an aggregate answers whether a change was allowed; it never hands data back")]
     public void NoAggregate_ReturnsData() =>
         AggregateRoots
@@ -101,7 +101,7 @@ public sealed class DomainModelingRules
     /// No aggregate, holds another aggregate.
     /// </summary>
     [Fact]
-    [ArchitectureRule("README#the-domain",
+    [ArchitectureRule("README#domain-model",
         "an aggregate holds another aggregate by identifier, never by reference")]
     public void NoAggregate_HoldsAnotherAggregate() =>
         AggregateRoots
@@ -117,7 +117,7 @@ public sealed class DomainModelingRules
     /// No domain type, hands out a mutable collection.
     /// </summary>
     [Fact]
-    [ArchitectureRule("README#the-domain",
+    [ArchitectureRule("README#domain-model",
         "a collection leaves the domain read-only, or it is not the domain that owns it")]
     public void NoDomainType_HandsOutAMutableCollection() =>
         DomainTypes
@@ -133,7 +133,7 @@ public sealed class DomainModelingRules
     /// No domain type, has a public setter.
     /// </summary>
     [Fact]
-    [ArchitectureRule("README#the-domain",
+    [ArchitectureRule("README#domain-model",
         "state changes go through behavior, so no property is settable from outside")]
     public void NoDomainType_HasAPublicSetter() =>
         DomainTypes
@@ -445,7 +445,7 @@ public sealed class DomainModelingRules
     /// Result, offers no unchecked way in.
     /// </summary>
     [Fact]
-    [ArchitectureRule("README#the-result-type",
+    [ArchitectureRule("README#results-instead-of-exceptions",
         "Result offers no way to read a value without handling the failure: that is the whole point of it")]
     public void Result_OffersNoUncheckedWayIn()
     {
