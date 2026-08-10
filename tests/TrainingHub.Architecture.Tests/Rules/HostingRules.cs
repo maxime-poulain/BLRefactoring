@@ -80,6 +80,76 @@ public sealed class HostingRules
     }
 
     /// <summary>
+    /// The image build, keeps its layer cache between runs.
+    /// </summary>
+    /// <remarks>
+    /// Three things, and the third is the one worth a rule. A cache has to be imported and exported
+    /// or it is not a cache; it has to live where the caching action carries it or it dies with the
+    /// runner; and <c>type=local</c> <em>appends</em>, so exporting into the directory it was
+    /// imported from grows the cache one run at a time until restoring it costs more than the build
+    /// it saves. All three failures are green: the images still build, and nothing says the caching
+    /// stopped working. See ADR 0067.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0067",
+        "the pipeline reuses the image layers it built last time, and exports the cache beside the one " +
+        "it imported rather than into it")]
+    public void TheImageBuild_KeepsItsLayerCacheBetweenRuns()
+    {
+        var workflow = SourceTree.ReadText(ContinuousIntegration);
+        var imported = CacheDirectory(workflow, "src");
+        var exported = CacheDirectory(workflow, "dest");
+
+        new[]
+        {
+            (Broken: imported.Length == 0,
+             Wrong: "imports no layer cache into the image build, so every run rebuilds what the " +
+                    "last one already built"),
+            (Broken: exported.Length == 0,
+             Wrong: "exports no layer cache from the image build, so the next run finds nothing to " +
+                    "import however well this one is cached"),
+            (Broken: !workflow.Contains($"path: ~/{CacheDirectory()}", StringComparison.Ordinal),
+             Wrong: $"never asks actions/cache to carry '~/{CacheDirectory()}', so whatever the " +
+                    "build writes dies with the runner that wrote it"),
+            (Broken: imported.Length > 0 && string.Equals(imported, exported, StringComparison.Ordinal),
+             Wrong: "exports the layer cache into the directory it imported it from. `type=local` " +
+                    "appends rather than replaces, so that directory grows every run until " +
+                    "restoring it costs more than the build it exists to save")
+        }
+            .Selected("condition on the layer cache")
+            .Where(assertion => assertion.Broken)
+            .Select(assertion => $"'.github/workflows/ci.yml' {assertion.Wrong} (ADR 0067)")
+            .ShouldHold();
+    }
+
+    /// <summary>The directory the layer cache is carried in, between runs.</summary>
+    private static string CacheDirectory() => ".cache/traininghub-images";
+
+    /// <summary>
+    /// The path one half of the layer cache names, or empty when that half is absent.
+    /// </summary>
+    /// <remarks>
+    /// Read as text rather than as YAML because what is being read is a shell script inside a YAML
+    /// scalar, and the question — do these two paths differ — is about the two strings the shell
+    /// will see.
+    /// </remarks>
+    private static string CacheDirectory(string workflow, string role)
+    {
+        var marker = $"type=local,{role}=";
+        var start = workflow.IndexOf(marker, StringComparison.Ordinal);
+
+        if (start < 0)
+        {
+            return string.Empty;
+        }
+
+        var value = workflow[(start + marker.Length)..];
+        var end = value.IndexOfAny(['"', ',', '\n']);
+
+        return end < 0 ? value : value[..end];
+    }
+
+    /// <summary>
     /// No folder of source, is hidden from the build context.
     /// </summary>
     /// <remarks>
