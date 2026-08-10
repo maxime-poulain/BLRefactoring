@@ -4,6 +4,7 @@ using TrainingHub.Shared.Application.Dtos.Trainer;
 using TrainingHub.Shared.Application.Dtos.Training;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
+using TrainingHub.Shared.Infrastructure.Pagination;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Search;
 
@@ -11,10 +12,11 @@ namespace TrainingHub.Shared.Infrastructure.Search;
 
 /// <inheritdoc />
 /// <remarks>
-/// Two statements, and the order is the design: the index is asked whether the training is on offer,
-/// and only then is the write model asked what it says. A single query joining both would read the
-/// same rows, and would also make it possible to write a visibility predicate here — which is the
-/// one thing this adapter must never do (ADR 0062).
+/// Two statements, and the order is the design: the index is asked whether the training is on offer
+/// — or, for a profile, whether the person is offering anything — and only then is the write model
+/// asked what it says. A single query joining both would read the same rows, and would also make it
+/// possible to write a visibility predicate here — which is the one thing this adapter must never
+/// do (ADR 0062, ADR 0070).
 /// <para>
 /// It lives beside the search adapter because it is the same context's storage it opens, and
 /// nowhere else may name those tables (ADR 0059).
@@ -54,6 +56,7 @@ public sealed class CatalogDetailQuery(
             .Where(candidate => candidate.Id == id)
             .Select(candidate => new
             {
+                candidate.TrainerId,
                 Title = candidate.Title.Value,
                 Description = candidate.Description.Value,
                 Prerequisites = candidate.Prerequisites.Value,
@@ -90,6 +93,7 @@ public sealed class CatalogDetailQuery(
             // An owner whose account is gone leaves the name empty rather than dropping the
             // training, the reading the administrative listing already gives the same situation.
             TrainerName = detail.TrainerName ?? string.Empty,
+            TrainerId = detail.TrainerId.Value,
             Topics = detail.Topics,
             Description = detail.Description,
             Prerequisites = detail.Prerequisites,
@@ -161,6 +165,124 @@ public sealed class CatalogDetailQuery(
         // A row naming bytes the store does not hold answers "no portrait" rather than an error,
         // exactly as the two authenticated readers do. The media type comes from the column rather
         // than from the store's echo of it: that is the one the aggregate vetted.
+        return stored is null
+            ? null
+            : new TrainerPhotoDto(photoId, stored.Content, portrait.ContentType);
+    }
+
+    /// <inheritdoc />
+    public async Task<CatalogTrainerDto?> FindOfferedTrainerAsync(
+        Guid trainerId,
+        CancellationToken cancellationToken = default)
+    {
+        // The index decides, and here it also answers the list: the trainings a visitor may see
+        // are exactly this person's entries, so "not offering" and "nothing to list" are one fact,
+        // read once. The order is the catalog's own — the profile is a shelf of the same catalog,
+        // not a second one (ADR 0001, ADR 0029).
+        var offered = await trainingContext.Set<TrainingSearchEntry>()
+            .AsNoTracking()
+            .Where(entry => entry.TrainerId == trainerId
+                && entry.IsPublished
+                && !entry.IsTrainerHidden)
+            .AlphabeticallyByTitle()
+            .Select(entry => new CatalogTrainingDto
+            {
+                Id = entry.TrainingId,
+                TrainerId = entry.TrainerId,
+                Title = entry.Title
+            })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (offered.Count == 0)
+        {
+            return null;
+        }
+
+        // The write model says who the person is, read now rather than indexed, for the detail's
+        // reason: no fact carries a rename. The photo travels only with its stamp, the condition
+        // the portrait itself is served under — a page offering an address the endpoint will
+        // answer 404 renders a broken image rather than no image (ADR 0063).
+        var id = TrainerId.Create(trainerId);
+
+        var identity = await trainingContext.Trainers
+            .AsNoTracking()
+            .Where(trainer => trainer.Id == id)
+            .Select(trainer => new
+            {
+                trainer.Name.Firstname,
+                trainer.Name.Lastname,
+                Bio = trainer.Bio!.Value,
+                PhotoId = trainer.Photo!.SanitizedOnUtc != null ? trainer.Photo!.PhotoId : null
+            })
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        // The index said yes and the row is gone: the entries are a moment stale, which is what an
+        // eventually consistent read model is. Answering nothing is the same answer a visitor
+        // would have got a second later.
+        if (identity is null)
+        {
+            return null;
+        }
+
+        return new CatalogTrainerDto
+        {
+            Id = trainerId,
+            Firstname = identity.Firstname,
+            Lastname = identity.Lastname,
+            Bio = identity.Bio,
+            PhotoId = identity.PhotoId?.Value,
+            Trainings = offered
+        };
+    }
+
+    /// <inheritdoc />
+    public async Task<TrainerPhotoDto?> FindTrainerPortraitAsync(
+        Guid trainerId,
+        Guid photoId,
+        CancellationToken cancellationToken = default)
+    {
+        // The same first statement as the profile, and for the same reason: whether a person may
+        // be looked at is composed in the index and nowhere here. Their portrait is content of the
+        // profile page, so it inherits the profile's visibility rather than acquiring one of its
+        // own.
+        var isOffering = await trainingContext.Set<TrainingSearchEntry>()
+            .AsNoTracking()
+            .AnyAsync(
+                entry => entry.TrainerId == trainerId
+                    && entry.IsPublished
+                    && !entry.IsTrainerHidden,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        if (!isOffering)
+        {
+            return null;
+        }
+
+        // The same two conditions the training-addressed portrait states, minus the owner lookup
+        // the route has already done: the identity must be the one this person has now, and the
+        // stamp must be there (ADR 0063).
+        var owner = TrainerId.Create(trainerId);
+        var photo = PhotoId.Create(photoId);
+
+        var portrait = await trainingContext.Trainers
+            .AsNoTracking()
+            .Where(trainer => trainer.Id == owner
+                && trainer.Photo!.PhotoId == photo
+                && trainer.Photo.SanitizedOnUtc != null)
+            .Select(trainer => new { trainer.Photo!.ContentType })
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (portrait is null)
+        {
+            return null;
+        }
+
+        var stored = await photoStore.FetchAsync(owner, photo, cancellationToken).ConfigureAwait(false);
+
         return stored is null
             ? null
             : new TrainerPhotoDto(photoId, stored.Content, portrait.ContentType);

@@ -9,17 +9,18 @@ namespace TrainingHub.Shared.Application.Dtos.Training;
 /// reading it</em>, and this is the reading. Separate for ADR 0055's reason — an audience is what
 /// separates two contracts — even though this one's audience is the same as the search's.
 /// <para>
-/// It carries the trainer's <see cref="TrainerName"/> and not their identifier, which is the whole
-/// difference between a page somebody can use and a page that shows a GUID. The name is read from
-/// the write model at the moment of the request rather than kept in the search index: no
-/// integration event carries a rename, so an indexed copy would be a name that nothing refreshes.
+/// It carries the trainer twice, and each half does one job: the <see cref="TrainerName"/> is what
+/// the page prints — read from the write model at the moment of the request rather than kept in
+/// the search index, because no integration event carries a rename — and the
+/// <see cref="TrainerId"/> is where the name links, now that the person has a public page of their
+/// own to link to (ADR 0070).
 /// </para>
 /// <para>
-/// It carries the identity of a <em>photo</em> and never of a person, which is what let a portrait
-/// be published at all. The reference waited for the stripping ADR 0021 deferred: a portrait served
-/// publicly carries whatever the phone that took it wrote, GPS included, so until something removed
-/// that there was nothing safe to point at. ADR 0063 removed it, and a portrait that carries no
-/// proof of having been stripped leaves this null.
+/// The portrait travels as the identity of a <em>photo</em>, which is what let one be published at
+/// all. The reference waited for the stripping ADR 0021 deferred: a portrait served publicly
+/// carries whatever the phone that took it wrote, GPS included, so until something removed that
+/// there was nothing safe to point at. ADR 0063 removed it, and a portrait that carries no proof
+/// of having been stripped leaves this null.
 /// </para>
 /// </remarks>
 public sealed class CatalogTrainingDetailDto
@@ -30,8 +31,11 @@ public sealed class CatalogTrainingDetailDto
     /// <summary>The training's title.</summary>
     public required string Title { get; init; }
 
-    /// <summary>The trainer who offers it, named rather than identified.</summary>
+    /// <summary>The trainer who offers it, named for printing beside the title.</summary>
     public required string TrainerName { get; init; }
+
+    /// <summary>The trainer who offers it, identified so the name can link to their page.</summary>
+    public required Guid TrainerId { get; init; }
 
     /// <summary>The topics it is filed under.</summary>
     public required IReadOnlyList<string> Topics { get; init; }

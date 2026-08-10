@@ -1,6 +1,6 @@
 # 0063 — Strip the metadata before the bytes are stored, and publish only what was stripped
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0070](0070-open-a-trainers-public-page.md): the identifier this record would not hand out is handed out on purpose, now that a person has a page to be — the directory ADR 0055 withdrew stays withdrawn
 - **Amends:** [0009](0009-hold-the-access-token-in-the-bff-instead-of-the-browser.md), [0021](0021-store-a-photo-beside-the-row-that-names-it.md), [0062](0062-let-the-proxy-forward-one-family-of-paths-without-a-token.md)
 - **Date:** 2026-08-10
 

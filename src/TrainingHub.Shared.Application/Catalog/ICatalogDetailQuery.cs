@@ -4,7 +4,8 @@ using TrainingHub.Shared.Application.Dtos.Training;
 namespace TrainingHub.Shared.Application.Catalog;
 
 /// <summary>
-/// Reads one offered training in full, for a visitor who followed a search result (ADR 0062).
+/// Reads one offered training in full, or one offering trainer's profile, for a visitor who
+/// followed a search result (ADR 0062, ADR 0070).
 /// </summary>
 /// <remarks>
 /// A port of its own rather than a method on <c>ITrainingSearchQuery</c>, because it asks a
@@ -54,9 +55,9 @@ public interface ICatalogDetailQuery
     /// </summary>
     /// <remarks>
     /// The same sharing of authority as its neighbor, applied to bytes: the index says whether the
-    /// training is on offer, and the write model says which photo its owner has. Reached through the
-    /// training rather than through the trainer on purpose — what a visitor followed is a catalog
-    /// entry, and no identifier of a person belongs in a public address (ADR 0063).
+    /// training is on offer, and the write model says which photo its owner has. Reached through
+    /// the training because that is what this visitor has in hand — a catalog entry names the page
+    /// they are on, where the address by person below belongs to the profile (ADR 0070).
     /// <para>
     /// Four ways to answer nothing, and the action turns all four into the same 404: no such
     /// training, not on offer, a photo identity that is not the one the owner currently has, and a
@@ -70,6 +71,51 @@ public interface ICatalogDetailQuery
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     Task<TrainerPhotoDto?> FindOfferedPortraitAsync(
         Guid trainingId,
+        Guid photoId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The public profile of an offering trainer, or <see langword="null"/> when there is none a
+    /// visitor may see.
+    /// </summary>
+    /// <remarks>
+    /// Offered or invisible, and nothing in between: a profile answers if and only if the index
+    /// holds at least one entry for this trainer, so a person nobody ever registered, a suspended
+    /// one, and one with nothing published are all the same <see langword="null"/> (ADR 0070). One
+    /// predicate, and it is the index's — asking the write model who is presentable would be the
+    /// second definition of "on offer" this port exists to prevent (ADR 0062).
+    /// <para>
+    /// The same sharing of authority as the detail: the index says whether the person is offering,
+    /// and what they offer; the write model says who they are, read at the moment of the request
+    /// because no integration event carries a rename.
+    /// </para>
+    /// </remarks>
+    /// <param name="trainerId">The trainer the visitor asked for.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    Task<CatalogTrainerDto?> FindOfferedTrainerAsync(
+        Guid trainerId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The portrait of an offering trainer, or <see langword="null"/> when there is none a visitor
+    /// may see.
+    /// </summary>
+    /// <remarks>
+    /// The profile's own address for the same bytes its neighbor serves through a training. Two
+    /// addresses on purpose rather than one redirected: each page asks for the portrait with what
+    /// it has in hand, and both answers are cacheable forever because both name the photo
+    /// (ADR 0070).
+    /// <para>
+    /// The same four refusals as the neighbor, one of them differently reached: no offering
+    /// trainer at this identifier, a photo identity that is not the current one, no sanitization
+    /// stamp, or bytes the store does not hold.
+    /// </para>
+    /// </remarks>
+    /// <param name="trainerId">The offering trainer the visitor is looking at.</param>
+    /// <param name="photoId">The photo its address names.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    Task<TrainerPhotoDto?> FindTrainerPortraitAsync(
+        Guid trainerId,
         Guid photoId,
         CancellationToken cancellationToken = default);
 }

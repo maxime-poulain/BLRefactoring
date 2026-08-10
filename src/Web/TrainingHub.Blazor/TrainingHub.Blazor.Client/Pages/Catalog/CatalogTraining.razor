@@ -50,13 +50,12 @@
 
             @* The name, and it is the whole reason this endpoint reads the write model rather than
                the index: no integration event carries a rename, so a stored copy would show whoever
-               this trainer used to be. *@
+               this trainer used to be. It links to the author's own page, which is where a visitor
+               deciding whether to learn from this person goes next (ADR 0070). *@
             @* The face beside it when there is one to show. The address is built from the training
-               and the photo — never from the trainer — so nothing on this page hands a visitor a way
-               to address a person, and the browser is the one that attests the request came from
-               here (ADR 0063). No avatar at all rather than a placeholder: a silhouette says
-               "this person has no photo", and the honest reading also covers "they have one nobody
-               can prove was stripped". *@
+               and the photo — what this page has in hand (ADR 0063). No avatar at all rather than a
+               placeholder: a silhouette says "this person has no photo", and the honest reading
+               also covers "they have one nobody can prove was stripped". *@
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Class="mb-4">
                 @if (_training.TrainerPhotoId is not null)
                 {
@@ -64,7 +63,13 @@
                         <MudImage Src="@PortraitUrl(_training)" Alt="@_training.TrainerName" />
                     </MudAvatar>
                 }
-                <MudText Typo="Typo.subtitle1">Offered by @_training.TrainerName</MudText>
+                <MudText Typo="Typo.subtitle1">
+                    Offered by
+                    <MudLink Href="@($"/catalog/trainers/{_training.TrainerId}")"
+                             Typo="Typo.subtitle1">
+                        @_training.TrainerName
+                    </MudLink>
+                </MudText>
             </MudStack>
 
             @if (_training.Topics.Count > 0)

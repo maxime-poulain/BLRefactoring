@@ -792,6 +792,14 @@ public sealed partial class HttpBoundaryRules
             return list;
         }
 
+        // A read model inside a read model, which the profile's list of trainings was the first to
+        // carry. Filled recursively, for the date's reason above: a builder that throws on a
+        // member type nobody had used yet is a rule that stops checking the moment the API grows.
+        if (bare.IsClass && bare.Name.EndsWith("Dto", StringComparison.Ordinal))
+        {
+            return Filled(bare);
+        }
+
         return bare == typeof(bool) ? true : Convert.ChangeType(1, bare, CultureInfo.InvariantCulture);
     }
 

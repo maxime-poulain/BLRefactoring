@@ -19,12 +19,13 @@ namespace TrainingHub.DDDWithCqrs.Api.Controller;
 /// search index rather than the trainings table, which is what makes an anonymous read defensible
 /// at all: the index holds what a visitor may be shown and nothing else (ADR 0059).
 /// <para>
-/// Three actions, and they read different places for the same reason. The search answers from the
-/// index alone, because a list of titles is all the index holds. The detail takes its
-/// <em>visibility</em> from the index and its <em>content</em> from the write model, because a
-/// description copied into an index is a description that goes stale (ADR 0062). The portrait is the
-/// detail's shape applied to bytes, and adds one condition of its own: what was never stripped is
-/// never published (ADR 0063).
+/// Three kinds of read, and they read different places for the same reason. The search and the
+/// facets answer from the index alone, because titles and topics are all the index holds. The two
+/// details — a training's page, and its author's (ADR 0070) — take their <em>visibility</em> from
+/// the index and their <em>content</em> from the write model, because a description copied into an
+/// index is a description that goes stale (ADR 0062). The portraits are the details' shape applied
+/// to bytes, and add one condition of their own: what was never stripped is never published
+/// (ADR 0063).
 /// </para>
 /// </remarks>
 public sealed class CatalogController(IQueryDispatcher queryDispatcher) : CatalogControllerBase
@@ -119,10 +120,10 @@ public sealed class CatalogController(IQueryDispatcher queryDispatcher) : Catalo
     /// Serves the portrait of the trainer behind an offered training.
     /// </summary>
     /// <remarks>
-    /// The address names the training and the photo, and no person. That is what lets a visitor be
-    /// given it — they followed a catalog entry, and a trainer's identifier is not something a
-    /// catalog hands out — and it is also what makes the response cacheable forever: a replacement
-    /// mints a new photo identity, so these bytes never change.
+    /// The address names the training and the photo: a visitor on a training's page asks with what
+    /// that page has in hand, exactly as the profile's portrait below asks with the trainer the
+    /// profile names (ADR 0070). Naming the photo is what makes the response cacheable forever: a
+    /// replacement mints a new photo identity, so these bytes never change.
     /// <para>
     /// One 404 for four situations, and the reason is the one the detail gives: no such training,
     /// none on offer, a photo that is not the owner's current one, and — the precondition ADR 0062
@@ -154,6 +155,79 @@ public sealed class CatalogController(IQueryDispatcher queryDispatcher) : Catalo
     {
         var portrait = await queryDispatcher.DispatchAsync(
             HttpToApplicationMappings.ToGetOfferedPortraitQuery(trainingId, photoId), cancellationToken);
+
+        return portrait is null ? NotFound() : this.ImmutablePhotoFile(portrait);
+    }
+
+    /// <summary>
+    /// Reads one offering trainer's public profile, for a visitor who followed a training.
+    /// </summary>
+    /// <remarks>
+    /// Offered or invisible: the profile answers if and only if the index holds at least one entry
+    /// for this trainer, so the 404 is the same for a person nobody ever registered, a suspended
+    /// one, and one with nothing published (ADR 0070). Distinguishing them would tell an anonymous
+    /// caller what only the administration may read (ADR 0055).
+    /// </remarks>
+    /// <param name="trainerId">The trainer the route names.</param>
+    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
+    /// <returns>
+    /// 200 OK with the trainer's public page: who they are, and what they offer.
+    /// 400 Bad Request when the identifier names nothing.
+    /// 404 Not Found when there is no offering trainer with this identifier.
+    /// </returns>
+    [HttpGet("trainers/{trainerId:guid}")]
+    [ProducesResponseType(typeof(CatalogTrainerHttpResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<CatalogTrainerHttpResponse>> GetTrainerProfileAsync(
+        [NotEmptyIdentifier] Guid trainerId,
+        CancellationToken cancellationToken = default)
+    {
+        var profile = await queryDispatcher.DispatchAsync(
+            HttpToApplicationMappings.ToGetTrainerProfileQuery(trainerId), cancellationToken);
+
+        return profile is null ? NotFound() : Ok(profile.ToHttp());
+    }
+
+    /// <summary>
+    /// Serves the portrait of an offering trainer.
+    /// </summary>
+    /// <remarks>
+    /// The profile's own address for the same bytes its neighbor serves through a training: each
+    /// page asks with what it has in hand (ADR 0070). Naming the photo is what makes the response
+    /// cacheable forever — a replacement mints a new photo identity, so these bytes never change.
+    /// <para>
+    /// One 404 for four situations, and the reason is the one the profile gives: no offering
+    /// trainer at this identifier, a photo that is not their current one, and — the precondition
+    /// ADR 0062 named — a portrait carrying no proof that anything was ever stripped from it
+    /// (ADR 0063).
+    /// </para>
+    /// </remarks>
+    /// <param name="trainerId">The offering trainer the route names.</param>
+    /// <param name="photoId">The photo the route names.</param>
+    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
+    /// <returns>
+    /// 200 OK with the image.
+    /// 304 Not Modified when the caller already holds these bytes.
+    /// 400 Bad Request when either identifier names nothing.
+    /// 404 Not Found when there is no portrait a visitor may see at this address.
+    /// </returns>
+    [HttpGet("trainers/{trainerId:guid}/photo/{photoId:guid}")]
+    // byte[] rather than a FileResult, for the reason GET /Trainer/{id}/photo gives at length: it is
+    // what the document generator renders as a binary body, and naming the result type instead had
+    // the generated client offering to deserialize a portrait as JSON.
+    [Produces(TrainerPhoto.PngContentType, TrainerPhoto.JpegContentType, TrainerPhoto.WebpContentType)]
+    [ProducesResponseType(typeof(byte[]), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status304NotModified)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> GetTrainerPortraitAsync(
+        [NotEmptyIdentifier] Guid trainerId,
+        [NotEmptyIdentifier] Guid photoId,
+        CancellationToken cancellationToken = default)
+    {
+        var portrait = await queryDispatcher.DispatchAsync(
+            HttpToApplicationMappings.ToGetTrainerPortraitQuery(trainerId, photoId), cancellationToken);
 
         return portrait is null ? NotFound() : this.ImmutablePhotoFile(portrait);
     }

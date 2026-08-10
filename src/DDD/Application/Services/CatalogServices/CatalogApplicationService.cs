@@ -71,6 +71,38 @@ public interface ICatalogApplicationService
         Guid trainingId,
         Guid photoId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The public profile of an offering trainer, or <see langword="null"/> when there is none a
+    /// visitor may see.
+    /// </summary>
+    /// <remarks>
+    /// Offered or invisible: the index decides whether this person is offering anything, exactly
+    /// as it decides whether a training is on offer, and this service never asks the write model
+    /// that question (ADR 0062, ADR 0070).
+    /// </remarks>
+    /// <param name="trainerId">The trainer the visitor asked for.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    Task<CatalogTrainerDto?> FindOfferedTrainerAsync(
+        Guid trainerId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The portrait of an offering trainer, or <see langword="null"/> when there is none a visitor
+    /// may see.
+    /// </summary>
+    /// <remarks>
+    /// The profile's own address for the same bytes the training-addressed read serves: each page
+    /// asks with what it has in hand, and both answers are cacheable forever because both name the
+    /// photo (ADR 0063, ADR 0070).
+    /// </remarks>
+    /// <param name="trainerId">The offering trainer the visitor is looking at.</param>
+    /// <param name="photoId">The photo its address names.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    Task<TrainerPhotoDto?> FindTrainerPortraitAsync(
+        Guid trainerId,
+        Guid photoId,
+        CancellationToken cancellationToken = default);
 }
 
 /// <inheritdoc />
@@ -111,4 +143,17 @@ public sealed class CatalogApplicationService(
         Guid photoId,
         CancellationToken cancellationToken = default) =>
         await catalogDetail.FindOfferedPortraitAsync(trainingId, photoId, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<CatalogTrainerDto?> FindOfferedTrainerAsync(
+        Guid trainerId,
+        CancellationToken cancellationToken = default) =>
+        await catalogDetail.FindOfferedTrainerAsync(trainerId, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<TrainerPhotoDto?> FindTrainerPortraitAsync(
+        Guid trainerId,
+        Guid photoId,
+        CancellationToken cancellationToken = default) =>
+        await catalogDetail.FindTrainerPortraitAsync(trainerId, photoId, cancellationToken);
 }

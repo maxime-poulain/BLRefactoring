@@ -1,0 +1,146 @@
+@page "/catalog/trainers/{TrainerId:guid}"
+@using TrainingHub.GeneratedClients
+@inject ICatalogClient CatalogClient
+@inject ISnackbar Snackbar
+
+@* No [Authorize] either, for the same reason as the pages it is reached from: a person with
+   something on offer is part of the catalog, and the catalog answers anybody (ADR 0070). *@
+
+<PageTitle>@(_trainer is null ? "Trainer" : $"{_trainer.Firstname} {_trainer.Lastname}") — TrainingHub</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="my-4">
+    <MudButton Variant="Variant.Text"
+               Color="Color.Primary"
+               Href="/catalog"
+               StartIcon="@Icons.Material.Filled.ArrowBack"
+               Class="mb-4">
+        Back to the catalog
+    </MudButton>
+
+    @if (_isLoading)
+    {
+        <MudStack AlignItems="AlignItems.Center" Class="my-8">
+            <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+        </MudStack>
+    }
+    else if (_isUnreachable)
+    {
+        @* Kept apart from the panel below on purpose: "we could not ask" and "the answer is no"
+           are different things to be told, and merging them would make an outage look like a
+           person who left. *@
+        <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center">
+            <MudIcon Icon="@Icons.Material.Filled.CloudOff" Style="font-size: 6rem;" Class="mb-4" />
+            <MudText Typo="Typo.h6">The catalog could not be reached</MudText>
+        </MudPaper>
+    }
+    else if (_trainer is null)
+    {
+        @* One panel for every way a profile answers nothing — no such person, suspended, nothing
+           published — because the API answers 404 to all of them and a visitor is owed no more
+           than that (ADR 0070). *@
+        <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center">
+            <MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size: 6rem;" Class="mb-4" />
+            <MudText Typo="Typo.h6" GutterBottom="true">This profile is not available</MudText>
+            <MudText Typo="Typo.body2">The trainer may not exist, or may have nothing on offer.</MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudPaper Elevation="1" Class="pa-6">
+            @* The face beside the name when there is one to show, addressed by trainer and photo —
+               what this page has in hand (ADR 0070). No avatar at all rather than a placeholder: a
+               silhouette says "this person has no photo", and the honest reading also covers "they
+               have one nobody can prove was stripped" (ADR 0063). *@
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Class="mb-4">
+                @if (_trainer.PhotoId is not null)
+                {
+                    <MudAvatar Size="Size.Large">
+                        <MudImage Src="@PortraitUrl(_trainer)" Alt="@($"{_trainer.Firstname} {_trainer.Lastname}")" />
+                    </MudAvatar>
+                }
+                <MudText Typo="Typo.h4">@_trainer.Firstname @_trainer.Lastname</MudText>
+            </MudStack>
+
+            @if (!string.IsNullOrEmpty(_trainer.Bio))
+            {
+                <MudText Typo="Typo.h6" GutterBottom="true">About</MudText>
+                <MudText Typo="Typo.body1" Class="mb-6">@_trainer.Bio</MudText>
+            }
+
+            <MudText Typo="Typo.h6" GutterBottom="true">Trainings on offer</MudText>
+
+            @* Never empty: a profile with nothing on offer is a profile the API answered 404 for,
+               so this table always has at least one row. Rows of the search's own shape, leading
+               where a search row leads (ADR 0062). *@
+            <MudTable Items="@_trainer.Trainings" Hover="true" Elevation="0" T="CatalogTrainingHttpResponse">
+                <HeaderContent>
+                    <MudTh>Title</MudTh>
+                    <MudTh />
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Title">@context.Title</MudTd>
+                    <MudTd>
+                        <MudButton Size="Size.Small"
+                                   Color="Color.Primary"
+                                   Variant="Variant.Text"
+                                   Href="@($"/catalog/{context.Id}")">
+                            Read more
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    private const int StatusNotFound = 404;
+
+    /// <summary>The trainer the route names.</summary>
+    [Parameter]
+    public Guid TrainerId { get; set; }
+
+    private CatalogTrainerHttpResponse? _trainer;
+    private bool _isLoading = true;
+    private bool _isUnreachable;
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+        _isUnreachable = false;
+        try
+        {
+            _trainer = await CatalogClient.GetTrainerProfileAsync(TrainerId);
+        }
+        catch (ApiException exception) when (exception.StatusCode == StatusNotFound)
+        {
+            // Not an error to report: a URL somebody kept is allowed to stop working, and the panel
+            // above says so in the visitor's terms rather than the transport's.
+            _trainer = null;
+        }
+        catch (Exception)
+        {
+            // The message is ours rather than the server's: what an exception carries is for a log,
+            // and a visitor learns nothing from a stack of it.
+            _trainer = null;
+            _isUnreachable = true;
+            Snackbar.Add("The profile could not be loaded.", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// The address of the portrait, built from the trainer and the photo the response named.
+    /// </summary>
+    /// <remarks>
+    /// No cache buster, for the training page's reason: this address carries the photo's identity,
+    /// so it stops resolving when the picture is replaced rather than serving a stale one. That is
+    /// what lets the endpoint answer <c>immutable</c> honestly (ADR 0063, ADR 0070).
+    /// </remarks>
+    private static string PortraitUrl(CatalogTrainerHttpResponse trainer) =>
+        $"api/Catalog/trainers/{trainer.Id}/photo/{trainer.PhotoId}";
+}
