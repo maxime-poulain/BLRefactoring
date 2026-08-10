@@ -306,16 +306,53 @@ public sealed partial class AmericanSpellingRules
     /// The extensions this rule reads.
     /// </summary>
     /// <remarks>
-    /// Declared rather than derived, because the alternative is reading a PNG as text and finding a
-    /// word in the noise. Everything this repository <em>writes</em> is here; everything it
-    /// <em>stores</em> is not.
+    /// Declared rather than derived, because the alternative is reading a private key as text and
+    /// finding a word in the noise. Everything this repository <em>writes</em> is here; everything
+    /// it merely <em>holds</em> is in <see cref="Unread"/>, and a file in neither fails
+    /// <see cref="EveryFileThisRepositoryHolds_IsEitherReadOrDeclaredUnread"/> rather than escaping
+    /// quietly.
     /// </remarks>
     private static readonly IReadOnlySet<string> WrittenExtensions =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             ".cs", ".razor", ".css", ".js", ".md", ".json", ".yml", ".yaml",
-            ".csproj", ".props", ".slnx", ".sh", ".nswag", ".http", ".sql",
-            ".editorconfig", ".gitignore", ".dockerignore"
+            ".csproj", ".props", ".slnx", ".sh", ".py", ".nswag", ".http", ".sql",
+            ".editorconfig", ".gitignore", ".gitattributes", ".dockerignore", ".gitkeep"
+        };
+
+    /// <summary>
+    /// The files this rule reads that carry no extension at all.
+    /// </summary>
+    /// <remarks>
+    /// A Dockerfile is prose and instructions in equal measure, and it was the blind spot that
+    /// showed why the selection needed both halves: <see cref="Path.GetExtension(string)"/> answers
+    /// an empty string for it, so three files this repository writes were governed by nothing while
+    /// the rule reported itself green.
+    /// </remarks>
+    private static readonly IReadOnlySet<string> WrittenNames =
+        new HashSet<string>(StringComparer.Ordinal) { "Dockerfile" };
+
+    /// <summary>
+    /// What this repository holds without having written it, and why each is not read.
+    /// </summary>
+    /// <remarks>
+    /// Keyed by file name or by extension, whichever names the thing — and by neither a path nor a
+    /// glob, because all but one of these belong to a machine rather than to a commit and sit
+    /// wherever the tool that made them put them. A reason per entry, for the argument
+    /// <c>EveryDemotedRule_SaysWhyItWasDemoted</c> makes: an exemption without one is
+    /// indistinguishable from an oversight.
+    /// <para>
+    /// Three of the four are here because the rule found them rather than because anybody predicted
+    /// them, which is the argument for closing the two sets against each other in the first place.
+    /// </para>
+    /// </remarks>
+    private static readonly IReadOnlyDictionary<string, string> Unread =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["LICENSE"] = "the MIT license, whose words belong to whoever wrote it and cannot be edited here",
+            ["appsettings.Local.json"] = "a developer's private overrides, versioned by nothing (ADR 0035)",
+            [".pfx"] = "a developer's private key, which is not text at all (ADR 0065)",
+            [".log"] = "a rolling log a running host writes into the working tree, versioned by nothing (ADR 0026)",
         };
 
     /// <summary>The file that declares the list above, and therefore has to hold every word in it.</summary>
@@ -350,13 +387,63 @@ public sealed partial class AmericanSpellingRules
             .SelectMany(Offences)
             .ShouldHold();
 
+    /// <summary>
+    /// Every file this repository holds, is either read or declared unread.
+    /// </summary>
+    /// <remarks>
+    /// The rule above selects the files it reads, and a selection that names what it wants is a
+    /// selection that goes quiet about everything else. That is not a hypothetical: three
+    /// Dockerfiles, a <c>.gitattributes</c> and a Python script were governed by nothing while the
+    /// convention reported itself kept, because <see cref="Path.GetExtension(string)"/> answers an
+    /// empty string for a file called <c>Dockerfile</c> and something unlisted for the rest.
+    /// <para>
+    /// So the two sets are closed against each other and a file in neither fails here. The point is
+    /// not this list of extensions — it is that the next kind of file to arrive cannot be governed
+    /// by silence: somebody has to say which side it is on, in the commit that introduces it.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0066",
+        "a file this repository holds is read by the spelling rule or declared unread with a reason: " +
+        "a selection that names only what it wants goes quiet about everything else")]
+    public void EveryFileThisRepositoryHolds_IsEitherReadOrDeclaredUnread() =>
+        SourceTree.AllFiles
+            .Where(path => !SourceTree.IsGenerated(path))
+            .Selected("file this repository holds")
+            .Where(path => !IsRead(path) && !IsDeclaredUnread(path))
+            .Select(path =>
+                $"'{SourceTree.Relative(path)}' is neither read by " +
+                "EveryWordThisRepositoryWrites_UsesAmericanSpelling nor declared unread with a " +
+                "reason. A file governed by nothing is a convention kept by nothing, and the rule " +
+                "would go on passing without it (ADR 0066)")
+            .ShouldHold();
+
     /// <summary>The files this convention reaches.</summary>
     private static IEnumerable<string> GovernedFiles() =>
         SourceTree.AllFiles
-            .Where(path => WrittenExtensions.Contains(Path.GetExtension(path)))
+            .Where(IsRead)
             .Where(path => !SourceTree.IsGenerated(path))
             .Where(path => SourceTree.Relative(path) != ThisRule)
             .Where(path => !IsRecordFromBeforeThisConvention(SourceTree.Relative(path)));
+
+    /// <summary>Whether a file is one this repository writes, and therefore one this rule reads.</summary>
+    private static bool IsRead(string path) =>
+        WrittenNames.Contains(Path.GetFileName(path))
+        || WrittenExtensions.Contains(Path.GetExtension(path));
+
+    /// <summary>
+    /// Whether a file is declared as one this repository does not write.
+    /// </summary>
+    /// <remarks>
+    /// The rule's own file counts here, and it is the one entry that could not be listed beside the
+    /// others: <see cref="Unread"/> would have to hold the name of a file whose whole purpose is to
+    /// hold the words nobody may write, which is the self-reference ADR 0064 already resolved by
+    /// excluding it.
+    /// </remarks>
+    private static bool IsDeclaredUnread(string path) =>
+        Unread.ContainsKey(Path.GetFileName(path))
+        || Unread.ContainsKey(Path.GetExtension(path))
+        || SourceTree.Relative(path) == ThisRule;
 
     /// <summary>Every British word in a file, with the line it sits on.</summary>
     private static IEnumerable<string> Offences(string path)

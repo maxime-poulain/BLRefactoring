@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 65 architecture decision records.
+2. `docs/adr/README.md` — the index of 66 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 182 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 183 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -250,12 +250,21 @@ The endings that decide almost all of it, written the way this repository writes
 what replaces it. Restating it here would be a second copy to forget, so this section teaches the
 shape and that file holds the letter.
 
-**Three things are exempt, and only these three.** A word coming from outside this repository keeps
-the spelling its author gave it — `Color`, `IPipelineBehavior`, `AuthorizationPolicy`, `Serializer`
-are what .NET calls them, and renaming them is not an option. The sixty-three records merged before
-ADR 0064 keep the words they were written with, because a merged record is never rewritten. And
-`AmericanSpellingRules.cs` is invisible to its own rule, because it is the file that lists what the
-rule refuses.
+**What is exempt is exempt by name, and nothing is exempt by being forgotten (ADR 0066).** A word
+coming from outside this repository keeps the spelling its author gave it — `Color`,
+`IPipelineBehavior`, `AuthorizationPolicy`, `Serializer` are what .NET calls them, and renaming them
+is not an option. The sixty-three records merged before ADR 0064 keep the words they were written
+with, because a merged record is never rewritten. `AmericanSpellingRules.cs` is invisible to its own
+rule, because it is the file that lists what the rule refuses. And four kinds of file are read by
+nobody, each with its reason written beside it in that same file: the MIT license, a developer's
+`appsettings.Local.json` and their `.pfx`, and the rolling `.log` a running host leaves in the tree.
+
+**A file that is neither read nor declared unread fails the build**, which is the half worth
+remembering when adding a kind of file this repository has not held before.
+`EveryFileThisRepositoryHolds_IsEitherReadOrDeclaredUnread` closes the two sets against each other,
+because the previous shape — a list of extensions naming what to check — went quiet about three
+Dockerfiles, a `.gitattributes` and a Python script while reporting itself kept. Adding a `.toml`
+now costs one line saying which side it is on; it used to cost nothing and check nothing.
 
 **`EveryWordThisRepositoryWrites_UsesAmericanSpelling` fails the build** when any of this is broken,
 so a spelling is a red test rather than a review comment. A word the dictionary does not yet know is
