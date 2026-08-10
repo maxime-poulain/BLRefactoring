@@ -31,17 +31,25 @@ public sealed class SearchCatalogQueryHandlerTests
         var paging = new PageRequest { Page = 3, PageSize = 5 };
 
         _trainingSearch
-            .Setup(search => search.SearchAsync("event storming", "Design", paging, It.IsAny<CancellationToken>()))
+            .Setup(search => search.SearchAsync(
+                "event storming", "Design", CatalogOrder.Newest, paging, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PagedResult<CatalogTrainingDto>([], 3, 5, 0));
 
         var sut = new SearchCatalogQueryHandler(_trainingSearch.Object);
 
         await sut.Handle(
-            new SearchCatalogQuery { Term = "event storming", Topic = "Design", Paging = paging },
+            new SearchCatalogQuery
+            {
+                Term = "event storming",
+                Topic = "Design",
+                Order = CatalogOrder.Newest,
+                Paging = paging
+            },
             CancellationToken.None);
 
         _trainingSearch.Verify(
-            search => search.SearchAsync("event storming", "Design", paging, It.IsAny<CancellationToken>()),
+            search => search.SearchAsync(
+                "event storming", "Design", CatalogOrder.Newest, paging, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -63,7 +71,11 @@ public sealed class SearchCatalogQueryHandlerTests
 
         _trainingSearch
             .Setup(search => search.SearchAsync(
-                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CatalogOrder>(),
+                It.IsAny<PageRequest>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(answered);
 
         var sut = new SearchCatalogQueryHandler(_trainingSearch.Object);

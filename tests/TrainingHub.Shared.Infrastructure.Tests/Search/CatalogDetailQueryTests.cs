@@ -755,7 +755,8 @@ public sealed class CatalogDetailQueryTests : IAsyncLifetime
         bool isTrainerHidden)
     {
         var entry = new TrainingSearchEntry(training.Id.Value);
-        entry.Describe(owner.Id.Value, training.Title.Value, isPublished, isTrainerHidden, [], []);
+        entry.Describe(
+            owner.Id.Value, training.Title.Value, training.CreatedOn, isPublished, isTrainerHidden, [], []);
 
         _context.Set<TrainingSearchEntry>().Add(entry);
         await _context.SaveChangesAsync();

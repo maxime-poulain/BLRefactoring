@@ -1,6 +1,6 @@
 # 0001 — Paginate on the query side, over a total order
 
-- **Status:** Accepted — amended in part by [0029](0029-answer-a-list-the-same-way-on-both-hosts.md)
+- **Status:** Accepted — amended in part by [0029](0029-answer-a-list-the-same-way-on-both-hosts.md); amended in part by [0071](0071-give-the-catalog-a-second-published-order.md): the search index's total order becomes a pair a caller chooses from, each total by the same tie-break
 - **Date:** 2026-08-01
 
 ## Context

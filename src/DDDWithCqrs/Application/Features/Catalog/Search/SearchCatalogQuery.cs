@@ -1,4 +1,5 @@
 using TrainingHub.Shared.Application.Dtos.Training;
+using TrainingHub.Shared.Application.Search;
 using TrainingHub.Shared.Common.Pagination;
 using TrainingHub.Shared.CQS;
 
@@ -33,6 +34,11 @@ public sealed class SearchCatalogQuery : IQuery<PagedResult<CatalogTrainingDto>>
     /// (ADR 0069).
     /// </summary>
     public string? Topic { get; init; }
+
+    /// <summary>
+    /// Which of the catalog's two published orders to read the page in (ADR 0071).
+    /// </summary>
+    public CatalogOrder Order { get; init; }
 
     /// <summary>
     /// The page asked for; the default page when none was.

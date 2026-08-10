@@ -1,7 +1,9 @@
 @page "/catalog/{TrainingId:guid}"
 @using TrainingHub.GeneratedClients
+@implements IDisposable
 @inject ICatalogClient CatalogClient
 @inject ISnackbar Snackbar
+@inject PersistentComponentState ApplicationState
 
 @* No [Authorize] either, for the same reason as the listing it is reached from (ADR 0062). *@
 
@@ -101,13 +103,33 @@
     [Parameter]
     public Guid TrainingId { get; set; }
 
+    // The key this page's prerendered answer travels under, from the server's pass to the
+    // WebAssembly one (ADR 0072).
+    private const string PersistenceKey = "catalog-training";
+
     private CatalogTrainingDetailHttpResponse? _training;
     private bool _isLoading = true;
     private bool _isUnreachable;
+    private PersistingComponentStateSubscription _persisting;
+
+    /// <inheritdoc />
+    protected override void OnInitialized() =>
+        _persisting = ApplicationState.RegisterOnPersisting(Persist);
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
+        // The prerendered pass already asked; taking its answer is what keeps the first paint
+        // from being replaced by a spinner and the API from being asked twice (ADR 0072). A 404
+        // travels too — the panel it renders is as much the page as a training is.
+        if (ApplicationState.TryTakeFromJson<CatalogTrainingDetailHttpResponse?>(
+                PersistenceKey, out var prerendered))
+        {
+            _training = prerendered;
+            _isLoading = false;
+            return;
+        }
+
         _isLoading = true;
         _isUnreachable = false;
         try
@@ -144,4 +166,19 @@
     /// </remarks>
     private static string PortraitUrl(CatalogTrainingDetailHttpResponse training) =>
         $"api/Catalog/trainings/{training.Id}/photo/{training.TrainerPhotoId}";
+
+    private Task Persist()
+    {
+        // An unreachable API is not an answer to hand over: the interactive pass should ask
+        // again rather than inherit a snackbar it never showed.
+        if (!_isUnreachable)
+        {
+            ApplicationState.PersistAsJson(PersistenceKey, _training);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public void Dispose() => _persisting.Dispose();
 }

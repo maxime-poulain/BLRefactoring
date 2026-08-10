@@ -1,6 +1,10 @@
 using TrainingHub.Blazor.Bff;
+using Microsoft.AspNetCore.Components.Authorization;
 using MudBlazor.Services;
+using TrainingHub.Blazor.Client.Infrastructure;
 using TrainingHub.Blazor.Components;
+using TrainingHub.Blazor.Prerendering;
+using TrainingHub.GeneratedClients;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,10 +19,31 @@ builder.Services.AddMudServices();
 
 // The browser's services are deliberately NOT registered here. AddDependencies describes the
 // WebAssembly application's world — an HttpClient pointed at the page's own origin, an identity
-// read from /bff/user — and this host is the other side of both. Prerendering is off (see
-// App.razor), so nothing renders server-side and nothing would resolve them; what registering them
-// did do was collide with this host's own API client, which shares the name "Api", and answer
-// sign-in with a 500. The BFF suite catches that.
+// read from /bff/user — and this host is the other side of both. What registering them did do was
+// collide with this host's own API client, which shares the name "Api", and answer sign-in with a
+// 500. The BFF suite catches that.
+//
+// The catalog's routes prerender (see App.razor), so the services those pages and the layout
+// inject get server-side counterparts of their own here — each the host's honest answer to the
+// same question, never the browser's registration adopted (ADR 0072):
+//
+//  - identity is the cookie the BFF pipeline already authenticated, read in place rather than
+//    fetched from /bff/user by this host calling itself;
+//  - the generated read clients ride the BFF's own named client to the API, under its name and
+//    never under "Api";
+//  - the session client and the standing source resolve because instantiation must, and behave
+//    honestly if a prerender ever reaches them — the one signs out nobody, the other answers
+//    "active" to a caller the API refuses.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddAuthorizationCore();
+builder.Services.AddScoped<AuthenticationStateProvider, HostAuthenticationStateProvider>();
+builder.Services.AddScoped<IAuthenticationStateNotifier>(serviceProvider =>
+    (HostAuthenticationStateProvider)serviceProvider.GetRequiredService<AuthenticationStateProvider>());
+builder.Services.AddScoped<IBffSessionClient, BffSessionClient>();
+builder.Services.AddScoped<ITrainerStandingSource, TrainerStandingSource>();
+builder.Services.AddHttpClient<ICatalogClient, CatalogClient>(BffEndpoints.ApiClientName);
+builder.Services.AddHttpClient<ITrainerClient, TrainerClient>(BffEndpoints.ApiClientName);
 
 // This host is the backend for frontend. It terminates authentication, keeps the API's access
 // token in a cookie the browser cannot read, and forwards everything under /api to the API with

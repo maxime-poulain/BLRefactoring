@@ -35,6 +35,12 @@ public sealed class TrainingSearchEntryConfiguration : IEntityTypeConfiguration<
             .IsRequired()
             .HasMaxLength(100);
 
+        // The same precision every audit column carries. The value is the training's own CreatedOn,
+        // read back with the title, so a replay rewrites the same instant rather than a new one.
+        builder.Property(entry => entry.CreatedOnUtc)
+            .HasPrecision(7)
+            .IsRequired();
+
         builder.Property(entry => entry.IsPublished)
             .IsRequired();
 
@@ -65,5 +71,18 @@ public sealed class TrainingSearchEntryConfiguration : IEntityTypeConfiguration<
             entry.Title,
             entry.TrainingId
         }).HasDatabaseName("IX_TrainingSearchEntry_Offered");
+
+        // The second order's index, shaped exactly like the first one's: visibility leads, the
+        // order follows, so a "newest" page is a seek and a walk too (ADR 0071). Descending on the
+        // age because that is the only direction this order is read in.
+        builder.HasIndex(entry => new
+        {
+            entry.IsPublished,
+            entry.IsTrainerHidden,
+            entry.CreatedOnUtc,
+            entry.TrainingId
+        })
+            .IsDescending(false, false, true, false)
+            .HasDatabaseName("IX_TrainingSearchEntry_OfferedNewest");
     }
 }

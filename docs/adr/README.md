@@ -28,7 +28,7 @@ simpler from the outside.
 
 | # | Decision | Status |
 |---|----------|--------|
-| [0001](0001-paginate-on-the-query-side-over-a-total-order.md) | Paginate on the query side, over a total order | Accepted — amended in part by 0029 |
+| [0001](0001-paginate-on-the-query-side-over-a-total-order.md) | Paginate on the query side, over a total order | Accepted — amended in part by 0029; amended in part by 0071: the search index's total order becomes a pair a caller chooses from, each total by the same tie-break |
 | [0002](0002-keep-domain-reactions-in-the-transaction-and-deliver-integration-events-through-an-outbox.md) | Keep domain reactions in the transaction, deliver integration events through an outbox | Accepted — implemented; the message design is recorded in 0024, the delivery worker in 0025; its registration consequence is corrected by 0040 |
 | [0003](0003-apply-migrations-on-startup-in-development-only.md) | Apply migrations on startup in Development only | Accepted — amended by [0045](0045-fail-readiness-while-a-migration-is-pending.md): the readiness probe this record said to revisit it for now exists, and a pending migration fails it |
 | [0004](0004-publish-every-error-as-rfc-7807-problem-details.md) | Publish every error as RFC 7807 Problem Details | Accepted — amended in part by 0012 |
@@ -56,7 +56,7 @@ simpler from the outside.
 | [0026](0026-log-with-serilog-to-console-and-files-through-typed-options.md) | Log with Serilog to console and files, through typed options | Accepted |
 | [0027](0027-stamp-the-callers-identity-on-every-log-line.md) | Stamp the caller's identity on every log line | Accepted |
 | [0028](0028-a-specification-names-a-business-rule-or-it-does-not-exist.md) | A specification names a business rule, or it does not exist | Accepted — amended by [0055](0055-let-the-administration-read-what-the-catalogue-may-not.md): a named question may carry named criteria, and the line this record drew at none moves to *never a predicate* |
-| [0029](0029-answer-a-list-the-same-way-on-both-hosts.md) | Answer a list the same way on both hosts | Accepted |
+| [0029](0029-answer-a-list-the-same-way-on-both-hosts.md) | Answer a list the same way on both hosts | Accepted — amended by 0071: the shared list contract gains a sort parameter — the same closed set of orders on both hosts |
 | [0030](0030-bring-the-fact-to-the-aggregate-not-the-decision-to-a-service.md) | Bring the fact to the aggregate, not the decision to a service | Accepted — narrowed by 0036: a decision with no home is a recorded domain service |
 | [0031](0031-send-email-over-smtp-and-prove-it-against-a-real-server.md) | Send email over SMTP, and prove it against a real server | Accepted |
 | [0032](0032-flatten-a-value-object-as-a-complex-property-not-an-owned-entity.md) | Flatten a value object as a complex property, not an owned entity | Accepted — amended by [0060](0060-look-inside-the-column-a-search-has-to-read.md): one scalar converts, unless the column has to be looked inside — a converted `TrainingTitle` is one no substring match can translate against |
@@ -89,12 +89,14 @@ simpler from the outside.
 | [0056](0056-announce-the-sanction-and-let-the-index-compose-visibility.md) | Announce the sanction, and let the index compose visibility | Accepted |
 | [0057](0057-the-trainers-own-surface-says-where-they-stand.md) | The trainer's own surface says where they stand | Accepted |
 | [0058](0058-a-translation-to-a-published-contract-is-total.md) | A translation to a published contract is total | Accepted |
-| [0059](0059-give-the-search-index-a-body-and-a-query-surface.md) | Give the search index a body, and a query surface | Accepted — amended by [0069](0069-give-the-catalog-its-first-facet.md): the index gains its first non-title dimension — the topics a training declares, served as the catalog's facets |
+| [0059](0059-give-the-search-index-a-body-and-a-query-surface.md) | Give the search index a body, and a query surface | Accepted — amended by [0069](0069-give-the-catalog-its-first-facet.md): the index gains its first non-title dimension — the topics a training declares, served as the catalog's facets; amended by [0071](0071-give-the-catalog-a-second-published-order.md): the index gains the training's own age, and a second published order over it |
 | [0060](0060-look-inside-the-column-a-search-has-to-read.md) | Look inside the column a search has to read | Accepted |
 | [0061](0061-give-the-poison-a-url-and-an-operator-a-way-back-in.md) | Give the poison a URL, and an operator a way back in | Accepted |
 | [0062](0062-let-the-proxy-forward-one-family-of-paths-without-a-token.md) | Let the proxy forward one family of paths without a token | Accepted — amended by [0063](0063-strip-the-metadata-before-the-bytes-are-stored.md): the precondition it named is met, and the portrait is published at an address carrying the photo's identity; amended by [0070](0070-open-a-trainers-public-page.md): the detail port gains the profile's reads — an offering trainer's page and portrait, visibility from the index as ever |
 | [0063](0063-strip-the-metadata-before-the-bytes-are-stored.md) | Strip the metadata before the bytes are stored, and publish only what was stripped | Accepted — amended by [0070](0070-open-a-trainers-public-page.md): the identifier this record would not hand out is handed out on purpose, now that a person has a page to be — the directory ADR 0055 withdrew stays withdrawn |
 | [0069](0069-give-the-catalog-its-first-facet.md) | Give the catalog its first facet | Accepted |
 | [0070](0070-open-a-trainers-public-page.md) | Open a trainer's public page | Accepted |
+| [0071](0071-give-the-catalog-a-second-published-order.md) | Give the catalog a second published order | Accepted |
+| [0072](0072-prerender-the-catalogs-routes.md) | Prerender the catalog's routes | Accepted |
 | [0064](0064-write-this-repository-in-american-english.md) | Write this repository in American English | Accepted — amended by [0066](0066-close-the-spelling-rules-selection-against-its-exemptions.md): the selection is closed against its exemptions, so a file governed by neither fails the build |
 | [0065](0065-ship-every-host-as-an-image-and-build-them-in-the-pipeline.md) | Ship every host as an image, and build them in the pipeline | Accepted — amended by [0067](0067-cache-the-image-layers-without-taking-a-dependency.md): the layer cache it turned down is taken, the objection having been the dependency rather than the caching; amended by [0068](0068-remove-the-image-layer-cache.md): the cache is removed on measurement, and building without one stands again |

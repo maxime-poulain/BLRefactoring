@@ -32,7 +32,7 @@ public sealed class LoginTests : ComponentTest
     public LoginTests()
     {
         Services.AddSingleton(_session.Object);
-        Services.AddSingleton(new BffAuthenticationStateProvider(
+        Services.AddSingleton<IAuthenticationStateNotifier>(new BffAuthenticationStateProvider(
             new StubHttpClientFactory(_ => new HttpResponseMessage(System.Net.HttpStatusCode.NoContent))));
 
         _session
@@ -54,10 +54,10 @@ public sealed class LoginTests : ComponentTest
     }
 
     /// <summary>
-    /// Sign in, no return address, goes to the catalog.
+    /// Sign in, no return address, goes to the trainings.
     /// </summary>
     [Fact]
-    public async Task SignIn_NoReturnAddress_GoesToTheCatalog()
+    public async Task SignIn_NoReturnAddress_GoesToTheTrainings()
     {
         // Act
         var navigation = await SignInWith(returnUrl: null);

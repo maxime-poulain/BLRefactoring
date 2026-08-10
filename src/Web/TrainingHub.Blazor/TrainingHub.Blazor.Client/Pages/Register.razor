@@ -2,8 +2,9 @@
 @using System.ComponentModel.DataAnnotations
 @using System.Linq
 @using System.Text.Json
+@using TrainingHub.Blazor.Client.Infrastructure
 @using TrainingHub.GeneratedClients
-@inject IAuthClient AuthClient
+@inject IBffSessionClient SessionClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -151,24 +152,28 @@
                 Lastname = _lastname
             };
 
-            await AuthClient.RegisterAsync(request);
+            // Through the BFF's own endpoint, not the generated client: /api/Auth/register sits
+            // behind the proxy's session-guarded route, and a visitor creating an account is the
+            // one caller who never has a session.
+            var problem = await SessionClient.RegisterAsync(request);
 
-            Snackbar.Add("Account created successfully! Please sign in.", Severity.Success);
-            NavigationManager.NavigateTo("/login");
-        }
-        catch (ApiException<ProblemDetails> ex)
-        {
+            if (problem is null)
+            {
+                Snackbar.Add("Account created successfully! Please sign in.", Severity.Success);
+                NavigationManager.NavigateTo("/login");
+                return;
+            }
+
             // Registration answers a problem document keyed by field, like every other validation
-            // failure this API publishes — it used to answer a bare IdentityError array, and this
-            // page was the only one in the application carrying a catch clause for that shape.
-            // The per-field messages are what the user needs ("Email 'x' is already taken."), so
-            // they are read out of the map rather than replaced by the generic title above it.
-            foreach (var message in ValidationMessages(ex.Result))
+            // failure this API publishes. The per-field messages are what the user needs
+            // ("Email 'x' is already taken."), so they are read out of the map rather than
+            // replaced by the generic title above it.
+            foreach (var message in ValidationMessages(problem))
             {
                 Snackbar.Add(message, Severity.Error);
             }
         }
-        catch (ApiException ex)
+        catch (HttpRequestException ex)
         {
             Console.Error.WriteLine(ex);
             Snackbar.Add("Registration is unavailable right now. Try again in a moment.", Severity.Error);

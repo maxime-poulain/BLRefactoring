@@ -33,6 +33,7 @@ namespace TrainingHub.Blazor.Bff.Tests;
 public sealed class BffTests : IDisposable
 {
     private const string LoginPath = "bff/login";
+    private const string RegisterPath = "bff/register";
     private const string UserPath = "bff/user";
     private const string LogoutPath = "bff/logout";
     private const string ForwardedPath = "api/Trainer/me";
@@ -73,6 +74,49 @@ public sealed class BffTests : IDisposable
         response.StatusCode.Should().Be(HttpStatusCode.OK,
             "the host stopped registering the browser's services — those describe the other side " +
             "of this one, and registering them collided with its own API client");
+    }
+
+    /// <summary>
+    /// The catalog page is prerendered for a visitor with no session.
+    /// </summary>
+    /// <remarks>
+    /// The whole point of ADR 0072, observed from outside: the response to a plain GET carries the
+    /// page's own words as HTML, before any WebAssembly runs — which is all a crawler ever reads.
+    /// It doubles as the proof that the host can resolve everything the page and the layout
+    /// inject, which is the half of prerendering that fails at runtime rather than at build time.
+    /// </remarks>
+    [Fact]
+    public async Task The_catalog_page_is_prerendered_for_a_visitor_with_no_session()
+    {
+        var response = await _browser.GetAsync("/catalog");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var html = await response.Content.ReadAsStringAsync();
+
+        html.Should().Contain("Trainings on offer",
+            "the catalog's first paint is served as HTML, for the crawler ADR 0062 invited (ADR 0072)");
+    }
+
+    /// <summary>
+    /// The home page is not prerendered.
+    /// </summary>
+    /// <remarks>
+    /// The other half of the closed set: everything outside the catalog keeps prerender off,
+    /// because those screens are interactive controls behind a sign-in and a prerendered pass
+    /// renders them inert. The landing page's words arrive only once WebAssembly boots, so their
+    /// absence from the raw HTML is what "off" looks like from outside.
+    /// </remarks>
+    [Fact]
+    public async Task The_home_page_is_not_prerendered()
+    {
+        var response = await _browser.GetAsync("/");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (await response.Content.ReadAsStringAsync()).Should().NotContain("Trainers publish trainings",
+            "outside the catalog the first paint is the WebAssembly boot, not a prerendered form " +
+            "that drops clicks (ADR 0072)");
     }
 
     /// <summary>
@@ -192,6 +236,78 @@ public sealed class BffTests : IDisposable
         var response = await SignInAsync();
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    // ---------------------------------------------------------------- registering
+
+    /// <summary>
+    /// Registration is open to a visitor who has never signed in.
+    /// </summary>
+    /// <remarks>
+    /// The defect this fact was written against: the registration page used to call
+    /// <c>/api/Auth/register</c>, which the proxy's catch-all route answers with a 401 for anyone
+    /// without a session — and creating an account is the one thing a visitor with a session never
+    /// does. The BFF now owns the call, beside sign-in, so the proxy's anonymous family stays
+    /// exactly the catalog's (ADR 0062).
+    /// </remarks>
+    [Fact]
+    public async Task Registration_is_open_to_a_visitor_who_has_never_signed_in()
+    {
+        _factory.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.Created);
+
+        var response = await SendAsync(HttpMethod.Post, RegisterPath, Registration());
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var forwarded = _factory.LoginApi.Requests.Should().ContainSingle().Subject;
+
+        forwarded.Uri!.AbsolutePath.Should().Be("/Auth/register");
+        forwarded.Authorization.Should().BeNull("a visitor creating an account has no credential to send");
+    }
+
+    /// <summary>
+    /// Registration passes the apis problem document through.
+    /// </summary>
+    /// <remarks>
+    /// The opposite of sign-in's rule. A login failure's document describes a call the browser
+    /// never made, so only the status is passed; a registration failure's document describes the
+    /// very fields the browser submitted — a taken email, a refused password — and the form reads
+    /// the per-field messages out of it.
+    /// </remarks>
+    [Fact]
+    public async Task Registration_passes_the_apis_problem_document_through()
+    {
+        const string Problem =
+            """{"title":"One or more validation errors occurred.","status":409,"errors":{"Email":["Email 'alice@example.com' is already taken."]}}""";
+
+        _factory.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.Conflict)
+        {
+            Content = new StringContent(Problem, System.Text.Encoding.UTF8, "application/problem+json")
+        };
+
+        var response = await SendAsync(HttpMethod.Post, RegisterPath, Registration());
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        response.Content.Headers.ContentType!.MediaType.Should().Be("application/problem+json");
+        (await response.Content.ReadAsStringAsync()).Should().Contain("already taken",
+            "the per-field messages are what the form renders, and they exist nowhere but in this document");
+    }
+
+    /// <summary>
+    /// Registration without the application header never reaches the api.
+    /// </summary>
+    [Fact]
+    public async Task Registration_without_the_application_header_never_reaches_the_api()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, RegisterPath)
+        {
+            Content = Registration()
+        };
+
+        var response = await _browser.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        _factory.LoginApi.Requests.Should().BeEmpty();
     }
 
     // ---------------------------------------------------------------- identity
@@ -622,6 +738,17 @@ public sealed class BffTests : IDisposable
 
     private static HttpContent Credentials() =>
         JsonContent.Create(new { username = "alice", password = "Password1!" });
+
+    private static HttpContent Registration() =>
+        JsonContent.Create(new
+        {
+            username = "alice",
+            email = "alice@example.com",
+            password = "Password1!",
+            confirmPassword = "Password1!",
+            firstname = "Alice",
+            lastname = "Martin"
+        });
 
     /// <summary>The ticket inside the session cookie, opened with the host's own format.</summary>
     private AuthenticationTicket Unprotect(string setCookie)

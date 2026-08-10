@@ -1,7 +1,9 @@
 @page "/catalog"
 @using TrainingHub.GeneratedClients
+@implements IDisposable
 @inject ICatalogClient CatalogClient
 @inject ISnackbar Snackbar
+@inject PersistentComponentState ApplicationState
 
 @* No [Authorize], and it is the only routed page here without one. ADR 0059 built the index and
    gave it an anonymous endpoint; ADR 0062 gave the endpoint a face and taught the proxy to forward
@@ -51,6 +53,27 @@
                 }
             </MudStack>
         }
+
+        @* The catalog's two published orders (ADR 0071): by title, the default a visitor scans,
+           and newest first, the training's own age. A closed pair of chips rather than a sortable
+           table header, because the order is a named question the server answers — not a column
+           to click. *@
+        <MudStack Row="true" Spacing="1" Class="mt-3">
+            <MudChip T="string"
+                     Size="Size.Small"
+                     Color="@(_newestFirst ? Color.Default : Color.Primary)"
+                     Variant="@(_newestFirst ? Variant.Outlined : Variant.Filled)"
+                     OnClick="@(() => OnOrderChangedAsync(newestFirst: false))">
+                A–Z
+            </MudChip>
+            <MudChip T="string"
+                     Size="Size.Small"
+                     Color="@(_newestFirst ? Color.Primary : Color.Default)"
+                     Variant="@(_newestFirst ? Variant.Filled : Variant.Outlined)"
+                     OnClick="@(() => OnOrderChangedAsync(newestFirst: true))">
+                Newest
+            </MudChip>
+        </MudStack>
     </MudPaper>
 
     @if (_isLoading)
@@ -105,20 +128,62 @@
     // field refuses it here instead — the same reading the administrative screens give.
     private const int TermMaxLength = 100;
 
+    // The keys the prerendered answers travel under, from the server's pass to the WebAssembly
+    // one (ADR 0072). Only the landing question is persisted — no term, no topic, page one —
+    // because that is the only question a prerender is ever asked.
+    private const string PageKey = "catalog-page";
+    private const string FacetsKey = "catalog-facets";
+
     private PagedHttpResponseOfCatalogTrainingHttpResponse? _page;
     private List<CatalogTopicHttpResponse>? _facets;
     private string? _term;
     private string? _topic;
+    private bool _newestFirst;
     private int _currentPage = 1;
     private bool _isLoading = true;
+    private PersistingComponentStateSubscription _persisting;
+
+    // What the contract calls the non-default order. The default travels as no parameter at all,
+    // so the address of an unsorted catalog stays what it always was.
+    private string? Sort => _newestFirst ? "newest" : null;
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
+        _persisting = ApplicationState.RegisterOnPersisting(Persist);
+
+        // The prerendered pass already asked; taking its answer is what keeps the first paint
+        // from being replaced by a spinner and the API from being asked twice (ADR 0072).
+        if (ApplicationState.TryTakeFromJson<PagedHttpResponseOfCatalogTrainingHttpResponse?>(
+                PageKey, out var prerendered)
+            && prerendered is not null)
+        {
+            ApplicationState.TryTakeFromJson(FacetsKey, out _facets);
+            _page = prerendered;
+            _isLoading = false;
+            return;
+        }
+
         await LoadFacetsAsync();
         await LoadAsync();
         StateHasChanged();
     }
+
+    private Task Persist()
+    {
+        // A failed load is not an answer to hand over: the interactive pass should ask again
+        // rather than inherit a snackbar it never showed.
+        if (_page is not null)
+        {
+            ApplicationState.PersistAsJson(PageKey, _page);
+            ApplicationState.PersistAsJson(FacetsKey, _facets);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public void Dispose() => _persisting.Dispose();
 
     private async Task OnTermChangedAsync(string? term)
     {
@@ -141,6 +206,18 @@
         await LoadAsync();
     }
 
+    private async Task OnOrderChangedAsync(bool newestFirst)
+    {
+        if (_newestFirst == newestFirst)
+        {
+            return;
+        }
+
+        _newestFirst = newestFirst;
+        _currentPage = 1;
+        await LoadAsync();
+    }
+
     private async Task LoadFacetsAsync()
     {
         try
@@ -160,12 +237,12 @@
         _isLoading = true;
         try
         {
-            _page = await CatalogClient.SearchTrainingsAsync(_term, _topic, _currentPage, null);
+            _page = await CatalogClient.SearchTrainingsAsync(_term, _topic, Sort, _currentPage, null);
 
             if (_currentPage > _page.TotalPages)
             {
                 _currentPage = _page.TotalPages;
-                _page = await CatalogClient.SearchTrainingsAsync(_term, _topic, _currentPage, null);
+                _page = await CatalogClient.SearchTrainingsAsync(_term, _topic, Sort, _currentPage, null);
             }
         }
         catch (Exception)

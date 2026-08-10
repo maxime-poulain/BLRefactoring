@@ -43,6 +43,16 @@ public sealed class TrainingSearchEntry
     /// <summary>The title as a visitor reads it, unfolded and uncased.</summary>
     public string Title { get; private set; }
 
+    /// <summary>
+    /// When the training was created — the training's own age, read back from the write model.
+    /// </summary>
+    /// <remarks>
+    /// A fact about the training rather than about this read model: the day the indexer happened
+    /// to write this row would reshuffle after every replay, where the training's age never moves
+    /// (ADR 0071). It is what "newest first" orders on.
+    /// </remarks>
+    public DateTime CreatedOnUtc { get; private set; }
+
     /// <summary>Whether the training itself is published.</summary>
     public bool IsPublished { get; private set; }
 
@@ -60,6 +70,7 @@ public sealed class TrainingSearchEntry
     /// </summary>
     /// <param name="trainerId">The trainer the training is filed under.</param>
     /// <param name="title">The title as a visitor reads it.</param>
+    /// <param name="createdOnUtc">When the training was created, from the write model.</param>
     /// <param name="isPublished">Whether the training itself is published.</param>
     /// <param name="isTrainerHidden">Whether its owner's catalog is out of public view.</param>
     /// <param name="terms">The tokens the title yields.</param>
@@ -72,6 +83,7 @@ public sealed class TrainingSearchEntry
     public void Describe(
         Guid trainerId,
         string title,
+        DateTime createdOnUtc,
         bool isPublished,
         bool isTrainerHidden,
         IEnumerable<string> terms,
@@ -82,6 +94,7 @@ public sealed class TrainingSearchEntry
 
         TrainerId = trainerId;
         Title = title;
+        CreatedOnUtc = createdOnUtc;
         IsPublished = isPublished;
         IsTrainerHidden = isTrainerHidden;
 

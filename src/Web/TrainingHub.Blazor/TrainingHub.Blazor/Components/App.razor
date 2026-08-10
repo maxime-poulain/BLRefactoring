@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -9,35 +9,59 @@
     <link href=@Assets["_content/MudBlazor/MudBlazor.min.css"] rel="stylesheet"/>
     <ImportMap/>
 @*
-    Prerendering is deliberately off, here and on Routes below.
+    Prerendering is decided here, per request, and the decision is ADR 0072's: the catalog's
+    routes prerender, nothing else does.
 
-    It used to be impossible: the JWT lived in the browser's localStorage, which the server
-    cannot read, and every render resolved the authentication state through a JS interop call
-    that throws when there is no browser. ADR 0009 removed that obstacle — the identity is now
-    a cookie this host reads, so it does know the caller at render time.
+    The three routes under /catalog are the application's public face — the pages ADR 0062 opened
+    to a visitor with no account, and the only ones a crawler is meant to read. They are pages of
+    content: what they show is fetched in OnInitializedAsync and handed to the interactive pass
+    through PersistentComponentState, so the first paint is the real page rather than a spinner,
+    and the WebAssembly boot does not fetch it again.
 
-    What remains is the reason that was always the stronger one. The pages are built on
-    interactive MudBlazor controls, which a prerendered pass renders inert: a login form the
-    user can see and type into but that silently drops the click until WebAssembly boots. The
-    pages that load data do so in OnInitializedAsync, which prerendering runs twice — once
-    server-side, for a first paint that is replaced moments later.
-
-    A second reason used to sit beside it — the application was entirely behind authentication,
-    so there was no SEO to gain. ADR 0062 makes that half false: /catalog and /catalog/{id}
-    are public, and a public catalog is exactly the kind of page a crawler is meant to read.
-    The half that decided is untouched, and it is the one above.
-
-    So the question is genuinely open now, and narrower than it was: prerendering these two
-    routes and no others. It is a decision about perceived performance and discoverability, to
-    be made against a measurement. It is not made here.
+    Everything else keeps prerender off, for the reason this comment has always carried: those
+    pages are interactive MudBlazor controls behind a sign-in, and a prerendered pass renders them
+    inert — a login form the user can see and type into but that silently drops the click until
+    WebAssembly boots. There is also nobody to render them for: a crawler has no cookie.
 *@
-    <HeadOutlet @rendermode="new InteractiveWebAssemblyRenderMode(prerender: false)"/>
+    <HeadOutlet @rendermode="PageRenderMode"/>
 </head>
 
 <body>
-<Routes @rendermode="new InteractiveWebAssemblyRenderMode(prerender: false)"/>
+<Routes @rendermode="PageRenderMode"/>
 <script src="_framework/blazor.web.js"></script>
 <script src=@Assets["_content/MudBlazor/MudBlazor.min.js"]></script>
 </body>
 
 </html>
+
+@code {
+    /// <summary>
+    /// The request being answered. Present here because this component renders statically, once
+    /// per request — which is exactly why it is the one place that can decide per address.
+    /// </summary>
+    [CascadingParameter]
+    public HttpContext? HttpContext { get; set; }
+
+    /// <summary>
+    /// One mode for both outlets: <c>HeadOutlet</c> and <c>Routes</c> must agree, or the head's
+    /// content is written twice.
+    /// </summary>
+    private InteractiveWebAssemblyRenderMode PageRenderMode =>
+        new(prerender: IsCatalogRoute);
+
+    /// <summary>
+    /// Whether the address is one of the catalog's routes: <c>/catalog</c> itself, or anything
+    /// beneath it — the training's page and the trainer's profile (ADR 0062, ADR 0070).
+    /// </summary>
+    private bool IsCatalogRoute
+    {
+        get
+        {
+            var path = HttpContext?.Request.Path.Value;
+
+            return path is not null
+                   && (string.Equals(path, "/catalog", StringComparison.OrdinalIgnoreCase)
+                       || path.StartsWith("/catalog/", StringComparison.OrdinalIgnoreCase));
+        }
+    }
+}

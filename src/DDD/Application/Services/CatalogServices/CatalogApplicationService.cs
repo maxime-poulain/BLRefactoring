@@ -18,19 +18,17 @@ namespace TrainingHub.DDD.Application.Services.CatalogServices;
 public interface ICatalogApplicationService
 {
     /// <summary>
-    /// One page of the offered catalog, narrowed by a term and a topic when there are any.
+    /// One page of the offered catalog, narrowed by a term and a topic when there are any, in one
+    /// of the catalog's two published orders (ADR 0071).
     /// </summary>
-    /// <param name="term">What to look for, or nothing at all.</param>
-    /// <param name="topic">
-    /// The canonical name of a topic to browse, or nothing at all. The boundary refuses a name the
-    /// domain does not spell before this service sees it (ADR 0069).
+    /// <param name="request">
+    /// The question, whole: term, topic, order and page. The boundary refuses a topic the domain
+    /// does not spell and an order the catalog does not publish before this service sees either
+    /// (ADR 0069, ADR 0071).
     /// </param>
-    /// <param name="paging">The page asked for.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     Task<PagedResult<CatalogTrainingDto>> SearchAsync(
-        string? term,
-        string? topic,
-        PageRequest paging,
+        CatalogSearchRequest request,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -120,11 +118,14 @@ public sealed class CatalogApplicationService(
 {
     /// <inheritdoc />
     public async Task<PagedResult<CatalogTrainingDto>> SearchAsync(
-        string? term,
-        string? topic,
-        PageRequest paging,
-        CancellationToken cancellationToken = default) =>
-        await trainingSearch.SearchAsync(term, topic, paging, cancellationToken);
+        CatalogSearchRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        return await trainingSearch.SearchAsync(
+            request.Term, request.Topic, request.Order, request.Paging, cancellationToken);
+    }
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<TopicFacetDto>> GetFacetsAsync(

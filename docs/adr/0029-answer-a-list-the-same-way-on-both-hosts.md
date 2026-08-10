@@ -1,6 +1,6 @@
 # 0029 — Answer a list the same way on both hosts
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0071](0071-give-the-catalog-a-second-published-order.md): the shared list contract gains a sort parameter — the same closed set of orders on both hosts
 - **Date:** 2026-08-04
 
 ## Context

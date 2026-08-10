@@ -19,12 +19,22 @@
                 <MudText Typo="Typo.body2" Class="mb-4">
                     Review your trainings, publish a new one, or edit one you already offer.
                 </MudText>
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           Href="/trainings"
-                           StartIcon="@Icons.Material.Filled.School">
-                    Go to trainings
-                </MudButton>
+                <MudStack Row="true" Spacing="2">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Href="/trainings"
+                               StartIcon="@Icons.Material.Filled.School">
+                        Go to trainings
+                    </MudButton>
+                    @* A trainer is a visitor too: the catalog shows them their own trainings the
+                       way everyone else sees them (ADR 0062). *@
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Href="/catalog"
+                               StartIcon="@Icons.Material.Filled.Storefront">
+                        Browse the catalog
+                    </MudButton>
+                </MudStack>
             </MudPaper>
         </Authorized>
         <NotAuthorized>

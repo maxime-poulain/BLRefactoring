@@ -101,6 +101,76 @@ public sealed class BffSessionClientTests
     }
 
     /// <summary>
+    /// Register, accepted, answers no problem and posts to the BFF's own endpoint.
+    /// </summary>
+    /// <remarks>
+    /// The address is the defect this method was written against: the generated client's
+    /// <c>/api/Auth/register</c> is behind the proxy's session-guarded route, and a visitor
+    /// creating an account never has a session.
+    /// </remarks>
+    [Fact]
+    public async Task Register_Accepted_AnswersNoProblemAndPostsToTheBffsOwnEndpoint()
+    {
+        // Arrange
+        var factory = new StubHttpClientFactory(_ => Status(HttpStatusCode.Created));
+
+        // Act
+        var problem = await new BffSessionClient(factory).RegisterAsync(Registration());
+
+        // Assert
+        problem.Should().BeNull();
+        factory.Requests.Should().ContainSingle().Which.Should().Match<HttpRequestMessage>(
+            request => request.Method == HttpMethod.Post
+                       && request.RequestUri!.AbsolutePath == "/bff/register");
+    }
+
+    /// <summary>
+    /// Register, refused, answers the problem document rather than throwing.
+    /// </summary>
+    /// <remarks>
+    /// A refusal is an ordinary answer here — a taken email, a password the rules decline — and
+    /// the per-field messages inside the document are what the page renders. Throwing would turn
+    /// every validation verdict into an outage banner.
+    /// </remarks>
+    [Fact]
+    public async Task Register_Refused_AnswersTheProblemDocumentRatherThanThrowing()
+    {
+        // Arrange
+        const string Problem =
+            """{"title":"One or more validation errors occurred.","status":409,"errors":{"Email":["Email 'john@example.com' is already taken."]}}""";
+
+        var factory = new StubHttpClientFactory(_ => new HttpResponseMessage(HttpStatusCode.Conflict)
+        {
+            Content = new StringContent(Problem, System.Text.Encoding.UTF8, "application/problem+json")
+        });
+
+        // Act
+        var document = await new BffSessionClient(factory).RegisterAsync(Registration());
+
+        // Assert
+        document.Should().NotBeNull();
+        document.Title.Should().Be("One or more validation errors occurred.");
+        document.AdditionalProperties.Should().ContainKey("errors",
+            "the per-field map is the part of the document the form reads");
+    }
+
+    /// <summary>
+    /// Register, the BFF failed without a document, throws rather than reading as a refusal.
+    /// </summary>
+    [Fact]
+    public async Task Register_TheBffFailedWithoutADocument_ThrowsRatherThanReadingAsARefusal()
+    {
+        // Arrange
+        var client = new BffSessionClient(new StubHttpClientFactory(_ => Status(HttpStatusCode.BadGateway)));
+
+        // Act
+        var act = async () => await client.RegisterAsync(Registration());
+
+        // Assert
+        await act.Should().ThrowAsync<HttpRequestException>();
+    }
+
+    /// <summary>
     /// Logout, the session had already expired, succeeds.
     /// </summary>
     /// <remarks>
@@ -142,4 +212,14 @@ public sealed class BffSessionClientTests
     }
 
     private static HttpResponseMessage Status(HttpStatusCode status) => new(status);
+
+    private static TrainingHub.GeneratedClients.RegisterHttpRequest Registration() => new()
+    {
+        Username = "john",
+        Email = "john@example.com",
+        Password = "Passw0rd!",
+        ConfirmPassword = "Passw0rd!",
+        Firstname = "John",
+        Lastname = "Doe"
+    };
 }

@@ -63,6 +63,9 @@ public sealed class HomeTests : ComponentTest
             "the name comes from the cookie's own claims, and a blank greeting is how a broken " +
             "claim mapping would look");
         Link(page, "Go to trainings").Should().Be("/trainings");
+        Link(page, "Browse the catalog").Should().Be("/catalog",
+            "a trainer is a visitor too: the catalog shows them their own trainings the way " +
+            "everyone else sees them (ADR 0062)");
 
         page.Markup.Should().NotContain("Sign in to publish",
             "a signed-in trainer is not invited to sign in again");

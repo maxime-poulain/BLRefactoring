@@ -7,9 +7,11 @@ namespace TrainingHub.Shared.Infrastructure.Pagination;
 /// The orders every paged read uses, each defined once and named for what a caller gets.
 /// </summary>
 /// <remarks>
-/// One for the aggregates and one for the search index, and no third without an argument: a total
+/// One for the aggregates and two for the search index, and no fourth without an argument: a total
 /// order is a correctness property rather than a preference, so the way to add one is to explain
-/// why the existing one does not fit.
+/// why the existing ones do not fit — which is what ADR 0071 does for the second of the index's
+/// pair, and why the index's orders are a closed set a caller chooses from rather than a sort
+/// expression it composes.
 /// <para>
 /// The aggregates' is newest first, which is what a list of content is expected to show, and then
 /// by identifier.
@@ -81,10 +83,12 @@ public static class QueryableOrderingExtensions
     /// </summary>
     /// <remarks>
     /// The second order in this repository, and the exception is argued rather than assumed. The
-    /// index is not made of aggregates: it holds no <c>CreatedOn</c>, because the day a document was
-    /// written into a read model is a fact about the read model rather than about the training, and
-    /// a catalog sorted by when the indexer happened to reach a row would reshuffle itself after
-    /// every replay. A title is what a visitor scans, so a title is what it sorts on.
+    /// index is not made of aggregates, and the day a document was written into a read model is a
+    /// fact about the read model rather than about the training — a catalog sorted by when the
+    /// indexer happened to reach a row would reshuffle itself after every replay. A title is what
+    /// a visitor scans, so a title is the default it sorts on; the age its sibling below sorts on
+    /// is the <em>training's</em> own, read back from the write model, which no replay moves
+    /// (ADR 0071).
     /// <para>
     /// The tie-break is the same decision <see cref="NewestFirst{TAggregate,TEntityId}"/> makes and
     /// matters more here: two trainers may legitimately offer the same title — the uniqueness index
@@ -103,6 +107,33 @@ public static class QueryableOrderingExtensions
 
         return source
             .OrderBy(entry => entry.Title)
+            .ThenBy(entry => entry.TrainingId);
+    }
+
+    /// <summary>
+    /// Orders search index entries newest training first, ties broken by identifier.
+    /// </summary>
+    /// <remarks>
+    /// The third order, and the argument the class doc demands is ADR 0071's: what a visitor asking
+    /// for "newest" is owed is the training's age, not the row's — the entry carries the training's
+    /// own <c>CreatedOn</c>, read back from the write model beside the title, so a re-index rewrites
+    /// the same instant rather than a new one. A training that was withdrawn and republished keeps
+    /// its age for the same reason: it is back, not new.
+    /// <para>
+    /// The tie-break is the identifier, as everywhere: creation instants collide at the platform's
+    /// timer interval, and a tied pair left to the server's whim is a row on two pages or on none
+    /// (ADR 0001). Descending on age, ascending on the tie — the pair the
+    /// <c>IX_TrainingSearchEntry_OfferedNewest</c> index stores.
+    /// </para>
+    /// </remarks>
+    /// <param name="source">The query to order, already filtered.</param>
+    public static IOrderedQueryable<TrainingSearchEntry> NewestOnOffer(
+        this IQueryable<TrainingSearchEntry> source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        return source
+            .OrderByDescending(entry => entry.CreatedOnUtc)
             .ThenBy(entry => entry.TrainingId);
     }
 }

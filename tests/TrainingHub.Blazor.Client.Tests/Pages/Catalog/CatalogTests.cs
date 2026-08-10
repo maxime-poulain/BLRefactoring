@@ -28,7 +28,7 @@ public sealed class CatalogTests : ComponentTest
 
         _catalog
             .Setup(client => client.SearchTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
             .ReturnsAsync(Page(totalCount: 0));
     }
 
@@ -40,7 +40,7 @@ public sealed class CatalogTests : ComponentTest
     {
         Render<CatalogPage>();
 
-        _catalog.Verify(client => client.SearchTrainingsAsync(null, null, 1, null), Times.Once);
+        _catalog.Verify(client => client.SearchTrainingsAsync(null, null, null, 1, null), Times.Once);
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public sealed class CatalogTests : ComponentTest
 
         _catalog
             .Setup(client => client.SearchTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
             .ReturnsAsync(Page(totalCount: 1, Offered(trainingId, "Domain Driven Design")));
 
         var page = Render<CatalogPage>();
@@ -99,7 +99,7 @@ public sealed class CatalogTests : ComponentTest
         page.Find("input").Input("domain");
 
         page.WaitForAssertion(() => _catalog.Verify(
-            client => client.SearchTrainingsAsync("domain", null, 1, null),
+            client => client.SearchTrainingsAsync("domain", null, null, 1, null),
             Times.Once));
     }
 
@@ -111,7 +111,7 @@ public sealed class CatalogTests : ComponentTest
     {
         _catalog
             .Setup(client => client.SearchTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
             .ThrowsAsync(new HttpRequestException("no route to host"));
 
         Render<CatalogPage>();
@@ -160,7 +160,7 @@ public sealed class CatalogTests : ComponentTest
         Chip(page, "Programming").Click();
 
         page.WaitForAssertion(() => _catalog.Verify(
-            client => client.SearchTrainingsAsync(null, "Programming", 1, null),
+            client => client.SearchTrainingsAsync(null, "Programming", null, 1, null),
             Times.Once));
     }
 
@@ -185,8 +185,29 @@ public sealed class CatalogTests : ComponentTest
         Chip(page, "Programming").Click();
 
         page.WaitForAssertion(() => _catalog.Verify(
-            client => client.SearchTrainingsAsync(null, null, 1, null),
+            client => client.SearchTrainingsAsync(null, null, null, 1, null),
             Times.Exactly(2)));
+    }
+
+    /// <summary>
+    /// Clicking the newest chip, asks the server for that order on the first page.
+    /// </summary>
+    /// <remarks>
+    /// The page reset is the half worth pinning, as for the term and the topic: a reordered list
+    /// is a different walk, and page four of one order says nothing about page four of the other
+    /// (ADR 0071). The default order travels as no parameter at all, which the render's own
+    /// verify above already pins.
+    /// </remarks>
+    [Fact]
+    public void ClickingTheNewestChip_AsksTheServerForThatOrderOnTheFirstPage()
+    {
+        var page = Render<CatalogPage>();
+
+        Chip(page, "Newest").Click();
+
+        page.WaitForAssertion(() => _catalog.Verify(
+            client => client.SearchTrainingsAsync(null, null, "newest", 1, null),
+            Times.Once));
     }
 
     private static AngleSharp.Dom.IElement Chip(

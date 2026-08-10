@@ -32,6 +32,11 @@ public abstract class ComponentTest : BunitContext, IAsyncLifetime
 
         Services.AddMudServices();
 
+        // The catalog's pages hand their prerendered answer to the interactive pass through
+        // PersistentComponentState (ADR 0072). Here there is no prerender, so the store starts
+        // empty and every page simply fetches — which is exactly the browser's cold path.
+        this.AddBunitPersistentComponentState();
+
         // Every page of the trainer's space now asks where its caller stands, and the layout's
         // banner asks the same source (ADR 0057). Active by default, so a suite that is not about
         // the sanction says nothing about it; the suites that are override this.

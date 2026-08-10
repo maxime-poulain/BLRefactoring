@@ -63,6 +63,7 @@ public sealed class TrainingSearchIndexer(TrainingContext trainingContext) : ITr
         entry.Describe(
             document.TrainerId,
             document.Title,
+            document.CreatedOn,
             document.IsPublished,
             document.IsTrainerHidden,
             SearchTerms.Of(document.Title),
@@ -142,6 +143,7 @@ public sealed class TrainingSearchIndexer(TrainingContext trainingContext) : ITr
             .Select(candidate => new
             {
                 Title = candidate.Title.Value,
+                candidate.CreatedOn,
                 IsPublished = candidate.Status == TrainingStatus.Published,
                 Topics = candidate.Topics.Select(topic => topic.Name).ToList()
             })
@@ -161,13 +163,19 @@ public sealed class TrainingSearchIndexer(TrainingContext trainingContext) : ITr
             .ConfigureAwait(false);
 
         return new SearchDocument(
-            trainerId, training.Title, training.IsPublished, isTrainerHidden, training.Topics);
+            trainerId,
+            training.Title,
+            training.CreatedOn,
+            training.IsPublished,
+            isTrainerHidden,
+            training.Topics);
     }
 
     /// <summary>What one fact makes the index know about one training.</summary>
     private sealed record SearchDocument(
         Guid TrainerId,
         string Title,
+        DateTime CreatedOn,
         bool IsPublished,
         bool IsTrainerHidden,
         IReadOnlyList<string> Topics);

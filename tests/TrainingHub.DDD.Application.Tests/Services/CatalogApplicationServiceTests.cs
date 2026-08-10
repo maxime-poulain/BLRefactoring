@@ -24,23 +24,31 @@ public sealed class CatalogApplicationServiceTests
     private readonly Mock<ICatalogDetailQuery> _catalogDetail = new();
 
     /// <summary>
-    /// Search async, a term and a page, asks the index for exactly those.
+    /// Search async, a whole question, asks the index for exactly it.
     /// </summary>
     [Fact]
-    public async Task SearchAsync_ATermAndAPage_AsksTheIndexForExactlyThose()
+    public async Task SearchAsync_AWholeQuestion_AsksTheIndexForExactlyIt()
     {
         var paging = new PageRequest { Page = 2, PageSize = 10 };
 
         _trainingSearch
-            .Setup(search => search.SearchAsync(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
+            .Setup(search => search.SearchAsync(
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CatalogOrder>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PagedResult<CatalogTrainingDto>([], 2, 10, 0));
 
         var sut = new CatalogApplicationService(_trainingSearch.Object, _catalogDetail.Object);
 
-        await sut.SearchAsync("domain", "Programming", paging);
+        await sut.SearchAsync(new CatalogSearchRequest
+        {
+            Term = "domain",
+            Topic = "Programming",
+            Order = CatalogOrder.Newest,
+            Paging = paging
+        });
 
         _trainingSearch.Verify(
-            search => search.SearchAsync("domain", "Programming", paging, It.IsAny<CancellationToken>()),
+            search => search.SearchAsync(
+                "domain", "Programming", CatalogOrder.Newest, paging, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -61,12 +69,13 @@ public sealed class CatalogApplicationServiceTests
             TotalCount: 1);
 
         _trainingSearch
-            .Setup(search => search.SearchAsync(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
+            .Setup(search => search.SearchAsync(
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CatalogOrder>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(answered);
 
         var sut = new CatalogApplicationService(_trainingSearch.Object, _catalogDetail.Object);
 
-        var page = await sut.SearchAsync(term: null, topic: null, new PageRequest());
+        var page = await sut.SearchAsync(new CatalogSearchRequest());
 
         page.Should().BeSameAs(answered);
     }

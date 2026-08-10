@@ -39,5 +39,12 @@ public sealed class SearchCatalogQueryValidator : AbstractValidator<SearchCatalo
             .Must(topic => Topic.TryFromName(topic, out _))
             .When(query => query.Topic is not null)
             .WithMessage("A topic filter must name a topic this catalog knows.");
+
+        // The boundary translates a sort name to a member and refuses the rest, but an enum is
+        // only a promise at a dispatcher: any integer casts into one, so the closed set is
+        // asserted here too (ADR 0046, ADR 0071).
+        RuleFor(query => query.Order)
+            .IsInEnum()
+            .WithMessage("An order must be one the catalog publishes.");
     }
 }

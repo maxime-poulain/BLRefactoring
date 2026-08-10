@@ -29,6 +29,7 @@ public sealed class TrainingSearchQuery(TrainingContext trainingContext) : ITrai
     public async Task<PagedResult<CatalogTrainingDto>> SearchAsync(
         string? term,
         string? topic,
+        CatalogOrder order,
         PageRequest paging,
         CancellationToken cancellationToken = default)
     {
@@ -61,8 +62,13 @@ public sealed class TrainingSearchQuery(TrainingContext trainingContext) : ITrai
                 entry.Terms.Any(candidate => EF.Functions.Like(candidate.Term, word + "%")));
         }
 
-        return await entries
-            .AlphabeticallyByTitle()
+        // One of two named orders, both defined once in QueryableOrderingExtensions and both
+        // total (ADR 0071) — never a sort expression a caller composed.
+        var ordered = order == CatalogOrder.Newest
+            ? entries.NewestOnOffer()
+            : entries.AlphabeticallyByTitle();
+
+        return await ordered
             .ToPagedResultAsync(
                 entry => new CatalogTrainingDto
                 {

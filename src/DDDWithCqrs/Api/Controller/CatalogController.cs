@@ -44,7 +44,8 @@ public sealed class CatalogController(IQueryDispatcher queryDispatcher) : Catalo
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
     /// <returns>
     /// 200 OK with one page of trainings on offer.
-    /// 400 Bad Request when the term is too long, the topic is unknown or the page is out of range.
+    /// 400 Bad Request when the term is too long, the topic or the sort is unknown, or the page is
+    /// out of range.
     /// </returns>
     [HttpGet("trainings")]
     [ProducesResponseType(typeof(PagedHttpResponse<CatalogTrainingHttpResponse>), StatusCodes.Status200OK)]
