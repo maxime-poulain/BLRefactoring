@@ -131,6 +131,90 @@ services:
       mailpit:
         condition: service_healthy
 
+  # The same use cases, written the other way — commands and queries rather than application
+  # services — over the same domain and the same database. Its environment is ddd-api's, because
+  # the two hosts differ in how they are written and in nothing else.
+  cqrs-api:
+    build:
+      context: .
+      dockerfile: src/DDDWithCqrs/Api/Dockerfile
+    container_name: cqrs-api
+    ports:
+      - "5086:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__TrainingContext=Server=sqlserver;Database=TrainingHub;User Id=sa;Password=Password@;TrustServerCertificate=True;MultipleActiveResultSets=True
+      - Jwt__Key=<(_aHuci8-$=j0J}c>Y{}J?msu3Xe;W*
+      - Jwt__Issuer=TrainingHub.Api
+      - Jwt__Audience=TrainingHub.Web
+      - Jwt__ExpireMinutes=60
+      - ObjectStorage__ServiceUrl=http://seaweedfs:8333
+      - ObjectStorage__BucketName=blrefactoring
+      - ObjectStorage__AccessKey=blrefactoring
+      - ObjectStorage__SecretKey=blrefactoring
+      - ObjectStorage__CreateBucketOnStartup=true
+      - Smtp__Host=mailpit
+      - Smtp__Port=1025
+      - Smtp__SenderAddress=no-reply@traininghub.local
+      - Smtp__SenderName=TrainingHub
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    depends_on:
+      # After ddd-api is healthy, rather than beside it, and the three dependencies below are not
+      # the reason. In Development both hosts apply their migrations at startup (ADR 0003) against
+      # one database, so starting them together is the race on DDL that record names as the reason
+      # not to migrate from the process serving requests. Ordered, the migrations run once and this
+      # host finds nothing pending. A database per host would end the race and end the
+      # demonstration with it: the two stacks exist to serve the same domain.
+      ddd-api:
+        condition: service_healthy
+      sqlserver:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+
+  # The backend for frontend, and the only container a browser opens.
+  bff:
+    build:
+      context: .
+      dockerfile: src/Web/TrainingHub.Blazor/TrainingHub.Blazor/Dockerfile
+    container_name: bff
+    ports:
+      - "7068:8443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      # Plain HTTP, and correctly so: this is server to server inside the compose network, carries
+      # no cookie and no browser. The hop that needs TLS is the one below, which a browser makes.
+      - Api__BaseAddress=http://ddd-api:8080
+      # The session cookie is `__Host-bff` with Secure always on, so a browser refuses to store it
+      # over plain HTTP: this host served without TLS would render every page and sign nobody in.
+      # The certificate is the developer's own — `dotnet dev-certs https -ep`, see the README — so
+      # the machine's browser already trusts it and there is nothing to accept by hand.
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/traininghub.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=Password@
+    volumes:
+      - ./docker/https:/https:ro
+    healthcheck:
+      # Over TLS, because it is the only address this container serves, and `-k` because the
+      # container is checking itself: the certificate is trusted by the developer's machine, not by
+      # this image's store. Checking the plain-HTTP port instead would have been the softer bug —
+      # UseHttpsRedirection answers it with a 307, and curl without -L reads a redirect as success,
+      # so the check would pass without the endpoint ever being reached.
+      test: ["CMD", "curl", "-fsS", "-k", "https://localhost:8443/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    depends_on:
+      ddd-api:
+        condition: service_healthy
+
 volumes:
   sqlserver_data:
   seaweedfs_data:

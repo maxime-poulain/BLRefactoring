@@ -65,7 +65,7 @@ simpler from the outside.
 | [0035](0035-give-every-developer-a-git-ignored-local-overrides-file.md) | Give every developer a git-ignored local overrides file | Accepted |
 | [0036](0036-model-the-decision-that-has-no-home-as-a-domain-service.md) | Model the decision that has no home as a domain service | Accepted |
 | [0037](0037-answer-for-the-hosts-health-at-two-endpoints.md) | Answer for the host's health at two endpoints | Accepted — amended by [0045](0045-fail-readiness-while-a-migration-is-pending.md): a fifth probe answers for the schema, so every "four probes" below now reads five; the dead-letter surface it deferred is built by 0061 |
-| [0038](0038-derive-every-counted-claim-from-the-code.md) | Derive every counted claim from the code | Accepted |
+| [0038](0038-derive-every-counted-claim-from-the-code.md) | Derive every counted claim from the code | Accepted — amended by [0065](0065-ship-every-host-as-an-image-and-build-them-in-the-pipeline.md): the compose file and the Dockerfiles it recorded as read by nothing are read by two rules |
 | [0039](0039-hold-the-record-and-its-index-to-the-same-status.md) | Hold the record and its index to the same status | Accepted |
 | [0040](0040-register-the-trainer-and-the-account-in-one-transaction.md) | Register the trainer and the account in one transaction | Accepted |
 | [0041](0041-derive-every-named-list-from-the-code.md) | Derive every named list from the code | Accepted |
@@ -92,3 +92,4 @@ simpler from the outside.
 | [0062](0062-let-the-proxy-forward-one-family-of-paths-without-a-token.md) | Let the proxy forward one family of paths without a token | Accepted — amended by [0063](0063-strip-the-metadata-before-the-bytes-are-stored.md): the precondition it named is met, and the portrait is published at an address carrying the photo's identity |
 | [0063](0063-strip-the-metadata-before-the-bytes-are-stored.md) | Strip the metadata before the bytes are stored, and publish only what was stripped | Accepted |
 | [0064](0064-write-this-repository-in-american-english.md) | Write this repository in American English | Accepted |
+| [0065](0065-ship-every-host-as-an-image-and-build-them-in-the-pipeline.md) | Ship every host as an image, and build them in the pipeline | Accepted |

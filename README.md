@@ -982,7 +982,21 @@ without a version attribute, every version is exact, and transitive pinning is e
 ### Prerequisites
 
 - **.NET SDK 10**
-- **Docker** — for SQL Server, the object store and the mail server, and required by the integration tests
+- **Docker** — for SQL Server, the object store and the mail server, for the three application
+  images, and required by the integration tests
+- **A TLS certificate for the BFF container**, exported once from the certificate the SDK already
+  installed on this machine:
+
+  ```bash
+  dotnet dev-certs https --trust                                        # once per machine
+  dotnet dev-certs https -ep docker/https/traininghub.pfx -p 'Password@'
+  ```
+
+  It is never versioned — `.gitignore` and `.dockerignore` both exclude it, for the reason they
+  exclude `appsettings.Local.json`. Without it the `bff` container refuses to start, which is the
+  right way round: its session cookie is `__Host-` prefixed and `Secure`, so a browser stores none
+  of it over plain HTTP, and a container serving HTTP would render every page and sign nobody in.
+  See [ADR 0065](docs/adr/0065-ship-every-host-as-an-image-and-build-them-in-the-pipeline.md).
 
 ### Run the dependencies
 
@@ -996,13 +1010,29 @@ email the hosts send is readable at <http://localhost:8025>. SeaweedFS rather th
 repository was archived in April 2026 and publishes no binaries; both speak S3, and the API talks to
 whichever through `AWSSDK.S3`, so the provider is four configuration values rather than a rewrite.
 The bucket is created at startup in `Development`, in the same spirit as the migrations below. See
-[ADR 0021](docs/adr/0021-store-a-photo-beside-the-row-that-names-it.md). `docker compose up` also builds
-and runs the layered API on <http://localhost:5085> — but nothing in CI builds that image, so
-treat a `docker build` as the check rather than the guarantee. It went unbuildable once already:
-the restore stage stopped copying two files it needs, and the README said this sentence throughout.
-Since ADR 0037 that container answers for itself the way its three dependencies always have: the
-compose file polls its `/health/live`, so `docker compose ps` shows the API as `healthy` rather
-than merely running.
+[ADR 0021](docs/adr/0021-store-a-photo-beside-the-row-that-names-it.md).
+
+### Or run everything
+
+```bash
+docker compose up -d
+```
+
+Same three dependencies, plus an image per host: the layered API on <http://localhost:5085>, the
+CQRS API on <http://localhost:5086>, and the BFF — the one a browser opens — on
+<https://localhost:7068>. Six containers, and each answers for itself: since ADR 0037 the compose
+file polls every one of them, so `docker compose ps` shows `healthy` rather than merely running.
+
+Two things are worth knowing before the first run. The CQRS host waits for the layered one rather
+than starting beside it, because in `Development` both apply their migrations at startup against one
+database, and starting together is the race on DDL [ADR 0003](docs/adr/0003-apply-migrations-on-startup-in-development-only.md)
+exists to avoid. And only the BFF serves TLS: the two APIs speak plain HTTP, which is all a caller
+inside the compose network needs. See
+[ADR 0065](docs/adr/0065-ship-every-host-as-an-image-and-build-them-in-the-pipeline.md).
+
+The pipeline builds all three images on every commit — building is the whole check, since what goes
+wrong in a Dockerfile of this shape fails at build time or never — and pushes none of them: no
+registry is chosen, and neither is a deployment target.
 
 ### Run an API
 
