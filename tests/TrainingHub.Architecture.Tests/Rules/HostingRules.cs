@@ -80,94 +80,36 @@ public sealed class HostingRules
     }
 
     /// <summary>
-    /// The image build, keeps its layer cache between runs.
+    /// The image build, carries no layer cache.
     /// </summary>
     /// <remarks>
-    /// The four decisions of ADR 0067, each of which fails green on its own: the default
-    /// <c>docker</c> driver accepts <c>--cache-to</c> and exports nothing, so the builder must be a
-    /// container-driver one; the cache has to be imported and exported, one directory per image, or
-    /// the three builds trade one cache instead of keeping their own; it has to live where the
-    /// caching action carries it, keyed on the files that decide the restore stage, or it dies with
-    /// the runner or never hits; and <c>type=local</c> <em>appends</em>, so exporting into the
-    /// directory it was imported from grows the cache one run at a time until restoring it costs
-    /// more than the build it saves. In every case the images still build, and nothing says the
-    /// caching stopped working.
+    /// The inverse of the rule ADR 0067 carried, because the decision inverted on measurement:
+    /// warm, the cache saved nothing on the <c>Images</c> step and doubled the job (ADR 0068).
+    /// What this rule refuses is the mechanism returning quietly — a <c>--cache</c> flag or a
+    /// carried cache directory reappearing without a successor record bringing the warm
+    /// measurement 0067 lacked.
     /// </remarks>
     [Fact]
-    [ArchitectureRule("0067",
-        "the pipeline reuses the image layers it built last time, and exports the cache beside the one " +
-        "it imported rather than into it")]
-    public void TheImageBuild_KeepsItsLayerCacheBetweenRuns()
+    [ArchitectureRule("0068",
+        "the image build carries no layer cache: measured warm, it saved nothing and doubled the " +
+        "job, and bringing it back takes a record with a better measurement")]
+    public void TheImageBuild_CarriesNoLayerCache()
     {
         var workflow = SourceTree.ReadText(ContinuousIntegration);
-        var imported = CacheDirectory(workflow, "src");
-        var exported = CacheDirectory(workflow, "dest");
-        var cacheStep = ImagesCacheStep(workflow);
 
         new[]
         {
-            (Broken: imported.Length == 0,
-             Wrong: "imports no layer cache into the image build, so every run rebuilds what the " +
-                    "last one already built"),
-            (Broken: exported.Length == 0,
-             Wrong: "exports no layer cache from the image build, so the next run finds nothing to " +
-                    "import however well this one is cached"),
-            (Broken: !workflow.Contains("--driver docker-container", StringComparison.Ordinal),
-             Wrong: "builds the images without a container-driver builder. The default `docker` " +
-                    "driver accepts --cache-to and exports no cache at all, so every flag below " +
-                    "it would be accepted and do nothing"),
-            (Broken: imported.Length > 0 && !imported.EndsWith("/$image", StringComparison.Ordinal),
-             Wrong: "imports one shared directory instead of one per image, so the three builds " +
-                    "trade a single cache and each swap discards what the other two exported"),
-            (Broken: exported.Length > 0 && !exported.EndsWith("/$image", StringComparison.Ordinal),
-             Wrong: "exports one shared directory instead of one per image, so the three builds " +
-                    "trade a single cache and each swap discards what the other two exported"),
-            (Broken: !workflow.Contains($"path: ~/{CacheDirectory()}", StringComparison.Ordinal),
-             Wrong: $"never asks actions/cache to carry '~/{CacheDirectory()}', so whatever the " +
-                    "build writes dies with the runner that wrote it"),
-            (Broken: Array.Exists(RestoreStageInputs, input =>
-                 !cacheStep.Contains($"'{input}'", StringComparison.Ordinal)),
-             Wrong: "keys the layer cache on less than what decides the restore stage — every one " +
-                    $"of {string.Join(", ", RestoreStageInputs)} must be hashed, or a change to " +
-                    "one of them restores a cache the build cannot reuse"),
-            (Broken: imported.Length > 0 && string.Equals(imported, exported, StringComparison.Ordinal),
-             Wrong: "exports the layer cache into the directory it imported it from. `type=local` " +
-                    "appends rather than replaces, so that directory grows every run until " +
-                    "restoring it costs more than the build it exists to save")
+            (Marker: "--cache-from", Wrong: "imports a layer cache into the image build"),
+            (Marker: "--cache-to", Wrong: "exports a layer cache from the image build"),
+            (Marker: ".cache/traininghub-images", Wrong: "carries an image layer cache between runs"),
         }
-            .Selected("condition on the layer cache")
-            .Where(assertion => assertion.Broken)
-            .Select(assertion => $"'.github/workflows/ci.yml' {assertion.Wrong} (ADR 0067)")
+            .Selected("trace of the removed layer cache")
+            .Where(trace => workflow.Contains(trace.Marker, StringComparison.Ordinal))
+            .Select(trace =>
+                $"'.github/workflows/ci.yml' {trace.Wrong} ('{trace.Marker}'). ADR 0068 removed " +
+                "the cache on measurement — warm, it saved nothing on the step and doubled the " +
+                "job. Bringing it back is a new record's decision, and it owes a warm measurement")
             .ShouldHold();
-    }
-
-    /// <summary>The files the image key must hash: what the Dockerfiles' restore stages copy.</summary>
-    private static readonly string[] RestoreStageInputs =
-    [
-        "**/Dockerfile",
-        "TrainingHub.slnx",
-        "Directory.Build.props",
-        "Directory.Packages.props",
-        "**/*.csproj",
-    ];
-
-    /// <summary>
-    /// The caching step's own text — from the path it carries to its restore-keys — so the key
-    /// conditions read that step rather than whatever other cache the workflow declares.
-    /// </summary>
-    private static string ImagesCacheStep(string workflow)
-    {
-        var start = workflow.IndexOf($"path: ~/{CacheDirectory()}", StringComparison.Ordinal);
-
-        if (start < 0)
-        {
-            return string.Empty;
-        }
-
-        var step = workflow[start..];
-        var end = step.IndexOf("restore-keys:", StringComparison.Ordinal);
-
-        return end < 0 ? step : step[..end];
     }
 
     /// <summary>
@@ -199,33 +141,6 @@ public sealed class HostingRules
                 $"{pair.File} does not list {pair.Entry}. Without that entry a developer's private " +
                 "key is one git add or docker build away from leaving the machine")
             .ShouldHold();
-
-    /// <summary>The directory the layer cache is carried in, between runs.</summary>
-    private static string CacheDirectory() => ".cache/traininghub-images";
-
-    /// <summary>
-    /// The path one half of the layer cache names, or empty when that half is absent.
-    /// </summary>
-    /// <remarks>
-    /// Read as text rather than as YAML because what is being read is a shell script inside a YAML
-    /// scalar, and the question — do these two paths differ — is about the two strings the shell
-    /// will see.
-    /// </remarks>
-    private static string CacheDirectory(string workflow, string role)
-    {
-        var marker = $"type=local,{role}=";
-        var start = workflow.IndexOf(marker, StringComparison.Ordinal);
-
-        if (start < 0)
-        {
-            return string.Empty;
-        }
-
-        var value = workflow[(start + marker.Length)..];
-        var end = value.IndexOfAny(['"', ',', '\n']);
-
-        return end < 0 ? value : value[..end];
-    }
 
     /// <summary>
     /// No folder of source, is hidden from the build context.

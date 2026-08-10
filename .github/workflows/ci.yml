@@ -30,8 +30,9 @@ jobs:
   build-and-test:
     name: Build & Test
     runs-on: ubuntu-latest
-    # Thirty rather than twenty since this job also builds the three images (ADR 0065). The layer
-    # cache below (ADR 0067) trims that, but a cold key still pays for its own restore and publish.
+    # Thirty rather than twenty since this job also builds the three images (ADR 0065). They are
+    # built without a layer cache — one was tried, measured slower warm, and removed (ADR 0068) —
+    # so each pays for its own restore and publish.
     timeout-minutes: 30
 
     # This job used to carry a job-level `if` that skipped it outright for a same-repo `claude/**`
@@ -224,55 +225,21 @@ jobs:
       # that way still posts a check GitHub reads as passing. `EveryImage_IsBuiltByThePipeline`
       # reads this step, so a fourth host cannot arrive with an image nothing builds.
 
-      # The layer cache the step below reads and writes, and it costs no new dependency. ADR 0065
-      # turned caching down because the standard answer is two third-party actions in a workflow set
-      # that has only ever used `actions/*`; buildx ships with the runner's Docker CLI, so the
-      # builder is a `run` line and `type=local` writes to a directory this very action already
-      # knows how to carry between runs. See ADR 0067.
-      #
-      # Keyed on what decides the restore stage — the Dockerfiles, the solution and project files
-      # and the central package versions — rather than on the source, which changes every commit
-      # and would make every key a miss. The prefix fallback keeps a near miss useful instead of
-      # starting from nothing.
-      - name: Cache the image layers
-        if: steps.delegation.outputs.build == 'true'
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/traininghub-images
-          key: >-
-            images-${{ runner.os }}-${{ hashFiles('**/Dockerfile', 'TrainingHub.slnx',
-            'Directory.Build.props', 'Directory.Packages.props', '**/*.csproj') }}
-          restore-keys: images-${{ runner.os }}-
-
+      # No layer cache, on measurement. ADR 0067 tried one — dependency-free, keyed on the right
+      # inputs, exported beside its import — and the warm run refused it: the `Images` step saved
+      # nothing over building cold and the job doubled, because the publish stages rebuild on
+      # every commit while the export overhead is paid on every run. ADR 0068 owns the numbers,
+      # and `TheImageBuild_CarriesNoLayerCache` refuses the flags' quiet return.
       - name: Images
         if: steps.delegation.outputs.build == 'true'
         run: |
           set -euo pipefail
-          cache="$HOME/.cache/traininghub-images"
-
-          # A container-driver builder: the default `docker` driver exports no cache at all, so
-          # --cache-to would be accepted and do nothing. One line, and no action to depend on.
-          docker buildx create --name traininghub --driver docker-container --use >/dev/null
-
           for dockerfile in \
             src/DDD/Api/Dockerfile \
             src/DDDWithCqrs/Api/Dockerfile \
             src/Web/TrainingHub.Blazor/TrainingHub.Blazor/Dockerfile
           do
-            # One directory per image. Sharing one would have the three overwrite each other's
-            # cache and the step would go quietly back to building everything from scratch —
-            # green, and no faster than before.
-            image=$(dirname "$dockerfile" | tr '/' '-')
             echo "::group::$dockerfile"
-            docker buildx build --file "$dockerfile" \
-              --cache-from "type=local,src=$cache/$image" \
-              --cache-to "type=local,dest=$cache.new/$image,mode=max" \
-              .
+            docker build --file "$dockerfile" .
             echo "::endgroup::"
           done
-
-          # Exported beside the cache and swapped in, never into the directory it was imported
-          # from: `type=local` appends rather than replaces, so reading and writing one directory
-          # grows it without bound, a run at a time, until the cache is slower than the build.
-          rm -rf "$cache"
-          mv "$cache.new" "$cache"

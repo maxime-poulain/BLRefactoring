@@ -1,6 +1,6 @@
 # 0067 — Cache the image layers without taking a dependency
 
-- **Status:** Accepted
+- **Status:** Superseded by [0068](0068-remove-the-image-layer-cache.md): measured warm, the cache saved nothing and doubled the job
 - **Amends:** [0065](0065-ship-every-host-as-an-image-and-build-them-in-the-pipeline.md)
 - **Date:** 2026-08-10
 
