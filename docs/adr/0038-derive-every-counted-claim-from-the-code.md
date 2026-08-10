@@ -1,6 +1,6 @@
 # 0038 — Derive every counted claim from the code
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0065](0065-ship-every-host-as-an-image-and-build-them-in-the-pipeline.md): the compose file and the Dockerfiles it recorded as read by nothing are read by two rules
 - **Date:** 2026-08-05
 
 ## Context

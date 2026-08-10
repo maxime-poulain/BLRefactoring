@@ -8,6 +8,12 @@
 **/.gitignore
 **/Debug
 **/Release
+# One folder per use case, and one of the use cases is called Release (ADR 0052). The line above is
+# right for `bin/Release` and `obj/Release` and wrong here: it kept two source files out of the
+# build context, so the CQRS image failed to compile on a type that did not exist. `.gitignore`
+# carries the same exception, learned the same way. Re-included by exact path rather than by
+# wildcard, so it stays as narrow as the collision that caused it.
+!src/DDDWithCqrs/Application/Features/Trainings/Release
 **/*.user
 **/*.suo
 **/*.md
@@ -18,3 +24,4 @@
 **/docker-compose*.yaml
 **/.dockerignore
 **/appsettings.Local.json
+**/*.pfx

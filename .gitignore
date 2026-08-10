@@ -752,6 +752,12 @@ src/DDD/Api/TrainingHub.DDD.Api.json
 # versioned: in a public repository this file is where real credentials are allowed to exist.
 appsettings.Local.json
 
+# The developer's own TLS certificate, exported from `dotnet dev-certs https -ep` and mounted into
+# the BFF container so a browser will store the session cookie (ADR 0065). A PKCS#12 file carries
+# the private key beside the certificate, so this is the same kind of file as the line above: it
+# belongs to one machine and leaves it under no circumstances.
+docker/https/*.pfx
+
 # One folder per use case, and one of the use cases is called Release (ADR 0052). The build-results
 # block above ignores every directory named `Release/`, which is correct for `bin/Release` and
 # `obj/Release` and wrong here — it silently dropped four source files from a commit that built

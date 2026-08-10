@@ -30,7 +30,9 @@ jobs:
   build-and-test:
     name: Build & Test
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Thirty rather than twenty since this job also builds the three images (ADR 0065). They are
+    # built without a layer cache, so each pays for its own restore and publish.
+    timeout-minutes: 30
 
     # This job used to carry a job-level `if` that skipped it outright for a same-repo `claude/**`
     # pull request, on the ground that the push trigger had already built that commit. The ground
@@ -211,3 +213,30 @@ jobs:
         run: >-
           dotnet test --no-build --configuration Release --verbosity normal
           --filter "FullyQualifiedName!~IntegrationTests"
+
+      # The three images, built and thrown away — nothing is pushed anywhere, because what goes
+      # wrong in a Dockerfile of this shape fails at build time or never. The one image this
+      # repository had became unbuildable exactly once, when its restore stage stopped copying two
+      # files it needs, and the README carried a warning about it for months instead. See ADR 0065.
+      #
+      # Steps of this job rather than a job of their own, for a reason ADR 0047 already settled: a
+      # separate job would need a job-level `if` to honor the delegation above, and a job skipped
+      # that way still posts a check GitHub reads as passing. `EveryImage_IsBuiltByThePipeline`
+      # reads this step, so a fourth host cannot arrive with an image nothing builds.
+      #
+      # No layer cache and no third-party action. Every `uses:` in this repository is first-party,
+      # and a cross-run Docker cache costs a builder action plus a cache backend to save a few
+      # minutes on a job whose budget is twenty. Named here rather than left to be rediscovered.
+      - name: Images
+        if: steps.delegation.outputs.build == 'true'
+        run: |
+          set -euo pipefail
+          for dockerfile in \
+            src/DDD/Api/Dockerfile \
+            src/DDDWithCqrs/Api/Dockerfile \
+            src/Web/TrainingHub.Blazor/TrainingHub.Blazor/Dockerfile
+          do
+            echo "::group::$dockerfile"
+            docker build --file "$dockerfile" .
+            echo "::endgroup::"
+          done
