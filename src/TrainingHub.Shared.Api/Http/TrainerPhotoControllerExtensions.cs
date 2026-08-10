@@ -62,11 +62,11 @@ public static class TrainerPhotoControllerExtensions
     /// <param name="photo">The photo to serve.</param>
     /// <returns>The bytes, or 304 when the caller already has them.</returns>
     /// <remarks>
-    /// For the public portrait, whose address carries the photo's identity —
-    /// <c>GET /Catalog/trainings/{trainingId}/photo/{photoId}</c>. A replacement mints a new
-    /// identity, so <em>this</em> URL's bytes genuinely never change and <c>immutable</c> is a
-    /// promise the address keeps by construction. That is what lets a CDN sit in front of the route
-    /// later without a line of code moving (ADR 0063).
+    /// For the public portraits, whose addresses carry the photo's identity —
+    /// <c>GET /Catalog/trainings/{trainingId}/photo/{photoId}</c> and its per-trainer twin on the
+    /// profile (ADR 0070). A replacement mints a new identity, so either URL's bytes genuinely
+    /// never change and <c>immutable</c> is a promise the address keeps by construction. That is
+    /// what lets a CDN sit in front of the routes later without a line of code moving (ADR 0063).
     /// <para>
     /// Two named helpers rather than one taking a flag: which promise an endpoint makes about its
     /// own bytes is a property of its address, and a caller passing <c>true</c> is a caller who has

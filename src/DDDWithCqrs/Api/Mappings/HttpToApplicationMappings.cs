@@ -1,6 +1,8 @@
 using TrainingHub.DDDWithCqrs.Application.Features.Catalog.GetOffered;
 using TrainingHub.DDDWithCqrs.Application.Features.Catalog.GetOfferedPortrait;
 using TrainingHub.DDDWithCqrs.Application.Features.Catalog.GetTopics;
+using TrainingHub.DDDWithCqrs.Application.Features.Catalog.GetTrainerPortrait;
+using TrainingHub.DDDWithCqrs.Application.Features.Catalog.GetTrainerProfile;
 using TrainingHub.DDDWithCqrs.Application.Features.Catalog.Search;
 using TrainingHub.DDDWithCqrs.Application.Features.Outbox.GetPoisoned;
 using TrainingHub.DDDWithCqrs.Application.Features.Outbox.Requeue;
@@ -234,6 +236,21 @@ public static class HttpToApplicationMappings
     /// </remarks>
     public static GetOfferedPortraitQuery ToGetOfferedPortraitQuery(Guid trainingId, Guid photoId) =>
         new(trainingId, photoId);
+
+    /// <summary>Builds the query reading one offering trainer's public profile (ADR 0070).</summary>
+    /// <remarks>
+    /// No bound object at all: the only thing this endpoint carries is the identifier the route
+    /// names, and a visitor has nothing else to say.
+    /// </remarks>
+    public static GetTrainerProfileQuery ToGetTrainerProfileQuery(Guid trainerId) => new(trainerId);
+
+    /// <summary>Builds the query reading an offering trainer's portrait (ADR 0070).</summary>
+    /// <remarks>
+    /// Both identifiers come from the route: the trainer names the page the visitor is on, and the
+    /// photo is what makes the answer cacheable forever.
+    /// </remarks>
+    public static GetTrainerPortraitQuery ToGetTrainerPortraitQuery(Guid trainerId, Guid photoId) =>
+        new(trainerId, photoId);
 
     /// <summary>Builds the query reading one page of the outbox's poison (ADR 0061).</summary>
     /// <remarks>

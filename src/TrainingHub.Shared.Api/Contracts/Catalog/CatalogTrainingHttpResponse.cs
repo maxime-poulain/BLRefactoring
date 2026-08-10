@@ -10,9 +10,10 @@ namespace TrainingHub.Shared.Api.Contracts.Catalog;
 /// (ADR 0050, ADR 0056, ADR 0059). It carries no reason for the same reason.
 /// <para>
 /// The trainer travels as an identifier and not as a name, unlike the administrative row. That is
-/// not an oversight repeating itself: an administrator is deciding about a person and needs to read
-/// who they are, while a visitor is looking at a catalog whose author pages do not exist yet.
-/// Publishing every trainer's name to anybody is precisely the read this API withdrew.
+/// not an oversight repeating itself: an administrator is deciding about a person and needs to
+/// read who they are, while a visitor's row links to the author's page (ADR 0070) and the page
+/// prints the name. Publishing every trainer's name into a pageable listing is precisely the read
+/// this API withdrew.
 /// </para>
 /// </remarks>
 public sealed class CatalogTrainingHttpResponse

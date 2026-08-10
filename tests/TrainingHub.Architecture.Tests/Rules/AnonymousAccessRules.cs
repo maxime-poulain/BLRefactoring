@@ -1,4 +1,5 @@
 using System.Reflection;
+using Microsoft.AspNetCore.Mvc.Routing;
 using TrainingHub.Architecture.Tests.Framework;
 using TrainingHub.Blazor.Bff;
 using TrainingHub.Shared.Api.Controllers;
@@ -181,4 +182,54 @@ public sealed class AnonymousAccessRules
                     "(ADR 0062)"))
             .ShouldHold();
     }
+
+    /// <summary>
+    /// The catalog names a person only by identifier, and never lists people.
+    /// </summary>
+    /// <remarks>
+    /// ADR 0070 opened a person's public page, and ADR 0055 had withdrawn the read that lists
+    /// trainers to anybody — two decisions one route apart. What separates them is the route's own
+    /// shape: a profile is asked for with an identifier the visitor already holds, where a
+    /// directory hands identifiers out. So the rule reads the shape: every anonymous route that
+    /// says <c>trainers</c> says which trainer in the same breath, and a pageable
+    /// <c>GET /Catalog/trainers</c> cannot reappear as a widening of the profile.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0070",
+        "the catalog publishes a person by identifier and never a list of people: every catalog " +
+        "route naming trainers names one, constrained in the route itself")]
+    public void TheCatalog_NamesAPersonOnlyByIdentifier() =>
+        Solution.Hosts
+            .SelectMany(host => host.DeclaredTypes())
+            .Where(type => typeof(CatalogControllerBase).IsAssignableFrom(type) && !type.IsAbstract)
+            .SelectMany(controller => controller
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .SelectMany(action => action
+                    .GetCustomAttributes<HttpMethodAttribute>(inherit: true)
+                    .Where(verb => verb.Template is not null)
+                    .Select(verb => (Controller: controller, Action: action, Template: verb.Template!))))
+            .Selected("catalog route")
+            .Where(entry => Segments(entry.Template)
+                .Contains("trainers", StringComparer.OrdinalIgnoreCase))
+            .Where(entry => !SaysWhichTrainer(entry.Template))
+            .Select(entry =>
+                $"{entry.Controller.Name}.{entry.Action.Name} serves '{entry.Template}', which " +
+                "names trainers without naming one. The catalog publishes a person by identifier; " +
+                "the read that lists people to anybody is the one ADR 0055 withdrew (ADR 0070)")
+            .ShouldHold();
+
+    /// <summary>Whether the segment after <c>trainers</c> is one constrained identifier.</summary>
+    private static bool SaysWhichTrainer(string template)
+    {
+        var segments = Segments(template);
+        var index = Array.FindIndex(
+            segments, segment => string.Equals(segment, "trainers", StringComparison.OrdinalIgnoreCase));
+
+        return index >= 0
+            && index + 1 < segments.Length
+            && string.Equals(segments[index + 1], "{trainerId:guid}", StringComparison.Ordinal);
+    }
+
+    /// <summary>The template's segments, as the router reads them.</summary>
+    private static string[] Segments(string template) => template.Trim('/').Split('/');
 }

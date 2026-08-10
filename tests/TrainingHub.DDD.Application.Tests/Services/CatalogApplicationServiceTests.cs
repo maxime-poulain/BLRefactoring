@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Moq;
 using TrainingHub.DDD.Application.Services.CatalogServices;
 using TrainingHub.Shared.Application.Catalog;
+using TrainingHub.Shared.Application.Dtos.Trainer;
 using TrainingHub.Shared.Application.Dtos.Training;
 using TrainingHub.Shared.Application.Search;
 using TrainingHub.Shared.Common.Pagination;
@@ -113,6 +114,46 @@ public sealed class CatalogApplicationServiceTests
         var offered = await sut.FindOfferedAsync(Guid.CreateVersion7());
 
         offered.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Find offered trainer async, an identifier, asks the detail port for exactly it.
+    /// </summary>
+    /// <remarks>
+    /// The profile arrives at the same port as the detail (ADR 0070), and never at the search one:
+    /// whether a person is offering is the index's composition, read where ADR 0062 keeps it.
+    /// </remarks>
+    [Fact]
+    public async Task FindOfferedTrainerAsync_AnIdentifier_AsksTheDetailPortForExactlyIt()
+    {
+        var trainerId = Guid.CreateVersion7();
+
+        var sut = new CatalogApplicationService(_trainingSearch.Object, _catalogDetail.Object);
+
+        await sut.FindOfferedTrainerAsync(trainerId);
+
+        _catalogDetail.Verify(
+            detail => detail.FindOfferedTrainerAsync(trainerId, It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _trainingSearch.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
+    /// Find offered trainer async, nobody to show, hands the nothing back.
+    /// </summary>
+    [Fact]
+    public async Task FindOfferedTrainerAsync_NobodyToShow_HandsTheNothingBack()
+    {
+        _catalogDetail
+            .Setup(detail => detail.FindOfferedTrainerAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CatalogTrainerDto?)null);
+
+        var sut = new CatalogApplicationService(_trainingSearch.Object, _catalogDetail.Object);
+
+        var profile = await sut.FindOfferedTrainerAsync(Guid.CreateVersion7());
+
+        profile.Should().BeNull();
     }
 
     /// <summary>

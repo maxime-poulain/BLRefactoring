@@ -389,6 +389,287 @@ public sealed class CatalogDetailQueryTests : IAsyncLifetime
         portrait.Should().BeNull("a store is a separate system, and an error nobody can act on is worse");
     }
 
+    /// <summary>
+    /// Find offered async, an offered training, carries its trainer's identifier.
+    /// </summary>
+    /// <remarks>
+    /// The identifier is what turns "Offered by X" into a link: the page builds the profile's
+    /// address from it (ADR 0070), so a wrong or missing value is a link to nobody.
+    /// </remarks>
+    [Fact]
+    public async Task FindOfferedAsync_AnOfferedTraining_CarriesItsTrainersIdentifier()
+    {
+        var trainer = await GivenTrainerAsync("Ada", "Lovelace");
+        var training = await GivenTrainingAsync(trainer, "Domain Driven Design");
+        await GivenIndexEntryAsync(training, trainer, isPublished: true, isTrainerHidden: false);
+
+        var offered = await _detail.FindOfferedAsync(training.Id.Value);
+
+        offered!.TrainerId.Should().Be(trainer.Id.Value);
+    }
+
+    /// <summary>
+    /// Find offered trainer async, an offering trainer, answers who they are and what they offer.
+    /// </summary>
+    /// <remarks>
+    /// The profile in one fact: identity from the write model, list from the index, and the two
+    /// arrive together or not at all (ADR 0070).
+    /// </remarks>
+    [Fact]
+    public async Task FindOfferedTrainerAsync_AnOfferingTrainer_AnswersWhoTheyAreAndWhatTheyOffer()
+    {
+        var trainer = await GivenTrainerAsync("Ada", "Lovelace");
+        var training = await GivenTrainingAsync(trainer, "Domain Driven Design");
+        await GivenIndexEntryAsync(training, trainer, isPublished: true, isTrainerHidden: false);
+
+        var profile = await _detail.FindOfferedTrainerAsync(trainer.Id.Value);
+
+        profile.Should().NotBeNull();
+        profile!.Id.Should().Be(trainer.Id.Value);
+        profile.Firstname.Should().Be("Ada");
+        profile.Lastname.Should().Be("Lovelace");
+        profile.Bio.Should().NotBeNullOrWhiteSpace();
+        profile.Trainings.Should().ContainSingle(offered =>
+            offered.Id == training.Id.Value
+            && offered.TrainerId == trainer.Id.Value
+            && offered.Title == "Domain Driven Design");
+    }
+
+    /// <summary>
+    /// Find offered trainer async, the offered list, is alphabetical and holds only what is on
+    /// offer.
+    /// </summary>
+    /// <remarks>
+    /// The profile is a shelf of the same catalog: the order is the search's own (ADR 0001,
+    /// ADR 0029), and an unpublished training is as absent here as it is there.
+    /// </remarks>
+    [Fact]
+    public async Task FindOfferedTrainerAsync_TheOfferedList_IsAlphabeticalAndOnlyWhatIsOnOffer()
+    {
+        var trainer = await GivenTrainerAsync("Ada", "Lovelace");
+        var zebra = await GivenTrainingAsync(trainer, "Zebra Patterns");
+        var agile = await GivenTrainingAsync(trainer, "Agile Architecture");
+        var draft = await GivenTrainingAsync(trainer, "Drafts Stay Home");
+        await GivenIndexEntryAsync(zebra, trainer, isPublished: true, isTrainerHidden: false);
+        await GivenIndexEntryAsync(agile, trainer, isPublished: true, isTrainerHidden: false);
+        await GivenIndexEntryAsync(draft, trainer, isPublished: false, isTrainerHidden: false);
+
+        var profile = await _detail.FindOfferedTrainerAsync(trainer.Id.Value);
+
+        profile!.Trainings.Select(offered => offered.Title)
+            .Should().Equal("Agile Architecture", "Zebra Patterns");
+    }
+
+    /// <summary>
+    /// Find offered trainer async, a trainer the index hides, answers nothing.
+    /// </summary>
+    /// <remarks>
+    /// The suspension's read, without ever reading the suspension: the entries are there, the flag
+    /// is up, and the profile is as gone as the search results already are (ADR 0070).
+    /// </remarks>
+    [Fact]
+    public async Task FindOfferedTrainerAsync_ATrainerTheIndexHides_AnswersNothing()
+    {
+        var trainer = await GivenTrainerAsync("Ada", "Lovelace");
+        var training = await GivenTrainingAsync(trainer, "Domain Driven Design");
+        await GivenIndexEntryAsync(training, trainer, isPublished: true, isTrainerHidden: true);
+
+        var profile = await _detail.FindOfferedTrainerAsync(trainer.Id.Value);
+
+        profile.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Find offered trainer async, a trainer with nothing published, answers nothing.
+    /// </summary>
+    /// <remarks>
+    /// Offered or invisible, with no state in between: a registered person with only drafts has no
+    /// public page, and their 404 is indistinguishable from anybody else's (ADR 0070).
+    /// </remarks>
+    [Fact]
+    public async Task FindOfferedTrainerAsync_ATrainerWithNothingPublished_AnswersNothing()
+    {
+        var trainer = await GivenTrainerAsync("Ada", "Lovelace");
+        var training = await GivenTrainingAsync(trainer, "Domain Driven Design");
+        await GivenIndexEntryAsync(training, trainer, isPublished: false, isTrainerHidden: false);
+
+        var profile = await _detail.FindOfferedTrainerAsync(trainer.Id.Value);
+
+        profile.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Find offered trainer async, an identifier nobody stored, answers nothing.
+    /// </summary>
+    [Fact]
+    public async Task FindOfferedTrainerAsync_AnIdentifierNobodyStored_AnswersNothing()
+    {
+        var profile = await _detail.FindOfferedTrainerAsync(Guid.CreateVersion7());
+
+        profile.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Find offered trainer async, a trainer who says nothing about themselves, answers a null bio.
+    /// </summary>
+    /// <remarks>
+    /// The bio column is nullable inside a complex property, and a projection that reached it
+    /// carelessly would either throw or answer an empty string a page would render as a blank
+    /// paragraph.
+    /// </remarks>
+    [Fact]
+    public async Task FindOfferedTrainerAsync_ATrainerWhoSaysNothing_AnswersANullBio()
+    {
+        var trainer = new TrainerBuilder()
+            .WithFirstname("Ada")
+            .WithLastname("Lovelace")
+            .WithContactEmail($"trainer.{Guid.NewGuid():N}@example.com")
+            .WithoutBio()
+            .Build();
+        _context.Trainers.Add(trainer);
+        await _context.SaveChangesAsync();
+        var training = await GivenTrainingAsync(trainer, "Domain Driven Design");
+        await GivenIndexEntryAsync(training, trainer, isPublished: true, isTrainerHidden: false);
+
+        var profile = await _detail.FindOfferedTrainerAsync(trainer.Id.Value);
+
+        profile!.Bio.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Find offered trainer async, a stripped photo, answers the address of the portrait.
+    /// </summary>
+    [Fact]
+    public async Task FindOfferedTrainerAsync_AStrippedPhoto_AnswersItsIdentity()
+    {
+        var trainer = await GivenTrainerAsync("Ada", "Lovelace");
+        var photo = await GivenPortraitAsync(trainer);
+        var training = await GivenTrainingAsync(trainer, "Domain Driven Design");
+        await GivenIndexEntryAsync(training, trainer, isPublished: true, isTrainerHidden: false);
+
+        var profile = await _detail.FindOfferedTrainerAsync(trainer.Id.Value);
+
+        profile!.PhotoId.Should().Be(photo.PhotoId.Value);
+    }
+
+    /// <summary>
+    /// Find offered trainer async, a photo carrying no stamp, answers no portrait at all.
+    /// </summary>
+    /// <remarks>
+    /// The same refusal as the detail's, on the profile's page: an address the endpoint will
+    /// answer 404 renders a broken image, which is a worse answer than none (ADR 0063).
+    /// </remarks>
+    [Fact]
+    public async Task FindOfferedTrainerAsync_APhotoCarryingNoStamp_AnswersNoPortrait()
+    {
+        var trainer = await GivenTrainerAsync("Ada", "Lovelace");
+        await GivenPortraitAsync(trainer);
+        var training = await GivenTrainingAsync(trainer, "Domain Driven Design");
+        await GivenIndexEntryAsync(training, trainer, isPublished: true, isTrainerHidden: false);
+
+        await _context.Database.ExecuteSqlRawAsync(
+            "UPDATE Trainer SET PhotoSanitizedOnUtc = NULL WHERE Id = {0}", trainer.Id.Value);
+
+        var profile = await _detail.FindOfferedTrainerAsync(trainer.Id.Value);
+
+        profile!.PhotoId.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Find trainer portrait async, an offering trainer with a stripped photo, answers the bytes.
+    /// </summary>
+    /// <remarks>
+    /// The profile's own address for the portrait, crossing the same layers as the
+    /// training-addressed one minus the owner lookup the route already did (ADR 0070).
+    /// </remarks>
+    [Fact]
+    public async Task FindTrainerPortraitAsync_AnOfferingTrainerWithAStrippedPhoto_AnswersTheBytes()
+    {
+        var trainer = await GivenTrainerAsync("Ada", "Lovelace");
+        var photo = await GivenPortraitAsync(trainer);
+        var training = await GivenTrainingAsync(trainer, "Domain Driven Design");
+        await GivenIndexEntryAsync(training, trainer, isPublished: true, isTrainerHidden: false);
+
+        var portrait = await _detail.FindTrainerPortraitAsync(trainer.Id.Value, photo.PhotoId.Value);
+
+        portrait.Should().NotBeNull();
+        portrait!.PhotoId.Should().Be(photo.PhotoId.Value);
+        portrait.ContentType.Should().Be(TrainerPhoto.PngContentType);
+        portrait.Content.ToArray().Should().Equal(Png());
+    }
+
+    /// <summary>
+    /// Find trainer portrait async, a trainer the index does not hold, answers nothing.
+    /// </summary>
+    /// <remarks>
+    /// The portrait inherits the profile's visibility rather than acquiring one of its own: the
+    /// photo is perfectly readable, and the missing entry is the whole of the refusal (ADR 0070).
+    /// </remarks>
+    [Fact]
+    public async Task FindTrainerPortraitAsync_ATrainerTheIndexDoesNotHold_AnswersNothing()
+    {
+        var trainer = await GivenTrainerAsync("Ada", "Lovelace");
+        var photo = await GivenPortraitAsync(trainer);
+
+        var portrait = await _detail.FindTrainerPortraitAsync(trainer.Id.Value, photo.PhotoId.Value);
+
+        portrait.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Find trainer portrait async, a photo identity that is not the current one, answers nothing.
+    /// </summary>
+    [Fact]
+    public async Task FindTrainerPortraitAsync_APhotoTheTrainerDoesNotHave_AnswersNothing()
+    {
+        var trainer = await GivenTrainerAsync("Ada", "Lovelace");
+        await GivenPortraitAsync(trainer);
+        var training = await GivenTrainingAsync(trainer, "Domain Driven Design");
+        await GivenIndexEntryAsync(training, trainer, isPublished: true, isTrainerHidden: false);
+
+        var portrait = await _detail.FindTrainerPortraitAsync(trainer.Id.Value, Guid.CreateVersion7());
+
+        portrait.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Find trainer portrait async, a photo stored before anything stripped it, answers nothing.
+    /// </summary>
+    [Fact]
+    public async Task FindTrainerPortraitAsync_APhotoStoredBeforeAnythingStrippedIt_AnswersNothing()
+    {
+        var trainer = await GivenTrainerAsync("Ada", "Lovelace");
+        var photo = await GivenPortraitAsync(trainer);
+        var training = await GivenTrainingAsync(trainer, "Domain Driven Design");
+        await GivenIndexEntryAsync(training, trainer, isPublished: true, isTrainerHidden: false);
+
+        await _context.Database.ExecuteSqlRawAsync(
+            "UPDATE Trainer SET PhotoSanitizedOnUtc = NULL WHERE Id = {0}", trainer.Id.Value);
+
+        var portrait = await _detail.FindTrainerPortraitAsync(trainer.Id.Value, photo.PhotoId.Value);
+
+        portrait.Should().BeNull(
+            "what nothing can prove was stripped is not published, and the bytes are still there");
+    }
+
+    /// <summary>
+    /// Find trainer portrait async, a row naming bytes the store lost, answers nothing.
+    /// </summary>
+    [Fact]
+    public async Task FindTrainerPortraitAsync_BytesMissingFromTheStore_AnswersNothing()
+    {
+        var trainer = await GivenTrainerAsync("Ada", "Lovelace");
+        var photo = await GivenPortraitAsync(trainer);
+        var training = await GivenTrainingAsync(trainer, "Domain Driven Design");
+        await GivenIndexEntryAsync(training, trainer, isPublished: true, isTrainerHidden: false);
+
+        await _photos.DeleteAsync(trainer.Id, photo);
+
+        var portrait = await _detail.FindTrainerPortraitAsync(trainer.Id.Value, photo.PhotoId.Value);
+
+        portrait.Should().BeNull("a store is a separate system, and an error nobody can act on is worse");
+    }
+
     private async Task<TrainerPhoto> GivenPortraitAsync(Trainer trainer)
     {
         var photo = TrainerPhoto

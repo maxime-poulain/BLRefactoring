@@ -67,12 +67,37 @@ public sealed class CatalogTrainingTests : ComponentTest
     }
 
     /// <summary>
+    /// Renders, an offered training, links its trainer to their page.
+    /// </summary>
+    /// <remarks>
+    /// The navigation ADR 0070 exists for, from the fiche's side: "Offered by X" is an anchor to
+    /// the profile built from the identifier the response carries, not a dead label.
+    /// </remarks>
+    [Fact]
+    public void Renders_AnOfferedTraining_LinksItsTrainerToTheirPage()
+    {
+        var offered = Offered();
+
+        _catalog
+            .Setup(client => client.GetOfferedTrainingAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(offered);
+
+        var page = Render<CatalogTraining>(parameters => parameters
+            .Add(detail => detail.TrainingId, Guid.CreateVersion7()));
+
+        page.FindAll("a")
+            .Select(anchor => anchor.GetAttribute("href"))
+            .Should().Contain($"/catalog/trainers/{offered.TrainerId}");
+    }
+
+    /// <summary>
     /// Renders, a training whose trainer has a publishable portrait, shows it at the address the
     /// response named.
     /// </summary>
     /// <remarks>
-    /// The address is what this fact is about rather than the picture: it is built from the training
-    /// and the photo, so a reader can see that no identifier of a person leaves this page (ADR 0063).
+    /// The address is what this fact is about rather than the picture: it is built from the
+    /// training and the photo — what this page has in hand — which is what keeps the endpoint's
+    /// forever-cache honest (ADR 0063).
     /// </remarks>
     [Fact]
     public void Renders_ATrainerWithAPublishablePortrait_ShowsItAtTheAddressTheResponseNamed()
@@ -167,6 +192,7 @@ public sealed class CatalogTrainingTests : ComponentTest
         Id = Guid.CreateVersion7(),
         Title = "Domain Driven Design",
         TrainerName = "Ada Lovelace",
+        TrainerId = Guid.CreateVersion7(),
         Topics = ["Architecture"],
         Description = "What a bounded context is.",
         Prerequisites = "None.",

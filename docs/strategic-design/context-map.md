@@ -209,7 +209,7 @@ it, and a reader who does not know that will read them as over-engineering.
 
 | Already there | For |
 |---|---|
-| A real search index, maintained on every create, edit, transfer, publication and withdrawal, cleared on deletion, told a trainer's standing in one call, and readable through `ITrainingSearchQuery` (ADR 0059) | The search a public page would read, already answering at `GET /Catalog/trainings` |
+| A real search index, maintained on every create, edit, transfer, publication and withdrawal, cleared on deletion, told a trainer's standing in one call, and readable through `ITrainingSearchQuery` (ADR 0059) | The search the public pages read (ADR 0062, ADR 0070), already answering at `GET /Catalog/trainings` |
 | A public portrait at `GET /Catalog/trainings/{id}/photo/{photoId}`, whose address names a photo rather than a person and is therefore `immutable` by construction, serving only bytes the domain records as stripped of their metadata (ADR 0063) | A portrait served publicly, behind a CDN |
 | A CQRS query side that projects into DTOs without loading aggregates | A read model that does not pay for the write model |
 
@@ -224,11 +224,12 @@ but the subscriber still does not exist. What ADR 0050 added to that list is the
 what a public catalog must *not* show, and ADR 0056 the ability to express it about a trainer
 rather than about each of their trainings — which is what makes this context buildable rather than
 merely announced. ADR 0059 went one step further and built the index those facts maintain, so what
-is missing here is no longer a store: it is a trainer's public page, an ordering by anything other
-than a title, and whatever else a discovery experience turns out to be. The facets arrived with
-ADR 0069 — each topic at least one offered training declares, counted from this index, browsable at
-`GET /Catalog/topics` — and needed no store of their own, which is itself evidence that a page over
-the same database is still the honest size of this context.
+is missing here is no longer a store: it is an ordering by anything other than a title, and
+whatever else a discovery experience turns out to be. The facets arrived with ADR 0069 — each
+topic at least one offered training declares, counted from this index, browsable at
+`GET /Catalog/topics` — and the trainer's public page with ADR 0070, reachable from every training
+it offers; neither needed a store of its own, which is itself evidence that a page over the same
+database is still the honest size of this context.
 
 ---
 

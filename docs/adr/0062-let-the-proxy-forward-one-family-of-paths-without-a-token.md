@@ -1,6 +1,6 @@
 # 0062 — Let the proxy forward one family of paths without a token
 
-- **Status:** Accepted — amended by [0063](0063-strip-the-metadata-before-the-bytes-are-stored.md): the precondition it named is met, and the portrait is published at an address carrying the photo's identity
+- **Status:** Accepted — amended by [0063](0063-strip-the-metadata-before-the-bytes-are-stored.md): the precondition it named is met, and the portrait is published at an address carrying the photo's identity; amended by [0070](0070-open-a-trainers-public-page.md): the detail port gains the profile's reads — an offering trainer's page and portrait, visibility from the index as ever
 - **Date:** 2026-08-09
 
 ## Context

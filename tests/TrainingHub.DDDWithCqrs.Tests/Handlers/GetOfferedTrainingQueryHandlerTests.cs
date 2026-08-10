@@ -55,6 +55,7 @@ public sealed class GetOfferedTrainingQueryHandlerTests
             Id = Guid.CreateVersion7(),
             Title = "Domain Driven Design",
             TrainerName = "Ada Lovelace",
+            TrainerId = Guid.CreateVersion7(),
             Topics = ["Architecture"],
             Description = "What a bounded context is.",
             Prerequisites = "None.",

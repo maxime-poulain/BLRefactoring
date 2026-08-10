@@ -188,11 +188,30 @@ public static class ApplicationToHttpMappings
             Id = training.Id,
             Title = training.Title,
             TrainerName = training.TrainerName,
+            TrainerId = training.TrainerId,
             Topics = training.Topics,
             Description = training.Description,
             Prerequisites = training.Prerequisites,
             AcquiredSkills = training.AcquiredSkills,
             TrainerPhotoId = training.TrainerPhotoId
+        };
+    }
+
+    /// <summary>
+    /// Publishes one offering trainer's public profile (ADR 0070).
+    /// </summary>
+    public static CatalogTrainerHttpResponse ToHttp(this CatalogTrainerDto trainer)
+    {
+        ArgumentNullException.ThrowIfNull(trainer);
+
+        return new CatalogTrainerHttpResponse
+        {
+            Id = trainer.Id,
+            Firstname = trainer.Firstname,
+            Lastname = trainer.Lastname,
+            Bio = trainer.Bio,
+            PhotoId = trainer.PhotoId,
+            Trainings = trainer.Trainings.ToHttp()
         };
     }
 
