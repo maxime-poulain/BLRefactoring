@@ -13,7 +13,7 @@ using Xunit;
 namespace TrainingHub.DDDWithCqrs.Tests.Handlers;
 
 /// <summary>
-/// Behaviour covered for <c>PublishTrainingCommandHandler</c> and
+/// Behavior covered for <c>PublishTrainingCommandHandler</c> and
 /// <c>UnpublishTrainingCommandHandler</c>.
 /// </summary>
 /// <remarks>

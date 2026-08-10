@@ -1,11 +1,11 @@
 using AwesomeAssertions;
-using TrainingHub.DDDWithCqrs.Application.Features.Catalogue.GetOffered;
+using TrainingHub.DDDWithCqrs.Application.Features.Catalog.GetOffered;
 using Xunit;
 
 namespace TrainingHub.DDDWithCqrs.Tests.Validators;
 
 /// <summary>
-/// The second guard on the catalogue detail's identifier.
+/// The second guard on the catalog detail's identifier.
 /// </summary>
 /// <remarks>
 /// The route constraint refuses anything that is not a GUID, and this refuses the one GUID that

@@ -9,7 +9,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.EventHandlers;
 
 /// <summary>
-/// Behaviour covered for <c>PublishIntegrationEventWhenTrainingCreatedEventHandler</c>.
+/// Behavior covered for <c>PublishIntegrationEventWhenTrainingCreatedEventHandler</c>.
 /// </summary>
 public sealed class PublishIntegrationEventWhenTrainingCreatedEventHandlerTests
 {

@@ -10,7 +10,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.Services.TrainerServices;
 
 /// <summary>
-/// Behaviour covered for the administrative use cases of <c>TrainerApplicationService</c>.
+/// Behavior covered for the administrative use cases of <c>TrainerApplicationService</c>.
 /// </summary>
 /// <remarks>
 /// Whether a sanction is allowed, and what a reason may say, are the aggregate's and the value

@@ -45,7 +45,7 @@ public sealed class TrainingRepository(TrainingContext trainingContext)
 
     /// <summary>
     /// Counts the trainings that hold a place in the given trainer's quota — the data half of the
-    /// catalogue-capacity rule, whose decision stays in <see cref="Training.CreateAsync"/>.
+    /// catalog-capacity rule, whose decision stays in <see cref="Training.CreateAsync"/>.
     /// </summary>
     /// <remarks>
     /// Two clauses that are not the same kind of thing, and are written apart for it: the
@@ -124,7 +124,7 @@ public sealed class TrainingRepository(TrainingContext trainingContext)
     /// <remarks>
     /// The same order every paged read uses — <c>NewestFirst</c> is the only way to obtain the
     /// <see cref="IOrderedQueryable{T}"/> the paging extension demands, so this read cannot page
-    /// inconsistently with the CQRS host's. What differs is the bill: this one materialises the
+    /// inconsistently with the CQRS host's. What differs is the bill: this one materializes the
     /// aggregates whole, topics included, because handing back aggregates is what a repository is
     /// for; the query handlers project the same page into columns. See ADR 0029.
     /// </remarks>

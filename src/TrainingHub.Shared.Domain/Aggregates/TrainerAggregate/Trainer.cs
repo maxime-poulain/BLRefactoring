@@ -18,7 +18,7 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     /// account: authentication is handled by the Identity context, which the
     /// aggregate only ever references through <see cref="UserId"/>. A trainer may
     /// legitimately publish a professional address that differs from the one their
-    /// account was opened with, and two trainers of the same organisation may even
+    /// account was opened with, and two trainers of the same organization may even
     /// share one — hence no uniqueness rule applies here, unlike the account email.
     /// </remarks>
     public Email ContactEmail { get; private set; } = null!;
@@ -53,7 +53,7 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     /// </summary>
     /// <remarks>
     /// A trainer is born <see cref="TrainerStatus.Active"/>. This one field is the whole of a
-    /// suspension: the trainings are not touched, so the catalogue leaves public view because its
+    /// suspension: the trainings are not touched, so the catalog leaves public view because its
     /// owner did, and comes back whole when <see cref="Reinstate"/> is called. See ADR 0050.
     /// </remarks>
     public TrainerStatus Status { get; private set; } = TrainerStatus.Active;
@@ -203,7 +203,7 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     }
 
     /// <summary>
-    /// Places the trainer under sanction: their catalogue leaves public view and cannot grow.
+    /// Places the trainer under sanction: their catalog leaves public view and cannot grow.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -239,7 +239,7 @@ public sealed class Trainer : AggregateRoot<TrainerId>
     }
 
     /// <summary>
-    /// Lifts the sanction: the trainer's catalogue returns exactly as they left it.
+    /// Lifts the sanction: the trainer's catalog returns exactly as they left it.
     /// </summary>
     /// <remarks>
     /// Nothing is restored, because nothing was taken. A training the trainer had unpublished

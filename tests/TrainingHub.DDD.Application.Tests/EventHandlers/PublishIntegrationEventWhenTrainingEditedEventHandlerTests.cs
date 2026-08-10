@@ -9,7 +9,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.EventHandlers;
 
 /// <summary>
-/// Behaviour covered for <c>PublishIntegrationEventWhenTrainingEditedEventHandler</c>.
+/// Behavior covered for <c>PublishIntegrationEventWhenTrainingEditedEventHandler</c>.
 /// </summary>
 /// <remarks>
 /// Asserts the edited fact stays an edited fact on the wire: the type in the verification is what

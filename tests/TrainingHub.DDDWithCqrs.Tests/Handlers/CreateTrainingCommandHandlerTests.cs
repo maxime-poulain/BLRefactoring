@@ -11,7 +11,7 @@ using Xunit;
 namespace TrainingHub.DDDWithCqrs.Tests.Handlers;
 
 /// <summary>
-/// Behaviour covered for <c>CreateTrainingCommandHandler</c>.
+/// Behavior covered for <c>CreateTrainingCommandHandler</c>.
 /// </summary>
 public sealed class CreateTrainingCommandHandlerTests
 {
@@ -35,7 +35,7 @@ public sealed class CreateTrainingCommandHandlerTests
 
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
-    // Answers zero unless a test raises it: an empty catalogue is the default, so only the
+    // Answers zero unless a test raises it: an empty catalog is the default, so only the
     // test about the capacity rule mentions the counter.
     private readonly Mock<ITrainingCounter> _trainingCounter = new();
 
@@ -108,14 +108,14 @@ public sealed class CreateTrainingCommandHandlerTests
     }
 
     /// <summary>
-    /// Handle, the catalogue is full, surfaces the domain's refusal and does not save.
+    /// Handle, the catalog is full, surfaces the domain's refusal and does not save.
     /// </summary>
     /// <remarks>
     /// The rule and its message are the aggregate's, proven in the domain suite; what this
     /// stack owes is to hand the factory the counter and to let the refusal through untouched.
     /// </remarks>
     [Fact]
-    public async Task Handle_CatalogueFull_SurfacesTheRefusalAndDoesNotSave()
+    public async Task Handle_CatalogFull_SurfacesTheRefusalAndDoesNotSave()
     {
         var trainer = new TrainerBuilder().Build();
         _trainerRepository
@@ -139,7 +139,7 @@ public sealed class CreateTrainingCommandHandlerTests
 
         var result = await sut.Handle(command, CancellationToken.None);
 
-        result.ShouldContainError(TrainingErrorCodes.CatalogueFull);
+        result.ShouldContainError(TrainingErrorCodes.CatalogFull);
         _trainingRepository.Verify(r => r.Add(It.IsAny<Training>()), Times.Never);
         _unitOfWork.Verify(
             uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),

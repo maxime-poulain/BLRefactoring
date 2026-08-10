@@ -11,7 +11,7 @@ using Xunit;
 namespace TrainingHub.Shared.Api.Tests.Authorization;
 
 /// <summary>
-/// Behaviour covered for <c>AddApiAuthorization</c>: the three policies both hosts enforce, and
+/// Behavior covered for <c>AddApiAuthorization</c>: the three policies both hosts enforce, and
 /// what each of them demands.
 /// </summary>
 /// <remarks>

@@ -13,7 +13,7 @@ namespace TrainingHub.Shared.Api.Contracts.Trainers;
 /// the expected version from <c>If-Match</c>; joining the three is the mapping's job. That
 /// separation is the point of this type: the CQRS command used to be bound straight from the
 /// body and then have those two fields assigned by the controller, which is why it needed
-/// <c>[JsonIgnore]</c> — a serialisation concern inside an application message.
+/// <c>[JsonIgnore]</c> — a serialization concern inside an application message.
 /// </para>
 /// <para>
 /// The constraints are declared as attributes so that <c>[ApiController]</c> answers a

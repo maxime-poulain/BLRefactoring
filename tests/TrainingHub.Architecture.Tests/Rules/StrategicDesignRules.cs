@@ -41,7 +41,7 @@ public sealed partial class StrategicDesignRules
 
     /// <summary>A section's <c>**Status:**</c> bullet: its claim of how far the context exists.</summary>
     /// <remarks>
-    /// Anchored on the bullet, which is what keeps the Actors table of the Training Catalogue
+    /// Anchored on the bullet, which is what keeps the Actors table of the Training Catalog
     /// section — whose header also says <c>Status</c> — out of the match.
     /// </remarks>
     [GeneratedRegex(@"^\s*-\s+\*\*Status:\*\*\s*(?<status>.+)$")]

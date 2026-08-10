@@ -75,26 +75,26 @@ public sealed class TrainingSearchIndexer(TrainingContext trainingContext) : ITr
             .ConfigureAwait(false);
 
     /// <inheritdoc />
-    public async Task HideTrainerCatalogueAsync(
+    public async Task HideTrainerCatalogAsync(
         Guid trainerId,
         CancellationToken cancellationToken = default) =>
-        await SetCatalogueHidden(trainerId, hidden: true, cancellationToken).ConfigureAwait(false);
+        await SetCatalogHidden(trainerId, hidden: true, cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
-    public async Task ShowTrainerCatalogueAsync(
+    public async Task ShowTrainerCatalogAsync(
         Guid trainerId,
         CancellationToken cancellationToken = default) =>
-        await SetCatalogueHidden(trainerId, hidden: false, cancellationToken).ConfigureAwait(false);
+        await SetCatalogHidden(trainerId, hidden: false, cancellationToken).ConfigureAwait(false);
 
     /// <summary>
-    /// Flips the visibility of a whole catalogue in one statement.
+    /// Flips the visibility of a whole catalog in one statement.
     /// </summary>
     /// <remarks>
     /// What ADR 0056 promised a real adapter would do: one call about a trainer, one statement in
     /// the database, and each training's own publication untouched — so a lifting puts back exactly
     /// what was published and never what was merely written.
     /// </remarks>
-    private async Task SetCatalogueHidden(
+    private async Task SetCatalogHidden(
         Guid trainerId,
         bool hidden,
         CancellationToken cancellationToken) =>
@@ -110,7 +110,7 @@ public sealed class TrainingSearchIndexer(TrainingContext trainingContext) : ITr
     /// </summary>
     /// <remarks>
     /// The owner's standing is read from the trainer the fact names rather than from the entry that
-    /// may already exist, because a transfer can move a training into a hidden catalogue — and back
+    /// may already exist, because a transfer can move a training into a hidden catalog — and back
     /// out of one.
     /// </remarks>
     private async Task<SearchDocument?> ReadDocumentAsync(

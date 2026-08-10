@@ -102,7 +102,7 @@ public static class ProblemResultExtensions
     /// map is the standard's meaning of <c>errors</c>, and these codes are ours.
     /// </para>
     /// <para>
-    /// That request now answers <c>domainErrors</c> on both hosts: the CQRS validation behaviour
+    /// That request now answers <c>domainErrors</c> on both hosts: the CQRS validation behavior
     /// returns a failed <c>Result</c> rather than throwing, so a rejected command leaves through
     /// here like every other business failure. What still publishes the field map is what the
     /// standard means by it — the data annotations on the request contracts, Identity's rejections,

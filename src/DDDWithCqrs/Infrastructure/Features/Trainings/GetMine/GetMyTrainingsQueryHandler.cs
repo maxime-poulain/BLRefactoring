@@ -20,7 +20,7 @@ namespace TrainingHub.DDDWithCqrs.Infrastructure.Features.Trainings.GetMine;
 /// with. <c>CreateTrainingCommandHandler</c> resolves the owner of a new training the same way.
 /// <para>
 /// The <c>Where</c> is composed before <c>ToPagedResultAsync</c>, so the filter reaches SQL and the
-/// count and the page agree on the same set. Filtering a materialised page instead would page over
+/// count and the page agree on the same set. Filtering a materialized page instead would page over
 /// everybody's trainings and then remove most of them — a caller would receive a short page, a
 /// wrong total, and rows that were read before being discarded.
 /// </para>

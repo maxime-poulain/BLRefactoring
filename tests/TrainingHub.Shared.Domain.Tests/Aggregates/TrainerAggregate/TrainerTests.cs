@@ -11,7 +11,7 @@ namespace TrainingHub.Shared.Domain.Tests.Aggregates.TrainerAggregate;
 /// The aggregate only accepts value objects, so malformed input cannot reach it:
 /// those rules belong to the value objects and are covered by their own tests, and
 /// the accumulation of several errors at once is covered by the application-layer
-/// factory. What is left to assert here is the aggregate's own behaviour.
+/// factory. What is left to assert here is the aggregate's own behavior.
 /// </summary>
 public sealed class TrainerTests
 {

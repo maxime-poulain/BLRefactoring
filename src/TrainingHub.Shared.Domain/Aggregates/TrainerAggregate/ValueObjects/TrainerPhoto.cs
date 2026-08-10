@@ -72,7 +72,7 @@ public sealed class TrainerPhoto : ValueObject
     /// record. Which is the whole point — the absence is a fact about history, not a state this
     /// code can produce.
     /// </remarks>
-    public DateTime? SanitisedOnUtc { get; private init; }
+    public DateTime? SanitizedOnUtc { get; private init; }
 
     /// <summary>
     /// Whether these bytes may be shown to somebody who is not signed in.
@@ -83,7 +83,7 @@ public sealed class TrainerPhoto : ValueObject
     /// before ADR 0063 cannot be proven either way, and is therefore not published — its owner
     /// uploading it again is what makes it publishable, and costs them one action.
     /// </remarks>
-    public bool MayBePublished => SanitisedOnUtc is not null;
+    public bool MayBePublished => SanitizedOnUtc is not null;
 
     private TrainerPhoto()
     {
@@ -99,7 +99,7 @@ public sealed class TrainerPhoto : ValueObject
     /// <para>
     /// Separate from <see cref="Create"/> because the two ask about different bytes, and running
     /// them on the same ones cost this domain two of its own rules for the length of one commit.
-    /// Sanitisation re-encodes into the format it is told, so a JPEG uploaded as
+    /// Sanitization re-encodes into the format it is told, so a JPEG uploaded as
     /// <c>image/png</c> comes back a real PNG and the mismatch <em>this</em> method exists to refuse
     /// would have been laundered into an acceptance; and it bounds the dimensions, so a photograph
     /// past <see cref="MaxSizeInBytes"/> comes back small enough that the limit never fires. Both
@@ -109,8 +109,8 @@ public sealed class TrainerPhoto : ValueObject
     /// The declared type is checked <em>against the bytes</em>. An extension and a
     /// <c>Content-Type</c> header are both things a caller writes, so neither is evidence; the first
     /// bytes of the file are. A JPEG renamed <c>.png</c> is refused here, and so is anything whose
-    /// signature this method does not recognise — SVG included, which matters because these photos
-    /// are headed for a public catalogue and SVG is a script-carrying format.
+    /// signature this method does not recognize — SVG included, which matters because these photos
+    /// are headed for a public catalog and SVG is a script-carrying format.
     /// </para>
     /// </remarks>
     public static Result<string> Vet(ReadOnlySpan<byte> upload, string? declaredContentType)
@@ -127,7 +127,7 @@ public sealed class TrainerPhoto : ValueObject
                 $"A photo cannot exceed {MaxSizeInBytes} bytes.");
         }
 
-        var declared = Normalise(declaredContentType);
+        var declared = Normalize(declaredContentType);
 
         if (!IsSupported(declared))
         {
@@ -155,14 +155,14 @@ public sealed class TrainerPhoto : ValueObject
     /// <summary>
     /// Validates an uploaded image and describes it as a photo this domain will accept.
     /// </summary>
-    /// <param name="content">The bytes to be stored, after sanitisation.</param>
+    /// <param name="content">The bytes to be stored, after sanitization.</param>
     /// <param name="declaredContentType">The media type the caller claims the bytes have.</param>
-    /// <param name="sanitisedOnUtc">When those bytes were stripped.</param>
+    /// <param name="sanitizedOnUtc">When those bytes were stripped.</param>
     /// <returns>The photo, or the reason it was refused.</returns>
     /// <remarks>
     /// <para>
     /// The bytes handed here are what will be <em>stored</em>: they have been through
-    /// <c>IPhotoSanitiser</c>, which decoded them, applied the camera's orientation, bounded the
+    /// <c>IPhotoSanitizer</c>, which decoded them, applied the camera's orientation, bounded the
     /// dimensions and re-encoded them without metadata. ADR 0021 deferred that and ADR 0063 took
     /// it. The order matters and is the reason this takes a stamp — what this records is a media
     /// type and a byte count, and they have to describe the bytes that were really stored rather
@@ -179,7 +179,7 @@ public sealed class TrainerPhoto : ValueObject
     public static Result<TrainerPhoto> Create(
         ReadOnlySpan<byte> content,
         string? declaredContentType,
-        DateTime sanitisedOnUtc)
+        DateTime sanitizedOnUtc)
     {
         if (content.IsEmpty)
         {
@@ -194,7 +194,7 @@ public sealed class TrainerPhoto : ValueObject
                 $"A photo cannot exceed {MaxSizeInBytes} bytes.");
         }
 
-        var declared = Normalise(declaredContentType);
+        var declared = Normalize(declaredContentType);
 
         if (!IsSupported(declared))
         {
@@ -224,7 +224,7 @@ public sealed class TrainerPhoto : ValueObject
             PhotoId = PhotoId.Generate(),
             ContentType = actual,
             ByteSize = content.Length,
-            SanitisedOnUtc = sanitisedOnUtc
+            SanitizedOnUtc = sanitizedOnUtc
         });
     }
 
@@ -234,7 +234,7 @@ public sealed class TrainerPhoto : ValueObject
         yield return PhotoId;
         yield return ContentType;
         yield return ByteSize;
-        yield return SanitisedOnUtc;
+        yield return SanitizedOnUtc;
     }
 
     /// <summary>
@@ -276,7 +276,7 @@ public sealed class TrainerPhoto : ValueObject
     /// left alone on purpose — media types are case-insensitive, so the comparisons below say so
     /// rather than folding the string first and having to justify which direction they folded it.
     /// </remarks>
-    private static string Normalise(string? contentType)
+    private static string Normalize(string? contentType)
     {
         if (string.IsNullOrWhiteSpace(contentType))
         {

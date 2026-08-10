@@ -6,7 +6,7 @@ namespace TrainingHub.Shared.Application.IntegrationEvents;
 /// </summary>
 /// <remarks>
 /// An identifier and nothing else, because a lifting restores rather than decides: there is no
-/// motive to carry, and the catalogue that comes back is the one that was never written to
+/// motive to carry, and the catalog that comes back is the one that was never written to
 /// (ADR 0050).
 /// </remarks>
 /// <param name="TrainerId">The identifier of the reinstated trainer.</param>

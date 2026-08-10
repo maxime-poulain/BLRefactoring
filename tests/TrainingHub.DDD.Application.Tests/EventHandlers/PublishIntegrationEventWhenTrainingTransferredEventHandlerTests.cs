@@ -9,7 +9,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.EventHandlers;
 
 /// <summary>
-/// Behaviour covered for <c>PublishIntegrationEventWhenTrainingTransferredEventHandler</c>.
+/// Behavior covered for <c>PublishIntegrationEventWhenTrainingTransferredEventHandler</c>.
 /// </summary>
 /// <remarks>
 /// The verification pins both owners on the wire: a consumer reacting to the transfer must not

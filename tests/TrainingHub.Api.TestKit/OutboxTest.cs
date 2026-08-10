@@ -165,18 +165,18 @@ public abstract class OutboxTest<TFactory>(TFactory factory) : IntegrationTest<T
     }
 
     /// <summary>
-    /// A failing neighbour, does not replay a delivered consumer.
+    /// A failing neighbor, does not replay a delivered consumer.
     /// </summary>
     /// <remarks>
     /// The per-consumer isolation of ADR 0034, end to end. The marked registration routes its
     /// trainer-created fact to two consumers: the production welcome email, then the test kit's
     /// <see cref="FailOnceWhenTrainerCreatedIntegrationEventHandler"/>, which throws on its first
     /// delivery. Attempt one delivers the welcome and records it in the ledger; attempt two must
-    /// skip the welcome and re-run only the failed neighbour. The mailbox count is the assertion
+    /// skip the welcome and re-run only the failed neighbor. The mailbox count is the assertion
     /// that matters: before the ledger, a replayed welcome would have passed every suite silently.
     /// </remarks>
     [Fact]
-    public async Task AFailingNeighbour_DoesNotReplayADeliveredConsumer()
+    public async Task AFailingNeighbor_DoesNotReplayADeliveredConsumer()
     {
         var request = AuthHelper.CreateUniqueRegisterRequest(
             FailOnceWhenTrainerCreatedIntegrationEventHandler.Marker);
@@ -188,7 +188,7 @@ public abstract class OutboxTest<TFactory>(TFactory factory) : IntegrationTest<T
             "TrainerCreated",
             message => message.ProcessedOnUtc is not null);
 
-        delivered.Attempts.Should().Be(1, "the failing neighbour spent exactly one attempt of the message's budget");
+        delivered.Attempts.Should().Be(1, "the failing neighbor spent exactly one attempt of the message's budget");
         delivered.Error.Should().Contain("TestKit.FailOnce",
             "the failed pass's evidence stays on the envelope, naming the consumer that owed it");
 

@@ -8,7 +8,7 @@ namespace TrainingHub.Shared.Api.Controllers;
 /// <summary>
 /// Base class for the administrative controllers of both hosts: behind
 /// <see cref="AdministratorPolicy"/>, on the conventional route, with the <c>[ApiController]</c>
-/// behaviours.
+/// behaviors.
 /// </summary>
 /// <remarks>
 /// A third base rather than a fourth attribute on the second, and the reason is ADR 0051's design

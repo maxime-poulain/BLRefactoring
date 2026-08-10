@@ -12,7 +12,7 @@ using Xunit;
 namespace TrainingHub.Blazor.Client.Tests.Pages;
 
 /// <summary>
-/// Behaviour covered for the profile page.
+/// Behavior covered for the profile page.
 /// </summary>
 /// <remarks>
 /// The first component in this repository with logic worth proving, and the reason bUnit arrived.

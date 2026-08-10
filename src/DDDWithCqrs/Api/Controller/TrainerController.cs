@@ -131,9 +131,9 @@ public sealed class TrainerController(
     /// By identifier rather than <c>me</c>, unlike the two below: publishing a portrait is
     /// self-service, looking at one is not, and a trainer may perfectly well look at a colleague's.
     /// <para>
-    /// It stayed authenticated when the catalogue opened, and that turned out to be the right shape
+    /// It stayed authenticated when the catalog opened, and that turned out to be the right shape
     /// rather than a step short of one. The public portrait is a different address on a different
-    /// controller — it names a training, not a person, and it refuses what carries no sanitisation
+    /// controller — it names a training, not a person, and it refuses what carries no sanitization
     /// stamp (ADR 0063). Widening this one instead would have published an identifier a visitor has
     /// no way to have been given.
     /// </para>

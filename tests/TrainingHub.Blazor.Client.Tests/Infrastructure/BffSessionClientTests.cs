@@ -6,7 +6,7 @@ using Xunit;
 namespace TrainingHub.Blazor.Client.Tests.Infrastructure;
 
 /// <summary>
-/// Behaviour covered for signing in and out through the BFF.
+/// Behavior covered for signing in and out through the BFF.
 /// </summary>
 /// <remarks>
 /// The generated client is not used for this and cannot be: the API answers <c>/Auth/login</c> with

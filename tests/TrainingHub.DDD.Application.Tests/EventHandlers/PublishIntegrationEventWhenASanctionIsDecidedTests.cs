@@ -13,7 +13,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.EventHandlers;
 
 /// <summary>
-/// Behaviour covered for the three publishers ADR 0056 adds.
+/// Behavior covered for the three publishers ADR 0056 adds.
 /// </summary>
 /// <remarks>
 /// Each of them flattens a domain event into the fact that leaves the context, and what the
@@ -84,7 +84,7 @@ public sealed class PublishIntegrationEventWhenASanctionIsDecidedTests
         var domainEvent = new TrainingWithheldDomainEvent(
             trainingId,
             trainerId,
-            TrainingTitle.Create("Advanced domain modelling").ShouldBeSuccess(),
+            TrainingTitle.Create("Advanced domain modeling").ShouldBeSuccess(),
             WithholdingReason.Create("Reported for misleading claims.").ShouldBeSuccess());
 
         var sut = new PublishIntegrationEventWhenTrainingWithheldEventHandler(_publisher.Object);
@@ -94,7 +94,7 @@ public sealed class PublishIntegrationEventWhenASanctionIsDecidedTests
                 new TrainingWithheldIntegrationEvent(
                     trainingId.Value,
                     trainerId.Value,
-                    "Advanced domain modelling",
+                    "Advanced domain modeling",
                     "Reported for misleading claims."),
                 It.IsAny<CancellationToken>()),
             Times.Once);

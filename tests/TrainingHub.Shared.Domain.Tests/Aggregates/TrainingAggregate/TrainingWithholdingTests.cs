@@ -231,7 +231,7 @@ public sealed class TrainingWithholdingTests
     /// <remarks>
     /// The half of ADR 0052 that had to land in the same commit as the state itself. ADR 0050 made
     /// the ten count what the public can see, arguing that a trainer who withdraws ten should not
-    /// lose their catalogue for ever — but that argument is about a <em>voluntary</em> withdrawal.
+    /// lose their catalog for ever — but that argument is about a <em>voluntary</em> withdrawal.
     /// Freeing a slot by being moderated is a perverse incentive, so the question became "did its
     /// owner take it down" rather than "is it published".
     /// <para>

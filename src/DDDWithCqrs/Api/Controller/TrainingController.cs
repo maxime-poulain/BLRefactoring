@@ -260,7 +260,7 @@ public sealed class TrainingController(
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
     /// <returns>
     /// 204 No Content when the training is now on offer.
-    /// 400 Bad Request when the owner is suspended or their catalogue is full.
+    /// 400 Bad Request when the owner is suspended or their catalog is full.
     /// 404 Not Found if the training does not exist.
     /// 409 Conflict when the training was already published.
     /// </returns>

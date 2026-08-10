@@ -5,7 +5,7 @@ namespace TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetById;
 /// <summary>
 /// Checks <see cref="GetTrainerByIdQuery"/> before any handler sees it.
 /// <para>
-/// Runs in the pipeline behaviour, so a rejected message never reaches the domain and
+/// Runs in the pipeline behavior, so a rejected message never reaches the domain and
 /// the caller gets one document listing every field at fault rather than the first.
 /// </para>
 /// </summary>

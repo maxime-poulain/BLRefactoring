@@ -89,7 +89,7 @@ internal static class RuleAssertions
         return selected;
     }
 
-    /// <summary>A type, its offence and where to find it.</summary>
+    /// <summary>A type, its offense and where to find it.</summary>
     /// <remarks>
     /// <c>Explanation</c> is the enhanced fork's account of why the dependency search failed —
     /// "depends on Microsoft.EntityFrameworkCore" rather than a bare name. <c>SourceFilePath</c>

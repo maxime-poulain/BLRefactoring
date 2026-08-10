@@ -7,7 +7,7 @@ using Xunit;
 namespace TrainingHub.Shared.Domain.Tests.Common.Errors;
 
 /// <summary>
-/// Behaviour covered for <c>ErrorCollection</c>.
+/// Behavior covered for <c>ErrorCollection</c>.
 /// </summary>
 public sealed class ErrorCollectionTests
 {

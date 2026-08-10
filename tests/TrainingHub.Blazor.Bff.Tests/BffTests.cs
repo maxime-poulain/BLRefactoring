@@ -29,7 +29,7 @@ public sealed class BffTests : IDisposable
     private const string UserPath = "bff/user";
     private const string LogoutPath = "bff/logout";
     private const string ForwardedPath = "api/Trainer/me";
-    private const string AnonymousPath = "api/Catalogue/trainings";
+    private const string AnonymousPath = "api/Catalog/trainings";
 
     private readonly BffFactory _factory = new();
     private readonly HttpClient _browser;
@@ -141,7 +141,7 @@ public sealed class BffTests : IDisposable
         // and the user stays apparently signed in while every forwarded call comes back 401. There
         // is no refresh token to reach for — the API issues one credential, with one lifetime.
         //
-        // Asserted against the configured options because the behaviour is not observable from
+        // Asserted against the configured options because the behavior is not observable from
         // outside without waiting out half a token's life, and a test that sleeps is a test nobody
         // keeps. What it pins is exactly the line that was missing.
         options.SlidingExpiration.Should().BeFalse(
@@ -249,7 +249,7 @@ public sealed class BffTests : IDisposable
     /// A forwarded call without a session never reaches the api.
     /// </summary>
     /// <remarks>
-    /// The reason narrowed when the catalogue became reachable: it is no longer true of every path
+    /// The reason narrowed when the catalog became reachable: it is no longer true of every path
     /// that the API would refuse an anonymous call anyway. It is still true of this one, and of
     /// everything the catch-all route matches, which is what this fact pins (ADR 0062).
     /// </remarks>
@@ -259,13 +259,13 @@ public sealed class BffTests : IDisposable
         var response = await SendAsync(HttpMethod.Get, ForwardedPath);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized,
-            "outside the catalogue an anonymous call would be forwarded without a token and " +
+            "outside the catalog an anonymous call would be forwarded without a token and " +
             "refused anyway, one hop later");
         _factory.ProxiedApi.Requests.Should().BeEmpty();
     }
 
     /// <summary>
-    /// The catalogue is forwarded without a session, and without a token.
+    /// The catalog is forwarded without a session, and without a token.
     /// </summary>
     /// <remarks>
     /// The one path this proxy carries for a visitor who has never signed in. Two assertions rather
@@ -274,7 +274,7 @@ public sealed class BffTests : IDisposable
     /// else's credential (ADR 0062).
     /// </remarks>
     [Fact]
-    public async Task The_catalogue_is_forwarded_without_a_session_and_without_a_token()
+    public async Task The_catalog_is_forwarded_without_a_session_and_without_a_token()
     {
         var response = await SendAsync(HttpMethod.Get, AnonymousPath);
 
@@ -282,22 +282,22 @@ public sealed class BffTests : IDisposable
 
         var forwarded = _factory.ProxiedApi.Requests.Should().ContainSingle().Subject;
 
-        forwarded.Uri!.AbsolutePath.Should().Be("/Catalogue/trainings",
+        forwarded.Uri!.AbsolutePath.Should().Be("/Catalog/trainings",
             "the prefix is dropped on this route as on the other one");
         forwarded.Authorization.Should().BeNull(
             "there is no session to take a token from, and the transform adds nothing rather than failing");
     }
 
     /// <summary>
-    /// The catalogue carries the token of a visitor who has one.
+    /// The catalog carries the token of a visitor who has one.
     /// </summary>
     /// <remarks>
     /// Anonymous means "no policy to satisfy", not "stripped". A signed-in visitor browsing the
-    /// public catalogue reaches the API as themselves, which is what keeps one route from behaving
+    /// public catalog reaches the API as themselves, which is what keeps one route from behaving
     /// like two different proxies.
     /// </remarks>
     [Fact]
-    public async Task The_catalogue_carries_the_token_of_a_visitor_who_has_one()
+    public async Task The_catalog_carries_the_token_of_a_visitor_who_has_one()
     {
         await SignInAsync();
 

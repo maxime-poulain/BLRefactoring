@@ -11,7 +11,7 @@ namespace TrainingHub.DDD.Application.Services.OutboxServices;
 /// </summary>
 /// <remarks>
 /// The second application service here that drives no aggregate, and for a different reason than
-/// <c>ICatalogueApplicationService</c>: that one reads a read model, this one reads and writes the
+/// <c>ICatalogApplicationService</c>: that one reads a read model, this one reads and writes the
 /// platform's own delivery table. Neither has a rule to break, which is why the read answers no
 /// <c>Result</c> and the write answers a bare one (ADR 0061).
 /// </remarks>
@@ -36,7 +36,7 @@ public interface IOutboxApplicationService
 
 /// <inheritdoc />
 /// <remarks>
-/// A pass-through, for the reason <c>CatalogueApplicationService</c> states and which applies twice
+/// A pass-through, for the reason <c>CatalogApplicationService</c> states and which applies twice
 /// over here: there is no aggregate to drive, so the two stacks would be inventing a difference
 /// rather than expressing one. Both arrive at the same port, which is where the decision — is this
 /// row poison, and what does putting it back mean — actually lives.

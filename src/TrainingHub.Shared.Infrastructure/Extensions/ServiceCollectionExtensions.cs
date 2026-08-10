@@ -1,4 +1,4 @@
-using TrainingHub.Shared.Application.Catalogue;
+using TrainingHub.Shared.Application.Catalog;
 using TrainingHub.Shared.Application.IntegrationEventHandlers;
 using TrainingHub.Shared.Application.IntegrationEvents;
 using TrainingHub.Shared.Application.Outbox;
@@ -32,7 +32,7 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        // Every outbox knob is checked positive before the host serves anything, in the mould of
+        // Every outbox knob is checked positive before the host serves anything, in the mold of
         // SmtpOptions and ObjectStorageOptions: fail at start-up rather than on the first drain.
         // The defaults all pass, so a host with no section keeps starting (ADR 0033).
         services.AddOptions<OutboxOptions>()
@@ -101,11 +101,11 @@ public static class ServiceCollectionExtensions
             .AddScoped<IIntegrationEventHandler<TrainerSuspendedIntegrationEvent>,
                 SendSuspensionNoticeWhenTrainerSuspendedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<TrainerSuspendedIntegrationEvent>,
-                HideCatalogueWhenTrainerSuspendedIntegrationEventHandler>()
+                HideCatalogWhenTrainerSuspendedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<TrainerReinstatedIntegrationEvent>,
                 SendReinstatementNoticeWhenTrainerReinstatedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<TrainerReinstatedIntegrationEvent>,
-                ShowCatalogueWhenTrainerReinstatedIntegrationEventHandler>()
+                ShowCatalogWhenTrainerReinstatedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<TrainingCreatedIntegrationEvent>,
                 IndexTrainingWhenTrainingCreatedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<TrainingEditedIntegrationEvent>,
@@ -150,12 +150,12 @@ public static class ServiceCollectionExtensions
             // database and the adapter holds the session that writes them.
             // The one decoder in the product (ADR 0063). Singleton because it holds nothing: every
             // call allocates its own bitmaps and disposes them, and the type has no field at all.
-            .AddSingleton<IPhotoSanitiser, SkiaSharpPhotoSanitiser>()
+            .AddSingleton<IPhotoSanitizer, SkiaSharpPhotoSanitizer>()
             .AddScoped<ITrainingSearchIndexer, TrainingSearchIndexer>()
             .AddScoped<ITrainingSearchQuery, TrainingSearchQuery>()
-            // The catalogue's read by identifier: visibility from the index, content from the write
+            // The catalog's read by identifier: visibility from the index, content from the write
             // model, and the two never confused (ADR 0062).
-            .AddScoped<ICatalogueDetailQuery, CatalogueDetailQuery>()
+            .AddScoped<ICatalogDetailQuery, CatalogDetailQuery>()
             // The outbox's operator surface (ADR 0061). Scoped for the same reason: it reads and
             // writes the delivery table through the request's own session.
             .AddScoped<IOutboxOperations, OutboxOperations>();

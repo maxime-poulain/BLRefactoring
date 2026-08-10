@@ -2,9 +2,9 @@
 
 ## Is this worth doing here?
 
-Event storming earns its keep in two ways: **discovering** a domain nobody has modelled yet, and
+Event storming earns its keep in two ways: **discovering** a domain nobody has modeled yet, and
 **explaining** one that is already built. On a domain of two aggregates and fourteen events, there is
-nothing left to discover — so this document makes no pretence of being a workshop record. It is here
+nothing left to discover — so this document makes no pretense of being a workshop record. It is here
 for the second reason, and one property of this codebase makes it unusually effective:
 
 > **The reactions are already named as policies.** `DeleteTrainingWhenTrainerDeleted`,
@@ -12,14 +12,14 @@ for the second reason, and one property of this codebase makes it unusually effe
 
 Those are file names in `Shared.Application/EventHandlers/`. The *when X then Y* notation of an
 event storming does not have to be invented for this repository — it maps one-to-one onto files that
-exist. A reader who understands the boards below can open any handler and recognise it.
+exist. A reader who understands the boards below can open any handler and recognize it.
 
 What this document is **not**: exhaustive. Commands that only read are left out, and so is every
 validation failure that never reaches the domain.
 
 ## Notation
 
-| Colour | Means | Where it lives in the code |
+| Color | Means | Where it lives in the code |
 |---|---|---|
 | 🟠 **Domain event** | A business fact, past tense | `…/DomainEvents/*.cs` |
 | 🔵 **Command** | An intent, imperative | An application service, or a `*Command` |
@@ -163,7 +163,7 @@ flowchart LR
     P7 --> OB
     OB -->|"delivery worker, post-commit"| SI["Search Indexing context"]
 
-    SI -.-> RM["🟢 Future public catalogue"]
+    SI -.-> RM["🟢 Future public catalog"]
 
     TD["🟠 TrainerDeletedDomainEvent"] --> P3["🟣 Delete the trainer's trainings"]
     P3 --> AG
@@ -238,7 +238,7 @@ policy that deletes trainings *inside the same unit of work*. This is the strong
 integration event and an eventual, compensable deletion.
 
 **The transfer is the board's first multi-actor edge — and its one domain service.** Handing a
-training over reads the *recipient's* catalogue to mutate the *giver's* training, a decision no
+training over reads the *recipient's* catalog to mutate the *giver's* training, a decision no
 aggregate can own: `TrainingTransferDomainService` decides through the same two ports creation uses,
 and only it can reach the aggregate's internal reassignment (ADR 0036).
 
@@ -267,9 +267,9 @@ and only it can reach the aggregate's internal reassignment (ADR 0036).
 | Unpublish a training | `Training` | It is not already withdrawn | `TrainingUnpublishedDomainEvent` | Commit `TrainingUnpublishedIntegrationEvent` to the outbox; the worker removes it from the index after the commit | `PublishIntegrationEventWhenTrainingUnpublishedEventHandler` |
 | Publish a training | `Training` | It is withdrawn; the owner is not suspended and publishes fewer than ten | `TrainingPublishedDomainEvent` | Commit `TrainingPublishedIntegrationEvent` to the outbox; the worker indexes it after the commit | `PublishIntegrationEventWhenTrainingPublishedEventHandler` |
 | Suspend a trainer | `Trainer` | The trainer is not already suspended | `TrainerSuspendedDomainEvent` | Record the sanction | `AuditWhenTrainerSuspendedEventHandler` |
-| Suspend a trainer | `Trainer` | — | `TrainerSuspendedDomainEvent` | Commit `TrainerSuspendedIntegrationEvent` to the outbox; the worker notifies the account and hides the catalogue after the commit | `PublishIntegrationEventWhenTrainerSuspendedEventHandler` |
+| Suspend a trainer | `Trainer` | — | `TrainerSuspendedDomainEvent` | Commit `TrainerSuspendedIntegrationEvent` to the outbox; the worker notifies the account and hides the catalog after the commit | `PublishIntegrationEventWhenTrainerSuspendedEventHandler` |
 | Reinstate a trainer | `Trainer` | The trainer is suspended | `TrainerReinstatedDomainEvent` | Record the lifting | `AuditWhenTrainerReinstatedEventHandler` |
-| Reinstate a trainer | `Trainer` | — | `TrainerReinstatedDomainEvent` | Commit `TrainerReinstatedIntegrationEvent` to the outbox; the worker notifies the account and shows the catalogue again after the commit | `PublishIntegrationEventWhenTrainerReinstatedEventHandler` |
+| Reinstate a trainer | `Trainer` | — | `TrainerReinstatedDomainEvent` | Commit `TrainerReinstatedIntegrationEvent` to the outbox; the worker notifies the account and shows the catalog again after the commit | `PublishIntegrationEventWhenTrainerReinstatedEventHandler` |
 | Withhold a training | `Training` | It is not already withheld | `TrainingWithheldDomainEvent` | Record the decision and its reason | `AuditWhenTrainingWithheldEventHandler` |
 | Withhold a training | `Training` | — | `TrainingWithheldDomainEvent` | Commit `TrainingWithheldIntegrationEvent` to the outbox; the worker notifies the owner and removes the entry after the commit | `PublishIntegrationEventWhenTrainingWithheldEventHandler` |
 | Release a training | `Training` | It is withheld | `TrainingReleasedDomainEvent` | Record the lifting | `AuditWhenTrainingReleasedEventHandler` |

@@ -54,7 +54,7 @@
             {
                 <MudItem xs="12" sm="6" md="4">
                     @* The card's own surface carries the status, so a trainer reads their
-                       catalogue at a glance instead of card by card. A withdrawn one sits on the
+                       catalog at a glance instead of card by card. A withdrawn one sits on the
                        theme's recessed surface — the same one MudBlazor gives a data grid's group
                        rows — while a published one keeps the default and is not touched. *@
                     <MudCard Elevation="3" Class="@CardClass(training)">
@@ -187,8 +187,8 @@
         => string.Equals(training.Status, WithheldStatus, StringComparison.Ordinal);
 
     /// <remarks>
-    /// A MudBlazor utility class rather than a colour of our own. There is no stylesheet in this
-    /// project and no <c>MudTheme</c> override — every colour on screen comes from the theme — and
+    /// A MudBlazor utility class rather than a color of our own. There is no stylesheet in this
+    /// project and no <c>MudTheme</c> override — every color on screen comes from the theme — and
     /// the layout carries a dark mode toggle, so a literal would be right in one of the two themes
     /// and wrong in the other. <c>mud-background-gray</c> resolves to
     /// <c>--mud-palette-background-gray</c>, which the theme provider sets per mode; it is the
@@ -196,7 +196,7 @@
     /// that is present but set back.
     /// <para>
     /// Published returns the class it already had, so a training on offer looks exactly as it did.
-    /// Colour is never the only signal either: the withdrawn card still carries the word
+    /// Color is never the only signal either: the withdrawn card still carries the word
     /// <em>Unpublished</em> in its chip, for a reader who cannot see the difference in tone.
     /// </para>
     /// </remarks>

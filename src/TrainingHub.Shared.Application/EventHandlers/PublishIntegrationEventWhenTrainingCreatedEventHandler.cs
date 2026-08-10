@@ -12,7 +12,7 @@ namespace TrainingHub.Shared.Application.EventHandlers;
 /// It replaces the handler that wrote to the search index from inside the transaction — an index
 /// that could end up holding a training the database never accepted. The committed fact is what the
 /// index will be rebuilt from once the delivery worker exists, and it is the same fact the
-/// announced Catalogue Discovery context will subscribe to: one vocabulary, however many consumers.
+/// announced Catalog Discovery context will subscribe to: one vocabulary, however many consumers.
 /// </remarks>
 public sealed class PublishIntegrationEventWhenTrainingCreatedEventHandler(IIntegrationEventPublisher publisher)
     : IDomainEventHandler<TrainingCreatedDomainEvent>

@@ -197,7 +197,7 @@ public abstract class ApiFactory<TEntryPoint>
 
             ReplaceDbContext<TrainingIdentityDbContext>(services);
 
-            // The failing neighbour production does not have: appended after AddInfrastructure's
+            // The failing neighbor production does not have: appended after AddInfrastructure's
             // registrations, so it runs after the welcome-email consumer — the interleaving the
             // per-consumer isolation proof needs (ADR 0034). A singleton, so its once-only memory
             // survives the worker's per-batch scopes; it acts only on marked registrations.
@@ -306,12 +306,12 @@ public abstract class ApiFactory<TEntryPoint>
             _mailContainer.StartAsync());
 
         // Everything after the container has started is wrapped, because xUnit does not call
-        // DisposeAsync on a fixture whose initialisation threw. A failed migration would then
+        // DisposeAsync on a fixture whose initialization threw. A failed migration would then
         // leave a SQL Server container running with nothing left holding a reference to it —
         // reaped by Ryuk eventually, and not at all on a machine where Ryuk is disabled.
         try
         {
-            // Materialise the host now rather than on the first CreateClient(): its
+            // Materialize the host now rather than on the first CreateClient(): its
             // startup is what applies the migrations, and Respawn reads the schema when
             // the checkpoint is created. Creating it against an empty database would
             // yield a checkpoint that resets nothing — silently, which is worse than
@@ -355,7 +355,7 @@ public abstract class ApiFactory<TEntryPoint>
     /// <remarks>
     /// <c>DisposeAsync</c> on the container, not <c>StopAsync</c>: stopping leaves the container in
     /// place, so a run that is interrupted — or a machine with <c>TESTCONTAINERS_RYUK_DISABLED</c>
-    /// set — accumulates stopped SQL Servers. The connection is null-guarded because initialisation
+    /// set — accumulates stopped SQL Servers. The connection is null-guarded because initialization
     /// can fail before it exists.
     /// </remarks>
     public new async Task DisposeAsync()

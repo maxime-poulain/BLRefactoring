@@ -11,7 +11,7 @@ namespace TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Search;
 /// Visibility is stored as the two facts it is composed of rather than as their conjunction. The
 /// write side stores neither: a training carries its own status, its owner carries their standing,
 /// and "offered to the public" lives in the space between them (ADR 0050). Keeping the halves apart
-/// is what lets a suspension flip one column for a whole catalogue in a single statement without
+/// is what lets a suspension flip one column for a whole catalog in a single statement without
 /// forgetting which trainings were published (ADR 0056).
 /// </para>
 /// </remarks>
@@ -44,7 +44,7 @@ public sealed class TrainingSearchEntry
     /// <summary>Whether the training itself is published.</summary>
     public bool IsPublished { get; private set; }
 
-    /// <summary>Whether its owner's catalogue is out of public view.</summary>
+    /// <summary>Whether its owner's catalog is out of public view.</summary>
     public bool IsTrainerHidden { get; private set; }
 
     /// <summary>The tokens this entry is found by.</summary>
@@ -56,7 +56,7 @@ public sealed class TrainingSearchEntry
     /// <param name="trainerId">The trainer the training is filed under.</param>
     /// <param name="title">The title as a visitor reads it.</param>
     /// <param name="isPublished">Whether the training itself is published.</param>
-    /// <param name="isTrainerHidden">Whether its owner's catalogue is out of public view.</param>
+    /// <param name="isTrainerHidden">Whether its owner's catalog is out of public view.</param>
     /// <param name="terms">The tokens the title yields.</param>
     /// <remarks>
     /// Total rather than incremental: the tokens are cleared and rewritten, so re-indexing a renamed

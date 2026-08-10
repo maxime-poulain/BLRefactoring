@@ -15,7 +15,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.Services.TrainingServices;
 
 /// <summary>
-/// Behaviour covered for <c>TrainingApplicationService</c>.
+/// Behavior covered for <c>TrainingApplicationService</c>.
 /// </summary>
 public sealed class TrainingApplicationServiceTests
 {
@@ -111,14 +111,14 @@ public sealed class TrainingApplicationServiceTests
     }
 
     /// <summary>
-    /// Create async, the catalogue is full, surfaces the domain's refusal and does not save.
+    /// Create async, the catalog is full, surfaces the domain's refusal and does not save.
     /// </summary>
     /// <remarks>
     /// The rule and its message are the aggregate's, proven in the domain suite; what this
     /// stack owes is to hand the factory the counter and to let the refusal through untouched.
     /// </remarks>
     [Fact]
-    public async Task CreateAsync_CatalogueFull_SurfacesTheRefusalAndDoesNotSave()
+    public async Task CreateAsync_CatalogFull_SurfacesTheRefusalAndDoesNotSave()
     {
         SetupCurrentUser();
         SetupTrainerExists();
@@ -130,7 +130,7 @@ public sealed class TrainingApplicationServiceTests
 
         var result = await sut.CreateAsync(ValidCreationRequest());
 
-        result.ShouldContainError(TrainingErrorCodes.CatalogueFull);
+        result.ShouldContainError(TrainingErrorCodes.CatalogFull);
         _fixture.TrainingRepository.Verify(r => r.Add(It.IsAny<Training>()), Times.Never);
         _fixture.UnitOfWork.Verify(
             uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),

@@ -10,7 +10,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.EventHandlers;
 
 /// <summary>
-/// Behaviour covered for <c>PublishIntegrationEventWhenTrainerCreatedEventHandler</c>.
+/// Behavior covered for <c>PublishIntegrationEventWhenTrainerCreatedEventHandler</c>.
 /// </summary>
 /// <remarks>
 /// What is worth asserting here is the translation: value objects in, primitives out, nothing

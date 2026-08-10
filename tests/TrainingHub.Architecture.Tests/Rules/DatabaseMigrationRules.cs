@@ -12,7 +12,7 @@ namespace TrainingHub.Architecture.Tests.Rules;
 /// standing DDL rights, and a schema change that a process makes on startup cannot be undone by
 /// stopping it. The record was excused from having a rule on the grounds that a type-level rule
 /// can see the branch exists but not which way it goes — true of reflection, and not of reading
-/// the file, which is what the suite learnt to do for ADR 0026 and has done since. See ADR 0039.
+/// the file, which is what the suite learned to do for ADR 0026 and has done since. See ADR 0039.
 /// </remarks>
 public sealed class DatabaseMigrationRules
 {

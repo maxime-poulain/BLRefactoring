@@ -33,7 +33,7 @@ public sealed partial class HealthRules
     /// </summary>
     /// <remarks>
     /// Read from the source and stripped of comment lines before searching, exactly as the
-    /// logging rule learnt to: a call in <c>Program.cs</c> is top-level-statement code reflection
+    /// logging rule learned to: a call in <c>Program.cs</c> is top-level-statement code reflection
     /// cannot see, and a commented-out call still contains the name. Both halves are demanded —
     /// <c>AddApiHealth</c> registers the five probes, <c>MapApiHealth</c> publishes the two
     /// endpoints, and either one alone is a host that cannot answer.
@@ -181,7 +181,7 @@ public sealed partial class HealthRules
     /// the shape this rule exists to catch, since it is invisible at the call site and silent at
     /// runtime — the host simply never asks the question. The tag is read out of the source of the
     /// seam, from the arguments of this probe's own call rather than the statement's, because the
-    /// five registrations are one fluent chain and a looser match would accept a neighbour's tag.
+    /// five registrations are one fluent chain and a looser match would accept a neighbor's tag.
     /// </remarks>
     [Fact]
     [ArchitectureRule("0045",

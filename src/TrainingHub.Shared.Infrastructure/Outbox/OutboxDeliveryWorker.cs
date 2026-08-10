@@ -30,7 +30,7 @@ public sealed class OutboxDeliveryWorker(
     /// <summary>
     /// Polls until the host shuts down: drain the table, sleep one interval, repeat.
     /// </summary>
-    /// <param name="stoppingToken">Signalled when the host is shutting down.</param>
+    /// <param name="stoppingToken">Signaled when the host is shutting down.</param>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using var timer = new PeriodicTimer(options.Value.PollInterval, timeProvider);

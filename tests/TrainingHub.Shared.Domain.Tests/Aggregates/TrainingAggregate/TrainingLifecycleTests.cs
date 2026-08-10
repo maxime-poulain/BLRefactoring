@@ -176,7 +176,7 @@ public sealed class TrainingLifecycleTests
             Standing(false).Object, Counter(Training.MaximumPerTrainer).Object);
 
         result.ShouldBeFailure().Should().ContainSingle()
-            .Which.ErrorCode.Should().Be(TrainingErrorCodes.CatalogueFull);
+            .Which.ErrorCode.Should().Be(TrainingErrorCodes.CatalogFull);
         training.Status.Should().Be(TrainingStatus.Unpublished);
     }
 
@@ -189,7 +189,7 @@ public sealed class TrainingLifecycleTests
     /// repair what earned them the sanction.
     /// <para>
     /// Asserted on the signature rather than by suspending a trainer and calling the method, and
-    /// the difference matters: a behavioural test would pass just as happily against a version that
+    /// the difference matters: a behavioral test would pass just as happily against a version that
     /// consulted the port and happened to allow this case, and would go on passing when somebody
     /// later made that consultation refuse. A method with no port cannot be made to ask.
     /// </para>
@@ -200,11 +200,11 @@ public sealed class TrainingLifecycleTests
         var unpublish = typeof(Training).GetMethod(nameof(Training.Unpublish));
 
         unpublish!.GetParameters().Should().BeEmpty(
-            "withdrawing shrinks the public catalogue, so no fact about the owner can refuse it");
+            "withdrawing shrinks the public catalog, so no fact about the owner can refuse it");
     }
 
     /// <summary>
-    /// Create async, a suspended trainer, is refused before the catalogue is measured.
+    /// Create async, a suspended trainer, is refused before the catalog is measured.
     /// </summary>
     [Fact]
     public async Task CreateAsync_ASuspendedTrainer_IsRefused()

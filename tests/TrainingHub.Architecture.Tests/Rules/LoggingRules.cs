@@ -64,7 +64,7 @@ public sealed class LoggingRules
     /// Every log line, names its caller.
     /// </summary>
     /// <remarks>
-    /// ADR 0027 was excused from having a rule because the decision is a runtime behaviour — a
+    /// ADR 0027 was excused from having a rule because the decision is a runtime behavior — a
     /// property enriched at write time, rendered by a template — and no type-level rule can see
     /// either. What a rule can see is that the two halves are still wired to each other, which is
     /// how this breaks: a template edited without the token renders every line without its caller,

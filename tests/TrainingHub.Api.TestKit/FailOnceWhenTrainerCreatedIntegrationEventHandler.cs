@@ -4,13 +4,13 @@ using TrainingHub.Shared.Application.IntegrationEvents;
 namespace TrainingHub.Api.TestKit;
 
 /// <summary>
-/// The failing neighbour production does not have: a test-only consumer of the trainer-created
+/// The failing neighbor production does not have: a test-only consumer of the trainer-created
 /// fact that throws on its first delivery for a marked registration, and succeeds ever after.
 /// </summary>
 /// <remarks>
 /// Registered by <see cref="ApiFactory{TEntryPoint}"/> after the production consumers, so the welcome email
 /// has already been delivered when this one throws — which is exactly the interleaving the
-/// isolation proof needs: the retry must skip the delivered neighbour and re-run only this
+/// isolation proof needs: the retry must skip the delivered neighbor and re-run only this
 /// consumer (ADR 0034). It acts only on registrations whose first name is <see cref="Marker"/>
 /// and is a silent no-op for everything else, so every other fact in the suites keeps its
 /// first-attempt delivery and its <c>Attempts == 0</c>. A singleton, because the once-only

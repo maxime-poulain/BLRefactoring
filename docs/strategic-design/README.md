@@ -17,24 +17,24 @@ set of six.
 That is the whole business today. Two facts about it are worth stating immediately, because they
 explain most of the design:
 
-**A training is a catalogue entry, not a scheduled event.** It has no date, no session, no capacity
+**A training is a catalog entry, not a scheduled event.** It has no date, no session, no capacity
 and no price. Nobody enrols in anything. The system describes what is on offer; it does not run it.
 
 **Everything is scoped to its owner.** A trainer reads and writes their own profile and their own
 trainings, and nothing else. There is no browsing, no directory, no search — those endpoints existed
-once and were removed rather than restricted, because a read scoped to one caller is not a catalogue
-read. The public catalogue is the announced next step, and parts of the model are already shaped for
+once and were removed rather than restricted, because a read scoped to one caller is not a catalog
+read. The public catalog is the announced next step, and parts of the model are already shaped for
 it.
 
 ## The map, at a glance
 
 ```mermaid
 flowchart LR
-    IA["Identity &amp; Access<br/><i>supporting</i>"] --> TC["<b>Training Catalogue</b><br/><i>core domain</i>"]
+    IA["Identity &amp; Access<br/><i>supporting</i>"] --> TC["<b>Training Catalog</b><br/><i>core domain</i>"]
     TC --> NT["Notification<br/><i>generic</i>"]
     TC --> SI["Search Indexing<br/><i>generic</i>"]
     TC --> MS["Media Storage<br/><i>generic</i>"]
-    SI -.-> CD["Catalogue Discovery<br/><i>announced</i>"]
+    SI -.-> CD["Catalog Discovery<br/><i>announced</i>"]
 
     classDef core fill:#ffe066,stroke:#b45309,color:#000
     classDef other fill:#e5e7eb,stroke:#6b7280,color:#000
@@ -65,11 +65,11 @@ boundaries to fill the page.
 
 Three choices keep it from doing that:
 
-- **No boundary is drawn that the code does not honour.** `Trainer` and `Training` are the obvious
+- **No boundary is drawn that the code does not honor.** `Trainer` and `Training` are the obvious
   candidates for a split, and [bounded-contexts.md](bounded-contexts.md) argues in three points why
   they are one context. Getting that wrong is the standard way these documents become fiction.
-- **What is intended is separated from what is built.** *Catalogue Discovery* is on the map because
-  three existing decisions were made for it. *Scheduling* and *Enrolment* are named in a section
+- **What is intended is separated from what is built.** *Catalog Discovery* is on the map because
+  three existing decisions were made for it. *Scheduling* and *Enrollment* are named in a section
   called **Not decided**, and kept off the map on purpose. There was briefly a third category,
   **Decided, not yet built**, holding the training lifecycle of
   [ADR 0050](../adr/0050-retire-a-training-rather-than-delete-it.md) while the record was

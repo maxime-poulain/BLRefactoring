@@ -18,7 +18,7 @@ namespace TrainingHub.Shared.Infrastructure.Outbox;
 /// batch, so a worker that dies mid-delivery merely lets its lease lapse and the rows return to
 /// the pool. Each message's outcome is saved as it happens, not at the end of the batch, and
 /// settled per consumer: every success lands in the delivery ledger in that same save, so a crash
-/// or a failing neighbour re-runs at most the consumers of the message in flight that had not yet
+/// or a failing neighbor re-runs at most the consumers of the message in flight that had not yet
 /// settled — the platform-side half of the deduplication ADR 0024 promised on the envelope's id
 /// (ADR 0025, ADR 0034).
 /// </remarks>

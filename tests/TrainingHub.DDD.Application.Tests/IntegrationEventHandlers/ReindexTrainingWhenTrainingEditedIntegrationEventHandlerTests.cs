@@ -7,7 +7,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.IntegrationEventHandlers;
 
 /// <summary>
-/// Behaviour covered for <c>ReindexTrainingWhenTrainingEditedIntegrationEventHandler</c>.
+/// Behavior covered for <c>ReindexTrainingWhenTrainingEditedIntegrationEventHandler</c>.
 /// </summary>
 public sealed class ReindexTrainingWhenTrainingEditedIntegrationEventHandlerTests
 {

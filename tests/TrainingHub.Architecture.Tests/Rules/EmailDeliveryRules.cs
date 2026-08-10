@@ -9,8 +9,8 @@ namespace TrainingHub.Architecture.Tests.Rules;
 /// </summary>
 /// <remarks>
 /// One claim, because it is the one the record actually rests on: that changing mail provider is
-/// configuration rather than code. The behavioural half — that a committed fact really leaves the
-/// host as an SMTP message — is proven where behaviour is proven, by <c>EmailTest</c> in the
+/// configuration rather than code. The behavioral half — that a committed fact really leaves the
+/// host as an SMTP message — is proven where behavior is proven, by <c>EmailTest</c> in the
 /// shared kit, against a real server.
 /// </remarks>
 public sealed class EmailDeliveryRules

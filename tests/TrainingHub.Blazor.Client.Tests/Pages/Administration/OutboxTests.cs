@@ -9,7 +9,7 @@ using Xunit;
 namespace TrainingHub.Blazor.Client.Tests.Pages.Administration;
 
 /// <summary>
-/// Behaviour covered for the outbox's operator page.
+/// Behavior covered for the outbox's operator page.
 /// </summary>
 /// <remarks>
 /// The screen an operator reaches when something has already gone wrong, so what it shows matters

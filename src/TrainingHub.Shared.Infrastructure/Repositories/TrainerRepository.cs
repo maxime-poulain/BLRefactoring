@@ -94,7 +94,7 @@ public sealed class TrainerRepository(TrainingContext trainingContext) : ITraine
     /// </summary>
     /// <remarks>
     /// Every filter is composed onto the queryable <em>before</em> the page is taken, so the count
-    /// and the page describe the same set. Filtering a materialised page instead would answer a
+    /// and the page describe the same set. Filtering a materialized page instead would answer a
     /// short page with a total about a different question — the defect a pager hides best, because
     /// the numbers still look like numbers.
     /// <para>

@@ -63,7 +63,7 @@ public static class TrainerPhotoControllerExtensions
     /// <returns>The bytes, or 304 when the caller already has them.</returns>
     /// <remarks>
     /// For the public portrait, whose address carries the photo's identity —
-    /// <c>GET /Catalogue/trainings/{trainingId}/photo/{photoId}</c>. A replacement mints a new
+    /// <c>GET /Catalog/trainings/{trainingId}/photo/{photoId}</c>. A replacement mints a new
     /// identity, so <em>this</em> URL's bytes genuinely never change and <c>immutable</c> is a
     /// promise the address keeps by construction. That is what lets a CDN sit in front of the route
     /// later without a line of code moving (ADR 0063).
@@ -95,7 +95,7 @@ public static class TrainerPhotoControllerExtensions
         controller.Response.GetTypedHeaders().CacheControl = cacheControl;
 
         // This overload answers If-None-Match itself, so a client holding the current tag gets a
-        // 304 without the bytes travelling again.
+        // 304 without the bytes traveling again.
         return controller.File(
             photo.Content.ToArray(),
             photo.ContentType,

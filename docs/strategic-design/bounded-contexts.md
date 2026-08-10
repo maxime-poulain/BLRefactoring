@@ -11,8 +11,8 @@ because it decides where effort goes.
 
 | Subdomain | Kind | Why | Where it lives |
 |---|---|---|---|
-| Training Catalogue | **Core** | The reason the system exists: a trainer describes what they teach. Every rule that is specific to this business is here. | `src/TrainingHub.Shared.Domain/` |
-| Identity & Access | Supporting | Necessary, not distinctive. Bought rather than modelled — ASP.NET Core Identity, unmodified. | `Shared.Infrastructure/ThirdParty/Identity/` |
+| Training Catalog | **Core** | The reason the system exists: a trainer describes what they teach. Every rule that is specific to this business is here. | `src/TrainingHub.Shared.Domain/` |
+| Identity & Access | Supporting | Necessary, not distinctive. Bought rather than modeled — ASP.NET Core Identity, unmodified. | `Shared.Infrastructure/ThirdParty/Identity/` |
 | Notification | Generic | Sending an email is the same problem for everybody. | `IEmailSender` in `Shared.Application/Notifications/`, a MailKit adapter behind it — see [ADR 0031](../adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md) |
 | Search Indexing | Generic | Keeping a read model in step with writes. | `ITrainingSearchIndexer` and `ITrainingSearchQuery`, over an inverted index |
 | Media Storage | Generic | Bytes under a key. Solved by an industry protocol. | `IObjectStore`, S3 adapter — see [ADR 0021](../adr/0021-store-a-photo-beside-the-row-that-names-it.md) |
@@ -35,14 +35,14 @@ so in three places:
 
 Two aggregates that commit together, reference each other by type and cascade synchronously are two
 aggregates in **one** context. Drawing a line between them would produce a diagram that no code
-honours, which is the failure mode this document exists to avoid.
+honors, which is the failure mode this document exists to avoid.
 
 The line that *is* real runs between the domain and authentication, and the code states it out loud —
 see the next two sections.
 
 ---
 
-## Context — Training Catalogue
+## Context — Training Catalog
 
 **The core.** A trainer keeps a professional profile and publishes the trainings they teach.
 
@@ -59,11 +59,11 @@ name in the code; that is the point of a ubiquitous language.
 | Term | What it means in this business | Rule it carries |
 |---|---|---|
 | **Trainer** | Someone who publishes trainings. Not an account — see *Identity & Access*. | Aggregate root; created only by registration |
-| **Training** | A training a trainer offers. A catalogue entry, not a scheduled event. | Aggregate root; belongs to exactly one trainer |
+| **Training** | A training a trainer offers. A catalog entry, not a scheduled event. | Aggregate root; belongs to exactly one trainer |
 | **Name** | A trainer's `Firstname` and `Lastname` | Each 2 to 50 characters once trimmed; both refusals are reported together |
 | **Email** | The address a trainer wishes to be contacted at, split into `LocalPart` and `Domain` | Must be a valid address. **Not unique** — see below |
 | **Bio** | A trainer's own description of themselves | Optional; at most 500 characters, and blank is a refusal rather than an empty bio |
-| **TrainerPhoto** | The portrait a trainer publishes | At most 5 MiB; PNG, JPEG or WebP, recognised by reading the bytes rather than trusting the caller |
+| **TrainerPhoto** | The portrait a trainer publishes | At most 5 MiB; PNG, JPEG or WebP, recognized by reading the bytes rather than trusting the caller |
 | **TrainingTitle** | What a training is called | 5 to 100 characters, and unique **per trainer** |
 | **TrainingDescription** | What the training covers | Required, at most 500 characters |
 | **TrainingPrerequisites** | What a participant needs beforehand | Required, at most 500 characters |
@@ -80,7 +80,7 @@ than a technical one.
 
 **A contact address is not a login.** `Trainer.ContactEmail` carries no uniqueness rule, and the
 aggregate says why: a trainer may publish a professional address different from the one their
-account was opened with, and two trainers of the same organisation may legitimately share one. The
+account was opened with, and two trainers of the same organization may legitimately share one. The
 account's email is unique; the contact address is not. They are different concepts that happen to
 have the same shape.
 
@@ -90,7 +90,7 @@ cannot answer alone, so it asks `IUniquenessTitleChecker` — a port, so the dom
 without knowing how uniqueness is looked up.
 
 **A transfer belongs to neither aggregate.** Handing a training over reads the *recipient's*
-catalogue in order to mutate the *giver's* training, and neither `Training` — which knows one owner
+catalog in order to mutate the *giver's* training, and neither `Training` — which knows one owner
 — nor `Trainer` — which holds no training — can decide it alone. It is the model's one recorded
 domain service, and the only term in this table that is not a noun of the business:
 `TrainingTransferDomainService`, static and stateless, deciding through the same two ports creation
@@ -99,7 +99,7 @@ uses ([ADR 0036](../adr/0036-model-the-decision-that-has-no-home-as-a-domain-ser
 **Visibility is composed, never stored.** A training is publicly visible when it is `Published`
 **and** its trainer is `Active`. There is no third field holding the answer, and that is what makes
 a suspension liftable: it writes one column on one aggregate and touches no training, so nothing
-has to remember which trainings it hid — it hid none, and the catalogue simply became invisible
+has to remember which trainings it hid — it hid none, and the catalog simply became invisible
 with its owner. Cascading the sanction onto each training was considered and refused for exactly
 this reason
 ([ADR 0050](../adr/0050-retire-a-training-rather-than-delete-it.md)).
@@ -107,7 +107,7 @@ this reason
 ### Aggregates
 
 - `Trainer` — the profile, its contact address, its bio and its portrait.
-- `Training` — the catalogue entry, its content and its topics.
+- `Training` — the catalog entry, its content and its topics.
 
 Each is an independent consistency boundary: `Training` names its owner by `TrainerId` and never
 holds a `Trainer` instance.
@@ -118,7 +118,7 @@ holds a `Trainer` instance.
 - A trainer publishes at most ten **published** trainings (`Training.MaximumPerTrainer`); the
   eleventh is refused, both at creation and when a withdrawn training is published again. A
   withdrawn training holds no place in the quota — otherwise ten of them would end a trainer's
-  catalogue for ever — and checking only at creation would leave the limit bypassable in three
+  catalog for ever — and checking only at creation would leave the limit bypassable in three
   moves: unpublish one, create a replacement, publish the first back.
 - A training always belongs to a trainer; there is no orphan training.
 - A training changes hands only to a trainer who could have published it themselves: room under the
@@ -131,7 +131,7 @@ holds a `Trainer` instance.
   transition to the state it is already in is refused rather than ignored: a change that changes
   nothing must not raise a fact. Deleting announces itself too, on all three paths that delete a
   training — the everyday one on each stack, and the cascade that removes a departing trainer's
-  catalogue, which was the last one still silent. It did not before, and the
+  catalog, which was the last one still silent. It did not before, and the
   absence is why a deleted training used to stay in the search index for ever.
 - A withdrawn training keeps its title, and the title stays taken. It is taken by something its
   owner can see in their own listing and can republish, rename or delete, so the refusal names
@@ -161,7 +161,7 @@ sit on a controller base of their own.
 
 The first row's *only to their own data* has one deliberate exception, and it is worth naming
 because it looks like a leak and is not. Transferring a training reads two facts about the
-**recipient's** catalogue — how full it is, and whether a title of that name is already in it. The
+**recipient's** catalog — how full it is, and whether a title of that name is already in it. The
 caller never sees either: both come back as a refusal or as nothing at all, so the command decides
 on data it is not shown. That is the whole of what one trainer may learn about another here.
 
@@ -170,8 +170,8 @@ on data it is not shown. That is the whole of what one trainer may learn about a
 - Maintain a trainer profile (name, contact address, bio).
 - Publish and withdraw a portrait.
 - Author a training: create, edit, delete.
-- Hand a training to another trainer, when their catalogue can take it.
-- Consult one's own catalogue.
+- Hand a training to another trainer, when their catalog can take it.
+- Consult one's own catalog.
 
 ### Use cases
 
@@ -189,7 +189,7 @@ Every one of them exists twice — once per application style. See the
 | Create a training | Trainer | `Training` |
 | Edit a training | Trainer | `Training` |
 | Delete a training | Trainer | `Training` |
-| Transfer a training | Trainer | `Training` (and the recipient's catalogue) |
+| Transfer a training | Trainer | `Training` (and the recipient's catalog) |
 | Read one own training | Trainer | `Training` |
 | List own trainings | Trainer | `Training` |
 
@@ -197,9 +197,9 @@ Every one of them exists twice — once per application style. See the
 
 - **It does not schedule anything.** `Training` has no date, no session, no capacity and no price.
   That absence is the clearest statement in the model about where this context ends.
-- **It does not serve a catalogue.** Every read is scoped to the caller. Five endpoints that handed
+- **It does not serve a catalog.** Every read is scoped to the caller. Five endpoints that handed
   out other trainers' data were removed rather than restricted, because a read scoped to one caller
-  is not a catalogue read.
+  is not a catalog read.
 - **It does not authenticate.** See below.
 
 ---
@@ -219,7 +219,7 @@ Establish who is making a request. Nothing else.
 | **User / account** | A set of credentials — username, email, password hash, lockout state |
 | **Username** | Unique. What one signs in with |
 | **Account email** | Unique. Not the same concept as a trainer's contact address |
-| **Role** | Modelled by the framework. One is granted: `Administrator`, seeded in Development and granted by hand elsewhere (ADR 0051) |
+| **Role** | Modeled by the framework. One is granted: `Administrator`, seeded in Development and granted by hand elsewhere (ADR 0051) |
 | **Token** | A JWT, issued at sign-in, carrying the account and the trainer it maps to |
 
 ### Aggregates
@@ -229,7 +229,7 @@ unmodified — the model belongs to the framework, which is what *supporting* me
 
 ### The boundary, and where to see it
 
-This is the one boundary the code makes explicit, in three artefacts:
+This is the one boundary the code makes explicit, in three artifacts:
 
 1. **A separate `DbContext` with its own migration history.** `TrainingIdentityDbContext` and
    `TrainingContext` share a database and share nothing else.
@@ -279,7 +279,7 @@ Registration, authentication, token issuance, lockout.
 **Generic.** Keeping a read model in step with the writes.
 
 - **Language:** `IndexAsync(Guid trainingId, Guid trainerId)`, `RemoveAsync(Guid trainingId)`,
-  `HideTrainerCatalogueAsync(Guid trainerId)` and `ShowTrainerCatalogueAsync(Guid trainerId)`.
+  `HideTrainerCatalogAsync(Guid trainerId)` and `ShowTrainerCatalogAsync(Guid trainerId)`.
   Note the primitives: the port speaks `Guid`, never `TrainingId`. Its own remark says so — *"the
   search engine sitting behind it knows nothing about the domain's typed identifiers."* That is a
   published language in miniature. The removal is what lets a withdrawn or deleted training leave
@@ -292,8 +292,8 @@ Registration, authentication, token issuance, lockout.
 - **Status:** built (ADR 0059). An inverted index in two tables of the same database: one entry per
   training, holding the title and the two facts public visibility is composed of, and one row per
   word of that title so that a search seeks instead of scanning. One adapter writes it, the query
-  port reads it, and `GET /Catalogue/trainings` is its first reader. Since ADR 0062 it has a second,
-  `GET /Catalogue/trainings/{id}`, which asks this index one question only — is this training on
+  port reads it, and `GET /Catalog/trainings` is its first reader. Since ADR 0062 it has a second,
+  `GET /Catalog/trainings/{id}`, which asks this index one question only — is this training on
   offer — and reads the write model for everything it then shows. Those two are the whole anonymous
   surface of this API.
 - **Fed by:** the transactional outbox, end to end. Every change that alters what a visitor
@@ -306,7 +306,7 @@ Registration, authentication, token issuance, lockout.
   index only ever learns of trainings the database accepted. A transfer is an indexing event like
   the others: what a public search would show changes, because the training is filed under a
   different trainer. The last three are the sanctions (ADR 0056), and the two trainer facts are
-  why this port speaks about a catalogue at all: a suspension writes to no training, so the index
+  why this port speaks about a catalog at all: a suspension writes to no training, so the index
   is told about its owner once instead of about each training in turn.
 
 ---
@@ -325,13 +325,13 @@ Registration, authentication, token issuance, lockout.
 
 ---
 
-## Context — Catalogue Discovery
+## Context — Catalog Discovery
 
 **Emerging, and now partly visible.** The public site: search trainings, browse by topic, read a
 trainer's profile.
 
 This context still does not exist as a context — it owns no store of its own, and what a visitor
-reads is served by Training Catalogue over Search Indexing's index. What changed with ADR 0062 is
+reads is served by Training Catalog over Search Indexing's index. What changed with ADR 0062 is
 that the reading exists at all: two anonymous endpoints and two screens above them. A reader should
 know which of the things below were built for a context that may never be extracted:
 
@@ -341,12 +341,12 @@ know which of the things below were built for a context that may never be extrac
   `TrainingUnpublishedIntegrationEvent`, `TrainingDeletedIntegrationEvent`,
   `TrainingWithheldIntegrationEvent`, `TrainerSuspendedIntegrationEvent` and
   `TrainerReinstatedIntegrationEvent` — already land durably in the outbox on every commit.
-- **The catalogue's two reads** exist and are anonymous (ADR 0062): a paged title search over the
+- **The catalog's two reads** exist and are anonymous (ADR 0062): a paged title search over the
   index, and a reading of one offered training that takes its *visibility* from the index and its
   *content* — description, prerequisites, acquired skills, topics, and the trainer's name — from the
-  write model, live. Two screens sit above them, `/catalogue` and `/catalogue/{id}`, behind no
+  write model, live. Two screens sit above them, `/catalog` and `/catalog/{id}`, behind no
   session at all.
-- **The portrait is published**, at `GET /Catalogue/trainings/{id}/photo/{photoId}` — an address
+- **The portrait is published**, at `GET /Catalog/trainings/{id}/photo/{photoId}` — an address
   naming a training and a photo and never a person, which is both what a visitor can have been given
   and what makes its year-long `immutable` cache true by construction. What made it publishable is
   ADR 0063: the metadata ADR 0021 deferred stripping is stripped when the bytes arrive, the domain
@@ -357,7 +357,7 @@ know which of the things below were built for a context that may never be extrac
 - **The CQRS query side** already projects straight into DTOs without loading aggregates, which is
   the shape a public read model wants.
 
-**Expected relationship:** downstream of Training Catalogue, fed by the integration events the
+**Expected relationship:** downstream of Training Catalog, fed by the integration events the
 outbox already stores, with its own read model. It would own no aggregate — a discovery context
 reads, it does not decide. What is missing is no longer a store, and no longer the experience
 either: ADR 0059 built the one and ADR 0062 the other. What is missing is the reason to extract a
@@ -365,7 +365,7 @@ context — facets, a trainer's public page, a store shaped by how a visitor bro
 how a trainer writes. Until one of those is wanted, a page over the same database is the honest
 size of it.
 
-**Expected language:** *catalogue*, *search result*, *facet*, *listing* — deliberately different
+**Expected language:** *catalog*, *search result*, *facet*, *listing* — deliberately different
 words from the write side, because a search result is not a `Training`.
 
 ---
@@ -379,15 +379,15 @@ point at them, and they are kept out of the map so nobody mistakes them for a de
 March, twelve seats, in Lyon, is a different lifecycle from describing what the training *is* — one
 changes constantly, the other rarely. That is a boundary, whenever somebody needs it.
 
-**Enrolment.** There is no participant in this system. No `Participant`, no `Registration`, no
+**Enrollment.** There is no participant in this system. No `Participant`, no `Registration`, no
 `Attendance` — and adding a learner would introduce a second kind of actor, with its own view of the
-catalogue and its own rules about seats and cancellation.
+catalog and its own rules about seats and cancellation.
 
 Neither is being built. If either ever is, this section should be deleted and replaced by a context
 above it, with the same evidence the others carry.
 
 A third hypothesis is worth naming for what it is *not*. **Moderation** — a sanction with a reason, a
-duration, an author, an appeal — would be a context, because those concepts describe a judgement
+duration, an author, an appeal — would be a context, because those concepts describe a judgment
 rather than a trainer or a training and nobody else owns them. The trainer standing decided above
 presupposes none of it: one reversible state, no reason recorded, no history kept. If a sanction ever
 needs to be explained, timed or contested, that is the moment to draw the boundary — and not before.

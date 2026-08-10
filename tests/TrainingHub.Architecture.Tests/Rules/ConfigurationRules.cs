@@ -9,7 +9,7 @@ namespace TrainingHub.Architecture.Tests.Rules;
 /// <remarks>
 /// ADR 0035 gives each developer one git-ignored <c>appsettings.Local.json</c>, loaded after
 /// every other source by all three hosts. The decision has two halves and each can rot on its
-/// own: a host that forgets the loading line quietly stops honouring the file, and an ignore
+/// own: a host that forgets the loading line quietly stops honoring the file, and an ignore
 /// entry that goes missing turns the file from a private override into a published secret. Both
 /// rules read the artifacts the decision is about — the composition roots and the ignore files —
 /// with comment lines excluded before matching, the lesson <c>LoggingRules</c> measured.
@@ -30,7 +30,7 @@ public sealed class ConfigurationRules
     /// <remarks>
     /// The exact call is demanded — file name, <c>optional: true</c>, <c>reloadOnChange: true</c> —
     /// because each argument is part of the decision: the name is the convention, optional is what
-    /// lets every machine without the file keep booting, and the reload behaviour matches the
+    /// lets every machine without the file keep booting, and the reload behavior matches the
     /// committed sources so the local file is not the one that needs a restart.
     /// </remarks>
     [Fact]

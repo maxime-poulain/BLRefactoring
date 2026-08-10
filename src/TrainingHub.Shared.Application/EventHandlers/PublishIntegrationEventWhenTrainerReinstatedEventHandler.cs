@@ -10,7 +10,7 @@ namespace TrainingHub.Shared.Application.EventHandlers;
 /// </summary>
 /// <remarks>
 /// The half that keeps the suspension a state rather than a tombstone, on the consuming side too:
-/// without this fact the catalogue would leave public view on the way in and never come back, and
+/// without this fact the catalog would leave public view on the way in and never come back, and
 /// the sanction the domain models as reversible would be irreversible everywhere a visitor looks
 /// (ADR 0050, ADR 0056).
 /// </remarks>

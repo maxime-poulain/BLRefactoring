@@ -13,7 +13,7 @@ using Xunit;
 namespace TrainingHub.DDDWithCqrs.Tests.Behaviors;
 
 /// <summary>
-/// Behaviour covered for <c>NoTrackingDuringQueryExecutionBehavior</c>.
+/// Behavior covered for <c>NoTrackingDuringQueryExecutionBehavior</c>.
 /// </summary>
 public sealed class NoTrackingDuringQueryExecutionBehaviorTests : IDisposable
 {

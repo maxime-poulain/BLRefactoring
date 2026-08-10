@@ -67,7 +67,7 @@ public interface ITrainerRepository
     /// <para>
     /// <paramref name="search"/> is matched against the trainer's first name, last name and contact
     /// address. What that costs — a <c>LIKE '%term%'</c> no index can seek — is recorded in ADR 0055
-    /// rather than discovered, together with what replaces it when the catalogue outgrows it.
+    /// rather than discovered, together with what replaces it when the catalog outgrows it.
     /// </para>
     /// </remarks>
     /// <param name="status">The standing to narrow to, or <see langword="null"/> for every trainer.</param>

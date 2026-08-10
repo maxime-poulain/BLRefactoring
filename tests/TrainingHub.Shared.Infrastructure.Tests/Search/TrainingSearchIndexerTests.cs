@@ -69,7 +69,7 @@ public sealed class TrainingSearchIndexerTests : SearchIndexTest
     /// <remarks>
     /// The reason the read-back takes the trainer as well as the training: a transfer can hand a
     /// training to a suspended trainer, and an entry that inherited nothing would put a sanctioned
-    /// catalogue back in front of the public one training at a time.
+    /// catalog back in front of the public one training at a time.
     /// </remarks>
     [Fact]
     public async Task IndexAsync_ATrainingWhoseOwnerIsSuspended_WritesItHidden()
@@ -114,7 +114,7 @@ public sealed class TrainingSearchIndexerTests : SearchIndexTest
     /// <remarks>
     /// The ordering a delivery ledger cannot rule out: a creation redelivered after the deletion
     /// has already been consumed. Inventing an entry here would race a training back into the
-    /// catalogue after it was deleted, which is the defect ADR 0050 closed from the other end.
+    /// catalog after it was deleted, which is the defect ADR 0050 closed from the other end.
     /// </remarks>
     [Fact]
     public async Task IndexAsync_ATrainingTheWriteModelNoLongerHolds_WritesNothing()
@@ -165,17 +165,17 @@ public sealed class TrainingSearchIndexerTests : SearchIndexTest
     }
 
     /// <summary>
-    /// Hide trainer catalogue async, a trainer with several trainings, hides all of them and
+    /// Hide trainer catalog async, a trainer with several trainings, hides all of them and
     /// forgets none.
     /// </summary>
     /// <remarks>
     /// The promise ADR 0056 made on behalf of a real adapter: one call about a trainer, and each
     /// training's own publication untouched. The second half is the one worth asserting — a hiding
     /// that also cleared <c>IsPublished</c> would pass every visibility assertion and lose the
-    /// catalogue at the lifting.
+    /// catalog at the lifting.
     /// </remarks>
     [Fact]
-    public async Task HideTrainerCatalogueAsync_ATrainerWithSeveralTrainings_HidesAllOfThemAndForgetsNone()
+    public async Task HideTrainerCatalogAsync_ATrainerWithSeveralTrainings_HidesAllOfThemAndForgetsNone()
     {
         var trainer = await GivenTrainerAsync();
         var offered = await GivenTrainingAsync(trainer, "First Offer");
@@ -184,7 +184,7 @@ public sealed class TrainingSearchIndexerTests : SearchIndexTest
         await Indexer.IndexAsync(offered.Id.Value, trainer.Id.Value);
         await Indexer.IndexAsync(withdrawn.Id.Value, trainer.Id.Value);
 
-        await Indexer.HideTrainerCatalogueAsync(trainer.Id.Value);
+        await Indexer.HideTrainerCatalogAsync(trainer.Id.Value);
 
         (await EntryOfAsync(offered.Id.Value))!.IsTrainerHidden.Should().BeTrue();
         (await EntryOfAsync(offered.Id.Value))!.IsPublished.Should().BeTrue();
@@ -193,14 +193,14 @@ public sealed class TrainingSearchIndexerTests : SearchIndexTest
     }
 
     /// <summary>
-    /// Show trainer catalogue async, after a hiding, puts back what was published and nothing else.
+    /// Show trainer catalog async, after a hiding, puts back what was published and nothing else.
     /// </summary>
     /// <remarks>
     /// The whole argument for hiding rather than removing: the lifting costs one call and restores
     /// exactly what was on offer, never what was merely written (ADR 0056).
     /// </remarks>
     [Fact]
-    public async Task ShowTrainerCatalogueAsync_AfterAHiding_PutsBackWhatWasPublishedAndNothingElse()
+    public async Task ShowTrainerCatalogAsync_AfterAHiding_PutsBackWhatWasPublishedAndNothingElse()
     {
         var trainer = await GivenTrainerAsync();
         var offered = await GivenTrainingAsync(trainer, "First Offer");
@@ -209,8 +209,8 @@ public sealed class TrainingSearchIndexerTests : SearchIndexTest
         await Indexer.IndexAsync(offered.Id.Value, trainer.Id.Value);
         await Indexer.IndexAsync(withdrawn.Id.Value, trainer.Id.Value);
 
-        await Indexer.HideTrainerCatalogueAsync(trainer.Id.Value);
-        await Indexer.ShowTrainerCatalogueAsync(trainer.Id.Value);
+        await Indexer.HideTrainerCatalogAsync(trainer.Id.Value);
+        await Indexer.ShowTrainerCatalogAsync(trainer.Id.Value);
 
         (await EntryOfAsync(offered.Id.Value))!.IsTrainerHidden.Should().BeFalse();
         (await EntryOfAsync(offered.Id.Value))!.IsPublished.Should().BeTrue();
@@ -218,12 +218,12 @@ public sealed class TrainingSearchIndexerTests : SearchIndexTest
     }
 
     /// <summary>
-    /// Hide trainer catalogue async, a trainer the index never heard of, is not an error.
+    /// Hide trainer catalog async, a trainer the index never heard of, is not an error.
     /// </summary>
     [Fact]
-    public async Task HideTrainerCatalogueAsync_ATrainerTheIndexNeverHeardOf_IsNotAnError()
+    public async Task HideTrainerCatalogAsync_ATrainerTheIndexNeverHeardOf_IsNotAnError()
     {
-        var hiding = async () => await Indexer.HideTrainerCatalogueAsync(Guid.NewGuid());
+        var hiding = async () => await Indexer.HideTrainerCatalogAsync(Guid.NewGuid());
 
         await hiding.Should().NotThrowAsync();
     }

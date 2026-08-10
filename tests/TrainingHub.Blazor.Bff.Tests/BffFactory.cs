@@ -13,7 +13,7 @@ namespace TrainingHub.Blazor.Bff.Tests;
 /// replaced by a handler that records what it was sent.
 /// </summary>
 /// <remarks>
-/// Nothing about the security behaviour is stubbed: cookie authentication, the forgery guard, the
+/// Nothing about the security behavior is stubbed: cookie authentication, the forgery guard, the
 /// authorization on the proxied route and the token transform are the production ones. Only the far
 /// side of the proxy is fake, because a test cannot assert on a credential it never sees.
 /// <para>

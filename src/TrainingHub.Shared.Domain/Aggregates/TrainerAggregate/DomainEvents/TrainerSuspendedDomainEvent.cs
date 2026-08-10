@@ -7,7 +7,7 @@ namespace TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
 /// Raised when a <see cref="Trainer"/> has been placed under sanction.
 /// </summary>
 /// <remarks>
-/// Carries no list of trainings, because the suspension touches none: the catalogue leaves public
+/// Carries no list of trainings, because the suspension touches none: the catalog leaves public
 /// view by being derived from its owner's standing. See ADR 0050. It now travels outward as
 /// <c>TrainerSuspendedIntegrationEvent</c>: the administrative endpoints raise the sanction and two
 /// consumers wait on it — the notice to the trainer, and the index hiding what they offer

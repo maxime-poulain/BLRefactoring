@@ -8,7 +8,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.EventHandlers;
 
 /// <summary>
-/// Behaviour covered for <c>DeleteTrainingWhenTrainerDeletedEventHandler</c>.
+/// Behavior covered for <c>DeleteTrainingWhenTrainerDeletedEventHandler</c>.
 /// </summary>
 public sealed class DeleteTrainingWhenTrainerDeletedEventHandlerTests
 {

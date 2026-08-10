@@ -8,7 +8,7 @@ namespace TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
 /// <remarks>
 /// <para>
 /// The third port of the same family as <see cref="IUniquenessTitleChecker"/> and
-/// <see cref="ITrainingCounter"/>, and the same division of labour (ADR 0030): the rule — a
+/// <see cref="ITrainingCounter"/>, and the same division of labor (ADR 0030): the rule — a
 /// suspended trainer may not increase their public footprint — belongs to <see cref="Training"/>
 /// and stays there, while the fact it turns on sits in a row the aggregate cannot see. So the port
 /// answers the bare fact and never the decision; an implementation that answered

@@ -148,7 +148,7 @@ public sealed class AuthorizationRules
     /// The rule ADR 0053 needs in order to stay true after the commit that builds it. Its decision
     /// is a table — every read kept, every write refused — and a table is exactly the kind of claim
     /// that decays one endpoint at a time: the next write added to the trainer surface will be
-    /// written by somebody reading a neighbouring action, and the neighbour that gets copied is
+    /// written by somebody reading a neighboring action, and the neighbor that gets copied is
     /// whichever one they opened first.
     /// <para>
     /// Stated over the verb rather than over a list of route names, so that an endpoint added
@@ -189,7 +189,7 @@ public sealed class AuthorizationRules
     /// <remarks>
     /// The other half of ADR 0053's sentence, and the half that is easy to lose by being helpful.
     /// Moving the policy onto <c>ApiControllerBase</c> would guard every write in one line and take
-    /// the suspended trainer's own profile and catalogue away from them at the same time — the
+    /// the suspended trainer's own profile and catalog away from them at the same time — the
     /// alternative that record rejected by name, because "their trainings exist, they are theirs,
     /// and hiding them from their owner serves nobody".
     /// <para>

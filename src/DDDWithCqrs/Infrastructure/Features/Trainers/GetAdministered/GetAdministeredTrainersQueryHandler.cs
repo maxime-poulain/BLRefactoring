@@ -16,7 +16,7 @@ namespace TrainingHub.DDDWithCqrs.Infrastructure.Features.Trainers.GetAdminister
 /// </summary>
 /// <remarks>
 /// Every <c>Where</c> is composed before <c>ToPagedResultAsync</c>, so the filters reach SQL and the
-/// count and the page agree on the same set. Filtering a materialised page instead would answer a
+/// count and the page agree on the same set. Filtering a materialized page instead would answer a
 /// short page with a total about every trainer — numbers that still look like numbers, which is why
 /// a test pins this and not only the rows.
 /// <para>

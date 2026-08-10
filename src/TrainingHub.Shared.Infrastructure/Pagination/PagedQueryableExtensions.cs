@@ -29,7 +29,7 @@ public static class PagedQueryableExtensions
     /// <remarks>
     /// The overload the CQRS query handlers use. The projection is applied after
     /// <c>Skip</c>/<c>Take</c> and as an expression, so SQL selects only the columns the DTO
-    /// needs, for the rows of that page alone. No aggregate is materialised, and nothing is
+    /// needs, for the rows of that page alone. No aggregate is materialized, and nothing is
     /// filtered or sliced in memory.
     /// </remarks>
     /// <param name="source">The ordered, already filtered query.</param>
@@ -63,10 +63,10 @@ public static class PagedQueryableExtensions
     /// </summary>
     /// <remarks>
     /// The overload the layered stack's repositories use, and the honest cost of paging through
-    /// one: a repository hands back aggregates, so the rows of the page are materialised whole —
+    /// one: a repository hands back aggregates, so the rows of the page are materialized whole —
     /// owned collections included — where the projecting overload above selects only the columns
     /// a DTO needs. Same count, same slice, different bill; comparing the two on identical
-    /// behaviour is what harmonising the hosts bought.
+    /// behavior is what harmonizing the hosts bought.
     /// </remarks>
     /// <param name="source">The ordered, already filtered query.</param>
     /// <param name="paging">The page the caller asked for.</param>

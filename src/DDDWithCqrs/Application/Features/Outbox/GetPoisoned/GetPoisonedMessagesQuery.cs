@@ -10,7 +10,7 @@ namespace TrainingHub.DDDWithCqrs.Application.Features.Outbox.GetPoisoned;
 /// <remarks>
 /// The second query here that reads no aggregate table, and it does not read a read model either:
 /// it reads the platform's own delivery table, which is neither. What it has in common with
-/// <c>SearchCatalogueQuery</c> is the shape of the answer — a page of a DTO — and nothing else.
+/// <c>SearchCatalogQuery</c> is the shape of the answer — a page of a DTO — and nothing else.
 /// <para>
 /// It carries no filter. A poison message is defined by the configured retry budget rather than by
 /// anything a caller could ask for, so there is no criterion to offer and offering one would invite

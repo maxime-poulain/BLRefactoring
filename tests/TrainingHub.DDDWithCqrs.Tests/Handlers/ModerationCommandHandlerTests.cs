@@ -16,7 +16,7 @@ using Xunit;
 namespace TrainingHub.DDDWithCqrs.Tests.Handlers;
 
 /// <summary>
-/// Behaviour covered for the four administrative command handlers.
+/// Behavior covered for the four administrative command handlers.
 /// </summary>
 /// <remarks>
 /// Every rule these four commands answer to is the aggregate's or the reason's, and both are proven

@@ -103,7 +103,7 @@ public interface ITrainingRepository
     /// </para>
     /// <para>
     /// What the term costs — a <c>LIKE '%term%'</c> no index can seek — is recorded in ADR 0055 for
-    /// the trainers and is unchanged here. The search that seeks is the public catalogue's, over an
+    /// the trainers and is unchanged here. The search that seeks is the public catalog's, over an
     /// index of its own (ADR 0059), and it cannot answer this one: it holds none of the states a
     /// moderator is looking for.
     /// </para>

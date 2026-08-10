@@ -48,7 +48,7 @@ public sealed partial class HttpBoundaryRules
     /// an action is combined with its controller's rather than replacing it, so an administrative
     /// action could not have been hosted there.
     /// <para>
-    /// The fourth arrived with the public catalogue (ADR 0059), and for the same mechanical reason
+    /// The fourth arrived with the public catalog (ADR 0059), and for the same mechanical reason
     /// read the other way round: an anonymous action hosted on either of those two would inherit a
     /// policy it cannot satisfy. It is the one base that declares no 401 and no 403, because it can
     /// answer neither.
@@ -62,7 +62,7 @@ public sealed partial class HttpBoundaryRules
             .Selected("controller")
             .Where(controller => controller.BaseType?.Name is not
                 ("ApiControllerBase" or "AuthControllerBase" or "AdministrationControllerBase"
-                 or "CatalogueControllerBase"))
+                 or "CatalogControllerBase"))
             .Select(controller =>
                 $"{controller.FullName} derives from {controller.BaseType?.Name}, so it inherits none of " +
                 "the authorization, routing or error-shape decisions the bases carry")
@@ -291,9 +291,9 @@ public sealed partial class HttpBoundaryRules
     /// No inner layer, declares a type named for the transport.
     /// </summary>
     /// <remarks>
-    /// The neighbour above catches an inner layer that <em>uses</em> a contract — one appearing in a
+    /// The neighbor above catches an inner layer that <em>uses</em> a contract — one appearing in a
     /// public signature below the boundary. This one catches an inner layer that <em>declares</em> a
-    /// type wearing the boundary's name, which no signature need ever expose, and which the neighbour
+    /// type wearing the boundary's name, which no signature need ever expose, and which the neighbor
     /// would therefore miss until somebody passed it around.
     /// <para>
     /// It is the half of ADR 0048 the rename could not carry on its own. While the boundary's types ended
@@ -663,11 +663,11 @@ public sealed partial class HttpBoundaryRules
     /// The defect this exists for happened twice in eight pull requests, and silently both times: a
     /// member was added to a read model and to the contract beside it, and the translation between
     /// them compiled without copying it. **A member that is not <c>required</c> is not missed by an
-    /// object initialiser** — so the compiler is content, the tests pass, and the API serves a
+    /// object initializer** — so the compiler is content, the tests pass, and the API serves a
     /// <see langword="null"/> on the column the change existed to add.
     /// <para>
     /// Stated by running the mapping rather than by reading it. The suite carries no Roslyn, and a
-    /// regex over an initialiser would be a claim about how the code is punctuated rather than about
+    /// regex over an initializer would be a claim about how the code is punctuated rather than about
     /// what it does: this fills the source with values that are nothing like a default, invokes the
     /// translation, and asks whether anything came out still at one. A forgotten member is exactly a
     /// member left at its default, whichever way the mapping is written.
@@ -721,7 +721,7 @@ public sealed partial class HttpBoundaryRules
     /// </summary>
     /// <remarks>
     /// Uninitialised rather than constructed, because a read model's members are <c>required</c> and
-    /// <c>init</c>: the first refuses an object initialiser this cannot write, and the second is
+    /// <c>init</c>: the first refuses an object initializer this cannot write, and the second is
     /// settable by reflection all the same.
     /// </remarks>
     private static object Filled(Type readModel)

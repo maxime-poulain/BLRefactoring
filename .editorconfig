@@ -53,7 +53,7 @@ csharp_new_line_before_members_in_anonymous_types = true
 csharp_style_namespace_declarations = file_scoped
 
 # Brace settings — prefer curly braces even for one line of code.
-# The comment is on its own line, and has to be: EditorConfig comments are recognised at the start
+# The comment is on its own line, and has to be: EditorConfig comments are recognized at the start
 # of a line only, so `= true # …` makes the value the whole string after the `=`. The parser then
 # fails to read it and falls back to the default, which happens to be `true` — so this one read
 # correctly by luck, and would have gone silently unapplied the day anyone wrote `when_multiline`.
@@ -483,7 +483,7 @@ dotnet_diagnostic.IDE0058.severity = suggestion
 # The expression-bodied family, and the repository genuinely uses both forms: a block where there
 # is a guard clause, an arrow where the member is one expression. There is no preference declared
 # here, so the analyzer applies its own — "always a block" — and asks for two hundred and sixteen
-# rewrites that change no behaviour. Forcing the opposite default would ask for as many the other
+# rewrites that change no behavior. Forcing the opposite default would ask for as many the other
 # way. A rule that cannot be satisfied without picking a side this codebase has not picked.
 dotnet_diagnostic.IDE0021.severity = suggestion
 dotnet_diagnostic.IDE0022.severity = suggestion
@@ -520,7 +520,7 @@ dotnet_diagnostic.IDE0032.severity = suggestion
 
 # IDE0230: Use UTF-8 string literal (1)
 # One occurrence, in a test that builds an ETag byte-for-byte on purpose — the literal is the
-# subject of the test, not an optimisation waiting to happen.
+# subject of the test, not an optimization waiting to happen.
 dotnet_diagnostic.IDE0230.severity = suggestion
 
 # IDE0270: Null check can be simplified (2)

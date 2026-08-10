@@ -6,7 +6,7 @@ using Xunit;
 namespace TrainingHub.Shared.Domain.Tests.Common.Results;
 
 /// <summary>
-/// Behaviour covered for <c>Result</c>.
+/// Behavior covered for <c>Result</c>.
 /// </summary>
 public sealed class ResultTests
 {

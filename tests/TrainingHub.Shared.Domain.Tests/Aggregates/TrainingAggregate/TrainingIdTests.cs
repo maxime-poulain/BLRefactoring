@@ -6,7 +6,7 @@ using Xunit;
 namespace TrainingHub.Shared.Domain.Tests.Aggregates.TrainingAggregate;
 
 /// <summary>
-/// Behaviour covered for <c>TrainingId</c>.
+/// Behavior covered for <c>TrainingId</c>.
 /// </summary>
 public sealed class TrainingIdTests
 {

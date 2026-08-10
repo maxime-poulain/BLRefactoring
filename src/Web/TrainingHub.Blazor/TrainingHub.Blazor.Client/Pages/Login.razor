@@ -64,10 +64,10 @@
     /// Where to go once signed in, as <c>RedirectToLogin</c> recorded it.
     /// </summary>
     /// <remarks>
-    /// Only a path is honoured. The value arrives from the address bar, so anything that could name
+    /// Only a path is honored. The value arrives from the address bar, so anything that could name
     /// another origin — an absolute URL, or the protocol-relative <c>//evil.example</c> that
-    /// <c>Uri.IsWellFormedUriString(..., Relative)</c> happily accepts — is discarded in favour of
-    /// the catalogue. Redirecting to wherever a query string says is how a sign-in page becomes a
+    /// <c>Uri.IsWellFormedUriString(..., Relative)</c> happily accepts — is discarded in favor of
+    /// the catalog. Redirecting to wherever a query string says is how a sign-in page becomes a
     /// phishing hop.
     /// </remarks>
     [Parameter]

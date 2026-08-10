@@ -19,7 +19,7 @@ namespace TrainingHub.Shared.Infrastructure.Tests.Search;
 /// <remarks>
 /// Against a database rather than a substitute, because everything worth asserting here is a
 /// translation: the cascade that takes a training's tokens with it, the single statement that flips
-/// a whole catalogue, and the composed <c>EXISTS</c> per word. A fake indexer would agree with any
+/// a whole catalog, and the composed <c>EXISTS</c> per word. A fake indexer would agree with any
 /// of those and prove none of them.
 /// <para>
 /// SQLite over the in-memory provider for the reason <c>TrainerNamesQueryTests</c> gives: the
@@ -82,7 +82,7 @@ public abstract class SearchIndexTest : IAsyncLifetime
 
     /// <summary>Adds a training under that trainer, on offer unless asked otherwise.</summary>
     /// <remarks>
-    /// A training is born published, which the aggregate states in its initialiser, so the
+    /// A training is born published, which the aggregate states in its initializer, so the
     /// interesting direction is the other one: withdrawing it is what this helper has to do work for.
     /// </remarks>
     protected async Task<Training> GivenTrainingAsync(

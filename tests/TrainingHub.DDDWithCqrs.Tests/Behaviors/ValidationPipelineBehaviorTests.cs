@@ -17,7 +17,7 @@ using Xunit;
 namespace TrainingHub.DDDWithCqrs.Tests.Behaviors;
 
 /// <summary>
-/// Behaviour covered for <c>ValidationPipelineBehavior</c>.
+/// Behavior covered for <c>ValidationPipelineBehavior</c>.
 /// </summary>
 public sealed class ValidationPipelineBehaviorTests
 {

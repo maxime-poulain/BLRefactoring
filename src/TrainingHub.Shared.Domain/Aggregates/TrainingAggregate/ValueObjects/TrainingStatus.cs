@@ -3,7 +3,7 @@ using TrainingHub.Shared.Common;
 namespace TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 
 /// <summary>
-/// Where a training stands in its owner's catalogue: offered to the public, withdrawn by its owner,
+/// Where a training stands in its owner's catalog: offered to the public, withdrawn by its owner,
 /// or kept back by the administration.
 /// </summary>
 /// <remarks>
@@ -33,7 +33,7 @@ public sealed class TrainingStatus : ValueObject
 
     /// <summary>
     /// The training has been withdrawn by its owner. It keeps its title and frees its place in the
-    /// catalogue's quota, and its owner may publish it again.
+    /// catalog's quota, and its owner may publish it again.
     /// </summary>
     /// <remarks>
     /// The only state that frees a slot, because it is the only one the owner chose. See

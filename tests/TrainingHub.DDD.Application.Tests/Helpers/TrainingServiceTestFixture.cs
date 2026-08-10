@@ -23,7 +23,7 @@ public sealed class TrainingServiceTestFixture
     public Mock<IUniquenessTitleChecker> TitleChecker { get; } = new();
 
     /// <summary>
-    /// Training counter. Answers zero unless a test raises it: an empty catalogue is the
+    /// Training counter. Answers zero unless a test raises it: an empty catalog is the
     /// default, so only the tests about the capacity rule mention it.
     /// </summary>
     public Mock<ITrainingCounter> TrainingCounter { get; } = new();

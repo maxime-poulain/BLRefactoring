@@ -83,7 +83,7 @@ public static class QueryableOrderingExtensions
     /// The second order in this repository, and the exception is argued rather than assumed. The
     /// index is not made of aggregates: it holds no <c>CreatedOn</c>, because the day a document was
     /// written into a read model is a fact about the read model rather than about the training, and
-    /// a catalogue sorted by when the indexer happened to reach a row would reshuffle itself after
+    /// a catalog sorted by when the indexer happened to reach a row would reshuffle itself after
     /// every replay. A title is what a visitor scans, so a title is what it sorts on.
     /// <para>
     /// The tie-break is the same decision <see cref="NewestFirst{TAggregate,TEntityId}"/> makes and

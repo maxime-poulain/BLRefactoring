@@ -1,5 +1,5 @@
 using TrainingHub.Shared.Api.Contracts.Administration;
-using TrainingHub.Shared.Api.Contracts.Catalogue;
+using TrainingHub.Shared.Api.Contracts.Catalog;
 using TrainingHub.Shared.Api.Contracts.Errors;
 using TrainingHub.Shared.Api.Contracts.Outbox;
 using TrainingHub.Shared.Api.Contracts.Trainers;
@@ -135,13 +135,13 @@ public static class ApplicationToHttpMappings
         this IEnumerable<AdministrationTrainingDto> trainings) => [.. trainings.Select(ToHttp)];
 
     /// <summary>
-    /// Publishes a training as the public catalogue reads it.
+    /// Publishes a training as the public catalog reads it.
     /// </summary>
-    public static CatalogueTrainingHttpResponse ToHttp(this CatalogueTrainingDto training)
+    public static CatalogTrainingHttpResponse ToHttp(this CatalogTrainingDto training)
     {
         ArgumentNullException.ThrowIfNull(training);
 
-        return new CatalogueTrainingHttpResponse
+        return new CatalogTrainingHttpResponse
         {
             Id = training.Id,
             TrainerId = training.TrainerId,
@@ -152,18 +152,18 @@ public static class ApplicationToHttpMappings
     /// <summary>
     /// Publishes a page of them.
     /// </summary>
-    public static List<CatalogueTrainingHttpResponse> ToHttp(
-        this IEnumerable<CatalogueTrainingDto> trainings) => [.. trainings.Select(ToHttp)];
+    public static List<CatalogTrainingHttpResponse> ToHttp(
+        this IEnumerable<CatalogTrainingDto> trainings) => [.. trainings.Select(ToHttp)];
 
     /// <summary>
     /// Publishes one offered training in full, for the visitor who followed a search result
     /// (ADR 0062).
     /// </summary>
-    public static CatalogueTrainingDetailHttpResponse ToHttp(this CatalogueTrainingDetailDto training)
+    public static CatalogTrainingDetailHttpResponse ToHttp(this CatalogTrainingDetailDto training)
     {
         ArgumentNullException.ThrowIfNull(training);
 
-        return new CatalogueTrainingDetailHttpResponse
+        return new CatalogTrainingDetailHttpResponse
         {
             Id = training.Id,
             Title = training.Title,
@@ -206,7 +206,7 @@ public static class ApplicationToHttpMappings
     /// Publishes the errors an application call reported.
     /// </summary>
     /// <remarks>
-    /// The shape matches what the kernel's <c>Error</c> used to serialise, nested code included,
+    /// The shape matches what the kernel's <c>Error</c> used to serialize, nested code included,
     /// so no caller sees a difference. It is also the single place to change the day the API
     /// answers in <c>ProblemDetails</c>.
     /// </remarks>

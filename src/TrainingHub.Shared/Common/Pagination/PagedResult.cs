@@ -9,7 +9,7 @@ namespace TrainingHub.Shared.Common.Pagination;
 /// straight into a page of DTOs, while the layered stack's repository answers a page of aggregates
 /// that the application service then maps. It used to live on the query side alone, when only that
 /// host paged; the page itself was never a query-side concept, only the projection that fills it,
-/// so harmonising the two hosts moved the envelope here and left the two ways of filling it where
+/// so harmonizing the two hosts moved the envelope here and left the two ways of filling it where
 /// they were.
 /// </remarks>
 /// <param name="Items">The page itself.</param>

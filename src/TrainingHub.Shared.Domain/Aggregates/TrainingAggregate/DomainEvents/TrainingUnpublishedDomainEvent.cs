@@ -8,7 +8,7 @@ namespace TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.DomainEvents;
 /// </summary>
 /// <remarks>
 /// The everyday act ADR 0050 puts in the place deletion used to hold. The training keeps its title
-/// and its rows; what leaves is its place in the catalogue's quota and its entry in the search
+/// and its rows; what leaves is its place in the catalog's quota and its entry in the search
 /// index.
 /// </remarks>
 /// <param name="TrainingId">The identifier of the withdrawn training.</param>

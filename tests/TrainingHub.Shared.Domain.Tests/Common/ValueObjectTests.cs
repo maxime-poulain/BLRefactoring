@@ -5,7 +5,7 @@ using Xunit;
 namespace TrainingHub.Shared.Domain.Tests.Common;
 
 /// <summary>
-/// Behaviour covered for <c>ValueObject</c>.
+/// Behavior covered for <c>ValueObject</c>.
 /// </summary>
 public sealed class ValueObjectTests
 {

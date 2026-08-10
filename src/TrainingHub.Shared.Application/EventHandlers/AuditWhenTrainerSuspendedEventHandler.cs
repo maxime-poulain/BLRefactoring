@@ -33,7 +33,7 @@ public sealed class AuditWhenTrainerSuspendedEventHandler(
         // who acted and when are already stamped on this line by ADR 0027's enricher, and the
         // motive lived only in the administrator's head until ADR 0052 gave it a value object.
         logger.LogInformation(
-            "Trainer {TrainerId} was suspended for '{Reason}'; their catalogue leaves public view "
+            "Trainer {TrainerId} was suspended for '{Reason}'; their catalog leaves public view "
             + "until the sanction is lifted.",
             notification.TrainerId.Value,
             notification.Reason.Value);

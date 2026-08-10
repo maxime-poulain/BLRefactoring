@@ -11,7 +11,7 @@ using Xunit;
 namespace TrainingHub.Blazor.Client.Tests.Pages.Administration;
 
 /// <summary>
-/// Behaviour covered for the administrative trainers page.
+/// Behavior covered for the administrative trainers page.
 /// </summary>
 /// <remarks>
 /// The page reads a list this API deliberately withdrew from everybody else, so what it asks for is
@@ -211,7 +211,7 @@ public sealed class TrainersTests : ComponentTest
     /// </summary>
     /// <remarks>
     /// Backing out of the dialog is not a decision to suspend somebody, and a page that read a
-    /// cancelled result as an empty reason would send one anyway.
+    /// canceled result as an empty reason would send one anyway.
     /// </remarks>
     [Fact]
     public void Suspending_TheDialogDismissed_AsksTheApiForNothing()

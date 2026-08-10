@@ -140,7 +140,7 @@ public sealed partial class PersistenceRules
     /// What that costs is a hole a refactoring falls into silently: delete the <c>CreateIndex</c>
     /// while squashing history, or write a <c>Down</c> nobody re-applies, and the pre-check in
     /// <c>IUniquenessTitleChecker</c> goes on answering while two concurrent creations both win.
-    /// The only other defence is <c>Create_DuplicateTitleForSameTrainer_Returns409</c>, which runs
+    /// The only other defense is <c>Create_DuplicateTitleForSameTrainer_Returns409</c>, which runs
     /// in the integration workflow the fast one excludes.
     /// </para>
     /// <para>

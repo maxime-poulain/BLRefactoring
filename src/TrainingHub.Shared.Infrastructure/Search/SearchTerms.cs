@@ -9,7 +9,7 @@ namespace TrainingHub.Shared.Infrastructure.Search;
 /// The index's own business, so it lives behind the port with the rest of it: nothing outside this
 /// folder knows that a title is stored twice, once to read and once to find (ADR 0059). Writing and
 /// reading tokenize through the same method on purpose — a search that normalized its term
-/// differently from the index would answer nothing and look like an empty catalogue.
+/// differently from the index would answer nothing and look like an empty catalog.
 /// </remarks>
 public static class SearchTerms
 {
@@ -27,7 +27,7 @@ public static class SearchTerms
     /// The shortest token worth an index row.
     /// </summary>
     /// <remarks>
-    /// A single letter matches most of the catalogue by prefix, which costs a row to store and
+    /// A single letter matches most of the catalog by prefix, which costs a row to store and
     /// answers nothing useful. Two is where a word starts being a word.
     /// </remarks>
     public const int MinimumLength = 2;

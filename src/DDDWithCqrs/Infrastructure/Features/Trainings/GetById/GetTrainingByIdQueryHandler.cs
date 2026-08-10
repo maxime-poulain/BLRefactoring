@@ -21,7 +21,7 @@ namespace TrainingHub.DDDWithCqrs.Infrastructure.Features.Trainings.GetById;
 /// <para>
 /// This endpoint is the one read by identifier that survives. It is what the edit form loads, and
 /// what the <c>Location</c> of a creation points at, so it could not go the way of the four
-/// catalogue reads; scoping it to its owner is what makes keeping it safe.
+/// catalog reads; scoping it to its owner is what makes keeping it safe.
 /// </para>
 /// </remarks>
 public sealed class GetTrainingByIdQueryHandler(

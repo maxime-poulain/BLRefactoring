@@ -6,7 +6,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.Dtos;
 
 /// <summary>
-/// Behaviour covered for <c>Projections</c>.
+/// Behavior covered for <c>Projections</c>.
 /// </summary>
 public sealed class ProjectionsTests
 {

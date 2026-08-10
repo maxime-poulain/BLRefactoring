@@ -105,10 +105,10 @@ namespace TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Migrations
                                 .HasColumnType("uniqueidentifier")
                                 .HasColumnName("PhotoId");
 
-                            b1.Property<DateTime?>("SanitisedOnUtc")
+                            b1.Property<DateTime?>("SanitizedOnUtc")
                                 .HasPrecision(7)
                                 .HasColumnType("datetime2(7)")
-                                .HasColumnName("PhotoSanitisedOnUtc");
+                                .HasColumnName("PhotoSanitizedOnUtc");
                         });
 
                     b.ComplexProperty(typeof(Dictionary<string, object>), "SuspensionReason", "TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.Trainer.SuspensionReason#SuspensionReason", b1 =>

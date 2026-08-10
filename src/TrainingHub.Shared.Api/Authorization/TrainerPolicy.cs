@@ -13,7 +13,7 @@ namespace TrainingHub.Shared.Api.Authorization;
 /// Refusing once at the boundary is what keeps those eleven call sites free of the question.
 /// The alternative — a member on the current-user accessor saying "this caller is nobody's
 /// trainer" — would be answered by nothing, since no use case behind this policy can meet the
-/// case, and an accessor nobody consults is not a defence.
+/// case, and an accessor nobody consults is not a defense.
 /// </para>
 /// </remarks>
 public static class TrainerPolicy

@@ -126,7 +126,7 @@ public sealed partial class AnalysisRules
     /// No setting, carries a trailing comment.
     /// </summary>
     /// <remarks>
-    /// EditorConfig recognises a comment only at the start of a line. Written after a value, the
+    /// EditorConfig recognizes a comment only at the start of a line. Written after a value, the
     /// <c>#</c> and everything after it become part of the value, the parser fails to read it, and
     /// the setting silently falls back to its default — which is how <c>csharp_prefer_braces</c>
     /// went unread here for as long as it existed, and read correctly only because the default

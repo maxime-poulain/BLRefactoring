@@ -20,7 +20,7 @@ public sealed class TrainerConfiguration : AggregateRootTypeConfiguration<Traine
 
         // No uniqueness constraint here, deliberately: the contact email is a
         // business attribute of the profile, not a credential. Two trainers of the
-        // same organisation may legitimately publish the same address. Uniqueness
+        // same organization may legitimately publish the same address. Uniqueness
         // is enforced by Identity on the account email, which is a different value.
         builder.ComplexProperty(e => e.ContactEmail, b =>
         {
@@ -81,8 +81,8 @@ public sealed class TrainerConfiguration : AggregateRootTypeConfiguration<Traine
             // exists means "stored before anything stripped it". Only the database can produce the
             // second — the factory always stamps — and the public portrait refuses to serve it
             // (ADR 0063).
-            photoBuilder.Property(p => p.SanitisedOnUtc)
-                .HasColumnName("PhotoSanitisedOnUtc")
+            photoBuilder.Property(p => p.SanitizedOnUtc)
+                .HasColumnName("PhotoSanitizedOnUtc")
                 .HasPrecision(7);
         });
 

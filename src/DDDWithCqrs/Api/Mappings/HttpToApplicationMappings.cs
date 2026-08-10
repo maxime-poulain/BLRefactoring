@@ -1,6 +1,6 @@
-using TrainingHub.DDDWithCqrs.Application.Features.Catalogue.GetOffered;
-using TrainingHub.DDDWithCqrs.Application.Features.Catalogue.GetOfferedPortrait;
-using TrainingHub.DDDWithCqrs.Application.Features.Catalogue.Search;
+using TrainingHub.DDDWithCqrs.Application.Features.Catalog.GetOffered;
+using TrainingHub.DDDWithCqrs.Application.Features.Catalog.GetOfferedPortrait;
+using TrainingHub.DDDWithCqrs.Application.Features.Catalog.Search;
 using TrainingHub.DDDWithCqrs.Application.Features.Outbox.GetPoisoned;
 using TrainingHub.DDDWithCqrs.Application.Features.Outbox.Requeue;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Create;
@@ -21,7 +21,7 @@ using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Transfer;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Unpublish;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Withhold;
 using TrainingHub.Shared.Api.Contracts.Administration;
-using TrainingHub.Shared.Api.Contracts.Catalogue;
+using TrainingHub.Shared.Api.Contracts.Catalog;
 using TrainingHub.Shared.Api.Contracts.Auth;
 using TrainingHub.Shared.Api.Contracts.Mappings;
 using TrainingHub.Shared.Api.Contracts.Pagination;
@@ -197,13 +197,13 @@ public static class HttpToApplicationMappings
             Paging = pagination.ToPageRequest()
         };
 
-    /// <summary>Builds the query searching the public catalogue (ADR 0059).</summary>
+    /// <summary>Builds the query searching the public catalog (ADR 0059).</summary>
     /// <remarks>
     /// The same two-bound-objects-into-one-message shape as the administrative listings above, for
     /// the endpoint that has no status to carry: the index holds only what may be shown.
     /// </remarks>
-    public static SearchCatalogueQuery ToQuery(
-        this CatalogueSearchHttpRequest? search,
+    public static SearchCatalogQuery ToQuery(
+        this CatalogSearchHttpRequest? search,
         PaginationHttpRequest? pagination) => new()
         {
             Term = search?.Term,

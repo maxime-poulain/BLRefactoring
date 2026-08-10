@@ -64,7 +64,7 @@ public abstract class AuthControllerBase(
     /// <para>
     /// The address requires a token the registration response does not hand out. That is not a
     /// reason to withhold it: <c>Location</c> identifies the resource created, it does not promise
-    /// the caller is authorised to read it, and the caller is one <c>POST /Auth/login</c> away.
+    /// the caller is authorized to read it, and the caller is one <c>POST /Auth/login</c> away.
     /// <c>/Trainer/me</c> was the wrong candidate to compare it against — it is an alias for
     /// whoever is calling, not the address of the thing this request created.
     /// </para>
@@ -228,7 +228,7 @@ public abstract class AuthControllerBase(
     /// A 401 Unauthorized problem document if authentication fails.
     /// </returns>
     /// <remarks>
-    /// The 401 used to be <c>Unauthorized("Invalid username or password.")</c>, which serialises to
+    /// The 401 used to be <c>Unauthorized("Invalid username or password.")</c>, which serializes to
     /// a bare JSON string — quotes included, no status, no member to read. ADR 0004 lists that
     /// exact shape as the worst of the four it removed, and then left it standing on the first
     /// call any client makes. The sentence is unchanged; only its wrapping is.

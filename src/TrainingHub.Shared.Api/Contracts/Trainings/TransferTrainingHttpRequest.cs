@@ -11,7 +11,7 @@ namespace TrainingHub.Shared.Api.Contracts.Trainings;
 /// <para>
 /// That last sentence was untrue for as long as the annotation was <c>[Required]</c>: a
 /// non-nullable <see cref="Guid"/> always has a value, so <see cref="Guid.Empty"/> satisfied it and
-/// travelled on, and what refused it was a validator behind the CQRS host alone.
+/// traveled on, and what refused it was a validator behind the CQRS host alone.
 /// <see cref="NotEmptyIdentifierAttribute"/> is what the remark always described (ADR 0046).
 /// </para>
 /// </remarks>

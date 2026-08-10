@@ -16,7 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <!-- For ValidationExceptionHandler alone: the API has to recognise a validation failure to
+      <!-- For ValidationExceptionHandler alone: the API has to recognize a validation failure to
            answer it as a ValidationProblemDetails. No validator is declared here — the rules stay
            in the application layer, only their translation to HTTP lives at this boundary. -->
       <PackageReference Include="FluentValidation" />

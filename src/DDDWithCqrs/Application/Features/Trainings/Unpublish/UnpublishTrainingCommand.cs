@@ -23,7 +23,7 @@ public sealed class UnpublishTrainingCommand(Guid trainingId) : ICommand<Result>
 /// <remarks>
 /// Takes no standing port and no counter, and that asymmetry with publishing is the record's rule
 /// showing through: withdrawing shrinks what the public can see, so nothing about the owner's
-/// standing or the size of their catalogue can refuse it.
+/// standing or the size of their catalog can refuse it.
 /// </remarks>
 public sealed class UnpublishTrainingCommandHandler(
     ITrainingRepository trainingRepository,

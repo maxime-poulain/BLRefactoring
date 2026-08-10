@@ -198,11 +198,11 @@ public abstract class ModerationTest<TFactory>(TFactory factory) : IntegrationTe
             new SuspendTrainerHttpRequest { Reason = Motive }))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        // Suspended, the trainer's catalogue cannot grow again — and the refusal now arrives one
+        // Suspended, the trainer's catalog cannot grow again — and the refusal now arrives one
         // layer earlier than it used to. ADR 0053 moved it to the boundary, so the request is turned
         // away by ActiveTrainerPolicy before any use case runs, with no body at all. The aggregate's
         // own standing rule is still there and still tested, by the domain suite and by both
-        // application suites, which reach the use case without passing a policy: it is defence in
+        // application suites, which reach the use case without passing a policy: it is defense in
         // depth now rather than the only door.
         var refused = await trainer.PostAsync($"/Training/{withdrawn}/publish", content: null);
         refused.StatusCode.Should().Be(HttpStatusCode.Forbidden);

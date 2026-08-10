@@ -425,15 +425,15 @@ public abstract class TrainingLifecycleTest<TFactory>(TFactory factory) : Integr
     }
 
     /// <summary>
-    /// Unpublish, a training at the catalogue limit, frees a place for another.
+    /// Unpublish, a training at the catalog limit, frees a place for another.
     /// </summary>
     /// <remarks>
     /// The invariant with the widest blast radius in ADR 0050, end to end: the quota counts what is
-    /// on offer, so a full catalogue is one a trainer can still work in. Before this, ten trainings
-    /// ended a trainer's catalogue for ever unless they destroyed one.
+    /// on offer, so a full catalog is one a trainer can still work in. Before this, ten trainings
+    /// ended a trainer's catalog for ever unless they destroyed one.
     /// </remarks>
     [Fact]
-    public async Task Unpublish_AtTheCatalogueLimit_FreesAPlace()
+    public async Task Unpublish_AtTheCatalogLimit_FreesAPlace()
     {
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
 
@@ -454,7 +454,7 @@ public abstract class TrainingLifecycleTest<TFactory>(TFactory factory) : Integr
         (await client.PostAsJsonAsync("/Training", ValidCreation())).StatusCode
             .Should().Be(HttpStatusCode.Created);
 
-        // And the withdrawn one cannot come back while the catalogue is full again — the hole a
+        // And the withdrawn one cannot come back while the catalog is full again — the hole a
         // quota on published trainings would otherwise leave open.
         (await client.PostAsync($"/Training/{first}/publish", content: null))
             .StatusCode.Should().Be(HttpStatusCode.BadRequest);

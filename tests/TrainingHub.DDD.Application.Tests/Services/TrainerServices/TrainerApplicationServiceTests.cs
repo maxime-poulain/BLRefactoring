@@ -11,7 +11,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.Services.TrainerServices;
 
 /// <summary>
-/// Behaviour covered for <c>TrainerApplicationService</c>.
+/// Behavior covered for <c>TrainerApplicationService</c>.
 /// </summary>
 public sealed class TrainerApplicationServiceTests
 {

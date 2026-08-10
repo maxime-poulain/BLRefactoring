@@ -43,7 +43,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <!--
-      AnalysisLevel follows the target framework, so the three net9.0 projects would analyse at a
+      AnalysisLevel follows the target framework, so the three net9.0 projects would analyze at a
       different level from the other twenty-three and the ruleset would quietly differ across one
       solution. Pinned after measuring that aligning them costs nothing.
     -->

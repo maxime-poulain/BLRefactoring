@@ -9,7 +9,7 @@ using Xunit;
 namespace TrainingHub.Blazor.Client.Tests.Pages;
 
 /// <summary>
-/// Behaviour covered for the training form's failure paths.
+/// Behavior covered for the training form's failure paths.
 /// </summary>
 /// <remarks>
 /// The page shows the API's refusals in the API's own words when a problem document carries them.

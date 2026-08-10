@@ -11,7 +11,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.Services;
 
 /// <summary>
-/// Behaviour covered for <c>OutboxApplicationService</c>.
+/// Behavior covered for <c>OutboxApplicationService</c>.
 /// </summary>
 /// <remarks>
 /// The layered half of the operator surface, and the twin of the CQRS handlers' facts on purpose:

@@ -8,7 +8,7 @@ using Xunit;
 namespace TrainingHub.Blazor.Client.Tests.Components;
 
 /// <summary>
-/// Behaviour covered for the dialog both sanctions ask their question through.
+/// Behavior covered for the dialog both sanctions ask their question through.
 /// </summary>
 /// <remarks>
 /// The reason is not a field on this dialog, it is the dialog: ADR 0052 made a withholding a state
@@ -101,7 +101,7 @@ public sealed class ReasonDialogTests : ComponentTest
     /// <remarks>
     /// Five hundred is what both contracts publish, so refusing here spares a round trip rather
     /// than inventing a rule. It is checked and not only advertised through <c>MaxLength</c>: an
-    /// attribute the browser honours is not a decision this component made, and nothing stops the
+    /// attribute the browser honors is not a decision this component made, and nothing stops the
     /// text arriving by a paste the attribute never sees.
     /// </remarks>
     [Fact]
@@ -122,14 +122,14 @@ public sealed class ReasonDialogTests : ComponentTest
     }
 
     /// <summary>
-    /// Cancelling, answers nothing at all.
+    /// Canceling, answers nothing at all.
     /// </summary>
     /// <remarks>
-    /// Backing out is not a decision, and the pages read a cancelled result as "do not send". A
+    /// Backing out is not a decision, and the pages read a canceled result as "do not send". A
     /// dialog that closed with an empty reason instead would have them send one.
     /// </remarks>
     [Fact]
-    public async Task Cancelling_AnswersNothingAtAll()
+    public async Task Canceling_AnswersNothingAtAll()
     {
         // Arrange
         var (dialog, reference) = await OpenAsync();
@@ -153,7 +153,7 @@ public sealed class ReasonDialogTests : ComponentTest
         {
             { component => component.Prompt, "Suspend" },
             { component => component.Subject, "Ada Lovelace" },
-            { component => component.Consequence, "Their catalogue leaves public view." },
+            { component => component.Consequence, "Their catalog leaves public view." },
             { component => component.Verb, Verb }
         };
 

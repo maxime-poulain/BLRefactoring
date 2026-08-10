@@ -27,7 +27,7 @@ two different problems.
 - [Testing](#testing)
 - [Continuous integration](#continuous-integration)
 - [Repository conventions](#repository-conventions)
-- [Licence](#licence)
+- [License](#license)
 
 ---
 
@@ -43,7 +43,7 @@ the subject. What the repository actually demonstrates:
   identifiers — never a `string`, a `Guid` or a parameter object shaped like an HTTP request.
   Turning raw input into those concepts is the application layer's job.
 - **Invariants that cannot be bypassed.** Constructors are private, collections are exposed
-  read-only, and every state transition goes through a behaviour method that either succeeds
+  read-only, and every state transition goes through a behavior method that either succeeds
   entirely or changes nothing.
 - **Failure as a value, not an exception.** A railway-oriented `Result` carries accumulated
   business errors from the domain up to the HTTP status code.
@@ -110,7 +110,7 @@ queries and application DTOs stop at that line: no controller names one, and eac
 shared contracts onto its own vocabulary — the layered one to its application services, the CQRS
 one to its commands and queries. Before that, the CQRS controllers bound an `EditTrainingCommand`
 straight from the request body and then assigned its route identifier and expected version onto
-it, which is why those commands carried `[JsonIgnore]`: a serialisation concern lodged inside an
+it, which is why those commands carried `[JsonIgnore]`: a serialization concern lodged inside an
 application message. The published API and the internals can now change without each other's
 permission, and the two hosts cannot drift on it, since the contract they serve is one object.
 
@@ -164,7 +164,7 @@ Twenty-seven projects: sixteen under `src/`, eleven under `tests/`. The backend 
 | `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService` |
 | `DDD.Api` | REST host for the layered stack — controllers, composition root |
 | `DDDWithCqrs.Application` | Commands, command handlers, FluentValidation validators |
-| `DDDWithCqrs.Infrastructure` | **Query handlers**, Mediator dispatchers, pipeline behaviours |
+| `DDDWithCqrs.Infrastructure` | **Query handlers**, Mediator dispatchers, pipeline behaviors |
 | `DDDWithCqrs.Api` | REST host for the CQRS stack — controllers, composition root |
 | `DDD.Domain`, `DDD.Infrastructure`, `DDDWithCqrs.Domain` | Routing projects with no source files; the domain and infrastructure they stand for live in the `TrainingHub.Shared.*` projects |
 | `TrainingHub.GeneratedClients` | NSwag-generated typed HTTP clients, checked in as source |
@@ -252,7 +252,7 @@ point rather than one mutator per attribute. Events are computed **before** muta
 
 `ContactEmail` is the address a trainer publishes — deliberately distinct from the credential of
 their Identity account, which the aggregate only ever references through `UserId`. Two trainers
-of the same organisation may share one, so no uniqueness rule applies to it.
+of the same organization may share one, so no uniqueness rule applies to it.
 
 `Photo` holds an identity, a media type and a size — never a bucket, a key or a URL. The aggregate
 says *which* photo a trainer has; where the bytes live is the infrastructure's business, which is
@@ -282,7 +282,7 @@ one a fact in rows it cannot see, brought to the factory through a port named af
 (ADR 0030). A title must be unique among the trainings of the same trainer, asked through
 `IUniquenessTitleChecker`; and a trainer publishes at most `Training.MaximumPerTrainer` (ten)
 trainings, asked through `ITrainingCounter` at creation only — editing changes a training, never
-how many there are — answering `Training.CatalogueFull` when the catalogue is full. Creation and
+how many there are — answering `Training.CatalogFull` when the catalog is full. Creation and
 edition share a private `ApplyEditionAsync` that checks the title rule first and **mutates
 nothing when it fails** — so a rejected edition never leaves the aggregate half-changed. The
 uniqueness lookup only runs when the title actually changed. Topics are de-duplicated and fully
@@ -327,7 +327,7 @@ nothing to refuse.
 | `TrainerStatus` | Closed set of two: `Active`, `Suspended` | — |
 | `TrainerPhoto` | Non-empty, at most 5 MiB, PNG/JPEG/WebP — and the bytes must be what the content type declares | `PhotoEmpty`, `PhotoTooLarge`, `PhotoFormatNotSupported`, `PhotoContentMismatch` |
 
-Three behaviours are worth knowing:
+Three behaviors are worth knowing:
 
 - **`TrainingTitle` compares case-insensitively.** `"Intro to C#"` and `"INTRO TO C#"` are the
   same title, which is what makes the uniqueness rule meaningful.
@@ -383,7 +383,7 @@ stacks:
 `Trainer.MarkForDeletion` and the trainer-deletion handler above have no caller in production,
 deliberately: the API exposes no way to delete a trainer (see [Security](#security)). What the
 aggregate states is the rule — a trainer does not disappear without their trainings — and the rule
-holds whoever ends up triggering it. The behaviour is covered by `DomainEventPipelineTests`, which
+holds whoever ends up triggering it. The behavior is covered by `DomainEventPipelineTests`, which
 drives it through the host's own services.
 
 Six of the seventeen handlers act inside the transaction — ADR 0002's *domain reactions* — and eleven
@@ -433,15 +433,15 @@ at the name alone (`TheLayeredApplication_NamesItsServicesInFull`).
 
 The read paths differ by design: the layered stack loads aggregates through repositories and maps
 them, while the CQRS stack projects straight from `TrainingContext` into DTOs with
-`IQueryable` expressions, under a pipeline behaviour that switches change tracking off for
+`IQueryable` expressions, under a pipeline behavior that switches change tracking off for
 queries and restores it afterwards.
 
-The two reads where they do not differ are the public catalogue's. `CatalogueApplicationService`
-and `SearchCatalogueQueryHandler` both call `ITrainingSearchQuery`, because what usually separates
+The two reads where they do not differ are the public catalog's. `CatalogApplicationService`
+and `SearchCatalogQueryHandler` both call `ITrainingSearchQuery`, because what usually separates
 the two stacks is how each drives the write model — and that search reads a read model the write
 model has nothing to say about
-([ADR 0059](docs/adr/0059-give-the-search-index-a-body-and-a-query-surface.md)). The catalogue's
-reading of one training arrives at `ICatalogueDetailQuery` from both stacks for the same reason,
+([ADR 0059](docs/adr/0059-give-the-search-index-a-body-and-a-query-surface.md)). The catalog's
+reading of one training arrives at `ICatalogDetailQuery` from both stacks for the same reason,
 and that port is where the interesting decision lives rather than in either host: the index says
 whether a visitor may see the training, and the write model says what it is
 ([ADR 0062](docs/adr/0062-let-the-proxy-forward-one-family-of-paths-without-a-token.md)).
@@ -464,7 +464,7 @@ broken, and carries that aggregate's name.
 | Holder | Codes |
 |---|---|
 | `ErrorCodes` (kernel) | `Unspecified`, `NotFound`, `ConcurrencyConflict`, `Validation` |
-| `TrainingErrorCodes` | `Training.InvalidTitle`, `Training.DuplicateTitle`, `Training.InvalidDescription`, `Training.InvalidPrerequisites`, `Training.InvalidAcquiredSkills`, `Training.InvalidTopic`, `Training.CatalogueFull`, `Training.TransferToSelf`, `Training.RecipientCatalogueFull`, `Training.UnknownRecipient`, `Training.AlreadyPublished`, `Training.AlreadyUnpublished`, `Training.TrainerSuspended`, `Training.RecipientSuspended`, `Training.AlreadyWithheld`, `Training.NotWithheld`, `Training.Withheld`, `Training.WithholdingReasonEmpty`, `Training.WithholdingReasonTooLong` |
+| `TrainingErrorCodes` | `Training.InvalidTitle`, `Training.DuplicateTitle`, `Training.InvalidDescription`, `Training.InvalidPrerequisites`, `Training.InvalidAcquiredSkills`, `Training.InvalidTopic`, `Training.CatalogFull`, `Training.TransferToSelf`, `Training.RecipientCatalogFull`, `Training.UnknownRecipient`, `Training.AlreadyPublished`, `Training.AlreadyUnpublished`, `Training.TrainerSuspended`, `Training.RecipientSuspended`, `Training.AlreadyWithheld`, `Training.NotWithheld`, `Training.Withheld`, `Training.WithholdingReasonEmpty`, `Training.WithholdingReasonTooLong` |
 | `TrainerErrorCodes` | `Trainer.InvalidEmail`, `Trainer.InvalidFirstname`, `Trainer.InvalidLastname`, `Trainer.BioEmpty`, `Trainer.BioExceeds500Characters`, `Trainer.PhotoEmpty`, `Trainer.PhotoTooLarge`, `Trainer.PhotoFormatNotSupported`, `Trainer.PhotoContentMismatch`, `Trainer.PhotoUnreadable`, `Trainer.AlreadySuspended`, `Trainer.NotSuspended`, `Trainer.SuspensionReasonEmpty`, `Trainer.SuspensionReasonTooLong` |
 | `OutboxErrorCodes` | `Outbox.NotPoison` |
 
@@ -495,7 +495,7 @@ either return the value objects or the complete list of what was wrong.
 The reverse direction is written once too, in `TrainingHub.Shared.Application/Projections/`.
 Each aggregate has a single `Expression<Func<TAggregate, TDto>>`, consumed two ways: the CQRS
 query handlers hand it to EF Core, which folds it into the `SELECT` list so no aggregate is ever
-materialised, while the layered application services call the same expression compiled once into
+materialized, while the layered application services call the same expression compiled once into
 a delegate.
 
 The expression is the source and the delegate the derivative, never the reverse — an expression
@@ -522,7 +522,7 @@ sequenceDiagram
     participant H as Domain event handlers
     participant DB as SQL Server
 
-    App->>Agg: behaviour method
+    App->>Agg: behavior method
     Agg->>Agg: raise domain event
     App->>UoW: SaveChangesAsync
     UoW->>Int: SavingChangesAsync
@@ -560,9 +560,9 @@ the retry policy will use.
 service that polls the table, claims the oldest unprocessed rows in a single
 `UPDATE … OUTPUT` under `READPAST` and a database lease — two hosts over one table are competing
 consumers, safely — and hands each fact to each of its consumers independently, through an
-explicit dispatcher that isolates every consumer from its neighbours' failures. Each success lands
+explicit dispatcher that isolates every consumer from its neighbors' failures. Each success lands
 in a per-consumer delivery ledger (`OutboxMessageConsumer`), so a retry re-runs only the consumers
-still owed — a failing neighbour cannot replay a delivered welcome email (ADR 0034). The message
+still owed — a failing neighbor cannot replay a delivered welcome email (ADR 0034). The message
 is stamped `ProcessedOnUtc` when every consumer has settled; a failed pass records its reasons on
 the envelope, counts one attempt, and books the next try one doubling further out — 30 s, then 60,
 then 120 — so a downstream outage is ridden out rather than burned through (ADR 0033). A message
@@ -597,7 +597,7 @@ sequenceDiagram
     Hdl->>Repo: load aggregate
     Hdl->>F: build value objects from primitives
     F-->>Hdl: Result — value objects or accumulated errors
-    Hdl->>Agg: behaviour method
+    Hdl->>Agg: behavior method
     Hdl->>Repo: Update
     Hdl->>UoW: SaveChangesAsync
     UoW-->>Ctrl: Result
@@ -691,7 +691,7 @@ specification-taking members, and the CQRS readers never touch one — their que
 for a screen, and four architecture rules hold each of those lines.
 
 A named question may now carry **named criteria** — the administrative listings filter by a state
-and by a term ([ADR 0055](docs/adr/0055-let-the-administration-read-what-the-catalogue-may-not.md))
+and by a term ([ADR 0055](docs/adr/0055-let-the-administration-read-what-the-catalog-may-not.md))
 — and that is exactly where the fourth rule sits. A status is a value the adapter interprets; an
 `Expression<Func<T, bool>>` is a query the caller wrote, and refusing the bare shape is what keeps
 the line at *named criteria* from being the line at *anything*.
@@ -825,23 +825,23 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 | `GET` | `/Trainer/{id}/photo` | The trainer's portrait, with a strong `ETag` and a year-long `max-age`. Not `immutable`: this address does not name the photo, so its bytes change when the owner replaces it and a stale cache has to revalidate (ADR 0063). `200`, `304`, `404` |
 | `PUT` | `/Trainer/me/photo` | `multipart/form-data`. Publishes **and** replaces. `200` with the updated profile, `400`, `404`, `409` |
 | `DELETE` | `/Trainer/me/photo` | `204`, `404`, `409` |
-| `POST` | `/Training` | `201` with the new identifier, `409` on a duplicate title, `400` when the catalogue is full (`Training.CatalogueFull`, at ten **published** trainings) or the content is invalid |
+| `POST` | `/Training` | `201` with the new identifier, `409` on a duplicate title, `400` when the catalog is full (`Training.CatalogFull`, at ten **published** trainings) or the content is invalid |
 | `GET` | `/Training/my-trainings` | The caller's own trainings, newest first. Takes no identifier. One page on either host: `?page=` and `?pageSize=` (default 20, maximum 100), answered as `{ items, page, pageSize, totalCount, totalPages, hasNextPage, hasPreviousPage }` |
 | `GET` | `/Training/{id}` | Owner only. `200` with an `ETag`, `400` on a malformed identifier, or `404` — including when the training exists but belongs to somebody else |
 | `PUT` | `/Training/{trainingId}` | Owner only. Requires `If-Match`. `200` with the updated training and its new `ETag`, `400`, `403`, `404`, `409`, `412`, `428` |
 | `DELETE` | `/Training/{trainingId}` | Owner only. `204`, `400`, `403`, `404` |
-| `POST` | `/Training/{trainingId}/transfer` | Owner only, and an active one. Hands the training to the recipient the body names when their catalogue allows it (ADR 0036). `204`, `400` (self, unknown, full or suspended **recipient** — the giver's own suspension is a `403` at the boundary), `403`, `404`, `409` on the recipient's duplicate title |
+| `POST` | `/Training/{trainingId}/transfer` | Owner only, and an active one. Hands the training to the recipient the body names when their catalog allows it (ADR 0036). `204`, `400` (self, unknown, full or suspended **recipient** — the giver's own suspension is a `403` at the boundary), `403`, `404`, `409` on the recipient's duplicate title |
 | `POST` | `/Training/{trainingId}/unpublish` | Owner only. Withdraws the training from public view; it stays in the owner's own listing (ADR 0050). No body, no `If-Match`. `204`, `400`, `403`, `404`, `409` when it was already withdrawn |
-| `POST` | `/Training/{trainingId}/publish` | Owner only, and an active one. Offers a withdrawn training again. `204`, `400` when their catalogue is full, `403` (not the owner, or suspended), `404`, `409` when it was already published |
+| `POST` | `/Training/{trainingId}/publish` | Owner only, and an active one. Offers a withdrawn training again. `204`, `400` when their catalog is full, `403` (not the owner, or suspended), `404`, `409` when it was already published |
 | `POST` | `/Administration/trainers/{trainerId}/suspend` | Administrator only. The body carries the reason. `204`, `400` when the reason is empty or over 500 characters, `404`, `409` when the trainer was already suspended |
 | `POST` | `/Administration/trainers/{trainerId}/reinstate` | Administrator only. No body. `204`, `400`, `404`, `409` when the trainer was not under sanction |
 | `POST` | `/Administration/trainings/{trainingId}/withhold` | Administrator only. The body carries the reason. Takes the training out of public view where its owner cannot put it back (ADR 0052). `204`, `400`, `404`, `409` when it was already withheld |
 | `POST` | `/Administration/trainings/{trainingId}/release` | Administrator only. No body. Lifts the interdiction; the training lands on *unpublished*, and publishing is the owner's call again. `204`, `400`, `404`, `409` when it was not withheld |
 | `GET` | `/Administration/trainers` | Administrator only. One page of trainers, newest first. `?status=` (`Active`, `Suspended`), `?search=` on the name or the contact address, `?page=`, `?pageSize=`. `200`, `400` when the status names nothing or the page is out of range |
-| `GET` | `/Administration/trainings` | Administrator only. One page of trainings across every trainer, newest first. `?status=` (`Published`, `Unpublished`, `Withheld`), `?search=` on the title, `?page=`, `?pageSize=`. The term is a `LIKE '%term%'` over the write model, which the title had to stop being a value-converted column to allow ([ADR 0060](docs/adr/0060-look-inside-the-column-a-search-has-to-read.md)); the search that seeks is the catalogue's, and it cannot answer this one. `200`, `400` when the status names nothing, the term is too long, or the page is out of range |
-| `GET` | `/Catalogue/trainings` | **Anonymous.** One page of the offered catalogue, by title. `?term=` matched against the words of a title, each by prefix, through the search index rather than the trainings table; `?page=`, `?pageSize=`. `200`, `400` when the term is longer than a title or the page is out of range (ADR 0059) |
-| `GET` | `/Catalogue/trainings/{id:guid}` | **Anonymous.** One offered training in full: its title, its topics, its description, its prerequisites, its acquired skills, and the name of the trainer who offers it. Whether it may be shown comes from the search index; what it says comes from the write model, read now rather than copied — no fact carries a trainer's rename, so an indexed name would be one nothing refreshes. `200`, `404` for a training that does not exist **and** for one that is no longer on offer, which are deliberately the same answer ([ADR 0062](docs/adr/0062-let-the-proxy-forward-one-family-of-paths-without-a-token.md)) |
-| `GET` | `/Catalogue/trainings/{id:guid}/photo/{photoId:guid}` | **Anonymous.** The portrait of the trainer who offers this training. The address names a training and a photo and never a person, which is both what a visitor can have been given and what makes `immutable` true — a replacement mints a new photo identity, so these bytes never change. Four ways to answer `404` and they are one answer: no such training, none on offer, a photo that is not the owner's current one, and a portrait carrying no proof that the camera's metadata was ever stripped from it. `200`, `304`, `400`, `404` ([ADR 0063](docs/adr/0063-strip-the-metadata-before-the-bytes-are-stored.md)) |
+| `GET` | `/Administration/trainings` | Administrator only. One page of trainings across every trainer, newest first. `?status=` (`Published`, `Unpublished`, `Withheld`), `?search=` on the title, `?page=`, `?pageSize=`. The term is a `LIKE '%term%'` over the write model, which the title had to stop being a value-converted column to allow ([ADR 0060](docs/adr/0060-look-inside-the-column-a-search-has-to-read.md)); the search that seeks is the catalog's, and it cannot answer this one. `200`, `400` when the status names nothing, the term is too long, or the page is out of range |
+| `GET` | `/Catalog/trainings` | **Anonymous.** One page of the offered catalog, by title. `?term=` matched against the words of a title, each by prefix, through the search index rather than the trainings table; `?page=`, `?pageSize=`. `200`, `400` when the term is longer than a title or the page is out of range (ADR 0059) |
+| `GET` | `/Catalog/trainings/{id:guid}` | **Anonymous.** One offered training in full: its title, its topics, its description, its prerequisites, its acquired skills, and the name of the trainer who offers it. Whether it may be shown comes from the search index; what it says comes from the write model, read now rather than copied — no fact carries a trainer's rename, so an indexed name would be one nothing refreshes. `200`, `404` for a training that does not exist **and** for one that is no longer on offer, which are deliberately the same answer ([ADR 0062](docs/adr/0062-let-the-proxy-forward-one-family-of-paths-without-a-token.md)) |
+| `GET` | `/Catalog/trainings/{id:guid}/photo/{photoId:guid}` | **Anonymous.** The portrait of the trainer who offers this training. The address names a training and a photo and never a person, which is both what a visitor can have been given and what makes `immutable` true — a replacement mints a new photo identity, so these bytes never change. Four ways to answer `404` and they are one answer: no such training, none on offer, a photo that is not the owner's current one, and a portrait carrying no proof that the camera's metadata was ever stripped from it. `200`, `304`, `400`, `404` ([ADR 0063](docs/adr/0063-strip-the-metadata-before-the-bytes-are-stored.md)) |
 | `GET` | `/Administration/Outbox/poison` | Administrator only. One page of the integration events delivery gave up on, oldest fact first, each with its last error and the consumers a retry would skip. The payload is deliberately not published. `?page=`, `?pageSize=`. `200`, `400` when the page is out of range ([ADR 0061](docs/adr/0061-give-the-poison-a-url-and-an-operator-a-way-back-in.md)) |
 | `POST` | `/Administration/Outbox/poison/{messageId}/requeue` | Administrator only. No body. Hands one poison message back to the delivery worker with a fresh budget; the delivery ledger is untouched, so the retry runs only the consumers still owed (ADR 0034). `204`, `400`, `404`, `409` when the message is still owed or was already delivered |
 
@@ -853,17 +853,17 @@ record says an administrator is: a permission, not a context. Six of them drive 
 `Training`; the last two drive no aggregate at all and administer the platform's own delivery table
 (ADR 0061). One endpoint is the only one nobody has to sign in for, and it too reads no aggregate:
 the search index holds what a visitor may be shown, which is what makes an anonymous read of it a
-different thing from the catalogue reads below. There used to be
+different thing from the catalog reads below. There used to be
 five more — `/Trainer/all`, `/Trainer/{id}`, `/Training/all`, `/Training/by-trainer/{id}` and
 `/Training/by-topic/{topic}` — and between them they handed out every trainer's name, contact email
 and bio to any authenticated caller, enumerable. Nothing in the application asked for them: the
 front end reads the signed-in trainer's profile and that trainer's own trainings — and, on the two
 administrative screens, every trainer and every training, which it asks for at `/Administration` and
-is answered `403` anywhere else. They were removed rather than restricted, because a catalogue read
-scoped to one caller is not a catalogue read.
+is answered `403` anywhere else. They were removed rather than restricted, because a catalog read
+scoped to one caller is not a catalog read.
 
 **Two of them have come back, and the difference is the audience rather than the shape**
-([ADR 0055](docs/adr/0055-let-the-administration-read-what-the-catalogue-may-not.md)). The two
+([ADR 0055](docs/adr/0055-let-the-administration-read-what-the-catalog-may-not.md)). The two
 `/Administration` listings serve the same columns `/Trainer/all` served — a name, a contact address
 — to the one role that can act on them, and to nobody else: a trainer's token is answered `403` on
 both, which is the whole of what makes them a different read. They are paged under the same cap as
@@ -877,7 +877,7 @@ would confirm that the identifier names something real, which is itself what is 
 
 The photo is the one read addressed by identifier rather than by `me`, and deliberately so:
 publishing a portrait is self-service, but looking at one is not, and a trainer may perfectly well
-look at a colleague's. It stayed authenticated when the catalogue opened, which turned out to be the
+look at a colleague's. It stayed authenticated when the catalog opened, which turned out to be the
 right shape rather than a step short of one: the public portrait is a different address on a
 different controller, naming a training and a photo rather than a person
 ([ADR 0063](docs/adr/0063-strip-the-metadata-before-the-bytes-are-stored.md)). Only that one says
@@ -954,7 +954,7 @@ restart, deliberately. See
 |---|---|
 | `Microsoft.EntityFrameworkCore.SqlServer` | Persistence, complex properties, owned collections, value conversions, `rowversion` concurrency token |
 | `Mediator` (`Mediator.Abstractions` + source generator) | Source-generated dispatch for domain events, commands and queries — no reflection at runtime |
-| `FluentValidation` | Request validation in the CQRS stack, wired as a pipeline behaviour |
+| `FluentValidation` | Request validation in the CQRS stack, wired as a pipeline behavior |
 | `EmailValidation` | Email format checking inside the `Email` value object |
 | `Microsoft.AspNetCore.Identity.EntityFrameworkCore` | User accounts, password hashing, lockout |
 | `Microsoft.AspNetCore.Authentication.JwtBearer` | Bearer token authentication |
@@ -964,7 +964,7 @@ restart, deliberately. See
 | `AspNetCore.HealthChecks.UI`, `.UI.Client`, `.UI.InMemory.Storage` | The health dashboard at `/healthchecks-ui`, Development only — the probes it watches stay hand-rolled ([ADR 0037](docs/adr/0037-answer-for-the-hosts-health-at-two-endpoints.md)) |
 | `Yarp.ReverseProxy` | The BFF's proxy — forwards `/api` to the REST API and attaches the access token from the session cookie |
 | `bunit` | Renders a Blazor component in-process, so the profile page's client-side decisions are tested rather than only clicked |
-| `xunit`, `AwesomeAssertions`, `Moq` | Testing — `AwesomeAssertions` is the Apache 2.0 community fork of FluentAssertions, whose 8.x line moved to a commercial licence |
+| `xunit`, `AwesomeAssertions`, `Moq` | Testing — `AwesomeAssertions` is the Apache 2.0 community fork of FluentAssertions, whose 8.x line moved to a commercial license |
 | `NetArchTest.eNhancedEdition` | The engine of the dependency half of the architecture rules — the maintained fork of NetArchTest, which is how the records become the executable rules in `TrainingHub.Architecture.Tests` |
 | `Microsoft.EntityFrameworkCore.InMemory` | A `DbContext` without a server, for the unit-side tests that need EF's change tracker but not SQL Server — and, pinned to the EF 10 build, the provider the health dashboard's store runs on |
 | `AWSSDK.S3` | The object store photos live in — pointed at a SeaweedFS container locally, and at any S3-compatible provider by configuration |
@@ -1173,14 +1173,14 @@ The two filters are exact inverses, so between them every test runs exactly once
 |---|---|
 | `TrainingHub.Shared.Domain.Tests` | Aggregates, value objects, typed identifiers, `Result`, specifications, the page vocabulary's bounds and arithmetic |
 | `TrainingHub.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers — including the eleven that translate a domain event into an integration event — and the fourteen post-commit consumers |
-| `TrainingHub.DDDWithCqrs.Tests` | Command handlers, validators, pipeline behaviours |
-| `TrainingHub.Shared.Api.Tests` | Entity-tag encoding and parsing, the guard that keeps client generation away from a database, what the unhandled-exception handler is allowed to tell a caller, and the transformer that describes an uploaded file inline so a client generator recognises it as one |
+| `TrainingHub.DDDWithCqrs.Tests` | Command handlers, validators, pipeline behaviors |
+| `TrainingHub.Shared.Api.Tests` | Entity-tag encoding and parsing, the guard that keeps client generation away from a database, what the unhandled-exception handler is allowed to tell a caller, and the transformer that describes an uploaded file inline so a client generator recognizes it as one |
 | `TrainingHub.Shared.Infrastructure.Tests` | The auditable-entities interceptor — that it stamps, and reads the clock once per entity —, the outbox publisher observed through the change tracker, the serializer's round trip for every registered event, the dispatcher held to its routing table, the envelope's state transitions, the bucket bootstrapper, mostly for when it does nothing, and — over SQLite rather than a substitute — the names a page of trainings asks for by identifier |
 | `TrainingHub.Blazor.Bff.Tests` | The backend for frontend over HTTP: the cookie's flags, the forgery guard, the token attached to a forwarded call, and what signing out revokes |
 | `TrainingHub.Blazor.Client.Tests` | The front end, rendered in-process with bUnit: the sign-in page's refusal to redirect anywhere but a path of its own origin, the deep link a redirect to sign-in preserves, the header that makes a cookie-authenticated call unusable as a forgery, an unreachable BFF read as anonymous rather than as an exception, the per-field messages read out of a problem document, the training form's bounds tied to the ones the generated contract publishes, and — on the profile page — the size ceiling that refuses a file before it is uploaded, the image address that defeats a year-long cache, and the server's refusal shown in its own words. The administrative pages are here too: the coordinates each listing owns and the criteria it forwards unchanged, the reason a dialog collected reaching the call that carries it, the lifting that asks for no reason at all, and the training row that names its owner rather than showing an identifier. And the suspended trainer's space: the banner carrying the administrator's words, and every write control kept on screen and disabled — asserted together, because a control that is gone teaches nothing (ADR 0057), plus the withheld training its owner reads the reason for and is offered no lifecycle button on |
 | `TrainingHub.DDD.Api.IntegrationTests` | The layered host, HTTP end to end against a real SQL Server and a real object store |
 | `TrainingHub.DDDWithCqrs.Api.IntegrationTests` | The CQRS host, same treatment |
-| `TrainingHub.Architecture.Tests` | The decisions themselves: the dependency rule, the CQRS shape, the modelling conventions, and a rule that fails when a record is defended by nothing — see [ADR 0013](docs/adr/0013-make-every-record-answer-to-a-test.md) |
+| `TrainingHub.Architecture.Tests` | The decisions themselves: the dependency rule, the CQRS shape, the modeling conventions, and a rule that fails when a record is defended by nothing — see [ADR 0013](docs/adr/0013-make-every-record-answer-to-a-test.md) |
 | `TrainingHub.Api.TestKit` | Not a test project: the fixtures both integration suites share |
 
 No test count is quoted here on purpose: a `[Theory]` expands to as many cases as it has rows, so
@@ -1211,7 +1211,7 @@ real Mailpit container through its HTTP API, subject, recipient and wording inta
 that the SMTP adapter ADR 0031 introduced actually delivers. Validation is where the two suites still differ, though far
 less than they did: an invalid field on the layered host is caught by the value objects, while on the
 CQRS host a FluentValidation validator inside `ValidationPipelineBehavior` catches it first. Both now
-answer the same shape — a `domainErrors` document — since that behaviour returns a failed `Result`
+answer the same shape — a `domainErrors` document — since that behavior returns a failed `Result`
 rather than throwing; what differs is the code inside it, because two different layers judged.
 
 `TrainingHub.Api.TestKit` holds the shared fixtures — the Testcontainers host, the Respawn
@@ -1293,7 +1293,7 @@ migrations — together about a fifth of everything that would otherwise be coun
 code. Their snapshots are
 near-identical by construction, so they would decide the duplication figure; nothing hand-written
 covers them, so they would decide the coverage figure; and an issue raised in either is fixed by
-regenerating, never by editing. Test projects need no exclusion — the .NET scanner recognises them
+regenerating, never by editing. Test projects need no exclusion — the .NET scanner recognizes them
 and keeps them out of the coverage denominator on its own, architecture tests included.
 
 **One measure is narrowed rather than one family excluded.** The two host projects — `src/DDD/Api`
@@ -1327,8 +1327,8 @@ Everything below is done by hand, once, outside the repository.
    | Organization (`/o:`) | `9c1eb57d24115cbbd103219f` | the organization URL: `sonarcloud.io/organizations/<this>/projects` |
    | Project key (`/k:`) | `maxime-poulain_BLRefactoring` | the project URL: `sonarcloud.io/project/overview?id=<this>` |
 
-   Neither is a secret: a key names something, it does not authorise anything. Both therefore sit in
-   the workflow, in the open, where a reader can see what is analysed and where it is reported. Only
+   Neither is a secret: a key names something, it does not authorize anything. Both therefore sit in
+   the workflow, in the open, where a reader can see what is analyzed and where it is reported. Only
    the token is a secret. Note that the organization key is a generated string while the project key
    is the `owner_repo` form — the second is what a GitHub import produces, so the project is bound
    to this repository and pull-request decoration works.
@@ -1390,12 +1390,12 @@ one the analysis of `master` produces.
 - **Code style** is described in `.editorconfig`: file-scoped namespaces, `var`, Allman braces,
   naming conventions, and a hundred and sixty-one analyzer severities — all of them enforced at build
   time, including the formatting ones.
-- **Line endings** are normalised to LF by `.gitattributes`, in the repository and the working
+- **Line endings** are normalized to LF by `.gitattributes`, in the repository and the working
   tree, whatever the contributor's platform.
 - **Commits** are imperative one-liners, squash-merged from a pull request.
 - **Assertions are AwesomeAssertions**, in every test project including the shared test kit.
   `subject.Should().Be(…)` rather than `Assert.Equal(…)`: a failure names the subject and the
-  expectation, where xUnit's message names neither. The licence question behind the choice — and
+  expectation, where xUnit's message names neither. The license question behind the choice — and
   why not Shouldly — is in [ADR 0007](docs/adr/0007-assert-with-awesomeassertions.md).
 - **Architecture decision records** live in [`docs/adr/`](docs/adr/), one numbered file per
   decision, each recording the alternatives and why they lost. A decision that changes gets a new
@@ -1425,7 +1425,7 @@ one the analysis of `master` produces.
 
 ---
 
-## Licence
+## License
 
 [MIT](LICENSE).
 

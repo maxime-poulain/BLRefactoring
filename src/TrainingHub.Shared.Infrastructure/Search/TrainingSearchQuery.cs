@@ -26,7 +26,7 @@ public sealed class TrainingSearchQuery(TrainingContext trainingContext) : ITrai
     /// set as the rows — the defect ADR 0055 names when it rejects filtering after paging.
     /// </para>
     /// </remarks>
-    public async Task<PagedResult<CatalogueTrainingDto>> SearchAsync(
+    public async Task<PagedResult<CatalogTrainingDto>> SearchAsync(
         string? term,
         PageRequest paging,
         CancellationToken cancellationToken = default)
@@ -54,7 +54,7 @@ public sealed class TrainingSearchQuery(TrainingContext trainingContext) : ITrai
         return await entries
             .AlphabeticallyByTitle()
             .ToPagedResultAsync(
-                entry => new CatalogueTrainingDto
+                entry => new CatalogTrainingDto
                 {
                     Id = entry.TrainingId,
                     TrainerId = entry.TrainerId,

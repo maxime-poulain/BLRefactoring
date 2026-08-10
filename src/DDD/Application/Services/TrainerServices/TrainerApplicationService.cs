@@ -132,7 +132,7 @@ public interface ITrainerApplicationService
 public sealed class TrainerApplicationService(
     ITrainerRepository trainerRepository,
     ITrainerPhotoStore photoStore,
-    IPhotoSanitiser photoSanitiser,
+    IPhotoSanitizer photoSanitizer,
     ICurrentUserService currentUserService,
     TimeProvider timeProvider,
     IUnitOfWork unitOfWork)
@@ -242,24 +242,24 @@ public sealed class TrainerApplicationService(
         }
 
         // Three steps, and the order is the whole of ADR 0063. The upload is judged first, because
-        // two of the aggregate's rules are about it and sanitisation would answer both away — a
+        // two of the aggregate's rules are about it and sanitization would answer both away — a
         // mismatch re-encoded into the declared format stops being one, and an oversized photograph
         // comes back within the bound. Then the bytes are stripped. Then what is recorded is
         // described from what will actually be stored.
         return await TrainerPhoto
             .Vet(content, contentType)
             .MatchAsync(
-                async vetted => await photoSanitiser
-                    .Sanitise(content, vetted)
+                async vetted => await photoSanitizer
+                    .Sanitize(content, vetted)
                     .MatchAsync(
-                        async sanitised => await TrainerPhoto
+                        async sanitized => await TrainerPhoto
                             .Create(
-                                sanitised.Content.Span,
-                                sanitised.ContentType,
+                                sanitized.Content.Span,
+                                sanitized.ContentType,
                                 timeProvider.GetUtcNow().UtcDateTime)
                             .MatchAsync(
                                 async photo => await PublishPhotoAsync(
-                                    trainer, photo, sanitised.Content.ToArray(), cancellationToken),
+                                    trainer, photo, sanitized.Content.ToArray(), cancellationToken),
                                 Result<TrainerDto>.FailureAsync),
                         Result<TrainerDto>.FailureAsync),
                 Result<TrainerDto>.FailureAsync);

@@ -52,8 +52,8 @@ public static class Portraits
     /// <param name="marker">The text written into the description tag.</param>
     /// <returns>The encoded bytes, with the segment where a camera puts it.</returns>
     /// <remarks>
-    /// For the one fact that can only be asserted over HTTP: that the pipeline calls the sanitiser
-    /// at all. Whether the sanitiser strips is proved on real bytes in its own unit tests; what a
+    /// For the one fact that can only be asserted over HTTP: that the pipeline calls the sanitizer
+    /// at all. Whether the sanitizer strips is proved on real bytes in its own unit tests; what a
     /// round trip through the API adds is that nothing between the controller and the object store
     /// forgot to run it, and a marker surviving is how that regression would look.
     /// </remarks>

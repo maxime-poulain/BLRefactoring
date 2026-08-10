@@ -14,7 +14,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.Services;
 
 /// <summary>
-/// Behaviour covered for the administrative listings of both layered application services.
+/// Behavior covered for the administrative listings of both layered application services.
 /// </summary>
 /// <remarks>
 /// What the criteria mean is the repository's, proven where the SQL is. What only this layer decides

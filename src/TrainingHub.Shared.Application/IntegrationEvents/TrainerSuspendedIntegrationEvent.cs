@@ -10,7 +10,7 @@ namespace TrainingHub.Shared.Application.IntegrationEvents;
 /// since been cleared of. The address the notice is sent to does not travel, for the opposite
 /// reason — it is not part of the sanction (ADR 0056).
 /// <para>
-/// No list of trainings, because the suspension wrote to none. The catalogue leaves public view by
+/// No list of trainings, because the suspension wrote to none. The catalog leaves public view by
 /// being derived from its owner's standing, which is what lets the whole reaction be one call
 /// rather than one per training (ADR 0050).
 /// </para>

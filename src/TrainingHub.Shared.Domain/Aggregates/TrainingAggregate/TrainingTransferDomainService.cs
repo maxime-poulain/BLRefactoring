@@ -7,7 +7,7 @@ namespace TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
 /// Decides whether a training may change hands — the one decision no aggregate can own.
 /// </summary>
 /// <remarks>
-/// The transfer rule reads the <em>recipient's</em> catalogue to mutate the <em>giver's</em>
+/// The transfer rule reads the <em>recipient's</em> catalog to mutate the <em>giver's</em>
 /// training: <see cref="Training"/> cannot answer facts about a set it does not belong to, and
 /// <see cref="Trainer"/> holds no trainings. This is the operation ADR 0030 reserved the pattern
 /// for and refused at creation because creation had a home; the transfer has none (ADR 0036).
@@ -20,7 +20,7 @@ namespace TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
 public static class TrainingTransferDomainService
 {
     /// <summary>
-    /// Hands a training over to a colleague, when the recipient's catalogue allows it: room
+    /// Hands a training over to a colleague, when the recipient's catalog allows it: room
     /// under the limit, and no training already listed under the same title.
     /// </summary>
     /// <param name="training">The training changing hands.</param>
@@ -51,10 +51,10 @@ public static class TrainingTransferDomainService
                 "A training cannot be transferred to the trainer who already owns it.");
         }
 
-        // Both sides are asked, because a transfer moves a training out of one public catalogue and
+        // Both sides are asked, because a transfer moves a training out of one public catalog and
         // into another. The giver is refused for the reason ADR 0050 gives — a suspended trainer
         // may not change what the public sees — and the recipient because a transfer they cannot
-        // refuse would grow a catalogue the sanction exists to freeze. This is what the record
+        // refuse would grow a catalog the sanction exists to freeze. This is what the record
         // means by "giving and receiving alike"; ADR 0036's "the recipient must be able to accept
         // it" now has a second half.
         if (await trainerStanding.IsSuspendedAsync(training.TrainerId, cancellationToken))
@@ -74,7 +74,7 @@ public static class TrainingTransferDomainService
         var published = await trainingCounter.CountForTrainerAsync(recipient, cancellationToken);
         if (published >= Training.MaximumPerTrainer)
         {
-            return Result.Failure(TrainingErrorCodes.RecipientCatalogueFull,
+            return Result.Failure(TrainingErrorCodes.RecipientCatalogFull,
                 $"The recipient already publishes {Training.MaximumPerTrainer} trainings and cannot receive another.");
         }
 

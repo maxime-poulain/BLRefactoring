@@ -10,7 +10,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.EventHandlers;
 
 /// <summary>
-/// Behaviour covered for <c>PublishIntegrationEventWhenTrainerContactEmailChangedEventHandler</c>.
+/// Behavior covered for <c>PublishIntegrationEventWhenTrainerContactEmailChangedEventHandler</c>.
 /// </summary>
 /// <remarks>
 /// The order of the two addresses is the whole point of this fact — the warning goes to the old

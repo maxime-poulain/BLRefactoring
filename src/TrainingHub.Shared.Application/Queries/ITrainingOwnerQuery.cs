@@ -6,7 +6,7 @@ namespace TrainingHub.Shared.Application.Queries;
 /// <remarks>
 /// The authorization policy that guards every write to a training needs one field: the identifier
 /// of the trainer who owns it. It used to get that field by asking <c>ITrainingRepository</c> for
-/// the aggregate — which materialises the training, its title, its description, its prerequisites,
+/// the aggregate — which materializes the training, its title, its description, its prerequisites,
 /// its acquired skills and its topics, on the authorization path, before the action that will read
 /// the very same aggregate a second time.
 /// <para>

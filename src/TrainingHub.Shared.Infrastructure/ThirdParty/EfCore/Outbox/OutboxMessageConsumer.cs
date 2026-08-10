@@ -7,7 +7,7 @@ namespace TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Outbox;
 /// The per-consumer half of the retry contract (ADR 0034). The processor writes a row here the
 /// moment a consumer's reaction succeeds, in the same save as the message's outcome, and the
 /// dispatcher skips every consumer the ledger already names — so a retry re-runs only what is
-/// still owed, and a failing neighbour cannot replay a delivered welcome email. Like the envelope
+/// still owed, and a failing neighbor cannot replay a delivered welcome email. Like the envelope
 /// itself, this is a persistence shape, not a domain one: no aggregate, no audit, no events, no
 /// navigation — the pair of identifiers is the whole fact, which is why the pair is the key.
 /// The rows ride the envelope's lifecycle through a cascading foreign key: sweeping or deleting a
