@@ -208,7 +208,7 @@ it, and a reader who does not know that will read them as over-engineering.
 | Already there | For |
 |---|---|
 | A real search index, maintained on every create, edit, transfer, publication and withdrawal, cleared on deletion, told a trainer's standing in one call, and readable through `ITrainingSearchQuery` (ADR 0059) | The search a public page would read, already answering at `GET /Catalogue/trainings` |
-| `GET /Trainer/{id}/photo`, addressed by identifier, immutable cache, `ETag` from the photo's identity | A portrait served publicly, behind a CDN |
+| A public portrait at `GET /Catalogue/trainings/{id}/photo/{photoId}`, whose address names a photo rather than a person and is therefore `immutable` by construction, serving only bytes the domain records as stripped of their metadata (ADR 0063) | A portrait served publicly, behind a CDN |
 | A CQRS query side that projects into DTOs without loading aggregates | A read model that does not pay for the write model |
 
 **What is not decided:** whether discovery gets its own store, or reads a projection of the same

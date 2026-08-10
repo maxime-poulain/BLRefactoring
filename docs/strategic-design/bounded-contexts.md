@@ -185,7 +185,7 @@ Every one of them exists twice — once per application style. See the
 | Edit own profile | Trainer | `Trainer` |
 | Publish or replace a portrait | Trainer | `Trainer` |
 | Remove a portrait | Trainer | `Trainer` |
-| View a trainer's portrait | Trainer *(shaped to become public)* | `Trainer` |
+| View a trainer's portrait | Trainer | `Trainer` |
 | Create a training | Trainer | `Training` |
 | Edit a training | Trainer | `Training` |
 | Delete a training | Trainer | `Training` |
@@ -346,11 +346,14 @@ know which of the things below were built for a context that may never be extrac
   *content* — description, prerequisites, acquired skills, topics, and the trainer's name — from the
   write model, live. Two screens sit above them, `/catalogue` and `/catalogue/{id}`, behind no
   session at all.
-- **`GET /Trainer/{id}/photo`** is the one read addressed by identifier rather than by `me`, with a
-  year-long immutable cache and an `ETag` cut from the photo's identity. It stays behind the token,
-  and ADR 0062 records why: a portrait taken on a phone carries the coordinates of where it was
-  taken, nothing here strips them, and ADR 0021 named that before there was a public page to
-  publish them on. Stripping the metadata is the named precondition, not `[AllowAnonymous]`.
+- **The portrait is published**, at `GET /Catalogue/trainings/{id}/photo/{photoId}` — an address
+  naming a training and a photo and never a person, which is both what a visitor can have been given
+  and what makes its year-long `immutable` cache true by construction. What made it publishable is
+  ADR 0063: the metadata ADR 0021 deferred stripping is stripped when the bytes arrive, the domain
+  records that it was, and a portrait carrying no such record is refused. The authenticated
+  `GET /Trainer/{id}/photo` stays where it is, addressed by identifier rather than by `me`, and now
+  says `max-age` with an `ETag` instead of `immutable` — its address does not name the photo, so its
+  bytes do change.
 - **The CQRS query side** already projects straight into DTOs without loading aggregates, which is
   the shape a public read model wants.
 

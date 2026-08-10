@@ -1,10 +1,12 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using AwesomeAssertions;
 using TrainingHub.Shared.Api.Contracts.Catalogue;
 using TrainingHub.Shared.Api.Contracts.Trainers;
 using TrainingHub.Shared.Api.Contracts.Trainings;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 using Xunit;
 
 namespace TrainingHub.Api.TestKit;
@@ -114,6 +116,132 @@ public abstract class CatalogueDetailTest<TFactory>(TFactory factory) : Integrat
         var refused = await anonymous.GetAsync($"/Catalogue/trainings/{Guid.Empty}");
 
         refused.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>
+    /// A portrait deposited and then read with no token at all, through an offered training.
+    /// </summary>
+    /// <remarks>
+    /// The whole of ADR 0063, end to end and through a real object store: a trainer uploads bytes,
+    /// something strips them, the domain records that it did, and a visitor who followed a catalogue
+    /// entry is served the result at an address naming a training and a photo — never a person.
+    /// <para>
+    /// The bytes are asserted as a picture rather than as the ones that went in. They cannot be the
+    /// same: what is stored has been decoded and re-encoded, which is what removed the metadata.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task AnOfferedTrainingsPortrait_IsServedToACallerWithNoToken()
+    {
+        var trainer = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        var me = await UploadPortraitAsync(trainer);
+
+        var trainingId = await PublishAsync(trainer, "A Training With A Face");
+        await WaitUntilOfferedAsync(trainingId);
+
+        var anonymous = Factory.CreateClient();
+
+        var detail = await anonymous.GetFromJsonAsync<CatalogueTrainingDetailHttpResponse>(
+            $"/Catalogue/trainings/{trainingId}");
+
+        detail!.TrainerPhotoId.Should().Be(me.PhotoId,
+            "the page has to offer an address the endpoint below will answer");
+
+        var portrait = await anonymous.GetAsync(
+            $"/Catalogue/trainings/{trainingId}/photo/{detail.TrainerPhotoId}");
+
+        portrait.StatusCode.Should().Be(HttpStatusCode.OK);
+        portrait.Content.Headers.ContentType!.MediaType.Should().Be(TrainerPhoto.PngContentType);
+
+        (await portrait.Content.ReadAsByteArrayAsync())
+            .Take(8)
+            .Should().Equal([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+
+        // Only this address makes the stronger promise, and only because it carries the identity.
+        portrait.Headers.CacheControl!.Extensions
+            .Select(extension => extension.Name)
+            .Should().Contain("immutable");
+    }
+
+    /// <summary>
+    /// A photo identity nobody has, answers the same nothing as a training nobody published.
+    /// </summary>
+    /// <remarks>
+    /// What makes <c>immutable</c> honest, over HTTP: a replaced portrait's address stops resolving
+    /// rather than quietly serving the new picture under the old tag.
+    /// </remarks>
+    [Fact]
+    public async Task APhotoTheOwnerDoesNotHave_AnswersNothing()
+    {
+        var trainer = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        await UploadPortraitAsync(trainer);
+
+        var trainingId = await PublishAsync(trainer, "A Training Whose Portrait Moved");
+        await WaitUntilOfferedAsync(trainingId);
+
+        var anonymous = Factory.CreateClient();
+
+        var portrait = await anonymous.GetAsync(
+            $"/Catalogue/trainings/{trainingId}/photo/{Guid.CreateVersion7()}");
+
+        portrait.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    /// <summary>
+    /// A withheld training, makes its owner's portrait unreachable.
+    /// </summary>
+    /// <remarks>
+    /// The portrait inherits the training's visibility rather than acquiring one of its own, and
+    /// this is the fact that can only be asserted here: the bytes are still in the object store and
+    /// the row still names them, and the only thing between them and the visitor is the index entry
+    /// a moderator's decision removed (ADR 0056).
+    /// </remarks>
+    [Fact]
+    public async Task AWithheldTraining_MakesItsOwnersPortraitUnreachable()
+    {
+        var trainer = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        var me = await UploadPortraitAsync(trainer);
+
+        var trainingId = await PublishAsync(trainer, "A Face Withheld With Its Training");
+        await WaitUntilOfferedAsync(trainingId);
+
+        var administrator = await AuthHelper.SignInAsAdministratorAsync(Factory);
+
+        (await administrator.PostAsJsonAsync(
+                $"/Administration/trainings/{trainingId}/withhold",
+                new WithholdTrainingHttpRequest { Reason = "Repeated breaches of the content policy." }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var anonymous = Factory.CreateClient();
+
+        await WaitForStatusAsync(anonymous, trainingId, HttpStatusCode.NotFound);
+
+        var portrait = await anonymous.GetAsync(
+            $"/Catalogue/trainings/{trainingId}/photo/{me.PhotoId}");
+
+        portrait.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        // Still the owner's, and still readable by them: the 404 above is about the audience.
+        (await trainer.GetAsync($"/Trainer/{me.Id}/photo")).StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    /// <summary>Publishes a portrait on the caller's own profile, and answers their profile.</summary>
+    private static async Task<TrainerHttpResponse> UploadPortraitAsync(HttpClient trainer)
+    {
+        using var form = new MultipartFormDataContent();
+        using var part = new ByteArrayContent(Portraits.Of(TrainerPhoto.PngContentType));
+
+        part.Headers.ContentType = new MediaTypeHeaderValue(TrainerPhoto.PngContentType);
+        form.Add(part, "photo", "portrait");
+
+        (await trainer.PutAsync("/Trainer/me/photo", form))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var me = await trainer.GetFromJsonAsync<TrainerHttpResponse>("/Trainer/me");
+
+        me!.PhotoId.Should().NotBeNull();
+
+        return me;
     }
 
     /// <summary>Creates and publishes a training, and answers its identifier.</summary>

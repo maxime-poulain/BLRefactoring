@@ -39,7 +39,7 @@ public sealed class GetTrainerPhotoQueryHandler(
             return null;
         }
 
-        var stored = await photoStore.FetchAsync(trainer.Id, trainer.Photo, cancellationToken);
+        var stored = await photoStore.FetchAsync(trainer.Id, trainer.Photo.PhotoId, cancellationToken);
 
         if (stored is null)
         {

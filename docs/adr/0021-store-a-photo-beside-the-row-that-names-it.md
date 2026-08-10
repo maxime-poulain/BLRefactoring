@@ -1,6 +1,6 @@
 # 0021 — Store a photo beside the row that names it, and never overwrite in place
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0063](0063-strip-the-metadata-before-the-bytes-are-stored.md): the metadata this record deferred stripping is stripped when the bytes arrive, and the domain records that it was
 - **Date:** 2026-08-03
 
 ## Context

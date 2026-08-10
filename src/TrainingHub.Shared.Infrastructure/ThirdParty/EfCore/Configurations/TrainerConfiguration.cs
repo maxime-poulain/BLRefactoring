@@ -75,6 +75,15 @@ public sealed class TrainerConfiguration : AggregateRootTypeConfiguration<Traine
 
             photoBuilder.Property(p => p.ByteSize)
                 .HasColumnName("PhotoByteSize");
+
+            // Nullable inside a complex property that is itself optional, which reads oddly and is
+            // exactly right: the outer null means "no photo", and a null here inside a photo that
+            // exists means "stored before anything stripped it". Only the database can produce the
+            // second — the factory always stamps — and the public portrait refuses to serve it
+            // (ADR 0063).
+            photoBuilder.Property(p => p.SanitisedOnUtc)
+                .HasColumnName("PhotoSanitisedOnUtc")
+                .HasPrecision(7);
         });
 
         // Stored as the word rather than an ordinal, like the training's own status: the whole of a

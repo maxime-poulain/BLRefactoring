@@ -1,3 +1,4 @@
+using TrainingHub.Shared.Application.Dtos.Trainer;
 using TrainingHub.Shared.Application.Dtos.Training;
 
 namespace TrainingHub.Shared.Application.Catalogue;
@@ -45,5 +46,30 @@ public interface ICatalogueDetailQuery
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     Task<CatalogueTrainingDetailDto?> FindOfferedAsync(
         Guid trainingId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The portrait of the trainer who owns this offered training, or <see langword="null"/> when
+    /// there is none a visitor may see.
+    /// </summary>
+    /// <remarks>
+    /// The same sharing of authority as its neighbour, applied to bytes: the index says whether the
+    /// training is on offer, and the write model says which photo its owner has. Reached through the
+    /// training rather than through the trainer on purpose — what a visitor followed is a catalogue
+    /// entry, and no identifier of a person belongs in a public address (ADR 0063).
+    /// <para>
+    /// Four ways to answer nothing, and the action turns all four into the same 404: no such
+    /// training, not on offer, a photo identity that is not the one the owner currently has, and a
+    /// photo carrying no sanitisation stamp. The last is the precondition ADR 0062 named — what was
+    /// never stripped is never published, and a portrait stored before that record can prove
+    /// nothing about itself.
+    /// </para>
+    /// </remarks>
+    /// <param name="trainingId">The offered training the visitor is looking at.</param>
+    /// <param name="photoId">The photo its address names.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    Task<TrainerPhotoDto?> FindOfferedPortraitAsync(
+        Guid trainingId,
+        Guid photoId,
         CancellationToken cancellationToken = default);
 }

@@ -33,12 +33,21 @@ public interface ITrainerPhotoStore
     /// Fetches the bytes of a photo.
     /// </summary>
     /// <param name="trainerId">The trainer the photo belongs to.</param>
-    /// <param name="photo">The photo to fetch.</param>
+    /// <param name="photoId">Which photo of theirs to fetch.</param>
     /// <param name="cancellationToken">Cancels the read.</param>
     /// <returns>The bytes, or <see langword="null"/> when they are not there.</returns>
+    /// <remarks>
+    /// The two fields the key is made of, rather than the whole value object its neighbours take.
+    /// A read is the one operation that has nothing else to say: <see cref="StoreAsync"/> needs the
+    /// media type it is about to record, and <see cref="DeleteAsync"/> is always called by something
+    /// that has just taken the photo off an aggregate — but a reader may have no aggregate at all.
+    /// The catalogue's portrait is exactly that: a route names a trainer and a photo, the read side
+    /// projects columns, and materialising a value object to compute a key out of two of them would
+    /// be work done to satisfy a signature (ADR 0063).
+    /// </remarks>
     Task<StoredObject?> FetchAsync(
         TrainerId trainerId,
-        TrainerPhoto photo,
+        PhotoId photoId,
         CancellationToken cancellationToken = default);
 
     /// <summary>

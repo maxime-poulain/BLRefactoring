@@ -28,6 +28,15 @@
       -->
       <PackageReference Include="MailKit" />
       <!--
+        The imaging library, for SkiaSharpPhotoSanitiser. Same containment as the two above, and
+        held by the same kind of rule: a portrait is decoded and re-encoded in exactly one place,
+        and nothing above the infrastructure knows what decodes it. The native assets are requested
+        beside it because a managed reference alone loads nothing at run time on Linux — the first
+        decode would throw DllNotFoundException, in the container rather than here. See ADR 0063.
+      -->
+      <PackageReference Include="SkiaSharp" />
+      <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
+      <!--
         AddInfrastructure asks IHostEnvironment whether it is running in Development before
         enabling EF Core's sensitive-data logging. That abstraction used to arrive through the
         ASP.NET Core framework reference; now that persistence no longer carries the whole web

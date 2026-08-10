@@ -26,30 +26,35 @@ public sealed class TrainerPhotoStore(IObjectStore objectStore) : ITrainerPhotoS
     {
         ArgumentNullException.ThrowIfNull(photo);
 
-        return objectStore.PutAsync(KeyFor(trainerId, photo), content, photo.ContentType, cancellationToken);
+        return objectStore.PutAsync(
+            KeyFor(trainerId, photo.PhotoId), content, photo.ContentType, cancellationToken);
     }
 
     /// <inheritdoc />
     public Task<StoredObject?> FetchAsync(
         TrainerId trainerId,
-        TrainerPhoto photo,
+        PhotoId photoId,
         CancellationToken cancellationToken = default) =>
-        objectStore.GetAsync(KeyFor(trainerId, photo), cancellationToken);
+        objectStore.GetAsync(KeyFor(trainerId, photoId), cancellationToken);
 
     /// <inheritdoc />
     public Task DeleteAsync(
         TrainerId trainerId,
         TrainerPhoto photo,
-        CancellationToken cancellationToken = default) =>
-        objectStore.DeleteAsync(KeyFor(trainerId, photo), cancellationToken);
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(photo);
 
-    private static ObjectKey KeyFor(TrainerId trainerId, TrainerPhoto photo)
+        return objectStore.DeleteAsync(KeyFor(trainerId, photo.PhotoId), cancellationToken);
+    }
+
+    private static ObjectKey KeyFor(TrainerId trainerId, PhotoId photoId)
     {
         ArgumentNullException.ThrowIfNull(trainerId);
-        ArgumentNullException.ThrowIfNull(photo);
+        ArgumentNullException.ThrowIfNull(photoId);
 
         return ObjectKey.Create(string.Create(
             CultureInfo.InvariantCulture,
-            $"trainers/{trainerId.Value}/{photo.PhotoId.Value}"));
+            $"trainers/{trainerId.Value}/{photoId.Value}"));
     }
 }

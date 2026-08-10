@@ -36,7 +36,7 @@ simpler from the outside.
 | [0006](0006-describe-the-api-with-the-frameworks-openapi-generator.md) | Describe the API with the framework's OpenAPI generator | Accepted — one paragraph superseded by 0008 |
 | [0007](0007-assert-with-awesomeassertions.md) | Assert with AwesomeAssertions | Accepted |
 | [0008](0008-generate-the-http-client-from-a-script-and-verify-it-in-ci.md) | Regenerate the HTTP client from the API, and commit it automatically | Accepted — the list-shape argument for the source host is dated by 0029; the hosts now answer alike, and the layered one remains the source |
-| [0009](0009-hold-the-access-token-in-the-bff-instead-of-the-browser.md) | Hold the access token in the BFF instead of the browser | Accepted |
+| [0009](0009-hold-the-access-token-in-the-bff-instead-of-the-browser.md) | Hold the access token in the BFF instead of the browser | Accepted — amended by [0063](0063-strip-the-metadata-before-the-bytes-are-stored.md): the forgery guard also admits a safe same-origin read the browser attests, because a custom header is one this application's own images cannot set either |
 | [0010](0010-declare-the-conditional-request-contract-in-the-document.md) | Declare the conditional-request contract in the document | Accepted |
 | [0011](0011-answer-a-creation-with-201-and-the-address-of-what-was-created.md) | Answer a creation with 201 and the address of what was created | Accepted, amended — see the Amendment section below |
 | [0012](0012-finish-the-one-error-shape-and-name-its-members-apart.md) | Finish the one error shape, and name its members apart | Accepted — amended by 0016 |
@@ -48,7 +48,7 @@ simpler from the outside.
 | [0018](0018-fail-on-the-gate-where-failing-stops-something.md) | Fail on the gate where failing stops something | Accepted |
 | [0019](0019-enforce-the-ruleset-this-repository-already-declared.md) | Enforce the ruleset this repository already declared | Accepted — amended by 0020 |
 | [0020](0020-declare-every-rule-this-codebase-already-satisfies.md) | Declare every rule this codebase already satisfies | Accepted |
-| [0021](0021-store-a-photo-beside-the-row-that-names-it.md) | Store a photo beside the row that names it, and never overwrite in place | Accepted |
+| [0021](0021-store-a-photo-beside-the-row-that-names-it.md) | Store a photo beside the row that names it, and never overwrite in place | Accepted — amended by [0063](0063-strip-the-metadata-before-the-bytes-are-stored.md): the metadata this record deferred stripping is stripped when the bytes arrive, and the domain records that it was |
 | [0022](0022-name-the-repository-after-the-domain-it-serves.md) | Name the repository after the domain it serves | Accepted |
 | [0023](0023-document-the-strategic-design-and-hold-it-to-the-model.md) | Document the strategic design, and hold it to the model | Accepted |
 | [0024](0024-publish-facts-not-intents-and-version-them-in-the-envelope.md) | Publish facts, not intents, and version them in the envelope | Accepted — the email half of "the ports remain fakes" is dated by 0031; the search half stays true; the retry contract gains its schedule in 0033; the per-consumer half of its at-least-once promise is made true by 0034 |
@@ -89,4 +89,5 @@ simpler from the outside.
 | [0059](0059-give-the-search-index-a-body-and-a-query-surface.md) | Give the search index a body, and a query surface | Accepted |
 | [0060](0060-look-inside-the-column-a-search-has-to-read.md) | Look inside the column a search has to read | Accepted |
 | [0061](0061-give-the-poison-a-url-and-an-operator-a-way-back-in.md) | Give the poison a URL, and an operator a way back in | Accepted |
-| [0062](0062-let-the-proxy-forward-one-family-of-paths-without-a-token.md) | Let the proxy forward one family of paths without a token | Accepted |
+| [0062](0062-let-the-proxy-forward-one-family-of-paths-without-a-token.md) | Let the proxy forward one family of paths without a token | Accepted — amended by [0063](0063-strip-the-metadata-before-the-bytes-are-stored.md): the precondition it named is met, and the portrait is published at an address carrying the photo's identity |
+| [0063](0063-strip-the-metadata-before-the-bytes-are-stored.md) | Strip the metadata before the bytes are stored, and publish only what was stripped | Accepted |

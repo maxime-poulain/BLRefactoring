@@ -40,6 +40,17 @@ public static class TrainerErrorCodes
     /// </remarks>
     public static readonly ErrorCode PhotoContentMismatch = new("Trainer.PhotoContentMismatch");
 
+    /// <summary>
+    /// The bytes carry a supported signature and do not decode into an image.
+    /// </summary>
+    /// <remarks>
+    /// A third refusal beside the two above, and a narrow one: the first eight bytes say PNG and
+    /// the rest is not a PNG. Only something that decodes the image can find this — the signature
+    /// check cannot — so the code arrives with the sanitisation ADR 0063 introduced, and it means
+    /// "your file is damaged" rather than "your file is the wrong kind".
+    /// </remarks>
+    public static readonly ErrorCode PhotoUnreadable = new("Trainer.PhotoUnreadable");
+
     /// <summary>The trainer is already under sanction, so suspending them changes nothing.</summary>
     public static readonly ErrorCode AlreadySuspended = new("Trainer.AlreadySuspended");
 

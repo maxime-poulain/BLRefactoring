@@ -28,17 +28,23 @@ public static class TrainerPhotoControllerExtensions
     public const long MaxRequestBytes = TrainerPhoto.MaxSizeInBytes + (8 * 1024);
 
     /// <summary>
-    /// Writes a photo to the response, cached hard and tagged.
+    /// Writes a photo to the response, cached for a year and revalidated by its tag.
     /// </summary>
     /// <param name="controller">The controller answering.</param>
     /// <param name="photo">The photo to serve.</param>
     /// <returns>The bytes, or 304 when the caller already has them.</returns>
     /// <remarks>
     /// <para>
-    /// Cached for a year and marked immutable, which is only honest because the address changes
-    /// when the picture does: a replacement mints a new photo identity, so the bytes under any one
-    /// ETag genuinely never change. This is what lets a CDN sit in front of this route later
-    /// without a line of code moving.
+    /// For an address that does <em>not</em> name the photo — <c>GET /Trainer/{id}/photo</c>, whose
+    /// bytes change the moment its owner uploads a new portrait. It used to say <c>immutable</c>
+    /// too, and that was wrong: <c>immutable</c> promises the response body for this URL will never
+    /// change, and a browser that believes it stops asking for a year. Two callers of one helper is
+    /// how that promise got made on behalf of an address that cannot keep it.
+    /// </para>
+    /// <para>
+    /// What is left is a long <c>max-age</c> with an <c>ETag</c>, so a stale cache revalidates and
+    /// is answered 304 when nothing moved. See <see cref="ImmutablePhotoFile"/> for the address that
+    /// can make the stronger promise, and ADR 0063.
     /// </para>
     /// <para>
     /// The tag is the photo's identity, not the row's version. Those are different facts — the
@@ -46,17 +52,47 @@ public static class TrainerPhotoControllerExtensions
     /// somebody fixed a typo in their surname is waste with no upside.
     /// </para>
     /// </remarks>
-    public static ActionResult PhotoFile(this ControllerBase controller, TrainerPhotoDto photo)
+    public static ActionResult PhotoFile(this ControllerBase controller, TrainerPhotoDto photo) =>
+        WritePhoto(controller, photo, immutable: false);
+
+    /// <summary>
+    /// Writes a photo to the response, cached for a year and never revalidated.
+    /// </summary>
+    /// <param name="controller">The controller answering.</param>
+    /// <param name="photo">The photo to serve.</param>
+    /// <returns>The bytes, or 304 when the caller already has them.</returns>
+    /// <remarks>
+    /// For the public portrait, whose address carries the photo's identity —
+    /// <c>GET /Catalogue/trainings/{trainingId}/photo/{photoId}</c>. A replacement mints a new
+    /// identity, so <em>this</em> URL's bytes genuinely never change and <c>immutable</c> is a
+    /// promise the address keeps by construction. That is what lets a CDN sit in front of the route
+    /// later without a line of code moving (ADR 0063).
+    /// <para>
+    /// Two named helpers rather than one taking a flag: which promise an endpoint makes about its
+    /// own bytes is a property of its address, and a caller passing <c>true</c> is a caller who has
+    /// to have thought about it. One did not.
+    /// </para>
+    /// </remarks>
+    public static ActionResult ImmutablePhotoFile(this ControllerBase controller, TrainerPhotoDto photo) =>
+        WritePhoto(controller, photo, immutable: true);
+
+    private static ActionResult WritePhoto(ControllerBase controller, TrainerPhotoDto photo, bool immutable)
     {
         ArgumentNullException.ThrowIfNull(controller);
         ArgumentNullException.ThrowIfNull(photo);
 
-        controller.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue
+        var cacheControl = new CacheControlHeaderValue
         {
             Public = true,
-            MaxAge = TimeSpan.FromDays(365),
-            Extensions = { new NameValueHeaderValue("immutable") }
+            MaxAge = TimeSpan.FromDays(365)
         };
+
+        if (immutable)
+        {
+            cacheControl.Extensions.Add(new NameValueHeaderValue("immutable"));
+        }
+
+        controller.Response.GetTypedHeaders().CacheControl = cacheControl;
 
         // This overload answers If-None-Match itself, so a client holding the current tag gets a
         // 304 without the bytes travelling again.

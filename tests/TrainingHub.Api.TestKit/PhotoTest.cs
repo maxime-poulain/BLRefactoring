@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using AwesomeAssertions;
 using TrainingHub.Shared.Api.Contracts.Trainers;
@@ -32,23 +33,48 @@ public abstract class PhotoTest<TFactory>(TFactory factory) : IntegrationTest<TF
     where TFactory : IResettableDatabase, IHttpClientSource, IServerErrorSource
 {
     /// <summary>
-    /// Upload then read, gives back the same bytes and media type.
+    /// Upload then read, gives back the picture without what the camera wrote into it.
     /// </summary>
+    /// <remarks>
+    /// This fact used to assert that the bytes come back byte for byte, which ADR 0063 makes wrong:
+    /// what is stored has been decoded, oriented, bounded and re-encoded.
+    /// <para>
+    /// It does not assert byte <em>inequality</em> either, and that is worth writing down because it
+    /// was the first correction and it was also wrong. Re-encoding a picture this same library
+    /// produced — no metadata, already inside the bound, upright — is deterministic, so the round
+    /// trip legitimately gives identical bytes back. CI said so. Byte difference is an accident of
+    /// the fixture, not a property of the endpoint.
+    /// </para>
+    /// <para>
+    /// What <em>is</em> a property is that the metadata does not survive, so the upload carries some:
+    /// an EXIF description a camera would have written. Whether the sanitiser strips is proved on
+    /// real bytes in its own unit tests; what this adds is that the pipeline calls it at all.
+    /// </para>
+    /// </remarks>
     [Fact]
-    public async Task UploadThenRead_GivesBackTheSameBytes()
+    public async Task UploadThenRead_GivesBackThePictureWithoutItsMetadata()
     {
         // Arrange
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var uploaded = Png();
+        const string Marker = "TakenAt48.8566,2.3522";
 
         // Act
-        var trainer = await UploadAsync(client, uploaded, TrainerPhoto.PngContentType);
+        var trainer = await UploadAsync(
+            client, Portraits.JpegCarrying(Marker), TrainerPhoto.JpegContentType);
+
         var response = await client.GetAsync($"/Trainer/{trainer.Id}/photo");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        response.Content.Headers.ContentType!.MediaType.Should().Be(TrainerPhoto.PngContentType);
-        (await response.Content.ReadAsByteArrayAsync()).Should().Equal(uploaded);
+        response.Content.Headers.ContentType!.MediaType.Should().Be(TrainerPhoto.JpegContentType);
+
+        var served = await response.Content.ReadAsByteArrayAsync();
+
+        served.Take(3).Should().Equal([0xFF, 0xD8, 0xFF],
+            "the format survives the round trip, whatever happens to the bytes");
+
+        Encoding.ASCII.GetString(served).Should().NotContain(Marker,
+            "the description the upload carried is what a phone writes its coordinates beside");
     }
 
     /// <summary>
@@ -61,7 +87,7 @@ public abstract class PhotoTest<TFactory>(TFactory factory) : IntegrationTest<TF
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
 
         // Act
-        var trainer = await UploadAsync(client, Png(), TrainerPhoto.PngContentType);
+        var trainer = await UploadAsync(client, Portraits.Of(TrainerPhoto.PngContentType), TrainerPhoto.PngContentType);
 
         // Assert
         trainer.PhotoId.Should().NotBeNull().And.NotBe(Guid.Empty);
@@ -79,7 +105,7 @@ public abstract class PhotoTest<TFactory>(TFactory factory) : IntegrationTest<TF
     {
         // Arrange
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var trainer = await UploadAsync(client, Png(), TrainerPhoto.PngContentType);
+        var trainer = await UploadAsync(client, Portraits.Of(TrainerPhoto.PngContentType), TrainerPhoto.PngContentType);
 
         // Act
         var response = await client.GetAsync($"/Trainer/{trainer.Id}/photo");
@@ -96,7 +122,7 @@ public abstract class PhotoTest<TFactory>(TFactory factory) : IntegrationTest<TF
     {
         // Arrange
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var trainer = await UploadAsync(client, Png(), TrainerPhoto.PngContentType);
+        var trainer = await UploadAsync(client, Portraits.Of(TrainerPhoto.PngContentType), TrainerPhoto.PngContentType);
 
         using var request = new HttpRequestMessage(HttpMethod.Get, $"/Trainer/{trainer.Id}/photo");
         request.Headers.IfNoneMatch.Add(new EntityTagHeaderValue($"\"{trainer.PhotoId}\""));
@@ -109,14 +135,20 @@ public abstract class PhotoTest<TFactory>(TFactory factory) : IntegrationTest<TF
     }
 
     /// <summary>
-    /// Read, is cached hard, because the address changes whenever the picture does.
+    /// Read, is cached long but revalidated, because this address does not name the photo.
     /// </summary>
+    /// <remarks>
+    /// The absent <c>immutable</c> is the assertion, not an omission. This address is
+    /// <c>/Trainer/{id}/photo</c>, whose bytes change when its owner uploads a new portrait, and
+    /// <c>immutable</c> would tell a browser to stop asking for a year. The public portrait's
+    /// address carries the photo's identity and says it; this one revalidates (ADR 0063).
+    /// </remarks>
     [Fact]
     public async Task Read_IsCachedHard()
     {
         // Arrange
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var trainer = await UploadAsync(client, Png(), TrainerPhoto.PngContentType);
+        var trainer = await UploadAsync(client, Portraits.Of(TrainerPhoto.PngContentType), TrainerPhoto.PngContentType);
 
         // Act
         var response = await client.GetAsync($"/Trainer/{trainer.Id}/photo");
@@ -124,6 +156,9 @@ public abstract class PhotoTest<TFactory>(TFactory factory) : IntegrationTest<TF
         // Assert
         response.Headers.CacheControl!.Public.Should().BeTrue();
         response.Headers.CacheControl.MaxAge.Should().Be(TimeSpan.FromDays(365));
+        response.Headers.CacheControl.Extensions
+            .Select(extension => extension.Name)
+            .Should().NotContain("immutable");
     }
 
     /// <summary>
@@ -138,9 +173,9 @@ public abstract class PhotoTest<TFactory>(TFactory factory) : IntegrationTest<TF
     {
         // Arrange
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var first = await UploadAsync(client, Png(), TrainerPhoto.PngContentType);
+        var first = await UploadAsync(client, Portraits.Of(TrainerPhoto.PngContentType), TrainerPhoto.PngContentType);
 
-        var replacement = Jpeg();
+        var replacement = Portraits.Of(TrainerPhoto.JpegContentType);
 
         // Act
         var second = await UploadAsync(client, replacement, TrainerPhoto.JpegContentType);
@@ -149,7 +184,10 @@ public abstract class PhotoTest<TFactory>(TFactory factory) : IntegrationTest<TF
         // Assert
         second.PhotoId.Should().NotBe(first.PhotoId!.Value);
         response.Content.Headers.ContentType!.MediaType.Should().Be(TrainerPhoto.JpegContentType);
-        (await response.Content.ReadAsByteArrayAsync()).Should().Equal(replacement);
+
+        // The picture's format rather than its bytes: what is served has been through the sanitiser,
+        // so the question is whether it is the replacement's format and not the first upload's.
+        (await response.Content.ReadAsByteArrayAsync()).Take(3).Should().Equal([0xFF, 0xD8, 0xFF]);
     }
 
     /// <summary>
@@ -160,7 +198,7 @@ public abstract class PhotoTest<TFactory>(TFactory factory) : IntegrationTest<TF
     {
         // Arrange
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        var trainer = await UploadAsync(client, Png(), TrainerPhoto.PngContentType);
+        var trainer = await UploadAsync(client, Portraits.Of(TrainerPhoto.PngContentType), TrainerPhoto.PngContentType);
 
         // Act
         var deleted = await client.DeleteAsync("/Trainer/me/photo");
@@ -179,7 +217,7 @@ public abstract class PhotoTest<TFactory>(TFactory factory) : IntegrationTest<TF
     {
         // Arrange
         var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
-        await UploadAsync(client, Png(), TrainerPhoto.PngContentType);
+        await UploadAsync(client, Portraits.Of(TrainerPhoto.PngContentType), TrainerPhoto.PngContentType);
 
         // Act
         await client.DeleteAsync("/Trainer/me/photo");
@@ -375,9 +413,11 @@ public abstract class PhotoTest<TFactory>(TFactory factory) : IntegrationTest<TF
         return await client.PutAsync("/Trainer/me/photo", form);
     }
 
+    /// <summary>Bytes carrying a signature and nothing else: a media type without a picture.</summary>
     private static byte[] Png(int totalSize = 96) =>
         Padded([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A], totalSize);
 
+    /// <summary>Bytes carrying a signature and nothing else: a media type without a picture.</summary>
     private static byte[] Jpeg(int totalSize = 96) =>
         Padded([0xFF, 0xD8, 0xFF, 0xE0], totalSize);
 

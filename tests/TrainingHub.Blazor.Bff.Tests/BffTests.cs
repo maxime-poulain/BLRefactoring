@@ -309,17 +309,93 @@ public sealed class BffTests : IDisposable
     }
 
     /// <summary>
-    /// The catalogue without the application header is refused like everything else.
+    /// A call that says nothing about where it came from is refused.
     /// </summary>
     /// <remarks>
-    /// The safety argument of the whole change. Opening a path to anonymous callers does not open
-    /// the proxy: the forgery guard runs on the prefix, before authentication, and knows nothing
-    /// about routes — so an anonymous route is reachable by this application and by nothing else.
+    /// The safety argument of the anonymous route. Opening a path to anonymous callers does not
+    /// open the proxy: the guard runs on the prefix, before authentication, and knows nothing about
+    /// routes.
+    /// <para>
+    /// This request carries neither the application's header nor the browser's own account of its
+    /// origin, so it proves nothing and is refused. A browser too old to send <c>Sec-Fetch-*</c>
+    /// lands here: it loses images, not function (ADR 0063).
+    /// </para>
     /// </remarks>
     [Fact]
-    public async Task The_catalogue_without_the_application_header_is_refused()
+    public async Task A_call_that_says_nothing_about_where_it_came_from_is_refused()
     {
         var response = await _browser.GetAsync(AnonymousPath);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        _factory.ProxiedApi.Requests.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// An image this application asked for reaches the API without the application header.
+    /// </summary>
+    /// <remarks>
+    /// The defect ADR 0063 found, from the other side. An <c>&lt;img&gt;</c> cannot set a custom
+    /// header — which the guard's own documentation gives as its strength, and which is equally true
+    /// of <em>our</em> images. Every portrait this front end rendered was refused 403 before
+    /// reaching the API, and nothing noticed because nothing renders a real page against a real BFF.
+    /// <para>
+    /// What replaces the header for a safe read is the browser's own account of the origin.
+    /// <c>Sec-Fetch-Site</c> is set by the browser and its name is forbidden to script, so a page
+    /// cannot claim <c>same-origin</c> for a request it did not make from here.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task An_image_this_application_asked_for_reaches_the_api_without_the_application_header()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, AnonymousPath);
+
+        request.Headers.Add("Sec-Fetch-Site", "same-origin");
+        request.Headers.Add("Sec-Fetch-Dest", "image");
+
+        var response = await _browser.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        _factory.ProxiedApi.Requests.Should().ContainSingle();
+    }
+
+    /// <summary>
+    /// An image another site asked for is refused.
+    /// </summary>
+    /// <remarks>
+    /// The half that keeps the relaxation honest. A third-party page embedding our address gets
+    /// <c>cross-site</c> from its own browser and cannot say otherwise — and its request would carry
+    /// no cookie either, the session being <c>SameSite=Strict</c>.
+    /// </remarks>
+    [Fact]
+    public async Task An_image_another_site_asked_for_is_refused()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, AnonymousPath);
+
+        request.Headers.Add("Sec-Fetch-Site", "cross-site");
+        request.Headers.Add("Sec-Fetch-Dest", "image");
+
+        var response = await _browser.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        _factory.ProxiedApi.Requests.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// A write from this origin without the application header is still refused.
+    /// </summary>
+    /// <remarks>
+    /// The boundary of the relaxation, and the fact that makes it defensible: it covers reads and
+    /// nothing else. A write is what the guard was built for, and a same-origin attestation does not
+    /// excuse one — the header stays the only thing that admits a write.
+    /// </remarks>
+    [Fact]
+    public async Task A_write_from_this_origin_without_the_application_header_is_still_refused()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, ForwardedPath);
+
+        request.Headers.Add("Sec-Fetch-Site", "same-origin");
+
+        var response = await _browser.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         _factory.ProxiedApi.Requests.Should().BeEmpty();
@@ -334,8 +410,8 @@ public sealed class BffTests : IDisposable
         await SignInAsync();
 
         // The forgery case exactly: the browser attaches the cookie to a request the application
-        // did not make. Only the header distinguishes the two, and no cross-site form, image or
-        // navigation can set one.
+        // did not make. This one says nothing at all about where it came from — no header, and no
+        // Sec-Fetch-Site to speak for it — so neither way past the guard is open to it.
         var response = await _browser.GetAsync(ForwardedPath);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);

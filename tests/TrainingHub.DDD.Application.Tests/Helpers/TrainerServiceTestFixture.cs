@@ -1,5 +1,7 @@
 using TrainingHub.DDD.Application.Services.TrainerServices;
 using TrainingHub.Shared;
+using TrainingHub.Shared.Application.Photos;
+using TrainingHub.Shared.Common.Results;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using Moq;
 
@@ -35,7 +37,15 @@ public sealed class TrainerServiceTestFixture
     /// <summary>
     /// Trainer service test fixture.
     /// </summary>
-    public TrainerServiceTestFixture() => GivenCaller(CallerId);
+    public TrainerServiceTestFixture()
+    {
+        GivenCaller(CallerId);
+
+        PhotoSanitiser
+            .Setup(sanitiser => sanitiser.Sanitise(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<string>()))
+            .Returns((ReadOnlyMemory<byte> content, string contentType) =>
+                Result<SanitisedPhoto>.Success(new SanitisedPhoto(content, contentType)));
+    }
 
     /// <summary>Makes the service resolve <paramref name="trainerId"/> as the calling trainer.</summary>
     /// <remarks>
@@ -60,11 +70,48 @@ public sealed class TrainerServiceTestFixture
     public Mock<ITrainerPhotoStore> PhotoStore { get; } = new();
 
     /// <summary>
+    /// What strips an upload before the aggregate ever sees it (ADR 0063).
+    /// </summary>
+    /// <remarks>
+    /// A mock that hands the bytes straight back, for the same reason the store above is a mock:
+    /// the tests here are about the order this service does things in, and the fixtures they upload
+    /// are a valid signature followed by nothing in particular — a real decoder would refuse them,
+    /// correctly, and every one of these tests would then be about the decoder. What the real one
+    /// does to real pixels is <c>SkiaSharpPhotoSanitiserTests</c>.
+    /// <para>
+    /// It is still wired rather than bypassed, so a service that stopped calling it would fail the
+    /// fact that says it must.
+    /// </para>
+    /// </remarks>
+    public Mock<IPhotoSanitiser> PhotoSanitiser { get; } = new();
+
+    /// <summary>
+    /// The instant this fixture's clock is stopped at.
+    /// </summary>
+    public static readonly DateTime Now = new(2026, 8, 9, 12, 0, 0, DateTimeKind.Utc);
+
+    /// <summary>
+    /// The clock the sanitisation stamp is read from, stopped so a fact can name the instant.
+    /// </summary>
+    /// <remarks>
+    /// Declared here rather than pulled from a package, which is what the two infrastructure
+    /// suites already do for the same need.
+    /// </remarks>
+    private sealed class StoppedClock : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => Now;
+    }
+
+    private readonly TimeProvider _clock = new StoppedClock();
+
+    /// <summary>
     /// Create sut.
     /// </summary>
     public TrainerApplicationService CreateSut() => new(
         TrainerRepository.Object,
         PhotoStore.Object,
+        PhotoSanitiser.Object,
         CurrentUserService.Object,
+        _clock,
         UnitOfWork.Object);
 }

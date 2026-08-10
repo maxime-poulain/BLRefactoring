@@ -263,7 +263,7 @@ public sealed class TrainerPhotoServiceTests
         trainer.AttachPhoto(photo);
 
         _fixture.PhotoStore
-            .Setup(store => store.FetchAsync(trainer.Id, photo, It.IsAny<CancellationToken>()))
+            .Setup(store => store.FetchAsync(trainer.Id, photo.PhotoId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new StoredObject(Png(), TrainerPhoto.PngContentType));
 
         var sut = _fixture.CreateSut();
@@ -294,7 +294,7 @@ public sealed class TrainerPhotoServiceTests
         result.Should().BeNull();
         _fixture.PhotoStore.Verify(
             store => store.FetchAsync(
-                It.IsAny<TrainerId>(), It.IsAny<TrainerPhoto>(), It.IsAny<CancellationToken>()),
+                It.IsAny<TrainerId>(), It.IsAny<PhotoId>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -310,7 +310,7 @@ public sealed class TrainerPhotoServiceTests
 
         _fixture.PhotoStore
             .Setup(store => store.FetchAsync(
-                It.IsAny<TrainerId>(), It.IsAny<TrainerPhoto>(), It.IsAny<CancellationToken>()))
+                It.IsAny<TrainerId>(), It.IsAny<PhotoId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((StoredObject?)null);
 
         var sut = _fixture.CreateSut();
@@ -334,7 +334,7 @@ public sealed class TrainerPhotoServiceTests
     }
 
     private static TrainerPhoto SomePhoto() =>
-        TrainerPhoto.Create(Png(), TrainerPhoto.PngContentType).ShouldBeSuccess();
+        TrainerPhoto.Create(Png(), TrainerPhoto.PngContentType, DateTime.UtcNow).ShouldBeSuccess();
 
     private static byte[] Png()
     {

@@ -128,9 +128,15 @@ public sealed class TrainerController(
     /// <param name="cancellationToken">Cancels the request.</param>
     /// <returns>The image, or 404 when the trainer has none.</returns>
     /// <remarks>
-    /// By identifier rather than <c>me</c>, unlike the two below. Publishing a portrait is
-    /// self-service; looking at one is what a catalogue does, and this is the shape that survives
-    /// the day the catalogue is public — <c>[AllowAnonymous]</c> and nothing else.
+    /// By identifier rather than <c>me</c>, unlike the two below: publishing a portrait is
+    /// self-service, looking at one is not, and a trainer may perfectly well look at a colleague's.
+    /// <para>
+    /// It stayed authenticated when the catalogue opened, and that turned out to be the right shape
+    /// rather than a step short of one. The public portrait is a different address on a different
+    /// controller — it names a training, not a person, and it refuses what carries no sanitisation
+    /// stamp (ADR 0063). Widening this one instead would have published an identifier a visitor has
+    /// no way to have been given.
+    /// </para>
     /// </remarks>
     [HttpGet("{id:guid}/photo")]
     // byte[], which the document generator renders as `type: string, format: binary` — the schema

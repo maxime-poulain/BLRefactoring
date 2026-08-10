@@ -1,6 +1,6 @@
 # 0009 — Hold the access token in the BFF instead of the browser
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0063](0063-strip-the-metadata-before-the-bytes-are-stored.md): the forgery guard also admits a safe same-origin read the browser attests, because a custom header is one this application's own images cannot set either
 - **Date:** 2026-08-01
 
 ## Context
