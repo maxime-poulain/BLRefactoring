@@ -1,6 +1,6 @@
 # 0064 — Write this repository in American English
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0066](0066-close-the-spelling-rules-selection-against-its-exemptions.md): the selection is closed against its exemptions, so a file governed by neither fails the build
 - **Date:** 2026-08-10
 
 ## Context
