@@ -242,10 +242,12 @@
         _bio = trainer.Bio ?? string.Empty;
         _hasPhoto = trainer.PhotoId is not null;
 
-        // The photo identity goes in the address, and that is the whole trick. The endpoint is
-        // cached for a year and marked immutable, which is true of the bytes under any one
-        // identity; a replacement mints a new one, so this URL changes and no browser serves the
-        // old portrait out of its cache.
+        // The photo identity goes in the query string as a cache buster, which is a workaround
+        // rather than a design: this endpoint's address does not name the photo, so its bytes do
+        // change and its response says max-age with an ETag rather than immutable (ADR 0063). The
+        // ?v= is what makes a replacement visible before the year is out. The public portrait needs
+        // none of this — it carries the identity in the path, so its address genuinely never
+        // changes meaning.
         _photoUrl = _hasPhoto
             ? $"api/Trainer/{trainer.Id}/photo?v={trainer.PhotoId}"
             : null;

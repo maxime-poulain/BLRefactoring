@@ -2,12 +2,14 @@ using TrainingHub.Shared.Application.Catalogue;
 using TrainingHub.Shared.Application.IntegrationEventHandlers;
 using TrainingHub.Shared.Application.IntegrationEvents;
 using TrainingHub.Shared.Application.Outbox;
+using TrainingHub.Shared.Application.Photos;
 using TrainingHub.Shared.Application.Queries;
 using TrainingHub.Shared.Application.Search;
 using TrainingHub.Shared.Common;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
 using TrainingHub.Shared.Infrastructure.Outbox;
+using TrainingHub.Shared.Infrastructure.Photos;
 using TrainingHub.Shared.Infrastructure.Queries;
 using TrainingHub.Shared.Infrastructure.Repositories;
 using TrainingHub.Shared.Infrastructure.Search;
@@ -146,6 +148,9 @@ public static class ServiceCollectionExtensions
             // The search port's real adapter (ADR 0059), called by the same consumers after the
             // same commit. Scoped rather than singleton, now that the index is two tables of this
             // database and the adapter holds the session that writes them.
+            // The one decoder in the product (ADR 0063). Singleton because it holds nothing: every
+            // call allocates its own bitmaps and disposes them, and the type has no field at all.
+            .AddSingleton<IPhotoSanitiser, SkiaSharpPhotoSanitiser>()
             .AddScoped<ITrainingSearchIndexer, TrainingSearchIndexer>()
             .AddScoped<ITrainingSearchQuery, TrainingSearchQuery>()
             // The catalogue's read by identifier: visibility from the index, content from the write

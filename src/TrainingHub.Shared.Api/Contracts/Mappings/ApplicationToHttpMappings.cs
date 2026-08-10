@@ -171,7 +171,8 @@ public static class ApplicationToHttpMappings
             Topics = training.Topics,
             Description = training.Description,
             Prerequisites = training.Prerequisites,
-            AcquiredSkills = training.AcquiredSkills
+            AcquiredSkills = training.AcquiredSkills,
+            TrainerPhotoId = training.TrainerPhotoId
         };
     }
 

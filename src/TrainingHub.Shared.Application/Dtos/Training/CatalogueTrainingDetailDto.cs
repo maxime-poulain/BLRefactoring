@@ -15,9 +15,11 @@ namespace TrainingHub.Shared.Application.Dtos.Training;
 /// integration event carries a rename, so an indexed copy would be a name that nothing refreshes.
 /// </para>
 /// <para>
-/// No photo, and that is a decision rather than an omission: a portrait served publicly would carry
-/// whatever EXIF the phone that took it wrote, GPS included, which ADR 0021 names and defers. The
-/// day that is stripped, this shape gains the reference and not before.
+/// It carries the identity of a <em>photo</em> and never of a person, which is what let a portrait
+/// be published at all. The reference waited for the stripping ADR 0021 deferred: a portrait served
+/// publicly carries whatever the phone that took it wrote, GPS included, so until something removed
+/// that there was nothing safe to point at. ADR 0063 removed it, and a portrait that carries no
+/// proof of having been stripped leaves this null.
 /// </para>
 /// </remarks>
 public sealed class CatalogueTrainingDetailDto
@@ -42,4 +44,15 @@ public sealed class CatalogueTrainingDetailDto
 
     /// <summary>What a participant leaves with.</summary>
     public required string AcquiredSkills { get; init; }
+
+    /// <summary>
+    /// The portrait to show beside the trainer's name, or <see langword="null"/> when there is none
+    /// a visitor may see.
+    /// </summary>
+    /// <remarks>
+    /// Null for two different situations, and the reading is deliberately the same: the trainer has
+    /// no photo, or they have one stored before anything stripped it (ADR 0063). Either way the
+    /// page shows a name and no face.
+    /// </remarks>
+    public Guid? TrainerPhotoId { get; init; }
 }

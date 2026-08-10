@@ -16,9 +16,11 @@ namespace TrainingHub.Shared.Api.Contracts.Catalogue;
 /// </para>
 /// <para>
 /// No status, for the same reason as the row: a training that answers here is on offer, and one
-/// that is not answers 404. No portrait either, and that one is a precondition rather than a
-/// preference — ADR 0021 records that a photograph taken on a phone carries the coordinates of
-/// where it was taken, and nothing here strips them yet.
+/// that is not answers 404. The portrait arrives as an identifier rather than as bytes, and it is
+/// a <em>photo's</em> identifier — the address a client builds from it names this training and that
+/// photo, so nothing here hands out a way to address a person. It waited on the precondition
+/// ADR 0021 recorded, that a photograph taken on a phone carries the coordinates of where it was
+/// taken; ADR 0063 strips them and refuses to publish what it cannot prove was stripped.
 /// </para>
 /// </remarks>
 public sealed class CatalogueTrainingDetailHttpResponse
@@ -43,4 +45,14 @@ public sealed class CatalogueTrainingDetailHttpResponse
 
     /// <summary>What a participant leaves with.</summary>
     public required string AcquiredSkills { get; init; }
+
+    /// <summary>
+    /// The portrait to show beside the trainer's name, or <see langword="null"/> when there is none
+    /// a visitor may see.
+    /// </summary>
+    /// <remarks>
+    /// Optional rather than required, and null covers both "no photo" and "a photo nothing can
+    /// prove was stripped" — a distinction a visitor has no use for.
+    /// </remarks>
+    public Guid? TrainerPhotoId { get; init; }
 }

@@ -3,6 +3,7 @@ using TrainingHub.Shared;
 using TrainingHub.Shared.Application.Projections;
 using TrainingHub.Shared.Application.Dtos.Trainer;
 using TrainingHub.Shared.Application.Factories;
+using TrainingHub.Shared.Application.Photos;
 using TrainingHub.Shared.Common.Errors;
 using TrainingHub.Shared.Common.Pagination;
 using TrainingHub.Shared.Common.Results;
@@ -131,7 +132,9 @@ public interface ITrainerApplicationService
 public sealed class TrainerApplicationService(
     ITrainerRepository trainerRepository,
     ITrainerPhotoStore photoStore,
+    IPhotoSanitiser photoSanitiser,
     ICurrentUserService currentUserService,
+    TimeProvider timeProvider,
     IUnitOfWork unitOfWork)
     : ITrainerApplicationService
 {
@@ -238,39 +241,69 @@ public sealed class TrainerApplicationService(
             return Result<TrainerDto>.Failure(ErrorCodes.NotFound, $"Trainer with id `{id}` could not be found.");
         }
 
-        // What counts as a photo is the aggregate's rule, read off the bytes themselves.
-        var photoResult = TrainerPhoto.Create(content, contentType);
+        // Three steps, and the order is the whole of ADR 0063. The upload is judged first, because
+        // two of the aggregate's rules are about it and sanitisation would answer both away — a
+        // mismatch re-encoded into the declared format stops being one, and an oversized photograph
+        // comes back within the bound. Then the bytes are stripped. Then what is recorded is
+        // described from what will actually be stored.
+        return await TrainerPhoto
+            .Vet(content, contentType)
+            .MatchAsync(
+                async vetted => await photoSanitiser
+                    .Sanitise(content, vetted)
+                    .MatchAsync(
+                        async sanitised => await TrainerPhoto
+                            .Create(
+                                sanitised.Content.Span,
+                                sanitised.ContentType,
+                                timeProvider.GetUtcNow().UtcDateTime)
+                            .MatchAsync(
+                                async photo => await PublishPhotoAsync(
+                                    trainer, photo, sanitised.Content.ToArray(), cancellationToken),
+                                Result<TrainerDto>.FailureAsync),
+                        Result<TrainerDto>.FailureAsync),
+                Result<TrainerDto>.FailureAsync);
+    }
 
-        return await photoResult.MatchAsync(async photo =>
+    /// <summary>
+    /// Writes the bytes, then the row that names them, then drops what the row displaced.
+    /// </summary>
+    /// <remarks>
+    /// Storage is not transactional with the database, so one of the two has to go first and the
+    /// choice decides which failure is possible at all. Every crash point below leaves an orphaned
+    /// object, which is collectable; none leaves a profile pointing at bytes that are gone.
+    /// </remarks>
+    private async Task<Result<TrainerDto>> PublishPhotoAsync(
+        Trainer trainer,
+        TrainerPhoto photo,
+        byte[] content,
+        CancellationToken cancellationToken)
+    {
+        // New bytes first, under a key nothing names yet…
+        await photoStore.StoreAsync(trainer.Id, photo, content, cancellationToken);
+
+        // …then the row that names them. What it displaces is read before the change rather than
+        // returned by it: the aggregate answers whether a change was allowed, nothing more.
+        var replaced = trainer.Photo;
+        trainer.AttachPhoto(photo);
+        trainerRepository.Update(trainer);
+
+        try
         {
-            // Storage is not transactional with the database, so the order below is what decides
-            // which failure is possible at all. New bytes first, under a key nothing names yet…
-            await photoStore.StoreAsync(trainer.Id, photo, content, cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (ConcurrencyConflictException)
+        {
+            return Result<TrainerDto>.Failure(ErrorCodes.ConcurrencyConflict, PhotoConcurrencyMessage);
+        }
 
-            // …then the row that names them. What it displaces is read before the change rather
-            // than returned by it: the aggregate answers whether a change was allowed, nothing more.
-            var replaced = trainer.Photo;
-            trainer.AttachPhoto(photo);
-            trainerRepository.Update(trainer);
+        // …and only now what it displaced.
+        if (replaced is not null)
+        {
+            await photoStore.DeleteAsync(trainer.Id, replaced, cancellationToken);
+        }
 
-            try
-            {
-                await unitOfWork.SaveChangesAsync(cancellationToken);
-            }
-            catch (ConcurrencyConflictException)
-            {
-                return Result<TrainerDto>.Failure(ErrorCodes.ConcurrencyConflict, PhotoConcurrencyMessage);
-            }
-
-            // …and only now what it displaced. Every crash point above leaves an orphaned object,
-            // which is collectable; none leaves a profile pointing at bytes that are gone.
-            if (replaced is not null)
-            {
-                await photoStore.DeleteAsync(trainer.Id, replaced, cancellationToken);
-            }
-
-            return Result<TrainerDto>.Success(trainer.ToDto());
-        }, Result<TrainerDto>.FailureAsync);
+        return Result<TrainerDto>.Success(trainer.ToDto());
     }
 
     /// <inheritdoc />
@@ -320,7 +353,7 @@ public sealed class TrainerApplicationService(
             return null;
         }
 
-        var stored = await photoStore.FetchAsync(trainer.Id, trainer.Photo, cancellationToken);
+        var stored = await photoStore.FetchAsync(trainer.Id, trainer.Photo.PhotoId, cancellationToken);
 
         // A row naming bytes the store does not hold should not happen, since writes go in the
         // order that prevents it. Answering "no photo" beats an error nobody can act on.

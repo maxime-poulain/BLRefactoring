@@ -12,13 +12,22 @@ namespace TrainingHub.Blazor.Client.Infrastructure;
 public static class BffContract
 {
     /// <summary>
-    /// The header the front end sends, and the BFF requires, on every call it serves or forwards.
+    /// The header the front end sends on every call it makes, and the only thing that admits a
+    /// write to the BFF.
     /// </summary>
     /// <remarks>
     /// Cookies travel automatically, which is what reintroduces cross-site request forgery — the
     /// one attack bearer tokens were immune to. A cross-site form, image or navigation cannot set a
     /// custom header, and a cross-origin script attempting one faces a preflight this host never
     /// approves. Together with <c>SameSite=Strict</c>, that is the mitigation.
+    /// <para>
+    /// The sentence above has a second half, and missing it cost this application every portrait it
+    /// ever tried to display: <em>our</em> images cannot set a custom header either. An
+    /// <c>&lt;img&gt;</c> is issued by the browser, not by the code that wrote the tag, so a
+    /// subresource of this very page arrived without this header and was refused. The guard
+    /// therefore admits a safe read the browser itself attests came from this origin, and this
+    /// header remains what admits everything else (ADR 0063).
+    /// </para>
     /// </remarks>
     public const string RequestedWithHeader = "X-Requested-With";
 

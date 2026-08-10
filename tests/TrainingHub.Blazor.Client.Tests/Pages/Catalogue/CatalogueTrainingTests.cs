@@ -67,6 +67,53 @@ public sealed class CatalogueTrainingTests : ComponentTest
     }
 
     /// <summary>
+    /// Renders, a training whose trainer has a publishable portrait, shows it at the address the
+    /// response named.
+    /// </summary>
+    /// <remarks>
+    /// The address is what this fact is about rather than the picture: it is built from the training
+    /// and the photo, so a reader can see that no identifier of a person leaves this page (ADR 0063).
+    /// </remarks>
+    [Fact]
+    public void Renders_ATrainerWithAPublishablePortrait_ShowsItAtTheAddressTheResponseNamed()
+    {
+        var photoId = Guid.CreateVersion7();
+        var offered = Offered(photoId);
+
+        _catalogue
+            .Setup(client => client.GetOfferedTrainingAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(offered);
+
+        var page = Render<CatalogueTraining>(parameters => parameters
+            .Add(detail => detail.TrainingId, Guid.CreateVersion7()));
+
+        page.Markup.Should().Contain($"api/Catalogue/trainings/{offered.Id}/photo/{photoId}");
+        page.Markup.Should().NotContain("?v=", "the identity is in the path, so nothing has to bust a cache");
+    }
+
+    /// <summary>
+    /// Renders, a training whose trainer has no publishable portrait, shows a name and no image.
+    /// </summary>
+    /// <remarks>
+    /// The response's null covers both "no photo" and "a photo nothing can prove was stripped", and
+    /// the page treats them the same. What it must not do is render an address the endpoint would
+    /// answer 404, which is a broken image rather than no image.
+    /// </remarks>
+    [Fact]
+    public void Renders_ATrainerWithNoPublishablePortrait_ShowsNoImage()
+    {
+        _catalogue
+            .Setup(client => client.GetOfferedTrainingAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(Offered());
+
+        var page = Render<CatalogueTraining>(parameters => parameters
+            .Add(detail => detail.TrainingId, Guid.CreateVersion7()));
+
+        page.Markup.Should().Contain("Ada Lovelace");
+        page.Markup.Should().NotContain("/photo/");
+    }
+
+    /// <summary>
     /// Renders, a training that is not on offer, says so without reporting a failure.
     /// </summary>
     /// <remarks>
@@ -115,7 +162,7 @@ public sealed class CatalogueTrainingTests : ComponentTest
             headers: new Dictionary<string, IEnumerable<string>>(),
             innerException: null);
 
-    private static CatalogueTrainingDetailHttpResponse Offered() => new()
+    private static CatalogueTrainingDetailHttpResponse Offered(Guid? trainerPhotoId = null) => new()
     {
         Id = Guid.CreateVersion7(),
         Title = "Domain Driven Design",
@@ -123,6 +170,7 @@ public sealed class CatalogueTrainingTests : ComponentTest
         Topics = ["Architecture"],
         Description = "What a bounded context is.",
         Prerequisites = "None.",
-        AcquiredSkills = "Drawing a context map."
+        AcquiredSkills = "Drawing a context map.",
+        TrainerPhotoId = trainerPhotoId
     };
 }

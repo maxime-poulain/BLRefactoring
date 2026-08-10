@@ -1,4 +1,5 @@
 using TrainingHub.Shared;
+using TrainingHub.Shared.Application.Photos;
 using TrainingHub.Shared.Common;
 using TrainingHub.Shared.Common.Errors;
 using TrainingHub.Shared.Common.Results;
@@ -34,7 +35,9 @@ public sealed class SetTrainerPhotoCommand : ICommand<Result>
 public sealed class SetTrainerPhotoCommandHandler(
     ITrainerRepository trainerRepository,
     ITrainerPhotoStore photoStore,
+    IPhotoSanitiser photoSanitiser,
     ICurrentUserService currentUserService,
+    TimeProvider timeProvider,
     IUnitOfWork unitOfWork)
     : ICommandHandler<SetTrainerPhotoCommand, Result>
 {
@@ -54,14 +57,32 @@ public sealed class SetTrainerPhotoCommandHandler(
                 $"Trainer with id `{trainerId}` could not be found.");
         }
 
-        // The rules about what counts as a photo belong to the aggregate, not to a validator: they
-        // are read off the bytes, and the pipeline's validation code means "rejected before the
-        // domain saw it", which is the opposite of what happened here.
-        var photoResult = TrainerPhoto.Create(request.Content, request.ContentType);
-
-        return await photoResult.MatchAsync<Result>(
-            onSuccess: async photo => await PublishAsync(trainer, photo, request.Content, cancellationToken),
-            onFailure: Result.FailureAsync);
+        // Three steps, and the order is the whole of ADR 0063. The upload is judged first, because
+        // two of the aggregate's rules are about it and sanitisation would answer both away — a
+        // mismatch re-encoded into the declared format stops being one, and an oversized photograph
+        // comes back within the bound. Then the bytes are stripped. Then what is recorded is
+        // described from what will actually be stored.
+        //
+        // All three are the aggregate's rules rather than a validator's: they are read off bytes,
+        // and the pipeline's validation code means "rejected before the domain saw it", which is
+        // the opposite of what happens here.
+        return await TrainerPhoto
+            .Vet(request.Content, request.ContentType)
+            .MatchAsync<Result>(
+                onSuccess: async vetted => await photoSanitiser
+                    .Sanitise(request.Content, vetted)
+                    .MatchAsync<Result>(
+                        onSuccess: async photo => await TrainerPhoto
+                            .Create(
+                                photo.Content.Span,
+                                photo.ContentType,
+                                timeProvider.GetUtcNow().UtcDateTime)
+                            .MatchAsync<Result>(
+                                onSuccess: async described => await PublishAsync(
+                                    trainer, described, photo.Content.ToArray(), cancellationToken),
+                                onFailure: Result.FailureAsync),
+                        onFailure: Result.FailureAsync),
+                onFailure: Result.FailureAsync);
     }
 
     private async ValueTask<Result> PublishAsync(

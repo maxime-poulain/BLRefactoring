@@ -1,4 +1,5 @@
 using TrainingHub.Shared.Application.Catalogue;
+using TrainingHub.Shared.Application.Dtos.Trainer;
 using TrainingHub.Shared.Application.Dtos.Training;
 using TrainingHub.Shared.Application.Search;
 using TrainingHub.Shared.Common.Pagination;
@@ -6,7 +7,7 @@ using TrainingHub.Shared.Common.Pagination;
 namespace TrainingHub.DDD.Application.Services.CatalogueServices;
 
 /// <summary>
-/// Application service interface for the public catalogue: one read, and no writes at all.
+/// Application service interface for the public catalogue: reads only, and no writes at all.
 /// </summary>
 /// <remarks>
 /// The layered stack's half of the query surface ADR 0059 opens on the Search Indexing context. It
@@ -41,6 +42,23 @@ public interface ICatalogueApplicationService
     Task<CatalogueTrainingDetailDto?> FindOfferedAsync(
         Guid trainingId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The portrait of the trainer behind an offered training, or <see langword="null"/> when there
+    /// is none a visitor may see.
+    /// </summary>
+    /// <remarks>
+    /// The only read in this application that answers bytes to nobody in particular, and it is safe
+    /// for two reasons at once: the index decides whether the training is on offer, and the write
+    /// model refuses a portrait that carries no sanitisation stamp (ADR 0063).
+    /// </remarks>
+    /// <param name="trainingId">The offered training the visitor is looking at.</param>
+    /// <param name="photoId">The photo its address names.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    Task<TrainerPhotoDto?> FindOfferedPortraitAsync(
+        Guid trainingId,
+        Guid photoId,
+        CancellationToken cancellationToken = default);
 }
 
 /// <inheritdoc />
@@ -68,4 +86,11 @@ public sealed class CatalogueApplicationService(
         Guid trainingId,
         CancellationToken cancellationToken = default) =>
         await catalogueDetail.FindOfferedAsync(trainingId, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<TrainerPhotoDto?> FindOfferedPortraitAsync(
+        Guid trainingId,
+        Guid photoId,
+        CancellationToken cancellationToken = default) =>
+        await catalogueDetail.FindOfferedPortraitAsync(trainingId, photoId, cancellationToken);
 }

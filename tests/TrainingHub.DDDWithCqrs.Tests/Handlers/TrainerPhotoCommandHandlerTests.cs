@@ -3,7 +3,9 @@ using TrainingHub.DDDWithCqrs.Application.Features.Trainers.RemovePhoto;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.SetPhoto;
 using TrainingHub.Shared;
 using TrainingHub.Shared.Common;
+using TrainingHub.Shared.Application.Photos;
 using TrainingHub.Shared.Common.Errors;
+using TrainingHub.Shared.Common.Results;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 using TrainingHub.Shared.Domain.Tests.Helpers;
@@ -24,6 +26,27 @@ public sealed class TrainerPhotoCommandHandlerTests
 {
     private readonly Mock<ITrainerRepository> _trainerRepository = new();
     private readonly Mock<ITrainerPhotoStore> _photoStore = new();
+
+    /// <summary>
+    /// What strips an upload before the aggregate sees it (ADR 0063).
+    /// </summary>
+    /// <remarks>
+    /// A mock handing the bytes back unchanged, for the same reason the store beside it is one:
+    /// these facts are about the order this handler does things in, and the fixture it uploads is a
+    /// signature followed by nothing — a real decoder would refuse it and every fact here would
+    /// become a fact about the decoder. <c>SkiaSharpPhotoSanitiserTests</c> is where real pixels go.
+    /// </remarks>
+    private readonly Mock<IPhotoSanitiser> _photoSanitiser = new();
+
+    /// <summary>The instant the stamp is read from.</summary>
+    private static readonly DateTime SanitisedAt = new(2026, 8, 9, 12, 0, 0, DateTimeKind.Utc);
+
+    private sealed class StoppedClock : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => SanitisedAt;
+    }
+
+    private readonly TimeProvider _clock = new StoppedClock();
     private readonly Mock<ICurrentUserService> _currentUserService = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Guid _callerId = Guid.NewGuid();
@@ -35,6 +58,11 @@ public sealed class TrainerPhotoCommandHandlerTests
     public TrainerPhotoCommandHandlerTests()
     {
         _currentUserService.SetupGet(service => service.TrainerId).Returns(_callerId);
+
+        _photoSanitiser
+            .Setup(sanitiser => sanitiser.Sanitise(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<string>()))
+            .Returns((ReadOnlyMemory<byte> content, string contentType) =>
+                Result<SanitisedPhoto>.Success(new SanitisedPhoto(content, contentType)));
 
         _photoStore
             .Setup(store => store.StoreAsync(
@@ -213,7 +241,9 @@ public sealed class TrainerPhotoCommandHandlerTests
     private SetTrainerPhotoCommandHandler SetSut() => new(
         _trainerRepository.Object,
         _photoStore.Object,
+        _photoSanitiser.Object,
         _currentUserService.Object,
+        _clock,
         _unitOfWork.Object);
 
     private RemoveTrainerPhotoCommandHandler RemoveSut() => new(
@@ -240,7 +270,7 @@ public sealed class TrainerPhotoCommandHandlerTests
     }
 
     private static TrainerPhoto SomePhoto() =>
-        TrainerPhoto.Create(Png(), TrainerPhoto.PngContentType).ShouldBeSuccess();
+        TrainerPhoto.Create(Png(), TrainerPhoto.PngContentType, DateTime.UtcNow).ShouldBeSuccess();
 
     private static byte[] Png() => Padded([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 

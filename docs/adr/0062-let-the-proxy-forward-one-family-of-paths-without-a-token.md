@@ -1,6 +1,6 @@
 # 0062 — Let the proxy forward one family of paths without a token
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0063](0063-strip-the-metadata-before-the-bytes-are-stored.md): the precondition it named is met, and the portrait is published at an address carrying the photo's identity
 - **Date:** 2026-08-09
 
 ## Context

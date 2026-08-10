@@ -147,11 +147,17 @@ public static class BffExtensions
         // endpoints below — more so, since they are the ones that write — and a request that should
         // not have been made is worth refusing before any work is done on it. The proxy has no
         // endpoint filter to hang this on, so it is ordinary middleware, scoped to the prefix.
+        //
+        // Two ways to be admitted, and the second is not a weakening (ADR 0063). A request either
+        // carries the header this application sets, or is a safe read the browser itself says came
+        // from here. The header alone was not enough: an <img> cannot set one, which the contract
+        // below gives as the control's strength and which is just as true of our own portraits —
+        // every one of them was refused 403 before reaching the API.
         app.UseWhen(
             context => context.Request.Path.StartsWithSegments(ApiPrefix, StringComparison.Ordinal),
             branch => branch.Use(async (context, next) =>
             {
-                if (!IsFromThisApplication(context.Request))
+                if (!IsFromThisApplication(context.Request) && !IsSafeSameOriginRead(context.Request))
                 {
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     return;
@@ -180,6 +186,42 @@ public static class BffExtensions
             request.Headers[BffContract.RequestedWithHeader],
             BffContract.RequestedWithValue,
             StringComparison.Ordinal);
+
+    /// <summary>
+    /// The header a browser sets itself to say where a request came from.
+    /// </summary>
+    /// <remarks>
+    /// Private to this file rather than declared in <see cref="BffContract"/>, which holds what the
+    /// front end and the BFF <em>agree</em> on. This is not an agreement between them: it is a fact
+    /// about the browser, and the front end never sets it.
+    /// </remarks>
+    private const string FetchSiteHeader = "Sec-Fetch-Site";
+
+    /// <summary>The value that means "this application's own origin asked for it".</summary>
+    private const string SameOrigin = "same-origin";
+
+    /// <summary>
+    /// Whether this is a safe read the browser itself attests came from this origin.
+    /// </summary>
+    /// <remarks>
+    /// The second way past the guard, and it exists because the first cannot cover a subresource:
+    /// an <c>&lt;img&gt;</c>, a stylesheet or a preload is issued by the browser and carries no
+    /// header this application chose. <c>Sec-Fetch-Site</c> is issued by the browser too, and its
+    /// name is on the forbidden list — script cannot set or overwrite it — so a page cannot claim
+    /// <c>same-origin</c> for a request that did not originate here (ADR 0063).
+    /// <para>
+    /// <b>Safe methods only.</b> A write is what this guard was built for, and no attestation of
+    /// origin excuses one: the header stays the only thing that admits a POST. Restricting the
+    /// relaxation to reads is what makes it a correction rather than a hole.
+    /// </para>
+    /// <para>
+    /// A browser too old to send <c>Sec-Fetch-*</c> falls through to the header and is refused,
+    /// which costs it images and no function.
+    /// </para>
+    /// </remarks>
+    internal static bool IsSafeSameOriginRead(HttpRequest request) =>
+        (HttpMethods.IsGet(request.Method) || HttpMethods.IsHead(request.Method))
+        && string.Equals(request.Headers[FetchSiteHeader], SameOrigin, StringComparison.Ordinal);
 
     private static IReadOnlyList<RouteConfig> BuildRoutes() =>
     [

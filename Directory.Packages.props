@@ -154,6 +154,21 @@
     -->
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
     <!--
+      The imaging library, under MIT, and the one ADR 0021 named by name when it deferred this:
+      ImageSharp was declined there because its licence changes for commercial use above a revenue
+      threshold, which is not a property a dependency should have. It decodes an uploaded portrait
+      and re-encodes it without metadata, which is what keeps a phone's GPS coordinates off a public
+      page. See ADR 0063.
+
+      The native half is the *NoDependencies* variant deliberately. The ordinary
+      SkiaSharp.NativeAssets.Linux expects libfontconfig1 in the image, because Skia links it for
+      text layout — and nothing here lays out text: a portrait is decoded, oriented, resized and
+      re-encoded. Taking the ordinary variant would add a system package to
+      mcr.microsoft.com/dotnet/aspnet:10.0 in exchange for a capability this repository never uses.
+    -->
+    <PackageVersion Include="SkiaSharp" Version="4.151.1" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.151.1" />
+    <!--
       Pinned, not referenced — the same mechanism as Microsoft.OpenApi above, and the same reason.
       The SQLite provider added for the schema probe's unit test drags the native library in at
       2.1.11, which NuGet's audit reports as GHSA-2m69-gcr7-jv3q, high severity. 2.1.12 is the

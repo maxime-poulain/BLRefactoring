@@ -62,32 +62,124 @@ public sealed class TrainerPhoto : ValueObject
     /// </summary>
     public int ByteSize { get; private init; }
 
+    /// <summary>
+    /// When the bytes were stripped of everything the camera wrote, or <see langword="null"/> for a
+    /// photo stored before anything stripped them (ADR 0063).
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Create"/> always stamps this, so the domain can no longer mint an unstripped
+    /// photo: a <see langword="null"/> here can only have come out of a row written before that
+    /// record. Which is the whole point — the absence is a fact about history, not a state this
+    /// code can produce.
+    /// </remarks>
+    public DateTime? SanitisedOnUtc { get; private init; }
+
+    /// <summary>
+    /// Whether these bytes may be shown to somebody who is not signed in.
+    /// </summary>
+    /// <remarks>
+    /// The published portrait is anonymous, so the question it answers is not "does this trainer
+    /// have a photo" but "can this system prove nobody's coordinates are in it". A photo stored
+    /// before ADR 0063 cannot be proven either way, and is therefore not published — its owner
+    /// uploading it again is what makes it publishable, and costs them one action.
+    /// </remarks>
+    public bool MayBePublished => SanitisedOnUtc is not null;
+
     private TrainerPhoto()
     {
     }
 
     /// <summary>
+    /// Judges an upload, and answers the media type its bytes really are.
+    /// </summary>
+    /// <param name="upload">The bytes as they arrived, before anything touched them.</param>
+    /// <param name="declaredContentType">The media type the caller claims they have.</param>
+    /// <returns>The vetted media type, or the reason the upload was refused.</returns>
+    /// <remarks>
+    /// <para>
+    /// Separate from <see cref="Create"/> because the two ask about different bytes, and running
+    /// them on the same ones cost this domain two of its own rules for the length of one commit.
+    /// Sanitisation re-encodes into the format it is told, so a JPEG uploaded as
+    /// <c>image/png</c> comes back a real PNG and the mismatch <em>this</em> method exists to refuse
+    /// would have been laundered into an acceptance; and it bounds the dimensions, so a photograph
+    /// past <see cref="MaxSizeInBytes"/> comes back small enough that the limit never fires. Both
+    /// rules are about the upload, and they have to be asked before anything rewrites it (ADR 0063).
+    /// </para>
+    /// <para>
+    /// The declared type is checked <em>against the bytes</em>. An extension and a
+    /// <c>Content-Type</c> header are both things a caller writes, so neither is evidence; the first
+    /// bytes of the file are. A JPEG renamed <c>.png</c> is refused here, and so is anything whose
+    /// signature this method does not recognise — SVG included, which matters because these photos
+    /// are headed for a public catalogue and SVG is a script-carrying format.
+    /// </para>
+    /// </remarks>
+    public static Result<string> Vet(ReadOnlySpan<byte> upload, string? declaredContentType)
+    {
+        if (upload.IsEmpty)
+        {
+            return Result<string>.Failure(TrainerErrorCodes.PhotoEmpty, "A photo cannot be empty.");
+        }
+
+        if (upload.Length > MaxSizeInBytes)
+        {
+            return Result<string>.Failure(
+                TrainerErrorCodes.PhotoTooLarge,
+                $"A photo cannot exceed {MaxSizeInBytes} bytes.");
+        }
+
+        var declared = Normalise(declaredContentType);
+
+        if (!IsSupported(declared))
+        {
+            return Result<string>.Failure(
+                TrainerErrorCodes.PhotoFormatNotSupported,
+                $"A photo is one of {PngContentType}, {JpegContentType} or {WebpContentType}.");
+        }
+
+        var actual = DetectContentType(upload);
+
+        if (actual is null)
+        {
+            return Result<string>.Failure(
+                TrainerErrorCodes.PhotoFormatNotSupported,
+                $"The uploaded bytes are none of {PngContentType}, {JpegContentType} or {WebpContentType}.");
+        }
+
+        return string.Equals(actual, declared, StringComparison.OrdinalIgnoreCase)
+            ? Result<string>.Success(actual)
+            : Result<string>.Failure(
+                TrainerErrorCodes.PhotoContentMismatch,
+                $"The upload is declared as {declared} but its content is {actual}.");
+    }
+
+    /// <summary>
     /// Validates an uploaded image and describes it as a photo this domain will accept.
     /// </summary>
-    /// <param name="content">The uploaded bytes.</param>
+    /// <param name="content">The bytes to be stored, after sanitisation.</param>
     /// <param name="declaredContentType">The media type the caller claims the bytes have.</param>
+    /// <param name="sanitisedOnUtc">When those bytes were stripped.</param>
     /// <returns>The photo, or the reason it was refused.</returns>
     /// <remarks>
     /// <para>
-    /// The declared type is checked <em>against the bytes</em>. An extension and a
-    /// <c>Content-Type</c> header are both things a caller writes, so neither is evidence; the
-    /// first bytes of the file are. A JPEG renamed <c>.png</c> is refused here, and so is anything
-    /// whose signature this method does not recognise — SVG included, which matters because these
-    /// photos are headed for a public catalogue and SVG is a script-carrying format.
+    /// The bytes handed here are what will be <em>stored</em>: they have been through
+    /// <c>IPhotoSanitiser</c>, which decoded them, applied the camera's orientation, bounded the
+    /// dimensions and re-encoded them without metadata. ADR 0021 deferred that and ADR 0063 took
+    /// it. The order matters and is the reason this takes a stamp — what this records is a media
+    /// type and a byte count, and they have to describe the bytes that were really stored rather
+    /// than an upload nobody kept.
     /// </para>
     /// <para>
-    /// What this deliberately does <em>not</em> do is decode the image. Decoding would bound the
-    /// dimensions and strip EXIF — and a photo taken on a phone carries GPS coordinates, which a
-    /// public catalogue would publish. That hardening is recorded as deferred in ADR 0021 rather
-    /// than left to be discovered; it needs an imaging library, and this method needs none.
+    /// The checks are repeated on the stored bytes rather than trusted from <see cref="Vet"/>, and
+    /// the repetition is deliberate for ADR 0046's reason: this factory is what anything reaching
+    /// the aggregate must go through, and it does not assume the layer above asked first. What it
+    /// costs is a signature comparison; what it buys is that no path exists to a photo whose
+    /// recorded media type disagrees with its bytes.
     /// </para>
     /// </remarks>
-    public static Result<TrainerPhoto> Create(ReadOnlySpan<byte> content, string? declaredContentType)
+    public static Result<TrainerPhoto> Create(
+        ReadOnlySpan<byte> content,
+        string? declaredContentType,
+        DateTime sanitisedOnUtc)
     {
         if (content.IsEmpty)
         {
@@ -131,7 +223,8 @@ public sealed class TrainerPhoto : ValueObject
         {
             PhotoId = PhotoId.Generate(),
             ContentType = actual,
-            ByteSize = content.Length
+            ByteSize = content.Length,
+            SanitisedOnUtc = sanitisedOnUtc
         });
     }
 
@@ -141,6 +234,7 @@ public sealed class TrainerPhoto : ValueObject
         yield return PhotoId;
         yield return ContentType;
         yield return ByteSize;
+        yield return SanitisedOnUtc;
     }
 
     /// <summary>

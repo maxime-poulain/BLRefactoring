@@ -1,4 +1,5 @@
 using TrainingHub.DDDWithCqrs.Application.Features.Catalogue.GetOffered;
+using TrainingHub.DDDWithCqrs.Application.Features.Catalogue.GetOfferedPortrait;
 using TrainingHub.DDDWithCqrs.Application.Features.Catalogue.Search;
 using TrainingHub.DDDWithCqrs.Application.Features.Outbox.GetPoisoned;
 using TrainingHub.DDDWithCqrs.Application.Features.Outbox.Requeue;
@@ -215,6 +216,14 @@ public static class HttpToApplicationMappings
     /// names, and a visitor has nothing else to say.
     /// </remarks>
     public static GetOfferedTrainingQuery ToGetOfferedTrainingQuery(Guid trainingId) => new(trainingId);
+
+    /// <summary>Builds the query reading the portrait behind an offered training (ADR 0063).</summary>
+    /// <remarks>
+    /// Both identifiers come from the route and neither names a person: the training is what the
+    /// visitor followed, and the photo is what makes the answer cacheable forever.
+    /// </remarks>
+    public static GetOfferedPortraitQuery ToGetOfferedPortraitQuery(Guid trainingId, Guid photoId) =>
+        new(trainingId, photoId);
 
     /// <summary>Builds the query reading one page of the outbox's poison (ADR 0061).</summary>
     /// <remarks>

@@ -465,7 +465,7 @@ broken, and carries that aggregate's name.
 |---|---|
 | `ErrorCodes` (kernel) | `Unspecified`, `NotFound`, `ConcurrencyConflict`, `Validation` |
 | `TrainingErrorCodes` | `Training.InvalidTitle`, `Training.DuplicateTitle`, `Training.InvalidDescription`, `Training.InvalidPrerequisites`, `Training.InvalidAcquiredSkills`, `Training.InvalidTopic`, `Training.CatalogueFull`, `Training.TransferToSelf`, `Training.RecipientCatalogueFull`, `Training.UnknownRecipient`, `Training.AlreadyPublished`, `Training.AlreadyUnpublished`, `Training.TrainerSuspended`, `Training.RecipientSuspended`, `Training.AlreadyWithheld`, `Training.NotWithheld`, `Training.Withheld`, `Training.WithholdingReasonEmpty`, `Training.WithholdingReasonTooLong` |
-| `TrainerErrorCodes` | `Trainer.InvalidEmail`, `Trainer.InvalidFirstname`, `Trainer.InvalidLastname`, `Trainer.BioEmpty`, `Trainer.BioExceeds500Characters`, `Trainer.PhotoEmpty`, `Trainer.PhotoTooLarge`, `Trainer.PhotoFormatNotSupported`, `Trainer.PhotoContentMismatch`, `Trainer.AlreadySuspended`, `Trainer.NotSuspended`, `Trainer.SuspensionReasonEmpty`, `Trainer.SuspensionReasonTooLong` |
+| `TrainerErrorCodes` | `Trainer.InvalidEmail`, `Trainer.InvalidFirstname`, `Trainer.InvalidLastname`, `Trainer.BioEmpty`, `Trainer.BioExceeds500Characters`, `Trainer.PhotoEmpty`, `Trainer.PhotoTooLarge`, `Trainer.PhotoFormatNotSupported`, `Trainer.PhotoContentMismatch`, `Trainer.PhotoUnreadable`, `Trainer.AlreadySuspended`, `Trainer.NotSuspended`, `Trainer.SuspensionReasonEmpty`, `Trainer.SuspensionReasonTooLong` |
 | `OutboxErrorCodes` | `Outbox.NotPoison` |
 
 `Validation` is the one the kernel declares for somebody else: the FluentValidation pipeline of the
@@ -822,7 +822,7 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 | `POST` | `/Auth/login` | `200` with a JWT, or `401` — the same answer for an unknown username, a wrong password and a locked-out account |
 | `GET` | `/Trainer/me` | The caller's own profile, with an `ETag`. `200`, `404` |
 | `PUT` | `/Trainer/me` | Requires `If-Match`. `200`, `400`, `404`, `412`, `428` |
-| `GET` | `/Trainer/{id}/photo` | The trainer's portrait, with a strong `ETag` and a year-long immutable cache. `200`, `304`, `404` |
+| `GET` | `/Trainer/{id}/photo` | The trainer's portrait, with a strong `ETag` and a year-long `max-age`. Not `immutable`: this address does not name the photo, so its bytes change when the owner replaces it and a stale cache has to revalidate (ADR 0063). `200`, `304`, `404` |
 | `PUT` | `/Trainer/me/photo` | `multipart/form-data`. Publishes **and** replaces. `200` with the updated profile, `400`, `404`, `409` |
 | `DELETE` | `/Trainer/me/photo` | `204`, `404`, `409` |
 | `POST` | `/Training` | `201` with the new identifier, `409` on a duplicate title, `400` when the catalogue is full (`Training.CatalogueFull`, at ten **published** trainings) or the content is invalid |
@@ -841,10 +841,11 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 | `GET` | `/Administration/trainings` | Administrator only. One page of trainings across every trainer, newest first. `?status=` (`Published`, `Unpublished`, `Withheld`), `?search=` on the title, `?page=`, `?pageSize=`. The term is a `LIKE '%term%'` over the write model, which the title had to stop being a value-converted column to allow ([ADR 0060](docs/adr/0060-look-inside-the-column-a-search-has-to-read.md)); the search that seeks is the catalogue's, and it cannot answer this one. `200`, `400` when the status names nothing, the term is too long, or the page is out of range |
 | `GET` | `/Catalogue/trainings` | **Anonymous.** One page of the offered catalogue, by title. `?term=` matched against the words of a title, each by prefix, through the search index rather than the trainings table; `?page=`, `?pageSize=`. `200`, `400` when the term is longer than a title or the page is out of range (ADR 0059) |
 | `GET` | `/Catalogue/trainings/{id:guid}` | **Anonymous.** One offered training in full: its title, its topics, its description, its prerequisites, its acquired skills, and the name of the trainer who offers it. Whether it may be shown comes from the search index; what it says comes from the write model, read now rather than copied — no fact carries a trainer's rename, so an indexed name would be one nothing refreshes. `200`, `404` for a training that does not exist **and** for one that is no longer on offer, which are deliberately the same answer ([ADR 0062](docs/adr/0062-let-the-proxy-forward-one-family-of-paths-without-a-token.md)) |
+| `GET` | `/Catalogue/trainings/{id:guid}/photo/{photoId:guid}` | **Anonymous.** The portrait of the trainer who offers this training. The address names a training and a photo and never a person, which is both what a visitor can have been given and what makes `immutable` true — a replacement mints a new photo identity, so these bytes never change. Four ways to answer `404` and they are one answer: no such training, none on offer, a photo that is not the owner's current one, and a portrait carrying no proof that the camera's metadata was ever stripped from it. `200`, `304`, `400`, `404` ([ADR 0063](docs/adr/0063-strip-the-metadata-before-the-bytes-are-stored.md)) |
 | `GET` | `/Administration/Outbox/poison` | Administrator only. One page of the integration events delivery gave up on, oldest fact first, each with its last error and the consumers a retry would skip. The payload is deliberately not published. `?page=`, `?pageSize=`. `200`, `400` when the page is out of range ([ADR 0061](docs/adr/0061-give-the-poison-a-url-and-an-operator-a-way-back-in.md)) |
 | `POST` | `/Administration/Outbox/poison/{messageId}/requeue` | Administrator only. No body. Hands one poison message back to the delivery worker with a fresh budget; the delivery ledger is untouched, so the retry runs only the consumers still owed (ADR 0034). `204`, `400`, `404`, `409` when the message is still owed or was already delivered |
 
-Twenty-five endpoints, and not one of them lets a trainer reach what another trainer owns. The eight
+Twenty-six endpoints, and not one of them lets a trainer reach what another trainer owns. The eight
 under `/Administration` act on something that is not the caller's by design and are the only eight
 that do — behind a role that is granted by hand and by no endpoint at all (ADR 0051). They are
 grouped by the authority they exercise rather than by the resource they act on, which is what that
@@ -875,12 +876,15 @@ than checked after it. A training belonging to somebody else answers `404`, not 
 would confirm that the identifier names something real, which is itself what is being withheld.
 
 The photo is the one read addressed by identifier rather than by `me`, and deliberately so:
-publishing a portrait is self-service, but looking at one is what a catalogue of trainers does. It
-is already shaped for that day — making it public is `[AllowAnonymous]` and nothing else. Its cache
-is aggressive because the address changes whenever the picture does: a replacement mints a new photo
-identity, so the bytes under any one `ETag` genuinely never change, and a CDN can sit in front of
-the route without a line moving. Writing is one verb, `PUT`, because there is no third thing to do
-to a photo and because its idempotence makes a retried five-megabyte upload safe.
+publishing a portrait is self-service, but looking at one is not, and a trainer may perfectly well
+look at a colleague's. It stayed authenticated when the catalogue opened, which turned out to be the
+right shape rather than a step short of one: the public portrait is a different address on a
+different controller, naming a training and a photo rather than a person
+([ADR 0063](docs/adr/0063-strip-the-metadata-before-the-bytes-are-stored.md)). Only that one says
+`immutable`, because only its address changes when the picture does; this one says `max-age` with an
+`ETag`, so a stale cache revalidates instead of being told a year-long lie. Writing is one verb,
+`PUT`, because there is no third thing to do to a photo and because its idempotence makes a retried
+five-megabyte upload safe.
 
 A body past the request size limit answers `400`, not `413`, and that is a finding rather than an
 oversight. The limit does stop the server reading an arbitrary payload — which is the property
