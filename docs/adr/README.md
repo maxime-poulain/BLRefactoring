@@ -89,10 +89,11 @@ simpler from the outside.
 | [0056](0056-announce-the-sanction-and-let-the-index-compose-visibility.md) | Announce the sanction, and let the index compose visibility | Accepted |
 | [0057](0057-the-trainers-own-surface-says-where-they-stand.md) | The trainer's own surface says where they stand | Accepted |
 | [0058](0058-a-translation-to-a-published-contract-is-total.md) | A translation to a published contract is total | Accepted |
-| [0059](0059-give-the-search-index-a-body-and-a-query-surface.md) | Give the search index a body, and a query surface | Accepted |
+| [0059](0059-give-the-search-index-a-body-and-a-query-surface.md) | Give the search index a body, and a query surface | Accepted — amended by [0069](0069-give-the-catalog-its-first-facet.md): the index gains its first non-title dimension — the topics a training declares, served as the catalog's facets |
 | [0060](0060-look-inside-the-column-a-search-has-to-read.md) | Look inside the column a search has to read | Accepted |
 | [0061](0061-give-the-poison-a-url-and-an-operator-a-way-back-in.md) | Give the poison a URL, and an operator a way back in | Accepted |
 | [0062](0062-let-the-proxy-forward-one-family-of-paths-without-a-token.md) | Let the proxy forward one family of paths without a token | Accepted — amended by [0063](0063-strip-the-metadata-before-the-bytes-are-stored.md): the precondition it named is met, and the portrait is published at an address carrying the photo's identity |
 | [0063](0063-strip-the-metadata-before-the-bytes-are-stored.md) | Strip the metadata before the bytes are stored, and publish only what was stripped | Accepted |
+| [0069](0069-give-the-catalog-its-first-facet.md) | Give the catalog its first facet | Accepted |
 | [0064](0064-write-this-repository-in-american-english.md) | Write this repository in American English | Accepted — amended by [0066](0066-close-the-spelling-rules-selection-against-its-exemptions.md): the selection is closed against its exemptions, so a file governed by neither fails the build |
 | [0065](0065-ship-every-host-as-an-image-and-build-them-in-the-pipeline.md) | Ship every host as an image, and build them in the pipeline | Accepted — amended by [0067](0067-cache-the-image-layers-without-taking-a-dependency.md): the layer cache it turned down is taken, the objection having been the dependency rather than the caching; amended by [0068](0068-remove-the-image-layer-cache.md): the cache is removed on measurement, and building without one stands again |

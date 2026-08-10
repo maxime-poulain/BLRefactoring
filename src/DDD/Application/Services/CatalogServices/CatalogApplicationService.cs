@@ -18,15 +18,27 @@ namespace TrainingHub.DDD.Application.Services.CatalogServices;
 public interface ICatalogApplicationService
 {
     /// <summary>
-    /// One page of the offered catalog, narrowed by a term when there is one.
+    /// One page of the offered catalog, narrowed by a term and a topic when there are any.
     /// </summary>
     /// <param name="term">What to look for, or nothing at all.</param>
+    /// <param name="topic">
+    /// The canonical name of a topic to browse, or nothing at all. The boundary refuses a name the
+    /// domain does not spell before this service sees it (ADR 0069).
+    /// </param>
     /// <param name="paging">The page asked for.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     Task<PagedResult<CatalogTrainingDto>> SearchAsync(
         string? term,
+        string? topic,
         PageRequest paging,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The facets of the offered catalog: each topic at least one offered training declares, with
+    /// its count.
+    /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    Task<IReadOnlyList<TopicFacetDto>> GetFacetsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// One offered training in full, or <see langword="null"/> when there is none a visitor may see.
@@ -77,9 +89,15 @@ public sealed class CatalogApplicationService(
     /// <inheritdoc />
     public async Task<PagedResult<CatalogTrainingDto>> SearchAsync(
         string? term,
+        string? topic,
         PageRequest paging,
         CancellationToken cancellationToken = default) =>
-        await trainingSearch.SearchAsync(term, paging, cancellationToken);
+        await trainingSearch.SearchAsync(term, topic, paging, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<TopicFacetDto>> GetFacetsAsync(
+        CancellationToken cancellationToken = default) =>
+        await trainingSearch.FacetsAsync(cancellationToken);
 
     /// <inheritdoc />
     public async Task<CatalogTrainingDetailDto?> FindOfferedAsync(

@@ -29,6 +29,12 @@ public sealed class SearchCatalogQuery : IQuery<PagedResult<CatalogTrainingDto>>
     public string? Term { get; init; }
 
     /// <summary>
+    /// The canonical name of a topic to browse, or <see langword="null"/> for all of them
+    /// (ADR 0069).
+    /// </summary>
+    public string? Topic { get; init; }
+
+    /// <summary>
     /// The page asked for; the default page when none was.
     /// </summary>
     public PageRequest Paging { get; init; } = new();

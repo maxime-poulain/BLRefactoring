@@ -16,8 +16,9 @@
     </MudText>
 
     <MudPaper Elevation="0" Class="pa-4 mb-4">
-        @* One criterion, because the index answers one question. Every word of the term is matched
-           against the words of a title, each by prefix (ADR 0059). *@
+        @* Two criteria now, and both are the index's own questions: every word of the term is
+           matched against the words of a title, each by prefix (ADR 0059), and a topic narrows
+           the search to one shelf (ADR 0069). *@
         <MudTextField T="string"
                       Label="Search"
                       Value="@_term"
@@ -30,6 +31,26 @@
                       Adornment="Adornment.Start"
                       AdornmentIcon="@Icons.Material.Filled.Search"
                       HelperText="Title" />
+
+        @* The catalog's facets, from GET /Catalog/topics: only topics with something on offer,
+           each with its count, so a chip never leads to an empty shelf. Clicking the selected
+           chip again lifts the filter — a facet is a lens, not a destination. *@
+        @if (_facets is { Count: > 0 })
+        {
+            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-3">
+                @foreach (var facet in _facets)
+                {
+                    var topic = facet.Topic;
+                    <MudChip T="string"
+                             Size="Size.Small"
+                             Color="@(topic == _topic ? Color.Primary : Color.Default)"
+                             Variant="@(topic == _topic ? Variant.Filled : Variant.Outlined)"
+                             OnClick="@(() => OnTopicClickedAsync(topic))">
+                        @topic (@facet.OfferedCount)
+                    </MudChip>
+                }
+            </MudStack>
+        }
     </MudPaper>
 
     @if (_isLoading)
@@ -85,13 +106,16 @@
     private const int TermMaxLength = 100;
 
     private PagedHttpResponseOfCatalogTrainingHttpResponse? _page;
+    private List<CatalogTopicHttpResponse>? _facets;
     private string? _term;
+    private string? _topic;
     private int _currentPage = 1;
     private bool _isLoading = true;
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
+        await LoadFacetsAsync();
         await LoadAsync();
         StateHasChanged();
     }
@@ -103,10 +127,32 @@
         await LoadAsync();
     }
 
+    private async Task OnTopicClickedAsync(string topic)
+    {
+        // The same chip again lifts the filter rather than reasserting it.
+        _topic = topic == _topic ? null : topic;
+        _currentPage = 1;
+        await LoadAsync();
+    }
+
     private async Task OnPageSelectedAsync(int page)
     {
         _currentPage = page;
         await LoadAsync();
+    }
+
+    private async Task LoadFacetsAsync()
+    {
+        try
+        {
+            _facets = (await CatalogClient.GetTopicsAsync()).Topics;
+        }
+        catch (Exception)
+        {
+            // Losing the chips costs browsing comfort, not the catalog: the search below answers
+            // without them, so this failure stays silent rather than doubling the snackbar.
+            _facets = null;
+        }
     }
 
     private async Task LoadAsync()
@@ -114,12 +160,12 @@
         _isLoading = true;
         try
         {
-            _page = await CatalogClient.SearchTrainingsAsync(_term, _currentPage, null);
+            _page = await CatalogClient.SearchTrainingsAsync(_term, _topic, _currentPage, null);
 
             if (_currentPage > _page.TotalPages)
             {
                 _currentPage = _page.TotalPages;
-                _page = await CatalogClient.SearchTrainingsAsync(_term, _currentPage, null);
+                _page = await CatalogClient.SearchTrainingsAsync(_term, _topic, _currentPage, null);
             }
         }
         catch (Exception)

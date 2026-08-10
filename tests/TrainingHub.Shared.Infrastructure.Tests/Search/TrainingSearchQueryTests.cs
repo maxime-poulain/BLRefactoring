@@ -33,7 +33,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Domain Modeling");
         await IndexedAsync(trainer, "Driven To Distraction");
 
-        var page = await Query().SearchAsync("domain driven", new PageRequest());
+        var page = await Query().SearchAsync("domain driven", null, new PageRequest());
 
         page.Items.Should().ContainSingle().Which.Title.Should().Be("Domain Driven Design");
         page.TotalCount.Should().Be(1);
@@ -55,11 +55,11 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Refactoring Legacy Code");
         await IndexedAsync(trainer, "Craftsmanship");
 
-        var page = await Query().SearchAsync("refac", new PageRequest());
+        var page = await Query().SearchAsync("refac", null, new PageRequest());
 
         page.Items.Should().ContainSingle().Which.Title.Should().Be("Refactoring Legacy Code");
 
-        var inside = await Query().SearchAsync("actor", new PageRequest());
+        var inside = await Query().SearchAsync("actor", null, new PageRequest());
 
         inside.Items.Should().BeEmpty();
     }
@@ -81,7 +81,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
 
         await IndexedAsync(trainer, "Event Storming");
 
-        var page = await Query().SearchAsync(term, new PageRequest());
+        var page = await Query().SearchAsync(term, null, new PageRequest());
 
         page.Items.Should().ContainSingle().Which.Title.Should().Be("Event Storming");
     }
@@ -100,7 +100,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
 
         await IndexedAsync(trainer, "Kept Quiet", published: false);
 
-        var page = await Query().SearchAsync("kept", new PageRequest());
+        var page = await Query().SearchAsync("kept", null, new PageRequest());
 
         page.Items.Should().BeEmpty();
         page.TotalCount.Should().Be(0);
@@ -122,10 +122,10 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Sanctioned Course");
 
         await Indexer.HideTrainerCatalogAsync(trainer.Id.Value);
-        (await Query().SearchAsync("sanctioned", new PageRequest())).Items.Should().BeEmpty();
+        (await Query().SearchAsync("sanctioned", null, new PageRequest())).Items.Should().BeEmpty();
 
         await Indexer.ShowTrainerCatalogAsync(trainer.Id.Value);
-        (await Query().SearchAsync("sanctioned", new PageRequest())).Items.Should().ContainSingle();
+        (await Query().SearchAsync("sanctioned", null, new PageRequest())).Items.Should().ContainSingle();
     }
 
     /// <summary>
@@ -147,7 +147,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Alpha Course");
         await IndexedAsync(trainer, "Hidden Course", published: false);
 
-        var page = await Query().SearchAsync(term, new PageRequest());
+        var page = await Query().SearchAsync(term, null, new PageRequest());
 
         page.Items.Select(training => training.Title).Should().Equal("Alpha Course", "Beta Course");
     }
@@ -169,7 +169,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Course Beta");
         await IndexedAsync(trainer, "Course Gamma");
 
-        var page = await Query().SearchAsync("course", new PageRequest { PageSize = 2 });
+        var page = await Query().SearchAsync("course", null, new PageRequest { PageSize = 2 });
 
         page.Items.Should().HaveCount(2);
         page.TotalCount.Should().Be(3);
@@ -191,16 +191,111 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
 
         await IndexedAsync(trainer, "Anything At All");
 
-        var page = await Query().SearchAsync("--- !", new PageRequest());
+        var page = await Query().SearchAsync("--- !", null, new PageRequest());
 
         page.Items.Should().ContainSingle();
     }
 
+    /// <summary>
+    /// Search async, a topic, answers only that shelf.
+    /// </summary>
+    /// <remarks>
+    /// Equality against the topics' own index rather than a prefix, because a topic is a name from
+    /// a closed set, not a word somebody is still typing (ADR 0069).
+    /// </remarks>
+    [Fact]
+    public async Task SearchAsync_ATopic_AnswersOnlyThatShelf()
+    {
+        var trainer = await GivenTrainerAsync();
+
+        await IndexedAsync(trainer, "Refactoring Legacy Code", topics: ["Programming"]);
+        await IndexedAsync(trainer, "Design Sprints", topics: ["Design"]);
+
+        var page = await Query().SearchAsync(null, "Design", new PageRequest());
+
+        page.Items.Should().ContainSingle().Which.Title.Should().Be("Design Sprints");
+    }
+
+    /// <summary>
+    /// Search async, a topic and a term, narrows by both at once.
+    /// </summary>
+    [Fact]
+    public async Task SearchAsync_ATopicAndATerm_NarrowsByBothAtOnce()
+    {
+        var trainer = await GivenTrainerAsync();
+
+        await IndexedAsync(trainer, "Advanced Modeling", topics: ["Programming"]);
+        await IndexedAsync(trainer, "Advanced Sketching", topics: ["Design"]);
+        await IndexedAsync(trainer, "Basic Sketching", topics: ["Design"]);
+
+        var page = await Query().SearchAsync("advanced", "Design", new PageRequest());
+
+        page.Items.Should().ContainSingle().Which.Title.Should().Be("Advanced Sketching");
+    }
+
+    /// <summary>
+    /// Facets async, counts only what is offered.
+    /// </summary>
+    /// <remarks>
+    /// The same composed visibility the search reads (ADR 0050, ADR 0056): a withdrawn training
+    /// and a sanctioned trainer's whole shelf leave these numbers the moment their consumers run,
+    /// so a facet never promises a shelf the search would answer empty (ADR 0069).
+    /// </remarks>
+    [Fact]
+    public async Task FacetsAsync_CountsOnlyWhatIsOffered()
+    {
+        var trainer = await GivenTrainerAsync();
+        var sanctioned = await GivenTrainerAsync(suspended: true);
+
+        await IndexedAsync(trainer, "On Offer", topics: ["Programming"]);
+        await IndexedAsync(trainer, "Withdrawn", published: false, topics: ["Programming"]);
+        await IndexedAsync(sanctioned, "Hidden Whole", topics: ["Programming"]);
+
+        var facets = await Query().FacetsAsync();
+
+        facets.Should().ContainSingle()
+            .Which.Should().BeEquivalentTo(new { Topic = "Programming", OfferedCount = 1 });
+    }
+
+    /// <summary>
+    /// Facets async, a topic nothing offered declares, is absent rather than zero.
+    /// </summary>
+    [Fact]
+    public async Task FacetsAsync_ATopicNothingOfferedDeclares_IsAbsentRatherThanZero()
+    {
+        var trainer = await GivenTrainerAsync();
+
+        await IndexedAsync(trainer, "Withdrawn Shelf", published: false, topics: ["Marketing"]);
+
+        (await Query().FacetsAsync()).Should().BeEmpty(
+            "a facet is a way into the catalog, and an empty shelf leads nowhere (ADR 0069)");
+    }
+
+    /// <summary>
+    /// Facets async, several shelves, answers them alphabetically.
+    /// </summary>
+    [Fact]
+    public async Task FacetsAsync_SeveralShelves_AnswersThemAlphabetically()
+    {
+        var trainer = await GivenTrainerAsync();
+
+        await IndexedAsync(trainer, "Selling Well", topics: ["Marketing"]);
+        await IndexedAsync(trainer, "Leading Kindly", topics: ["Leadership"]);
+        await IndexedAsync(trainer, "Sketching Fast", topics: ["Design", "Marketing"]);
+
+        var facets = await Query().FacetsAsync();
+
+        facets.Select(facet => facet.Topic)
+            .Should().ContainInOrder("Design", "Leadership", "Marketing");
+        facets.Single(facet => facet.Topic == "Marketing").OfferedCount.Should().Be(2);
+    }
+
     private TrainingSearchQuery Query() => new(Context);
 
-    private async Task IndexedAsync(Trainer owner, string title, bool published = true)
+    private async Task IndexedAsync(
+        Trainer owner, string title, bool published = true, string[]? topics = null)
     {
-        var training = await GivenTrainingAsync(owner, title, published);
+        var training = await GivenTrainingAsync(owner, title, published, topics);
 
         await Indexer.IndexAsync(training.Id.Value, owner.Id.Value);
     }

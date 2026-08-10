@@ -1,5 +1,6 @@
 using TrainingHub.DDDWithCqrs.Application.Features.Catalog.GetOffered;
 using TrainingHub.DDDWithCqrs.Application.Features.Catalog.GetOfferedPortrait;
+using TrainingHub.DDDWithCqrs.Application.Features.Catalog.GetTopics;
 using TrainingHub.DDDWithCqrs.Application.Features.Catalog.Search;
 using TrainingHub.DDDWithCqrs.Application.Features.Outbox.GetPoisoned;
 using TrainingHub.DDDWithCqrs.Application.Features.Outbox.Requeue;
@@ -207,8 +208,17 @@ public static class HttpToApplicationMappings
         PaginationHttpRequest? pagination) => new()
         {
             Term = search?.Term,
+            // Blank is what an empty query parameter binds to, and it asks for no filter rather
+            // than for a topic called nothing — the same reading the status filters give it.
+            Topic = string.IsNullOrWhiteSpace(search?.Topic) ? null : search.Topic,
             Paging = pagination.ToPageRequest()
         };
+
+    /// <summary>Builds the query listing the catalog's facets (ADR 0069).</summary>
+    /// <remarks>
+    /// Nothing to carry: a visitor asking what there is to browse has nothing to say yet.
+    /// </remarks>
+    public static GetCatalogTopicsQuery ToGetCatalogTopicsQuery() => new();
 
     /// <summary>Builds the query reading one offered training in full (ADR 0062).</summary>
     /// <remarks>

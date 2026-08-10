@@ -46,6 +46,11 @@ public sealed class TrainingSearchIndexer(TrainingContext trainingContext) : ITr
 
         var entry = await trainingContext.Set<TrainingSearchEntry>()
             .Include(candidate => candidate.Terms)
+            .Include(candidate => candidate.Topics)
+            // Two sibling collections in one query would join into Terms × Topics rows per entry;
+            // split queries read each collection once. Safe without a serializable transaction
+            // because this adapter is the index's only writer, and idempotent on redelivery anyway.
+            .AsSplitQuery()
             .FirstOrDefaultAsync(candidate => candidate.TrainingId == trainingId, cancellationToken)
             .ConfigureAwait(false);
 
@@ -60,7 +65,8 @@ public sealed class TrainingSearchIndexer(TrainingContext trainingContext) : ITr
             document.Title,
             document.IsPublished,
             document.IsTrainerHidden,
-            SearchTerms.Of(document.Title));
+            SearchTerms.Of(document.Title),
+            document.Topics);
 
         await trainingContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -136,7 +142,8 @@ public sealed class TrainingSearchIndexer(TrainingContext trainingContext) : ITr
             .Select(candidate => new
             {
                 Title = candidate.Title.Value,
-                IsPublished = candidate.Status == TrainingStatus.Published
+                IsPublished = candidate.Status == TrainingStatus.Published,
+                Topics = candidate.Topics.Select(topic => topic.Name).ToList()
             })
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
@@ -153,7 +160,8 @@ public sealed class TrainingSearchIndexer(TrainingContext trainingContext) : ITr
                 cancellationToken)
             .ConfigureAwait(false);
 
-        return new SearchDocument(trainerId, training.Title, training.IsPublished, isTrainerHidden);
+        return new SearchDocument(
+            trainerId, training.Title, training.IsPublished, isTrainerHidden, training.Topics);
     }
 
     /// <summary>What one fact makes the index know about one training.</summary>
@@ -161,5 +169,6 @@ public sealed class TrainingSearchIndexer(TrainingContext trainingContext) : ITr
         Guid TrainerId,
         string Title,
         bool IsPublished,
-        bool IsTrainerHidden);
+        bool IsTrainerHidden,
+        IReadOnlyList<string> Topics);
 }

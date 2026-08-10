@@ -28,6 +28,7 @@ public sealed class TrainingSearchQuery(TrainingContext trainingContext) : ITrai
     /// </remarks>
     public async Task<PagedResult<CatalogTrainingDto>> SearchAsync(
         string? term,
+        string? topic,
         PageRequest paging,
         CancellationToken cancellationToken = default)
     {
@@ -36,6 +37,15 @@ public sealed class TrainingSearchQuery(TrainingContext trainingContext) : ITrai
             // What "on offer" means, composed exactly as the domain composes it (ADR 0050,
             // ADR 0056) — and stored, because the write side stores it nowhere.
             .Where(entry => entry.IsPublished && !entry.IsTrainerHidden);
+
+        if (topic is not null)
+        {
+            // One EXISTS against the topics' own index, the same shape as a token's. Equality
+            // rather than a prefix, because a topic is a name from a closed set, not a word
+            // somebody is still typing (ADR 0069).
+            entries = entries.Where(entry =>
+                entry.Topics.Any(candidate => candidate.Topic == topic));
+        }
 
         foreach (var token in SearchTerms.Of(term))
         {
@@ -64,4 +74,31 @@ public sealed class TrainingSearchQuery(TrainingContext trainingContext) : ITrai
                 cancellationToken)
             .ConfigureAwait(false);
     }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// A join and a count rather than six counts: the topics table knows which entries it belongs
+    /// to, the entries know which of them are on offer, and the group answers every facet in one
+    /// statement. Topics nothing offered declares simply have no rows to group, which is what the
+    /// port's contract promises — absent, never zero.
+    /// </remarks>
+    public async Task<IReadOnlyList<TopicFacetDto>> FacetsAsync(
+        CancellationToken cancellationToken = default) =>
+        await trainingContext.Set<TrainingSearchTopic>()
+            .AsNoTracking()
+            .Join(
+                trainingContext.Set<TrainingSearchEntry>()
+                    .Where(entry => entry.IsPublished && !entry.IsTrainerHidden),
+                topic => topic.TrainingId,
+                entry => entry.TrainingId,
+                (topic, _) => topic.Topic)
+            .GroupBy(topic => topic)
+            .OrderBy(facet => facet.Key)
+            .Select(facet => new TopicFacetDto
+            {
+                Topic = facet.Key,
+                OfferedCount = facet.Count()
+            })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
 }

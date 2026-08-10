@@ -46,6 +46,11 @@ public sealed class TrainingSearchEntryConfiguration : IEntityTypeConfiguration<
             .HasForeignKey(term => term.TrainingId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.HasMany(entry => entry.Topics)
+            .WithOne()
+            .HasForeignKey(topic => topic.TrainingId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // The sanction's index: hiding or showing a trainer's catalog is one statement over this
         // one, which is what lets the pair cost a call each way rather than a rebuild (ADR 0056).
         builder.HasIndex(entry => entry.TrainerId);

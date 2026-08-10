@@ -88,14 +88,21 @@ public abstract class SearchIndexTest : IAsyncLifetime
     protected async Task<Training> GivenTrainingAsync(
         Trainer owner,
         string title,
-        bool published = true)
+        bool published = true,
+        string[]? topics = null)
     {
         ArgumentNullException.ThrowIfNull(owner);
 
-        var training = (await new TrainingBuilder()
+        var builder = new TrainingBuilder()
             .WithTitle(title)
-            .WithTrainerId(owner.Id.Value)
-            .BuildAsync()).ShouldBeSuccess();
+            .WithTrainerId(owner.Id.Value);
+
+        if (topics is not null)
+        {
+            builder = builder.WithTopics(topics);
+        }
+
+        var training = (await builder.BuildAsync()).ShouldBeSuccess();
 
         if (!published)
         {
@@ -108,13 +115,16 @@ public abstract class SearchIndexTest : IAsyncLifetime
         return training;
     }
 
-    /// <summary>Reads one entry back, tokens included, without the tracker answering from memory.</summary>
+    /// <summary>
+    /// Reads one entry back, tokens and topics included, without the tracker answering from memory.
+    /// </summary>
     protected async Task<TrainingSearchEntry?> EntryOfAsync(Guid trainingId)
     {
         Context.ChangeTracker.Clear();
 
         return await Context.Set<TrainingSearchEntry>()
             .Include(entry => entry.Terms)
+            .Include(entry => entry.Topics)
             .AsNoTracking()
             .FirstOrDefaultAsync(entry => entry.TrainingId == trainingId);
     }

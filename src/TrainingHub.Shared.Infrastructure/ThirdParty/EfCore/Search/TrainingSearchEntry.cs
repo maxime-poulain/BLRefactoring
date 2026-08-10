@@ -19,6 +19,8 @@ public sealed class TrainingSearchEntry
 {
     private readonly List<TrainingSearchTerm> _terms = [];
 
+    private readonly List<TrainingSearchTopic> _topics = [];
+
     /// <summary>
     /// Opens an entry for a training the index has not heard of yet.
     /// </summary>
@@ -50,6 +52,9 @@ public sealed class TrainingSearchEntry
     /// <summary>The tokens this entry is found by.</summary>
     public IReadOnlyCollection<TrainingSearchTerm> Terms => _terms.AsReadOnly();
 
+    /// <summary>The topics this entry is filed under.</summary>
+    public IReadOnlyCollection<TrainingSearchTopic> Topics => _topics.AsReadOnly();
+
     /// <summary>
     /// Rewrites the entry from the document the indexer just read back.
     /// </summary>
@@ -58,18 +63,22 @@ public sealed class TrainingSearchEntry
     /// <param name="isPublished">Whether the training itself is published.</param>
     /// <param name="isTrainerHidden">Whether its owner's catalog is out of public view.</param>
     /// <param name="terms">The tokens the title yields.</param>
+    /// <param name="topics">The canonical names of the topics the training declares.</param>
     /// <remarks>
-    /// Total rather than incremental: the tokens are cleared and rewritten, so re-indexing a renamed
-    /// training cannot leave it findable under the words of a title it no longer has.
+    /// Total rather than incremental: the tokens and the topics are cleared and rewritten, so
+    /// re-indexing an edited training cannot leave it findable under the words of a title it no
+    /// longer has — or filed under a topic it no longer declares.
     /// </remarks>
     public void Describe(
         Guid trainerId,
         string title,
         bool isPublished,
         bool isTrainerHidden,
-        IEnumerable<string> terms)
+        IEnumerable<string> terms,
+        IEnumerable<string> topics)
     {
         ArgumentNullException.ThrowIfNull(terms);
+        ArgumentNullException.ThrowIfNull(topics);
 
         TrainerId = trainerId;
         Title = title;
@@ -78,5 +87,8 @@ public sealed class TrainingSearchEntry
 
         _terms.Clear();
         _terms.AddRange(terms.Select(term => new TrainingSearchTerm(TrainingId, term)));
+
+        _topics.Clear();
+        _topics.AddRange(topics.Select(topic => new TrainingSearchTopic(TrainingId, topic)));
     }
 }
