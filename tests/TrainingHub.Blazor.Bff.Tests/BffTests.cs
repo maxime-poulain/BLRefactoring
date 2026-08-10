@@ -1,9 +1,16 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using AwesomeAssertions;
 using TrainingHub.Blazor.Client.Infrastructure;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -118,11 +125,20 @@ public sealed class BffTests : IDisposable
 
         // No `expires` attribute, deliberately: IsPersistent is false, so the browser drops the
         // cookie when it closes. The expiry that matters is inside the encrypted ticket —
-        // ExpiresUtc, taken from the JWT's own `exp` — and the handler refuses the ticket past it.
-        // Which is why the assertion below is about configuration rather than about this header:
-        // nothing in a Set-Cookie can show whether the ticket will be renewed.
+        // ExpiresUtc, taken from the JWT's own `exp` — and nothing in a Set-Cookie header can show
+        // it. So the ticket is opened rather than believed: the assertion below unprotects the
+        // cookie with the host's own ticket format, because deleting the one line that copies the
+        // expiry changes no header and, until this test, failed nothing — the handler would fall
+        // back to its fourteen-day default and the session would outlive the token by two weeks.
         cookie.Should().NotContainEquivalentOf("expires=");
         cookie.Should().NotContainEquivalentOf("max-age=");
+
+        var ticket = Unprotect(cookie);
+        var expiry = new JwtSecurityTokenHandler().ReadJwtToken(_token).ValidTo;
+
+        ticket.Properties.ExpiresUtc.Should().Be(new DateTimeOffset(expiry),
+            "the cookie dies with the token it carries (ADR 0009), and this line is the half of " +
+            "that sentence the Set-Cookie header cannot prove");
     }
 
     /// <summary>
@@ -359,6 +375,51 @@ public sealed class BffTests : IDisposable
     }
 
     /// <summary>
+    /// A head request this page asked for is admitted as a safe read.
+    /// </summary>
+    /// <remarks>
+    /// The relaxation admits both safe methods, not just GET — a preload or a cache revalidation
+    /// asks with HEAD and carries no application header, exactly as an image does. Asserted
+    /// because the guard names the two methods one by one, and dropping HEAD would refuse those
+    /// requests while every other fact here stayed green.
+    /// </remarks>
+    [Fact]
+    public async Task A_head_request_this_page_asked_for_is_admitted_as_a_safe_read()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Head, AnonymousPath);
+
+        request.Headers.Add("Sec-Fetch-Site", "same-origin");
+
+        var response = await _browser.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        _factory.ProxiedApi.Requests.Should().ContainSingle();
+    }
+
+    /// <summary>
+    /// A read a sibling site asked for is refused.
+    /// </summary>
+    /// <remarks>
+    /// <c>same-site</c> is not <c>same-origin</c>: a page on a sibling subdomain earns the former
+    /// and must be refused all the same, because the attestation the guard trusts is "this very
+    /// origin asked" and nothing looser. The suite sent <c>same-origin</c> and <c>cross-site</c>;
+    /// the value between them is the one a typo in the guard would quietly admit.
+    /// </remarks>
+    [Fact]
+    public async Task A_read_a_sibling_site_asked_for_is_refused()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, AnonymousPath);
+
+        request.Headers.Add("Sec-Fetch-Site", "same-site");
+        request.Headers.Add("Sec-Fetch-Dest", "image");
+
+        var response = await _browser.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        _factory.ProxiedApi.Requests.Should().BeEmpty();
+    }
+
+    /// <summary>
     /// An image another site asked for is refused.
     /// </summary>
     /// <remarks>
@@ -441,6 +502,28 @@ public sealed class BffTests : IDisposable
     }
 
     /// <summary>
+    /// Logout clears the cookie rather than leaving it to expire.
+    /// </summary>
+    /// <remarks>
+    /// The sibling fact asserts the session is over — a later call answers 401. This one asserts
+    /// the browser is told so: sign-out's 204 must carry the <c>Set-Cookie</c> that deletes
+    /// <c>__Host-bff</c>, or the browser keeps sending a dead ticket until it expires on its own.
+    /// </remarks>
+    [Fact]
+    public async Task Logout_clears_the_cookie_rather_than_leaving_it_to_expire()
+    {
+        await SignInAsync();
+
+        var logout = await SendAsync(HttpMethod.Post, LogoutPath);
+
+        var cookie = logout.Headers.GetValues("Set-Cookie").Single();
+
+        cookie.Should().StartWith("__Host-bff=;", "signing out empties the cookie");
+        cookie.Should().ContainEquivalentOf("expires=Thu, 01 Jan 1970",
+            "a deletion is an expiry in the past — anything else leaves the cookie in the jar");
+    }
+
+    /// <summary>
     /// Logout without the application header is refused.
     /// </summary>
     [Fact]
@@ -457,10 +540,101 @@ public sealed class BffTests : IDisposable
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
+    // ---------------------------------------------------------------- the host's own wiring
+
+    /// <summary>
+    /// The bff refuses a configuration without the apis address.
+    /// </summary>
+    /// <remarks>
+    /// The guard in <c>AddBff</c> exists so a missing address fails at startup, loudly, instead of
+    /// as an obscure connection error on the first sign-in. Asserted against the extension
+    /// directly rather than a rebuilt host: the factory's configuration hooks run before the
+    /// application's own files load, so a host-level override cannot make the value disappear —
+    /// and the guard is a line of <c>AddBff</c>, not of the host around it.
+    /// </remarks>
+    [Fact]
+    public void The_bff_refuses_a_configuration_without_the_apis_address()
+    {
+        var registering = () => new ServiceCollection().AddBff(new ConfigurationBuilder().Build());
+
+        registering.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Api:BaseAddress*",
+                "the BFF forwards to the API and has no sensible default — a localhost address in " +
+                "production would fail obscurely, and silently");
+    }
+
+    /// <summary>
+    /// An authorization denial answers 403 rather than a redirect.
+    /// </summary>
+    /// <remarks>
+    /// The caller is a fetch client, so the cookie handler's two redirects are rewritten as status
+    /// codes. The 401 half is exercised by every fact that calls without a session; the 403 half —
+    /// <c>OnRedirectToAccessDenied</c> — had no path through the production routes, so this fact
+    /// drives the handler's forbid directly and asserts the rewrite, not a 302 to a page that does
+    /// not exist server-side.
+    /// </remarks>
+    [Fact]
+    public async Task An_authorization_denial_answers_403_rather_than_a_redirect()
+    {
+        using var probed = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton<IStartupFilter>(new ForbidProbe())));
+        using var browser = probed.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"),
+            AllowAutoRedirect = false,
+            HandleCookies = true
+        });
+
+        var response = await browser.GetAsync(ForbidProbe.Path);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden,
+            "a denial is a status code here, never a redirect to an AccessDenied page");
+        response.Headers.Location.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Prepends one probe endpoint that asks the cookie handler to forbid, so the rewrite of the
+    /// AccessDenied redirect is observable without inventing a production route that denies.
+    /// </summary>
+    private sealed class ForbidProbe : IStartupFilter
+    {
+        public const string Path = "/forbid-probe";
+
+        public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) =>
+            app =>
+            {
+                app.Use(async (context, nextMiddleware) =>
+                {
+                    if (context.Request.Path == Path)
+                    {
+                        await context.ForbidAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                        return;
+                    }
+
+                    await nextMiddleware(context);
+                });
+                next(app);
+            };
+    }
+
     // ---------------------------------------------------------------- helpers
 
     private static HttpContent Credentials() =>
         JsonContent.Create(new { username = "alice", password = "Password1!" });
+
+    /// <summary>The ticket inside the session cookie, opened with the host's own format.</summary>
+    private AuthenticationTicket Unprotect(string setCookie)
+    {
+        const string Name = "__Host-bff=";
+        var value = setCookie[Name.Length..setCookie.IndexOf(';', StringComparison.Ordinal)];
+
+        return _factory.Services
+            .GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
+            .Get(CookieAuthenticationDefaults.AuthenticationScheme)
+            .TicketDataFormat
+            .Unprotect(value)!;
+    }
 
     private Task<HttpResponseMessage> SignInAsync() =>
         SendAsync(HttpMethod.Post, LoginPath, Credentials());

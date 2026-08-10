@@ -84,6 +84,9 @@ public sealed class UploadedFileTransformerTests
         await new UploadedFileTransformer().TransformAsync(document, null!, CancellationToken.None);
 
         // Assert
+        // "Changes nothing" asserted as such: the one schema is still there and still alone. The
+        // key alone could survive a transformer that rewrote everything around it.
+        document.Components.Schemas.Should().HaveCount(1);
         document.Components.Schemas.Should().ContainKey("TrainerHttpResponse");
     }
 
