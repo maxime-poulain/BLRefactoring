@@ -1523,20 +1523,31 @@ namespace TrainingHub.GeneratedClients
     {
         /// <param name="term">Only trainings whose title matches every word of this, or the whole catalog when it is
         /// <br/>absent.</param>
+        /// <param name="topic">Only trainings filed under this topic, or every topic when it is absent.</param>
         /// <param name="page">The page to return, counted from 1.</param>
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, int? page, int? pageSize);
+        System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, string? topic, int? page, int? pageSize);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="term">Only trainings whose title matches every word of this, or the whole catalog when it is
         /// <br/>absent.</param>
+        /// <param name="topic">Only trainings filed under this topic, or every topic when it is absent.</param>
         /// <param name="page">The page to return, counted from 1.</param>
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, string? topic, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken);
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<CatalogTopicsHttpResponse> GetTopicsAsync();
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<CatalogTopicsHttpResponse> GetTopicsAsync(System.Threading.CancellationToken cancellationToken);
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
@@ -1592,23 +1603,25 @@ namespace TrainingHub.GeneratedClients
 
         /// <param name="term">Only trainings whose title matches every word of this, or the whole catalog when it is
         /// <br/>absent.</param>
+        /// <param name="topic">Only trainings filed under this topic, or every topic when it is absent.</param>
         /// <param name="page">The page to return, counted from 1.</param>
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, int? page, int? pageSize)
+        public virtual System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, string? topic, int? page, int? pageSize)
         {
-            return SearchTrainingsAsync(term, page, pageSize, System.Threading.CancellationToken.None);
+            return SearchTrainingsAsync(term, topic, page, pageSize, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="term">Only trainings whose title matches every word of this, or the whole catalog when it is
         /// <br/>absent.</param>
+        /// <param name="topic">Only trainings filed under this topic, or every topic when it is absent.</param>
         /// <param name="page">The page to return, counted from 1.</param>
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, string? topic, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -1627,6 +1640,10 @@ namespace TrainingHub.GeneratedClients
                     if (term != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("Term")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(term, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (topic != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("Topic")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(topic, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (page != null)
                     {
@@ -1679,6 +1696,84 @@ namespace TrainingHub.GeneratedClients
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<CatalogTopicsHttpResponse> GetTopicsAsync()
+        {
+            return GetTopicsAsync(System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<CatalogTopicsHttpResponse> GetTopicsAsync(System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                
+                    // Operation Path: "Catalog/topics"
+                    urlBuilder_.Append("Catalog/topics");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<CatalogTopicsHttpResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
                         }
                         else
                         {
@@ -4588,6 +4683,64 @@ namespace TrainingHub.GeneratedClients
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("withholdingReason")]
         public string? WithholdingReason { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// One facet of the offered catalog, as `GET /Catalog/topics` publishes it.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class CatalogTopicHttpResponse
+    {
+
+        /// <summary>
+        /// The topic's canonical name, as the domain spells it.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("topic")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Topic { get; set; } = default!;
+
+        /// <summary>
+        /// How many offered trainings are filed under it.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("offeredCount")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^-?(?:0|[1-9]\d*)$")]
+        public int OfferedCount { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// The catalog's facets, as `GET /Catalog/topics` publishes them.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class CatalogTopicsHttpResponse
+    {
+
+        /// <summary>
+        /// The facets, alphabetically by topic; empty when nothing is on offer.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("topics")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.List<CatalogTopicHttpResponse> Topics { get; set; } = new System.Collections.Generic.List<CatalogTopicHttpResponse>();
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

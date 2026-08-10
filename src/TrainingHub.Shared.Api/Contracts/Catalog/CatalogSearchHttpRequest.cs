@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 
 namespace TrainingHub.Shared.Api.Contracts.Catalog;
 
@@ -32,4 +33,16 @@ public sealed class CatalogSearchHttpRequest
     /// </remarks>
     [StringLength(100)]
     public string? Term { get; init; }
+
+    /// <summary>
+    /// Only trainings filed under this topic, or every topic when it is absent.
+    /// </summary>
+    /// <remarks>
+    /// A name from the domain's closed set, refused at model binding when it is anything else —
+    /// <c>[KnownTopic]</c> asks the domain rather than restating its list. Composable with the
+    /// term: a visitor can browse a shelf and search along it in the same breath (ADR 0069).
+    /// </remarks>
+    [KnownTopic(typeof(Topic))]
+    [StringLength(50)]
+    public string? Topic { get; init; }
 }

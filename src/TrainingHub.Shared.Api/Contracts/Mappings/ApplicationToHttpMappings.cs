@@ -156,6 +156,26 @@ public static class ApplicationToHttpMappings
         this IEnumerable<CatalogTrainingDto> trainings) => [.. trainings.Select(ToHttp)];
 
     /// <summary>
+    /// Publishes one facet of the offered catalog (ADR 0069).
+    /// </summary>
+    public static CatalogTopicHttpResponse ToHttp(this TopicFacetDto facet)
+    {
+        ArgumentNullException.ThrowIfNull(facet);
+
+        return new CatalogTopicHttpResponse
+        {
+            Topic = facet.Topic,
+            OfferedCount = facet.OfferedCount
+        };
+    }
+
+    /// <summary>
+    /// Publishes all of them, as the document <c>GET /Catalog/topics</c> answers.
+    /// </summary>
+    public static CatalogTopicsHttpResponse ToHttp(this IEnumerable<TopicFacetDto> facets) =>
+        new() { Topics = [.. facets.Select(ToHttp)] };
+
+    /// <summary>
     /// Publishes one offered training in full, for the visitor who followed a search result
     /// (ADR 0062).
     /// </summary>

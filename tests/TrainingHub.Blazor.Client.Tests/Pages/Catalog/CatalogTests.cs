@@ -28,7 +28,7 @@ public sealed class CatalogTests : ComponentTest
 
         _catalog
             .Setup(client => client.SearchTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
             .ReturnsAsync(Page(totalCount: 0));
     }
 
@@ -40,7 +40,7 @@ public sealed class CatalogTests : ComponentTest
     {
         Render<CatalogPage>();
 
-        _catalog.Verify(client => client.SearchTrainingsAsync(null, 1, null), Times.Once);
+        _catalog.Verify(client => client.SearchTrainingsAsync(null, null, 1, null), Times.Once);
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public sealed class CatalogTests : ComponentTest
 
         _catalog
             .Setup(client => client.SearchTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
             .ReturnsAsync(Page(totalCount: 1, Offered(trainingId, "Domain Driven Design")));
 
         var page = Render<CatalogPage>();
@@ -99,7 +99,7 @@ public sealed class CatalogTests : ComponentTest
         page.Find("input").Input("domain");
 
         page.WaitForAssertion(() => _catalog.Verify(
-            client => client.SearchTrainingsAsync("domain", 1, null),
+            client => client.SearchTrainingsAsync("domain", null, 1, null),
             Times.Once));
     }
 
@@ -111,7 +111,7 @@ public sealed class CatalogTests : ComponentTest
     {
         _catalog
             .Setup(client => client.SearchTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
             .ThrowsAsync(new HttpRequestException("no route to host"));
 
         Render<CatalogPage>();
@@ -119,6 +119,89 @@ public sealed class CatalogTests : ComponentTest
         Shown().Should().ContainSingle()
             .Which.Message.Should().Be("The catalog could not be loaded.");
     }
+
+    /// <summary>
+    /// Renders, topics on offer, shows one chip per facet with its count.
+    /// </summary>
+    /// <remarks>
+    /// The facets come from their own endpoint rather than from the page of results, so the chips
+    /// describe the whole catalog while the table describes the current question (ADR 0069).
+    /// </remarks>
+    [Fact]
+    public void Renders_TopicsOnOffer_ShowsOneChipPerFacetWithItsCount()
+    {
+        _catalog
+            .Setup(client => client.GetTopicsAsync())
+            .ReturnsAsync(Facets(Facet("Programming", 3), Facet("Design", 1)));
+
+        var page = Render<CatalogPage>();
+
+        page.Markup.Should().Contain("Programming (3)");
+        page.Markup.Should().Contain("Design (1)");
+    }
+
+    /// <summary>
+    /// Clicking a topic chip, asks the server for that shelf on the first page.
+    /// </summary>
+    /// <remarks>
+    /// The page reset is the half worth pinning, exactly as it is for the term: a visitor deep in
+    /// the whole catalog who narrows to one topic would otherwise be shown a page the shorter
+    /// shelf does not have.
+    /// </remarks>
+    [Fact]
+    public void ClickingATopicChip_AsksTheServerForThatShelfOnTheFirstPage()
+    {
+        _catalog
+            .Setup(client => client.GetTopicsAsync())
+            .ReturnsAsync(Facets(Facet("Programming", 3)));
+
+        var page = Render<CatalogPage>();
+
+        Chip(page, "Programming").Click();
+
+        page.WaitForAssertion(() => _catalog.Verify(
+            client => client.SearchTrainingsAsync(null, "Programming", 1, null),
+            Times.Once));
+    }
+
+    /// <summary>
+    /// Clicking the selected chip again, lifts the filter.
+    /// </summary>
+    /// <remarks>
+    /// A facet is a lens, not a destination: the second click asks the unfiltered question again,
+    /// and the only unfiltered searches are the render's and this one.
+    /// </remarks>
+    [Fact]
+    public void ClickingTheSelectedChipAgain_LiftsTheFilter()
+    {
+        _catalog
+            .Setup(client => client.GetTopicsAsync())
+            .ReturnsAsync(Facets(Facet("Programming", 3)));
+
+        var page = Render<CatalogPage>();
+
+        Chip(page, "Programming").Click();
+        page.WaitForAssertion(() => Chip(page, "Programming").ClassList.Should().Contain("mud-chip-filled"));
+        Chip(page, "Programming").Click();
+
+        page.WaitForAssertion(() => _catalog.Verify(
+            client => client.SearchTrainingsAsync(null, null, 1, null),
+            Times.Exactly(2)));
+    }
+
+    private static AngleSharp.Dom.IElement Chip(
+        IRenderedComponent<CatalogPage> page, string topic) =>
+        page.FindAll(".mud-chip").Single(chip => chip.TextContent.Contains(
+            topic, StringComparison.Ordinal));
+
+    private static CatalogTopicsHttpResponse Facets(params CatalogTopicHttpResponse[] facets) =>
+        new() { Topics = [.. facets] };
+
+    private static CatalogTopicHttpResponse Facet(string topic, int offeredCount) => new()
+    {
+        Topic = topic,
+        OfferedCount = offeredCount
+    };
 
     private static CatalogTrainingHttpResponse Offered(Guid trainingId, string title) => new()
     {

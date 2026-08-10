@@ -1,4 +1,5 @@
 using FluentValidation;
+using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 
 namespace TrainingHub.DDDWithCqrs.Application.Features.Catalog.Search;
 
@@ -6,14 +7,14 @@ namespace TrainingHub.DDDWithCqrs.Application.Features.Catalog.Search;
 /// Checks <see cref="SearchCatalogQuery"/> before any handler sees it.
 /// </summary>
 /// <remarks>
-/// One rule, and it is the one the HTTP contract already carries — deliberately, for the reason
+/// Two rules, and both are ones the HTTP contract already carries — deliberately, for the reason
 /// ADR 0046 gives: the two answer different callers. The contract answers a request and this
 /// answers anything that reaches <c>IQueryDispatcher</c>, and the application layer never assumes
 /// the boundary checked first.
 /// <para>
-/// A term longer than any title can match nothing, so refusing it says more than an empty page
-/// would — the same argument ADR 0055 makes for refusing an unknown status rather than answering
-/// it with a silence.
+/// A term longer than any title can match nothing, and a topic the domain does not spell names no
+/// shelf, so refusing either says more than an empty page would — the same argument ADR 0055 makes
+/// for refusing an unknown status rather than answering it with a silence.
 /// </para>
 /// </remarks>
 public sealed class SearchCatalogQueryValidator : AbstractValidator<SearchCatalogQuery>
@@ -26,8 +27,17 @@ public sealed class SearchCatalogQueryValidator : AbstractValidator<SearchCatalo
     /// <summary>
     /// Builds the rules.
     /// </summary>
-    public SearchCatalogQueryValidator() =>
+    public SearchCatalogQueryValidator()
+    {
         RuleFor(query => query.Term)
             .MaximumLength(MaximumTermLength)
             .WithMessage("A search term cannot be longer than a title.");
+
+        // The domain is asked rather than a list restated, exactly as [KnownTopic] asks it at the
+        // boundary (ADR 0069). Null passes — no filter is an ordinary question.
+        RuleFor(query => query.Topic)
+            .Must(topic => Topic.TryFromName(topic, out _))
+            .When(query => query.Topic is not null)
+            .WithMessage("A topic filter must name a topic this catalog knows.");
+    }
 }

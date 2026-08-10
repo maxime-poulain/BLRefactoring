@@ -133,6 +133,121 @@ public abstract class CatalogSearchTest<TFactory>(TFactory factory) : Integratio
     }
 
     /// <summary>
+    /// The catalogs facets, follow what is offered, to a caller with no token.
+    /// </summary>
+    /// <remarks>
+    /// The whole chain of ADR 0069 in one fact: publishing files the training under its topic
+    /// through the outbox, and withdrawing takes the shelf away — absent rather than zero, because
+    /// a facet is a way into the catalog and an empty shelf leads nowhere.
+    /// </remarks>
+    [Fact]
+    public async Task TheCatalogsFacets_FollowWhatIsOffered_ToACallerWithNoToken()
+    {
+        var trainer = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+
+        var created = await trainer.PostAsJsonAsync(
+            "/Training", TrainingRequests.Valid("Leading Without Fear", topics: ["Leadership"]));
+        created.StatusCode.Should().Be(HttpStatusCode.Created);
+        var trainingId = await created.Content.ReadFromJsonAsync<Guid>();
+
+        var facets = await WaitForFacetsAsync(holds: "Leadership");
+        facets.Should().ContainKey("Leadership").WhoseValue.Should().BeGreaterThanOrEqualTo(1);
+
+        (await trainer.PostAsync($"/Training/{trainingId}/unpublish", content: null))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        (await WaitForFacetsAsync(holdsNot: "Leadership")).Should().NotContainKey("Leadership",
+            "a facet nothing offered declares is absent rather than zero (ADR 0069)");
+    }
+
+    /// <summary>
+    /// Searching a shelf, answers only trainings filed under it.
+    /// </summary>
+    /// <remarks>
+    /// Both trainings are waited into the unfiltered catalog first, so the absence the filtered
+    /// read asserts is a refusal rather than an index that has not caught up yet.
+    /// </remarks>
+    [Fact]
+    public async Task SearchingAShelf_AnswersOnlyTrainingsFiledUnderIt()
+    {
+        var trainer = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+
+        var design = await trainer.PostAsJsonAsync(
+            "/Training", TrainingRequests.Valid("Sketching Interfaces", topics: ["Design"]));
+        design.StatusCode.Should().Be(HttpStatusCode.Created);
+        var designId = await design.Content.ReadFromJsonAsync<Guid>();
+
+        var marketing = await trainer.PostAsJsonAsync(
+            "/Training", TrainingRequests.Valid("Selling Interfaces", topics: ["Marketing"]));
+        marketing.StatusCode.Should().Be(HttpStatusCode.Created);
+        var marketingId = await marketing.Content.ReadFromJsonAsync<Guid>();
+
+        (await WaitForCatalogAsync("interfaces", holds: designId)).Should().Contain(designId);
+        (await WaitForCatalogAsync("interfaces", holds: marketingId)).Should().Contain(marketingId);
+
+        var anonymous = Factory.CreateClient();
+        var page = await anonymous.GetAsync(
+            "/Catalog/trainings?term=interfaces&topic=Design&page=1&pageSize=50");
+        page.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await page.Content.ReadFromJsonAsync<JsonElement>();
+        var shelf = body.GetProperty("items").EnumerateArray()
+            .Select(item => item.GetProperty("id").GetGuid())
+            .ToList();
+
+        shelf.Should().Contain(designId).And.NotContain(marketingId);
+    }
+
+    /// <summary>
+    /// An unknown topic, is refused at the door.
+    /// </summary>
+    /// <remarks>
+    /// <c>[KnownTopic]</c> answers at model binding, before anything asks the index — a topic the
+    /// domain does not spell names no shelf, and refusing says more than an empty page would
+    /// (ADR 0069).
+    /// </remarks>
+    [Fact]
+    public async Task AnUnknownTopic_IsRefusedAtTheDoor()
+    {
+        var anonymous = Factory.CreateClient();
+
+        var page = await anonymous.GetAsync("/Catalog/trainings?topic=Astrology&page=1&pageSize=10");
+
+        page.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    private async Task<IReadOnlyDictionary<string, int>> WaitForFacetsAsync(
+        string? holds = null,
+        string? holdsNot = null)
+    {
+        var timeout = TimeSpan.FromSeconds(15);
+        var started = DateTime.UtcNow;
+        var anonymous = Factory.CreateClient();
+        IReadOnlyDictionary<string, int> lastSeen = new Dictionary<string, int>();
+
+        while (DateTime.UtcNow - started < timeout)
+        {
+            var response = await anonymous.GetAsync("/Catalog/topics");
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+            lastSeen = body.GetProperty("topics").EnumerateArray().ToDictionary(
+                facet => facet.GetProperty("topic").GetString()!,
+                facet => facet.GetProperty("offeredCount").GetInt32());
+
+            if ((holds is null || lastSeen.ContainsKey(holds))
+                && (holdsNot is null || !lastSeen.ContainsKey(holdsNot)))
+            {
+                return lastSeen;
+            }
+
+            await Task.Delay(100);
+        }
+
+        return lastSeen;
+    }
+
+    /// <summary>
     /// Polls the public catalog until it holds — or stops holding — the training, and answers the
     /// identifiers of the page it last read.
     /// </summary>

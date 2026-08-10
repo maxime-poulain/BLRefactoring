@@ -33,6 +33,7 @@ public sealed class SearchCatalogQueryHandler(ITrainingSearchQuery trainingSearc
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        return await trainingSearch.SearchAsync(request.Term, request.Paging, cancellationToken);
+        return await trainingSearch.SearchAsync(
+            request.Term, request.Topic, request.Paging, cancellationToken);
     }
 }

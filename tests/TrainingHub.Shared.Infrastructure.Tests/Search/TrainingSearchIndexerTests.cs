@@ -106,6 +106,32 @@ public sealed class TrainingSearchIndexerTests : SearchIndexTest
 
         (await Context.Set<TrainingSearchEntry>().CountAsync()).Should().Be(1);
         (await Context.Set<TrainingSearchTerm>().CountAsync()).Should().Be(2);
+        (await Context.Set<TrainingSearchTopic>().CountAsync()).Should().Be(1,
+            "the topics are rewritten with the tokens, never appended (ADR 0069)");
+    }
+
+    /// <summary>
+    /// Index async, a training with topics, files it under each of them.
+    /// </summary>
+    /// <remarks>
+    /// The browse half of the document (ADR 0069): the names stored are the domain's canonical
+    /// ones, read from the write model in the same projection as the title, so a facet needs no
+    /// translation on the way out.
+    /// </remarks>
+    [Fact]
+    public async Task IndexAsync_ATrainingWithTopics_FilesItUnderEachOfThem()
+    {
+        var trainer = await GivenTrainerAsync();
+        var training = await GivenTrainingAsync(
+            trainer, "Crossing Shelves", topics: ["Programming", "Design"]);
+
+        await Indexer.IndexAsync(training.Id.Value, trainer.Id.Value);
+
+        var entry = await EntryOfAsync(training.Id.Value);
+
+        entry.Should().NotBeNull();
+        entry!.Topics.Select(topic => topic.Topic)
+            .Should().BeEquivalentTo("Programming", "Design");
     }
 
     /// <summary>
@@ -147,6 +173,8 @@ public sealed class TrainingSearchIndexerTests : SearchIndexTest
 
         (await EntryOfAsync(training.Id.Value)).Should().BeNull();
         (await Context.Set<TrainingSearchTerm>().CountAsync()).Should().Be(0);
+        (await Context.Set<TrainingSearchTopic>().CountAsync()).Should().Be(0,
+            "the topics ride the same cascading foreign key as the tokens (ADR 0069)");
     }
 
     /// <summary>

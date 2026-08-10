@@ -31,15 +31,15 @@ public sealed class CatalogApplicationServiceTests
         var paging = new PageRequest { Page = 2, PageSize = 10 };
 
         _trainingSearch
-            .Setup(search => search.SearchAsync(It.IsAny<string?>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
+            .Setup(search => search.SearchAsync(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PagedResult<CatalogTrainingDto>([], 2, 10, 0));
 
         var sut = new CatalogApplicationService(_trainingSearch.Object, _catalogDetail.Object);
 
-        await sut.SearchAsync("domain", paging);
+        await sut.SearchAsync("domain", "Programming", paging);
 
         _trainingSearch.Verify(
-            search => search.SearchAsync("domain", paging, It.IsAny<CancellationToken>()),
+            search => search.SearchAsync("domain", "Programming", paging, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -60,12 +60,12 @@ public sealed class CatalogApplicationServiceTests
             TotalCount: 1);
 
         _trainingSearch
-            .Setup(search => search.SearchAsync(It.IsAny<string?>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
+            .Setup(search => search.SearchAsync(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(answered);
 
         var sut = new CatalogApplicationService(_trainingSearch.Object, _catalogDetail.Object);
 
-        var page = await sut.SearchAsync(term: null, new PageRequest());
+        var page = await sut.SearchAsync(term: null, topic: null, new PageRequest());
 
         page.Should().BeSameAs(answered);
     }
@@ -113,5 +113,26 @@ public sealed class CatalogApplicationServiceTests
         var offered = await sut.FindOfferedAsync(Guid.CreateVersion7());
 
         offered.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Get facets async, hands back what the index answered.
+    /// </summary>
+    /// <remarks>
+    /// The same pass-through the search is, and honestly so (ADR 0049, ADR 0069): over a read
+    /// model there is nothing for the two stacks to differ about.
+    /// </remarks>
+    [Fact]
+    public async Task GetFacetsAsync_HandsBackWhatTheIndexAnswered()
+    {
+        var facets = new List<TopicFacetDto> { new() { Topic = "Design", OfferedCount = 2 } };
+
+        _trainingSearch
+            .Setup(search => search.FacetsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(facets);
+
+        var sut = new CatalogApplicationService(_trainingSearch.Object, _catalogDetail.Object);
+
+        (await sut.GetFacetsAsync()).Should().BeSameAs(facets);
     }
 }

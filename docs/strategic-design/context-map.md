@@ -150,12 +150,14 @@ eventually rather than at once. The port carries no document, so the adapter rea
 training a fact spoke about; a public visibility composed from two aggregates and stored nowhere on
 the write side (ADR 0050, ADR 0056) is stored here, which is what a read model is for.
 
-Its readers are the two anonymous endpoints of this API, `GET /Catalog/trainings` and
-`GET /Catalog/trainings/{id}`, with a screen above each since ADR 0062. The second reads this
+Its readers are the three anonymous endpoints of this API — `GET /Catalog/trainings`,
+`GET /Catalog/trainings/{id}` and `GET /Catalog/topics` — with a screen above the first two since
+ADR 0062, and the catalog's facet chips over the third since ADR 0069. The second reads this
 index for one thing only — whether the training is on offer — and reads the write model for what it
 says, which is the shape a title-only index leaves: a description copied here would go stale on the
 next edit, and a trainer's name copied here would go stale on a rename no fact carries. Catalog
-Discovery as a *context* — facets, a store of its own, a language of its own — still does not exist.
+Discovery as a *context* — a store of its own, a language of its own — still does not exist,
+though its first word now runs: the facets ADR 0069 counts from this index.
 
 **Why a transfer is one of the nine.** Nothing about the training's content changes when it
 changes hands, which is why it looks like an ownership detail and is not: the index is what a
@@ -222,8 +224,11 @@ but the subscriber still does not exist. What ADR 0050 added to that list is the
 what a public catalog must *not* show, and ADR 0056 the ability to express it about a trainer
 rather than about each of their trainings — which is what makes this context buildable rather than
 merely announced. ADR 0059 went one step further and built the index those facts maintain, so what
-is missing here is no longer a store: it is a page, its facets, its ordering by anything other than
-a title, and whatever else a discovery experience turns out to be.
+is missing here is no longer a store: it is a trainer's public page, an ordering by anything other
+than a title, and whatever else a discovery experience turns out to be. The facets arrived with
+ADR 0069 — each topic at least one offered training declares, counted from this index, browsable at
+`GET /Catalog/topics` — and needed no store of their own, which is itself evidence that a page over
+the same database is still the honest size of this context.
 
 ---
 

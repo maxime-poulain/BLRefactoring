@@ -32,6 +32,12 @@ public interface ITrainingSearchQuery
     /// What to look for. A blank term is no term at all, and answers the offered catalog — the
     /// same reading the trainers' listing gives it (ADR 0055).
     /// </param>
+    /// <param name="topic">
+    /// The canonical name of a topic to browse, or <see langword="null"/> for all of them. The
+    /// boundary and the validators refuse a name the domain does not spell, so what arrives here
+    /// is <c>Topic</c>'s own form — a name that is not matches nothing, which is the honest answer
+    /// to a question no shelf carries (ADR 0069).
+    /// </param>
     /// <param name="paging">The page asked for, under the published cap (ADR 0029).</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>
@@ -40,6 +46,20 @@ public interface ITrainingSearchQuery
     /// </returns>
     Task<PagedResult<CatalogTrainingDto>> SearchAsync(
         string? term,
+        string? topic,
         PageRequest paging,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The facets of the offered catalog: each topic at least one offered training declares, with
+    /// its count.
+    /// </summary>
+    /// <remarks>
+    /// Counted over the same composed visibility the search reads, so a suspension or a
+    /// withholding moves these numbers the moment its consumer runs — a facet never promises a
+    /// shelf the search would answer empty (ADR 0069).
+    /// </remarks>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The facets, alphabetically by topic name; empty when nothing is on offer.</returns>
+    Task<IReadOnlyList<TopicFacetDto>> FacetsAsync(CancellationToken cancellationToken = default);
 }

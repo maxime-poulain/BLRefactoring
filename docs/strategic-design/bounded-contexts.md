@@ -354,6 +354,10 @@ know which of the things below were built for a context that may never be extrac
   `GET /Trainer/{id}/photo` stays where it is, addressed by identifier rather than by `me`, and now
   says `max-age` with an `ETag` instead of `immutable` — its address does not name the photo, so its
   bytes do change.
+- **The catalog's facets** exist (ADR 0069): the index files each entry under the topics its
+  training declares, `GET /Catalog/topics` counts the offered shelves — absent rather than zero —
+  and the search takes a `topic`. The first word of this context's expected language, spoken by
+  running code.
 - **The CQRS query side** already projects straight into DTOs without loading aggregates, which is
   the shape a public read model wants.
 
@@ -361,9 +365,10 @@ know which of the things below were built for a context that may never be extrac
 outbox already stores, with its own read model. It would own no aggregate — a discovery context
 reads, it does not decide. What is missing is no longer a store, and no longer the experience
 either: ADR 0059 built the one and ADR 0062 the other. What is missing is the reason to extract a
-context — facets, a trainer's public page, a store shaped by how a visitor browses rather than by
-how a trainer writes. Until one of those is wanted, a page over the same database is the honest
-size of it.
+context — a trainer's public page, an ordering by anything other than a title, a store shaped by
+how a visitor browses rather than by how a trainer writes. The facets were on that list and
+arrived without needing one (ADR 0069), which is itself evidence: until something on it cannot be
+served this way, a page over the same database is the honest size of it.
 
 **Expected language:** *catalog*, *search result*, *facet*, *listing* — deliberately different
 words from the write side, because a search result is not a `Training`.

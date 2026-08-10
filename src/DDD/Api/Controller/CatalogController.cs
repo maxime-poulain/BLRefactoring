@@ -43,7 +43,7 @@ public sealed class CatalogController(ICatalogApplicationService catalogApplicat
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
     /// <returns>
     /// 200 OK with one page of trainings on offer.
-    /// 400 Bad Request when the term is too long or the page is out of range.
+    /// 400 Bad Request when the term is too long, the topic is unknown or the page is out of range.
     /// </returns>
     [HttpGet("trainings")]
     [ProducesResponseType(typeof(PagedHttpResponse<CatalogTrainingHttpResponse>), StatusCodes.Status200OK)]
@@ -54,9 +54,37 @@ public sealed class CatalogController(ICatalogApplicationService catalogApplicat
         CancellationToken cancellationToken = default)
     {
         var page = await catalogApplicationService.SearchAsync(
-            search?.Term, pagination.ToPageRequest(), cancellationToken);
+            search?.Term,
+            // Blank is what an empty query parameter binds to, and it asks for no filter rather
+            // than for a topic called nothing — the same reading the status filters give it.
+            string.IsNullOrWhiteSpace(search?.Topic) ? null : search.Topic,
+            pagination.ToPageRequest(),
+            cancellationToken);
 
         return Ok(page.ToHttp(trainings => trainings.ToHttp()));
+    }
+
+    /// <summary>
+    /// Lists the catalog's facets: each topic at least one offered training declares, with its
+    /// count.
+    /// </summary>
+    /// <remarks>
+    /// The browse half of the search above (ADR 0069). Counted over the same composed visibility
+    /// the search reads, so a suspension or a withholding moves these numbers the moment its
+    /// consumer runs — a facet never promises a shelf the search would answer empty.
+    /// </remarks>
+    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
+    /// <returns>
+    /// 200 OK with the facets, alphabetically by topic; empty when nothing is on offer.
+    /// </returns>
+    [HttpGet("topics")]
+    [ProducesResponseType(typeof(CatalogTopicsHttpResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<CatalogTopicsHttpResponse>> GetTopicsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var facets = await catalogApplicationService.GetFacetsAsync(cancellationToken);
+
+        return Ok(facets.ToHttp());
     }
 
     /// <summary>

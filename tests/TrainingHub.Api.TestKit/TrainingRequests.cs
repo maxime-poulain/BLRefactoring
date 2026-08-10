@@ -17,16 +17,20 @@ public static class TrainingRequests
     /// <summary>
     /// A creation request that passes every data annotation and every domain rule.
     /// </summary>
-    /// <param name="title">The title, which is the only field a test usually needs to vary — it is
+    /// <param name="title">The title, which is the field a test usually needs to vary — it is
     /// what the uniqueness rule is about.</param>
-    public static CreateTrainingHttpRequest Valid(string title = "Valid training title") => new()
-    {
-        Title = title,
-        Description = "A valid training description for integration testing",
-        Prerequisites = "Basic programming knowledge required",
-        AcquiredSkills = "Advanced design patterns mastery",
-        Topics = ["Programming"]
-    };
+    /// <param name="topics">The topics, for the facts about shelves; one default topic otherwise
+    /// (ADR 0069).</param>
+    public static CreateTrainingHttpRequest Valid(
+        string title = "Valid training title",
+        List<string>? topics = null) => new()
+        {
+            Title = title,
+            Description = "A valid training description for integration testing",
+            Prerequisites = "Basic programming knowledge required",
+            AcquiredSkills = "Advanced design patterns mastery",
+            Topics = topics ?? ["Programming"]
+        };
 
     /// <summary>
     /// An edition request that passes every data annotation and every domain rule.
