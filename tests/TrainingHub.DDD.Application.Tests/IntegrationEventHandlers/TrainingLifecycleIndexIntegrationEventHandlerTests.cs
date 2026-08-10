@@ -8,17 +8,17 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.IntegrationEventHandlers;
 
 /// <summary>
-/// Behaviour covered for the three consumers that keep the search index in step with a training's
+/// Behavior covered for the three consumers that keep the search index in step with a training's
 /// own lifecycle.
 /// </summary>
 /// <remarks>
 /// They went untested for as long as the index was a fake that logged, where a wrong call was a
 /// wrong log line. They are now the only three roads by which a published training reaches the
-/// public catalogue and leaves it again (ADR 0059).
+/// public catalog and leaves it again (ADR 0059).
 /// <para>
 /// Each fact asserts the call that should happen <em>and</em> that the opposite one did not, for the
 /// reason ADR 0056 gives about its own pair: a consumer that removed where it should have indexed
-/// would leave the catalogue right in the end and be wrong about everything on the way.
+/// would leave the catalog right in the end and be wrong about everything on the way.
 /// </para>
 /// </remarks>
 public sealed class TrainingLifecycleIndexIntegrationEventHandlerTests

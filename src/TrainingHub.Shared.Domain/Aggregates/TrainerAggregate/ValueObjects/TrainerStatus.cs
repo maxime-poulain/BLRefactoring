@@ -8,9 +8,9 @@ namespace TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 /// <remarks>
 /// <para>
 /// Suspending a trainer writes this field and nothing else: their trainings are not touched, so
-/// their catalogue leaves public view because its owner did and returns intact when the sanction is
+/// their catalog leaves public view because its owner did and returns intact when the sanction is
 /// lifted — with no record of which trainings the suspension hid, because it hid none. A sanction
-/// that had to destroy a catalogue to take effect could not be undone. See ADR 0050.
+/// that had to destroy a catalog to take effect could not be undone. See ADR 0050.
 /// </para>
 /// <para>
 /// A suspended trainer loses every write (ADR 0053). Three of those refusals live here, on the
@@ -27,7 +27,7 @@ public sealed class TrainerStatus : ValueObject
     public static readonly TrainerStatus Active = new("Active");
 
     /// <summary>
-    /// The trainer is under sanction: their catalogue is hidden and cannot grow.
+    /// The trainer is under sanction: their catalog is hidden and cannot grow.
     /// </summary>
     public static readonly TrainerStatus Suspended = new("Suspended");
 

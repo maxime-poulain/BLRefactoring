@@ -56,14 +56,14 @@ internal static class SourceTree
     /// of these describes the state of a tool, not anything the repository says.
     /// <para>
     /// Declared above the property that reads it, and not below with the other helpers: static
-    /// field initialisers run in declaration order, and a set declared afterwards is null by the
+    /// field initializers run in declaration order, and a set declared afterwards is null by the
     /// time <see cref="AllFiles"/> filters with it.
     /// </para>
     /// </remarks>
-    private static readonly IReadOnlySet<string> WorkspaceArtefacts =
+    private static readonly IReadOnlySet<string> WorkspaceArtifacts =
         new HashSet<string>(StringComparer.Ordinal) { ".git", ".sonarqube", ".vs", "TestResults" };
 
-    /// <summary>Every file the repository itself contains, workspace artefacts excluded.</summary>
+    /// <summary>Every file the repository itself contains, workspace artifacts excluded.</summary>
     /// <remarks>
     /// Wider than <see cref="SourceFiles"/> and <see cref="ProjectFiles"/> on purpose: a rule about
     /// what the repository is called has to reach the workflows, the compose file, the records and
@@ -76,7 +76,7 @@ internal static class SourceTree
         .. Directory
             .EnumerateFiles(RepositoryRoot, "*", SearchOption.AllDirectories)
             .Where(IsNotBuildOutput)
-            .Where(IsNotWorkspaceArtefact)
+            .Where(IsNotWorkspaceArtifact)
             .OrderBy(path => path, StringComparer.Ordinal)
     ];
 
@@ -146,8 +146,8 @@ internal static class SourceTree
                && !relative.Contains("/obj/", StringComparison.Ordinal);
     }
 
-    private static bool IsNotWorkspaceArtefact(string path) =>
-        !Relative(path).Split('/').Any(WorkspaceArtefacts.Contains);
+    private static bool IsNotWorkspaceArtifact(string path) =>
+        !Relative(path).Split('/').Any(WorkspaceArtifacts.Contains);
 
     private static string ResolveRoot()
     {

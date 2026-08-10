@@ -38,7 +38,7 @@ public sealed partial class AdrIndexRules
     /// Both directions in one comparison, since a difference is a difference: an index that
     /// annotates what the record does not say leaves the record's own reader uninformed, and an
     /// index that drops what the record says makes the table a worse summary than the file it
-    /// summarises. Measured, not assumed: written against the drifted index — thirteen records,
+    /// summarizes. Measured, not assumed: written against the drifted index — thirteen records,
     /// five of them annotated only in the table — and it failed on all thirteen before any of them
     /// was corrected.
     /// </remarks>

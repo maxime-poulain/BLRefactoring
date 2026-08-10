@@ -16,8 +16,8 @@ public sealed class Bio : ValueObject
 {
     // private init, like every other value object here. A public init is a public setter as far as
     // reflection is concerned: it is an ordinary set accessor wearing a required modifier, and
-    // anything holding a Bio could have built a different one with `with`-style initialisation.
-    // Create still reaches it — private means private to the type, and the object initialiser below
+    // anything holding a Bio could have built a different one with `with`-style initialization.
+    // Create still reaches it — private means private to the type, and the object initializer below
     // is inside the type.
 
     /// <summary>

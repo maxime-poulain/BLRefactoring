@@ -6,7 +6,7 @@ using Xunit;
 namespace TrainingHub.Shared.Domain.Tests.Common;
 
 /// <summary>
-/// Behaviour covered for <c>AggregateRoot</c>.
+/// Behavior covered for <c>AggregateRoot</c>.
 /// </summary>
 public sealed class AggregateRootTests
 {

@@ -1,15 +1,15 @@
 # CLAUDE.md
 
 This repository is a showcase project: it exists to demonstrate professional engineering practice,
-not to maximise feature delivery. Architectural consistency, readability and long-term evolvability
+not to maximize feature delivery. Architectural consistency, readability and long-term evolvability
 outrank shipping speed. Understand the existing design before changing it.
 
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 63 architecture decision records.
+2. `docs/adr/README.md` — the index of 64 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 178 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 179 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -28,7 +28,7 @@ docker compose up -d                                           # SQL Server + Se
 
 ## Traps that cost a CI round-trip
 
-- **An incremental build skips analysers.** A local "0 warnings" on a project MSBuild considers up
+- **An incremental build skips analyzers.** A local "0 warnings" on a project MSBuild considers up
   to date proves nothing. Before trusting it: delete every `bin/` and `obj/`, then rebuild in
   Release. An unused `using` (IDE0005) is an *error* here, and that is how one reaches CI.
 - `TreatWarningsAsErrors` and `EnforceCodeStyleInBuild` are on. XML documentation is required on
@@ -117,7 +117,7 @@ repository a named question and maps the aggregates.
 
 ## C# style
 
-The build enforces the style, so match what is there rather than normalising it:
+The build enforces the style, so match what is there rather than normalizing it:
 
 - **Both member forms are deliberate**: a block where there is a guard clause, an arrow where the
   member is one expression. `.editorconfig` declines to pick a side and says why — do not convert
@@ -136,8 +136,8 @@ The build enforces the style, so match what is there rather than normalising it:
 
 ## Tests
 
-- Behaviour changed → unit tests.
-- API behaviour changed → an integration test in `tests/TrainingHub.Api.TestKit/`, so both suites run
+- Behavior changed → unit tests.
+- API behavior changed → an integration test in `tests/TrainingHub.Api.TestKit/`, so both suites run
   it rather than one.
 - An architectural rule changed → the rule, carrying
   `[ArchitectureRule("<adr>", "the decision in the record's own words")]`.
@@ -188,7 +188,7 @@ GIT_COMMITTER_NAME="<the author's name>" GIT_COMMITTER_EMAIL="<the author's addr
 Verify it the way a reader will see it, before pushing: `git log -1 --format='%an <%ae>%n%cn <%ce>'`
 prints the same line twice, or the commit is not ready.
 
-**Everything written for Git or for GitHub is in English — the whole artefact, not its title.**
+**Everything written for Git or for GitHub is in English — the whole artifact, not its title.**
 There is no part of one where another language is acceptable, and *the title was in English* does
 not satisfy this rule. It covers, exhaustively:
 
@@ -205,7 +205,56 @@ audience: a chat is ephemeral and has one reader, while a description stays atta
 as long as the diff exists and is read by whoever arrives next. A repository whose prose changes
 language according to who happened to ask for the change is one that has to be read twice. Translate
 at the boundary rather than writing across it: think in whichever language the discussion is in, and
-write the artefact in English.
+write the artifact in English.
+
+**And that English is American English — everywhere, without exception (ADR 0064).** This is a
+spelling rule, not a language rule: the paragraph above says *which language*, this one says *which
+variant*. Where two forms exist, write the American one — `color`, `behavior`, `organization`,
+`authorization`, `center`, `catalog`, `analyze`.
+
+It covers, exhaustively:
+
+- **every identifier** — type, interface, method, property, field, variable, parameter, namespace,
+  folder and file name;
+- **every comment and every XML documentation block**, `<summary>` and `<remarks>` alike;
+- **every error message, log message and technical string**, including the ones a caller reads;
+- **every document** — `README.md`, `CLAUDE.md`, `docs/`, the strategic design, and every new
+  architecture decision record;
+- **every commit message and pull-request title, description, comment and review**;
+- **every test name and every assertion's `because` clause**.
+
+The endings that decide almost all of it, written the way this repository writes them:
+
+- **`-ize`, `-ization`, `-izer`** — `organize`, `authorize`, `normalize`, `sanitize`, `initialize`,
+  `serialize`, `optimize`, `tokenize`, `materialize`, and the nouns and agents built on them.
+- **`-yze`** — `analyze`, `analyzer`, `paralyze`. **`analysis` does not move**: only the verb does,
+  which is why `AnalysisRules` is already correct.
+- **`-or`** — `color`, `behavior`, `favor`, `honor`, `labor`, `neighbor`, `rigor`.
+- **`-er`** — `center`, `meter`, `fiber`, `theater`, `caliber`.
+- **`-se`** — `license`, `defense`, `offense`, `pretense`, and `practice` for both the noun and the
+  verb.
+- **`-og`** — `catalog`, `dialog`, `analog`.
+- **one `l` before a suffix** — `canceled`, `modeling`, `traveling`, `labeled`, `signaled`.
+  `cancellation` keeps both, on either side of the Atlantic, and is already correct.
+- **two `l`s where American doubles instead** — `enrollment`, `fulfill`, `installment`.
+- **and the rest, one by one** — `artifact`, `judgment`, `gray`, `mold`, `program`, `check`,
+  `draft`, `aging`, `skeptic`, and `while` and `among` in place of their `-st` forms.
+
+**The complete list lives in one place**, and it is the dictionary inside
+`tests/TrainingHub.Architecture.Tests/Rules/AmericanSpellingRules.cs` — every refused spelling with
+what replaces it. Restating it here would be a second copy to forget, so this section teaches the
+shape and that file holds the letter.
+
+**Three things are exempt, and only these three.** A word coming from outside this repository keeps
+the spelling its author gave it — `Color`, `IPipelineBehavior`, `AuthorizationPolicy`, `Serializer`
+are what .NET calls them, and renaming them is not an option. The sixty-three records merged before
+ADR 0064 keep the words they were written with, because a merged record is never rewritten. And
+`AmericanSpellingRules.cs` is invisible to its own rule, because it is the file that lists what the
+rule refuses.
+
+**`EveryWordThisRepositoryWrites_UsesAmericanSpelling` fails the build** when any of this is broken,
+so a spelling is a red test rather than a review comment. A word the dictionary does not yet know is
+a word to add to it, in the same commit that introduces the need.
 
 **Pushing a `claude/*` branch means opening its pull request, without being asked.** This paragraph
 is that request, made once and standing: work that is finished is work a reviewer can see, and a
@@ -213,7 +262,7 @@ branch sitting on the remote with no pull request is finished work nobody has be
 the last step of the push is `gh pr create` — or the equivalent GitHub tool — against the default
 branch, every time, with no confirmation sought.
 
-Three things bound it, and they are what make a standing authorisation safe:
+Three things bound it, and they are what make a standing authorization safe:
 
 - **One pull request per branch.** If the branch already has an open one, the push updates it —
   including after a force-push — and the description is rewritten to describe what the branch now
@@ -224,7 +273,7 @@ Three things bound it, and they are what make a standing authorisation safe:
   schedule a check-in unless asked to. Opening it hands the work over; watching it is a separate
   request.
 
-Everything else about the artefact still applies: English throughout, the title and description
+Everything else about the artifact still applies: English throughout, the title and description
 written to the conventions below, and a repository template filled in when there is one.
 
 **A pull request Claude Code owns carries one commit, and stays that way.** After every push to a

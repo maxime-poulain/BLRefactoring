@@ -6,7 +6,7 @@ using Xunit;
 namespace TrainingHub.Shared.Domain.Tests.Common;
 
 /// <summary>
-/// Behaviour covered for <c>Entity</c>.
+/// Behavior covered for <c>Entity</c>.
 /// </summary>
 public sealed class EntityTests
 {

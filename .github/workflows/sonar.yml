@@ -3,7 +3,7 @@ name: Sonar
 # A second opinion on the same commit, and deliberately not a step inside ci.yml.
 #
 # ci.yml holds `contents: write` for one step — it commits the regenerated client — and it is the
-# fast, unconditional answer a pull request waits on. Wrapping an analyser around its build would
+# fast, unconditional answer a pull request waits on. Wrapping an analyzer around its build would
 # hand that write permission to a third-party tool and add a couple of minutes to the loop it exists
 # to keep short. The cost of a separate workflow is one extra build; the cost of merging them is
 # paid on every push.
@@ -25,7 +25,7 @@ jobs:
   #
   # The token is the only thing this workflow cannot carry itself: the organization and the project
   # are named on `begin` below, in the open, because a key identifies something rather than
-  # authorising anything.
+  # authorizing anything.
   guard:
     name: Configured?
     runs-on: ubuntu-latest
@@ -62,7 +62,7 @@ jobs:
       contents: read
 
     steps:
-      # Full history, not the default shallow clone. The analyser attributes each line to a commit
+      # Full history, not the default shallow clone. The analyzer attributes each line to a commit
       # to decide what "new code" means, and a shallow clone leaves it blaming everything on one
       # commit — which silently turns "coverage on new code" into a figure about the whole file.
       - uses: actions/checkout@v5
@@ -105,7 +105,7 @@ jobs:
         run: ./scripts/generate-clients.sh
 
       # Pinned in .config/dotnet-tools.json beside the NSwag CLI, rather than installed unpinned from
-      # the feed: an analyser that silently changes version between two runs turns "the gate went
+      # the feed: an analyzer that silently changes version between two runs turns "the gate went
       # red" into a question nobody can answer from the diff.
       - name: Restore the pinned tools
         run: dotnet tool restore
@@ -113,7 +113,7 @@ jobs:
       - name: Analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          # Read by the scanner to detect the pull request it is analysing, so the report lands on
+          # Read by the scanner to detect the pull request it is analyzing, so the report lands on
           # the right branch and the decoration on the right diff.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -159,7 +159,7 @@ jobs:
 
           # --no-incremental, because the scanner works by hooking the compilation: a project MSBuild
           # skips as up to date is a project the analysis never sees, and it would be reported as
-          # having no issues rather than as not analysed.
+          # having no issues rather than as not analyzed.
           # TreatWarningsAsErrors is off for this build alone. It runs inside `sonarscanner
           # begin`, which injects SonarAnalyzer.CSharp and a ruleset whose quality-profile rules
           # are warnings; promoting them would turn every Sonar finding into a compilation error

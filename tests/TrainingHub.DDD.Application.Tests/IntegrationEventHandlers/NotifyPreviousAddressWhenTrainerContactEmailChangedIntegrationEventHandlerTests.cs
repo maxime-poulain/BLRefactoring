@@ -7,7 +7,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.IntegrationEventHandlers;
 
 /// <summary>
-/// Behaviour covered for <c>NotifyPreviousAddressWhenTrainerContactEmailChangedIntegrationEventHandler</c>.
+/// Behavior covered for <c>NotifyPreviousAddressWhenTrainerContactEmailChangedIntegrationEventHandler</c>.
 /// </summary>
 public sealed class NotifyPreviousAddressWhenTrainerContactEmailChangedIntegrationEventHandlerTests
 {

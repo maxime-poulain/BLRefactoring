@@ -107,7 +107,7 @@ public sealed class TrainingTests
         // Act
         var act = () => Training.CreateAsync(
             TrainingId.Generate(), TrainerId.Generate(),
-            null!, Description(), Prerequisites(), Skills(), Topics(), checker, EmptyCatalogueCounter().Object,
+            null!, Description(), Prerequisites(), Skills(), Topics(), checker, EmptyCatalogCounter().Object,
             ActiveTrainerStanding().Object);
 
         // Assert
@@ -123,7 +123,7 @@ public sealed class TrainingTests
         // Act
         var act = () => Training.CreateAsync(
             TrainingId.Generate(), TrainerId.Generate(),
-            Title(), Description(), Prerequisites(), Skills(), Topics(), null!, EmptyCatalogueCounter().Object,
+            Title(), Description(), Prerequisites(), Skills(), Topics(), null!, EmptyCatalogCounter().Object,
             ActiveTrainerStanding().Object);
 
         // Assert
@@ -193,19 +193,19 @@ public sealed class TrainingTests
         // Assert — the code names the aggregate that owns the rule (ADR 0015), and the message
         // carries the limit so the caller learns the rule, not just the refusal.
         var error = result.ShouldBeFailure().Should().ContainSingle().Which;
-        error.ErrorCode.Should().Be(TrainingErrorCodes.CatalogueFull);
+        error.ErrorCode.Should().Be(TrainingErrorCodes.CatalogFull);
         error.ErrorMessage.Should().Be(
             $"A trainer cannot publish more than {Training.MaximumPerTrainer} trainings.");
     }
 
     /// <summary>
-    /// Create async, a full catalogue, refuses before looking at the content.
+    /// Create async, a full catalog, refuses before looking at the content.
     /// </summary>
     [Fact]
-    public async Task CreateAsync_FullCatalogue_RefusesBeforeLookingAtTheContent()
+    public async Task CreateAsync_FullCatalog_RefusesBeforeLookingAtTheContent()
     {
         // Arrange — the title is a duplicate too, but no title makes an eleventh training
-        // acceptable, so the refusal is the catalogue's alone.
+        // acceptable, so the refusal is the catalog's alone.
         var builder = new TrainingBuilder()
             .WithTrainingsAlreadyPublished(Training.MaximumPerTrainer)
             .WithTitleAlreadyExists();
@@ -215,7 +215,7 @@ public sealed class TrainingTests
 
         // Assert
         var errors = result.ShouldBeFailure();
-        errors.Should().ContainSingle().Which.ErrorCode.Should().Be(TrainingErrorCodes.CatalogueFull);
+        errors.Should().ContainSingle().Which.ErrorCode.Should().Be(TrainingErrorCodes.CatalogFull);
     }
 
     /// <summary>
@@ -398,7 +398,7 @@ public sealed class TrainingTests
         return standing;
     }
 
-    private static Mock<ITrainingCounter> EmptyCatalogueCounter()
+    private static Mock<ITrainingCounter> EmptyCatalogCounter()
     {
         var counter = new Mock<ITrainingCounter>();
         counter.Setup(c => c.CountForTrainerAsync(

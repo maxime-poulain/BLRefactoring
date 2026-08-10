@@ -11,7 +11,7 @@ using Xunit;
 namespace TrainingHub.Blazor.Client.Tests.Pages;
 
 /// <summary>
-/// Behaviour covered for the bounds the training form enforces before the API sees them.
+/// Behavior covered for the bounds the training form enforces before the API sees them.
 /// </summary>
 /// <remarks>
 /// Client-side validation here is a mirror, never the authority: it exists so a person is told

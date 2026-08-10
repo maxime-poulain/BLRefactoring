@@ -54,12 +54,12 @@ public sealed class AnonymousAccessRules
             .Except(servedWithoutAToken, StringComparer.OrdinalIgnoreCase)
             .Select(prefix =>
                 $"the proxy forwards '/api/{prefix}' without an authorization policy, and no " +
-                "controller deriving from CatalogueControllerBase serves it. An open path in front " +
+                "controller deriving from CatalogControllerBase serves it. An open path in front " +
                 "of a guarded endpoint answers 401 at best and publishes it at worst (ADR 0062)")
             .Concat(servedWithoutAToken
                 .Except(forwardedWithoutAToken, StringComparer.OrdinalIgnoreCase)
                 .Select(prefix =>
-                    $"'{prefix}' is served from CatalogueControllerBase, which declares no 401 and " +
+                    $"'{prefix}' is served from CatalogControllerBase, which declares no 401 and " +
                     "no 403, and the proxy forwards it only with a session. The endpoint is open " +
                     "and unreachable, which is the shape ADR 0059 left behind (ADR 0062)"))
             .ShouldHold();
@@ -83,13 +83,13 @@ public sealed class AnonymousAccessRules
     /// The route prefixes both hosts serve from the base that declares no refusal.
     /// </summary>
     /// <remarks>
-    /// Distinct, because every operation is published twice and the two hosts name their catalogue
+    /// Distinct, because every operation is published twice and the two hosts name their catalog
     /// controllers identically on purpose (<c>BothHosts_PublishTheSameOperations</c>).
     /// </remarks>
     private static IReadOnlyList<string> ServedWithoutAToken() =>
         Solution.Hosts
             .SelectMany(host => host.DeclaredTypes())
-            .Where(type => typeof(CatalogueControllerBase).IsAssignableFrom(type) && !type.IsAbstract)
+            .Where(type => typeof(CatalogControllerBase).IsAssignableFrom(type) && !type.IsAbstract)
             .Selected("controller serving anonymous callers")
             .Select(controller => controller.Name.Replace(
                 "Controller", string.Empty, StringComparison.Ordinal))
@@ -125,15 +125,15 @@ public sealed class AnonymousAccessRules
         ".Status"
     ];
 
-    /// <summary>The adapter that answers the catalogue's read by identifier.</summary>
+    /// <summary>The adapter that answers the catalog's read by identifier.</summary>
     private const string TheDetailAdapter =
-        "src/TrainingHub.Shared.Infrastructure/Search/CatalogueDetailQuery.cs";
+        "src/TrainingHub.Shared.Infrastructure/Search/CatalogDetailQuery.cs";
 
     /// <summary>The index entry, which is where "on offer" is composed.</summary>
     private const string TheIndexEntry = "TrainingSearchEntry";
 
     /// <summary>
-    /// The catalogue detail, takes its visibility from the index.
+    /// The catalog detail, takes its visibility from the index.
     /// </summary>
     /// <remarks>
     /// The one adapter here that opens the index and the write model in the same method, which
@@ -157,7 +157,7 @@ public sealed class AnonymousAccessRules
     [ArchitectureRule("0062",
         "visibility comes from the index and content comes from the write model, and the adapter " +
         "that joins them never writes a visibility predicate of its own")]
-    public void TheCatalogueDetail_TakesItsVisibilityFromTheIndex()
+    public void TheCatalogDetail_TakesItsVisibilityFromTheIndex()
     {
         var source = SourceTree.ReadText(Path.Combine(
             SourceTree.RepositoryRoot,

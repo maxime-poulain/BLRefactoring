@@ -9,7 +9,7 @@ namespace TrainingHub.Shared.Infrastructure.Tests.Search;
 /// </summary>
 /// <remarks>
 /// Both directions go through the same method, so these facts are about both: a normalization that
-/// differed between the two would answer nothing and look like an empty catalogue rather than like
+/// differed between the two would answer nothing and look like an empty catalog rather than like
 /// a defect.
 /// </remarks>
 public sealed class SearchTermsTests
@@ -52,7 +52,7 @@ public sealed class SearchTermsTests
     /// Of, a single letter, drops it.
     /// </summary>
     /// <remarks>
-    /// A one-letter prefix matches most of the catalogue, which costs a row and answers nothing.
+    /// A one-letter prefix matches most of the catalog, which costs a row and answers nothing.
     /// </remarks>
     [Fact]
     public void Of_ASingleLetter_DropsIt() =>
@@ -80,7 +80,7 @@ public sealed class SearchTermsTests
     /// </summary>
     /// <remarks>
     /// Three ways of saying the same thing, because the query treats "no tokens" as "no filter":
-    /// a term made only of punctuation must not quietly become a catalogue listing by a different
+    /// a term made only of punctuation must not quietly become a catalog listing by a different
     /// route than a blank one.
     /// </remarks>
     [Theory]

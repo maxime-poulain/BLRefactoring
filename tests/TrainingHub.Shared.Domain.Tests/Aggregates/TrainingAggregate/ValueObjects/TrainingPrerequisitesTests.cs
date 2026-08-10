@@ -7,7 +7,7 @@ using Xunit;
 namespace TrainingHub.Shared.Domain.Tests.Aggregates.TrainingAggregate.ValueObjects;
 
 /// <summary>
-/// Behaviour covered for <c>TrainingPrerequisites</c>.
+/// Behavior covered for <c>TrainingPrerequisites</c>.
 /// </summary>
 public sealed class TrainingPrerequisitesTests
 {

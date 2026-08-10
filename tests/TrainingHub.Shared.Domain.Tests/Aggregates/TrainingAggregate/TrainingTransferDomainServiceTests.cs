@@ -85,10 +85,10 @@ public sealed class TrainingTransferDomainServiceTests
     }
 
     /// <summary>
-    /// Transfer async, a recipient at the limit, answers recipient catalogue full.
+    /// Transfer async, a recipient at the limit, answers recipient catalog full.
     /// </summary>
     [Fact]
-    public async Task TransferAsync_ARecipientAtTheLimit_AnswersRecipientCatalogueFull()
+    public async Task TransferAsync_ARecipientAtTheLimit_AnswersRecipientCatalogFull()
     {
         var training = await new TrainingBuilder().BuildValidAsync();
         var formerOwner = training.TrainerId;
@@ -98,7 +98,7 @@ public sealed class TrainingTransferDomainServiceTests
             TitleCheckerAnswering(false).Object, StandingAnswering(false).Object);
 
         var error = result.ShouldBeFailure().Should().ContainSingle().Which;
-        error.ErrorCode.Should().Be(TrainingErrorCodes.RecipientCatalogueFull);
+        error.ErrorCode.Should().Be(TrainingErrorCodes.RecipientCatalogFull);
         training.TrainerId.Should().Be(formerOwner, "a refusal mutates nothing");
         training.DomainEvents.Should().NotContain(e => e is TrainingTransferredDomainEvent);
     }
@@ -133,7 +133,7 @@ public sealed class TrainingTransferDomainServiceTests
             StandingAnswering(false).Object);
 
         result.ShouldBeFailure().Should().ContainSingle()
-            .Which.ErrorCode.Should().Be(TrainingErrorCodes.RecipientCatalogueFull);
+            .Which.ErrorCode.Should().Be(TrainingErrorCodes.RecipientCatalogFull);
         titleChecker.Verify(c => c.TitleForTrainerExistsAsync(
                 It.IsAny<TrainingTitle>(), It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()),
             Times.Never, "no title makes an eleventh training acceptable — capacity refuses whole");

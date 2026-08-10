@@ -30,7 +30,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         var trainer = await GivenTrainerAsync();
 
         await IndexedAsync(trainer, "Domain Driven Design");
-        await IndexedAsync(trainer, "Domain Modelling");
+        await IndexedAsync(trainer, "Domain Modeling");
         await IndexedAsync(trainer, "Driven To Distraction");
 
         var page = await Query().SearchAsync("domain driven", new PageRequest());
@@ -107,29 +107,29 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
     }
 
     /// <summary>
-    /// Search async, after a sanction, offers the catalogue again only once it is lifted.
+    /// Search async, after a sanction, offers the catalog again only once it is lifted.
     /// </summary>
     /// <remarks>
-    /// The end of the chain ADR 0056 designed: one call about a trainer takes their whole catalogue
+    /// The end of the chain ADR 0056 designed: one call about a trainer takes their whole catalog
     /// out of the public's reach, and one call puts it back. Asserted through the reader rather than
     /// on the column, because what the record promises is what a visitor sees.
     /// </remarks>
     [Fact]
-    public async Task SearchAsync_AfterASanction_OffersTheCatalogueAgainOnlyOnceItIsLifted()
+    public async Task SearchAsync_AfterASanction_OffersTheCatalogAgainOnlyOnceItIsLifted()
     {
         var trainer = await GivenTrainerAsync();
 
         await IndexedAsync(trainer, "Sanctioned Course");
 
-        await Indexer.HideTrainerCatalogueAsync(trainer.Id.Value);
+        await Indexer.HideTrainerCatalogAsync(trainer.Id.Value);
         (await Query().SearchAsync("sanctioned", new PageRequest())).Items.Should().BeEmpty();
 
-        await Indexer.ShowTrainerCatalogueAsync(trainer.Id.Value);
+        await Indexer.ShowTrainerCatalogAsync(trainer.Id.Value);
         (await Query().SearchAsync("sanctioned", new PageRequest())).Items.Should().ContainSingle();
     }
 
     /// <summary>
-    /// Search async, no term at all, answers the offered catalogue in its total order.
+    /// Search async, no term at all, answers the offered catalog in its total order.
     /// </summary>
     /// <remarks>
     /// A blank term is no term, the reading the trainers' listing already gives it (ADR 0055). The
@@ -139,7 +139,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
     [Theory]
     [InlineData(null)]
     [InlineData("  ")]
-    public async Task SearchAsync_NoTermAtAll_AnswersTheOfferedCatalogueInItsTotalOrder(string? term)
+    public async Task SearchAsync_NoTermAtAll_AnswersTheOfferedCatalogInItsTotalOrder(string? term)
     {
         var trainer = await GivenTrainerAsync();
 
@@ -177,15 +177,15 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
     }
 
     /// <summary>
-    /// Search async, a term of punctuation alone, answers the whole catalogue rather than nothing.
+    /// Search async, a term of punctuation alone, answers the whole catalog rather than nothing.
     /// </summary>
     /// <remarks>
     /// A term that yields no token is a term that narrows nothing, and it has to mean the same thing
-    /// as no term at all — otherwise a caller typing a stray character would read an empty catalogue
+    /// as no term at all — otherwise a caller typing a stray character would read an empty catalog
     /// as "there is nothing here".
     /// </remarks>
     [Fact]
-    public async Task SearchAsync_ATermOfPunctuationAlone_AnswersTheWholeCatalogueRatherThanNothing()
+    public async Task SearchAsync_ATermOfPunctuationAlone_AnswersTheWholeCatalogRatherThanNothing()
     {
         var trainer = await GivenTrainerAsync();
 

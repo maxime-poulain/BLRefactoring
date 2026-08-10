@@ -114,7 +114,7 @@ public sealed class AdministrationController(
     }
 
     /// <summary>
-    /// Places a trainer under sanction: their catalogue leaves public view and cannot grow.
+    /// Places a trainer under sanction: their catalog leaves public view and cannot grow.
     /// </summary>
     /// <param name="trainerId">The trainer the route names.</param>
     /// <param name="request">The body carrying the reason.</param>
@@ -149,7 +149,7 @@ public sealed class AdministrationController(
     }
 
     /// <summary>
-    /// Lifts a trainer's sanction: their catalogue returns exactly as they left it.
+    /// Lifts a trainer's sanction: their catalog returns exactly as they left it.
     /// </summary>
     /// <param name="trainerId">The trainer the route names.</param>
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>

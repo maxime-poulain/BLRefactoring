@@ -5,7 +5,7 @@ using Xunit;
 namespace TrainingHub.DDDWithCqrs.Tests.Validators;
 
 /// <summary>
-/// Behaviour covered for <c>TransferTrainingCommandValidator</c>.
+/// Behavior covered for <c>TransferTrainingCommandValidator</c>.
 /// </summary>
 public sealed class TransferTrainingCommandValidatorTests
 {

@@ -17,7 +17,7 @@ namespace TrainingHub.Api.TestKit;
 /// <remarks>
 /// The mapping, the criteria and the envelope are each proven where they live. What only this suite
 /// can prove is what they add up to against a real database: that the filter reaches SQL rather than
-/// a materialised page, that the administration can find what it took down, and that nobody else can
+/// a materialized page, that the administration can find what it took down, and that nobody else can
 /// ask at all.
 /// </remarks>
 /// <typeparam name="TFactory">The suite's fixture.</typeparam>
@@ -66,7 +66,7 @@ public abstract class AdministrationListTest<TFactory>(TFactory factory) : Integ
     /// that runs it against SQL Server rather than SQLite.
     /// <para>
     /// The two criteria are asked together, then the term alone, because a filter that replaced its
-    /// neighbour instead of composing with it answers plausibly for either one on its own. The
+    /// neighbor instead of composing with it answers plausibly for either one on its own. The
     /// second call is what tells them apart: it must find the training the state filter excluded.
     /// </para>
     /// </remarks>
@@ -166,7 +166,7 @@ public abstract class AdministrationListTest<TFactory>(TFactory factory) : Integ
 
         for (var index = 1; index <= 6; index++)
         {
-            var trainingId = await CreateTrainingAsync(owner, $"Catalogue training {index:D2}");
+            var trainingId = await CreateTrainingAsync(owner, $"Catalog training {index:D2}");
 
             // The two withheld ones are the oldest, so that a filter applied to a page rather than
             // to the query would page right past them.

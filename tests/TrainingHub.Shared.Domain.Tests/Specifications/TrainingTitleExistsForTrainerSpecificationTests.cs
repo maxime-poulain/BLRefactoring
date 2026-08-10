@@ -8,7 +8,7 @@ using Xunit;
 namespace TrainingHub.Shared.Domain.Tests.Specifications;
 
 /// <summary>
-/// Behaviour covered for <see cref="TrainingTitleExistsForTrainerSpecification"/>: the data half
+/// Behavior covered for <see cref="TrainingTitleExistsForTrainerSpecification"/>: the data half
 /// of the uniqueness invariant, answered in memory.
 /// </summary>
 public sealed class TrainingTitleExistsForTrainerSpecificationTests

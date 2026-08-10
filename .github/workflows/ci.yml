@@ -18,7 +18,7 @@ on:
 
 # This workflow writes to the repository, so two runs on one branch can race: both regenerate, both
 # push, and the loser fails with a non-fast-forward nobody caused. Push runs therefore queue rather
-# than cancel. A superseded pull-request run is cancelled instead, which is safe for the branches
+# than cancel. A superseded pull-request run is canceled instead, which is safe for the branches
 # that reach this point: a `claude/**` one delegates its build and writes nothing at all, and a
 # fork's is read-only by permission. A same-repo branch the `push` trigger does not name is the one
 # that both builds and commits here, and it has no push run to race against.
@@ -36,11 +36,11 @@ jobs:
     # pull request, on the ground that the push trigger had already built that commit. The ground
     # was never checked. A skipped job still posts its check, GitHub counts a skipped check as
     # passing, and the sentence "its commit was already built when it was pushed" was a claim about
-    # a run this workflow never looked at. When that run is cancelled without ever reaching a
+    # a run this workflow never looked at. When that run is canceled without ever reaching a
     # runner — measured on this repository, `runner_id: 0` after fifteen minutes in the queue — the
     # pull request wears a green `Build & Test` for a build that did not happen. See ADR 0047.
     #
-    # The optimisation survives; only the assumption goes. The first step below decides whether
+    # The optimization survives; only the assumption goes. The first step below decides whether
     # this run must build or may stand on one that already did, and in the second case it waits for
     # that run and adopts its verdict. Every step after it carries the same condition, which is
     # noisier than a job-level `if` and is the point: a job that always runs is a check that can

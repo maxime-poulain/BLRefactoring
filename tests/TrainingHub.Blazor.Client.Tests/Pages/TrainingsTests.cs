@@ -11,13 +11,13 @@ using Xunit;
 namespace TrainingHub.Blazor.Client.Tests.Pages;
 
 /// <summary>
-/// Behaviour covered for the catalogue of a trainer's own trainings.
+/// Behavior covered for the catalog of a trainer's own trainings.
 /// </summary>
 /// <remarks>
 /// The page used to load every training in the system and hide the buttons on the ones belonging to
 /// somebody else, which is not filtering: the rows had already reached the browser and anyone could
 /// read them from the network tab. It now asks the server for its own — one page at a time since
-/// ADR 0029, so the pager is part of the behaviour: without it, everything past the first page
+/// ADR 0029, so the pager is part of the behavior: without it, everything past the first page
 /// would be unreachable, which is the old unbounded read's defect wearing the new contract.
 /// </remarks>
 public sealed class TrainingsTests : ComponentTest
@@ -100,7 +100,7 @@ public sealed class TrainingsTests : ComponentTest
     /// Renders, a withdrawn training, says so and offers to publish it again.
     /// </summary>
     /// <remarks>
-    /// The pair of buttons is what makes the lifecycle usable rather than merely modelled: a
+    /// The pair of buttons is what makes the lifecycle usable rather than merely modeled: a
     /// trainer who withdrew a training and thought better of it gets it back without recreating it.
     /// </remarks>
     [Fact]
@@ -149,9 +149,9 @@ public sealed class TrainingsTests : ComponentTest
     /// Renders, a withdrawn training, sets its card back on the theme's recessed surface.
     /// </summary>
     /// <remarks>
-    /// Asserted on the theme's class rather than on a colour, because that is what the page is
+    /// Asserted on the theme's class rather than on a color, because that is what the page is
     /// allowed to say: there is no stylesheet in this project and the layout toggles dark mode, so
-    /// a test that pinned a hex would pin the wrong one half the time. Colour is not the only
+    /// a test that pinned a hex would pin the wrong one half the time. Color is not the only
     /// signal — the sibling fact above checks the word is on the card too.
     /// </remarks>
     [Fact]
@@ -204,7 +204,7 @@ public sealed class TrainingsTests : ComponentTest
     /// <remarks>
     /// Deleting stays on the API — for the training created by mistake, and for erasure on request
     /// — and leaves the interface entirely. Withdrawing is the everyday act now, and a button that
-    /// destroys a catalogue entry should not sit where the everyday one used to (ADR 0050).
+    /// destroys a catalog entry should not sit where the everyday one used to (ADR 0050).
     /// </remarks>
     [Fact]
     public void Renders_OffersNoWayToDeleteATraining()

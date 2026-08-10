@@ -18,8 +18,8 @@ public static class TrainingErrorCodes
     /// <summary>This trainer already has a training under that title.</summary>
     public static readonly ErrorCode DuplicateTitle = new("Training.DuplicateTitle");
 
-    /// <summary>This trainer already publishes as many trainings as the catalogue allows.</summary>
-    public static readonly ErrorCode CatalogueFull = new("Training.CatalogueFull");
+    /// <summary>This trainer already publishes as many trainings as the catalog allows.</summary>
+    public static readonly ErrorCode CatalogFull = new("Training.CatalogFull");
 
     /// <summary>The description is empty, or longer than the aggregate allows.</summary>
     public static readonly ErrorCode InvalidDescription = new("Training.InvalidDescription");
@@ -37,11 +37,11 @@ public static class TrainingErrorCodes
     public static readonly ErrorCode TransferToSelf = new("Training.TransferToSelf");
 
     /// <summary>
-    /// The recipient already publishes as many trainings as the catalogue allows. Distinct from
-    /// <see cref="CatalogueFull"/> on purpose: "delete one of yours" and "pick another colleague"
+    /// The recipient already publishes as many trainings as the catalog allows. Distinct from
+    /// <see cref="CatalogFull"/> on purpose: "delete one of yours" and "pick another colleague"
     /// are different instructions to a caller (ADR 0015, ADR 0036).
     /// </summary>
-    public static readonly ErrorCode RecipientCatalogueFull = new("Training.RecipientCatalogueFull");
+    public static readonly ErrorCode RecipientCatalogFull = new("Training.RecipientCatalogFull");
 
     /// <summary>The transfer names a recipient no trainer answers to (ADR 0036).</summary>
     public static readonly ErrorCode UnknownRecipient = new("Training.UnknownRecipient");
@@ -59,8 +59,8 @@ public static class TrainingErrorCodes
 
     /// <summary>
     /// The recipient of a transfer is under sanction. Distinct from <see cref="TrainerSuspended"/>
-    /// for the reason <see cref="RecipientCatalogueFull"/> is distinct from
-    /// <see cref="CatalogueFull"/>: "your account is suspended" and "theirs is" send a caller to
+    /// for the reason <see cref="RecipientCatalogFull"/> is distinct from
+    /// <see cref="CatalogFull"/>: "your account is suspended" and "theirs is" send a caller to
     /// different places (ADR 0015).
     /// </summary>
     public static readonly ErrorCode RecipientSuspended = new("Training.RecipientSuspended");

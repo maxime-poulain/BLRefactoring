@@ -35,7 +35,7 @@ public sealed class SetTrainerPhotoCommand : ICommand<Result>
 public sealed class SetTrainerPhotoCommandHandler(
     ITrainerRepository trainerRepository,
     ITrainerPhotoStore photoStore,
-    IPhotoSanitiser photoSanitiser,
+    IPhotoSanitizer photoSanitizer,
     ICurrentUserService currentUserService,
     TimeProvider timeProvider,
     IUnitOfWork unitOfWork)
@@ -58,7 +58,7 @@ public sealed class SetTrainerPhotoCommandHandler(
         }
 
         // Three steps, and the order is the whole of ADR 0063. The upload is judged first, because
-        // two of the aggregate's rules are about it and sanitisation would answer both away — a
+        // two of the aggregate's rules are about it and sanitization would answer both away — a
         // mismatch re-encoded into the declared format stops being one, and an oversized photograph
         // comes back within the bound. Then the bytes are stripped. Then what is recorded is
         // described from what will actually be stored.
@@ -69,8 +69,8 @@ public sealed class SetTrainerPhotoCommandHandler(
         return await TrainerPhoto
             .Vet(request.Content, request.ContentType)
             .MatchAsync<Result>(
-                onSuccess: async vetted => await photoSanitiser
-                    .Sanitise(request.Content, vetted)
+                onSuccess: async vetted => await photoSanitizer
+                    .Sanitize(request.Content, vetted)
                     .MatchAsync<Result>(
                         onSuccess: async photo => await TrainerPhoto
                             .Create(

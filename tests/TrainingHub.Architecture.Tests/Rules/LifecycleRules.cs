@@ -18,7 +18,7 @@ public sealed partial class LifecycleRules
 {
     // A status changing hands: `Status = something;` as a statement, at the start of a line. The
     // property's own declaration does not match — there the line begins with its modifiers and
-    // type, and the initialiser sits after `{ get; private set; }`.
+    // type, and the initializer sits after `{ get; private set; }`.
     [GeneratedRegex(@"^\s*Status\s*=\s*[^=]", RegexOptions.Multiline)]
     private static partial Regex StatusAssignment { get; }
 

@@ -46,11 +46,11 @@ public sealed class TrainingSearchEntryConfiguration : IEntityTypeConfiguration<
             .HasForeignKey(term => term.TrainingId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // The sanction's index: hiding or showing a trainer's catalogue is one statement over this
+        // The sanction's index: hiding or showing a trainer's catalog is one statement over this
         // one, which is what lets the pair cost a call each way rather than a rebuild (ADR 0056).
         builder.HasIndex(entry => entry.TrainerId);
 
-        // The listing's index: a search with no term is the offered catalogue in its total order, so
+        // The listing's index: a search with no term is the offered catalog in its total order, so
         // the two visibility columns lead and the order follows. A page is then a seek and a walk,
         // never a sort of everything the table holds (ADR 0029, ADR 0059).
         builder.HasIndex(entry => new

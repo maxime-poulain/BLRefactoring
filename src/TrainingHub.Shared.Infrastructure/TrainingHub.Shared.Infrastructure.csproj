@@ -28,7 +28,7 @@
       -->
       <PackageReference Include="MailKit" />
       <!--
-        The imaging library, for SkiaSharpPhotoSanitiser. Same containment as the two above, and
+        The imaging library, for SkiaSharpPhotoSanitizer. Same containment as the two above, and
         held by the same kind of rule: a portrait is decoded and re-encoded in exactly one place,
         and nothing above the infrastructure knows what decodes it. The native assets are requested
         beside it because a managed reference alone loads nothing at run time on Linux — the first

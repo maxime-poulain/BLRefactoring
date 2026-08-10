@@ -42,7 +42,7 @@ public sealed class AdministrationTrainingFilterHttpRequest
     /// </para>
     /// <para>
     /// It costs the same <c>LIKE '%term%'</c> the trainers' listing pays, and for the same recorded
-    /// reason: no index can seek one. The search that seeks is the public catalogue's, over the
+    /// reason: no index can seek one. The search that seeks is the public catalog's, over the
     /// inverted index (ADR 0059) — which cannot answer this one, because it holds none of the states
     /// a moderator is looking for.
     /// </para>

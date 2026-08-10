@@ -6,7 +6,7 @@ using Xunit;
 namespace TrainingHub.Shared.Api.Tests.Extensions;
 
 /// <summary>
-/// Behaviour covered for the transformer that describes an uploaded file inline.
+/// Behavior covered for the transformer that describes an uploaded file inline.
 /// </summary>
 /// <remarks>
 /// Worth a test rather than a glance, because the failure it prevents is silent and lands three

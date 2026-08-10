@@ -63,7 +63,7 @@ public static class AdministratorSeedExtensions
     /// </summary>
     /// <param name="app">The host whose services hold Identity.</param>
     /// <remarks>
-    /// No cancellation token, unlike its neighbour <see cref="DatabaseMigrationExtensions"/>:
+    /// No cancellation token, unlike its neighbor <see cref="DatabaseMigrationExtensions"/>:
     /// Identity's <see cref="UserManager{TUser}"/> and <see cref="RoleManager{TRole}"/> accept
     /// none on any of the four calls below, and a parameter this method could only ignore would be
     /// a promise it cannot keep.

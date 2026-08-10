@@ -127,7 +127,7 @@ public sealed class OutboxMessageTests
     public void MayHaveSettledConsumers_SurvivesTheRequeue_ThatResetsTheCounter()
     {
         var message = CreateMessage();
-        message.RecordFailure("a consumer that failed after its neighbour succeeded", Now, RetryDelay);
+        message.RecordFailure("a consumer that failed after its neighbor succeeded", Now, RetryDelay);
 
         message.Requeue(Now.AddHours(1));
 

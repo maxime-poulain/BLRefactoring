@@ -7,7 +7,7 @@ using Xunit;
 namespace TrainingHub.Shared.Api.Tests.Identity;
 
 /// <summary>
-/// Behaviour covered for <c>CurrentUserService</c>: which caller each request resolves to, and what
+/// Behavior covered for <c>CurrentUserService</c>: which caller each request resolves to, and what
 /// happens when it resolves to nobody.
 /// </summary>
 /// <remarks>

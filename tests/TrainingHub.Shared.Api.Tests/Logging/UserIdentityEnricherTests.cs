@@ -9,7 +9,7 @@ using Xunit;
 namespace TrainingHub.Shared.Api.Tests.Logging;
 
 /// <summary>
-/// Behaviour covered for <c>UserIdentityEnricher</c>: which identity each kind of caller gets.
+/// Behavior covered for <c>UserIdentityEnricher</c>: which identity each kind of caller gets.
 /// </summary>
 /// <remarks>
 /// The mapping alone — the wiring that puts the enricher into the pipeline, and the template that

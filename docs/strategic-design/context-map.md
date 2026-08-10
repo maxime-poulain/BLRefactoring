@@ -9,7 +9,7 @@ keeping.
 ```mermaid
 flowchart TB
     subgraph built ["Built"]
-        TC["<b>Training Catalogue</b><br/>core domain<br/>Trainer · Training"]
+        TC["<b>Training Catalog</b><br/>core domain<br/>Trainer · Training"]
         IA["<b>Identity &amp; Access</b><br/>supporting · off the shelf"]
         MS["<b>Media Storage</b><br/>generic · S3 protocol"]
         NT["<b>Notification</b><br/>generic · SMTP"]
@@ -17,7 +17,7 @@ flowchart TB
     end
 
     subgraph planned ["Announced"]
-        CD["<b>Catalogue Discovery</b><br/>public read side"]
+        CD["<b>Catalog Discovery</b><br/>public read side"]
     end
 
     IA -- "upstream · ACL: UserId + ICurrentUserService" --> TC
@@ -32,24 +32,24 @@ flowchart TB
 
 | Context | Kind | State |
 |---|---|---|
-| Training Catalogue | Core domain | Built |
+| Training Catalog | Core domain | Built |
 | Identity & Access | Supporting | Built — off the shelf |
 | Media Storage | Generic | Built |
 | Notification | Generic | Built |
 | Search Indexing | Generic | Built |
-| Catalogue Discovery | Core (read side) | Announced |
+| Catalog Discovery | Core (read side) | Announced |
 
 Each has its own section in [bounded-contexts.md](bounded-contexts.md), and an architecture rule
 checks that the two lists agree.
 
 ---
 
-## Identity & Access → Training Catalogue
+## Identity & Access → Training Catalog
 
 **Pattern:** customer/supplier, with an **anti-corruption layer**. Identity is upstream: it decides
-what an account is, and the catalogue adapts.
+what an account is, and the catalog adapts.
 
-**Why an ACL and not conformity.** The catalogue refuses to adopt Identity's model. It does not
+**Why an ACL and not conformity.** The catalog refuses to adopt Identity's model. It does not
 store an `IdentityUser`, it does not treat the account's email as the trainer's contact address, and
 it does not let a controller pass an account identifier where a trainer is expected. Conforming
 would have been less code and would have produced the bug the code names out loud: *"conflating them
@@ -89,11 +89,11 @@ does not exist; a trainer comes into being through registration or not at all.
 
 ---
 
-## Training Catalogue → Notification
+## Training Catalog → Notification
 
 **Pattern:** open host service with a **published language**, in miniature.
 
-The catalogue publishes facts; the notifier consumes them. The contract is `EmailMessage(Recipient,
+The catalog publishes facts; the notifier consumes them. The contract is `EmailMessage(Recipient,
 Subject, Body)` — three strings, no domain type. The notifier cannot develop an opinion about
 trainers because it is never shown one.
 
@@ -116,7 +116,7 @@ suites read the delivered messages back out of the real server.
 
 ---
 
-## Training Catalogue → Search Indexing
+## Training Catalog → Search Indexing
 
 **Pattern:** open host service with a published language, and the clearest example of one here.
 
@@ -126,7 +126,7 @@ identifiers."* Passing `TrainingId` would have made the index a downstream *conf
 domain model; passing `Guid` keeps the contract translatable.
 
 The language now has a read half as well, `ITrainingSearchQuery`, which
-[ADR 0055](../adr/0055-let-the-administration-read-what-the-catalogue-may-not.md) refused to open
+[ADR 0055](../adr/0055-let-the-administration-read-what-the-catalog-may-not.md) refused to open
 until there was an index behind it and
 [ADR 0059](../adr/0059-give-the-search-index-a-body-and-a-query-surface.md) opens now that there is.
 
@@ -138,8 +138,8 @@ until there was an index behind it and
 `TrainerReinstatedIntegrationEvent`, committed to the outbox
 by nine policies (ADR 0002, ADR 0024, ADR 0056). The port answers four operations, not one:
 `RemoveAsync` is what a withdrawal, a deletion and a withholding call, and its absence is what used
-to leave a deleted training in the index for ever (ADR 0050); `HideTrainerCatalogueAsync` and
-`ShowTrainerCatalogueAsync` are what a sanction calls, one call about a trainer rather than one per
+to leave a deleted training in the index for ever (ADR 0050); `HideTrainerCatalogAsync` and
+`ShowTrainerCatalogAsync` are what a sanction calls, one call about a trainer rather than one per
 training, because a suspension writes to none of them.
 
 **State:** built (ADR 0059). Two tables of this database — one entry per training, one row per word
@@ -150,16 +150,16 @@ eventually rather than at once. The port carries no document, so the adapter rea
 training a fact spoke about; a public visibility composed from two aggregates and stored nowhere on
 the write side (ADR 0050, ADR 0056) is stored here, which is what a read model is for.
 
-Its readers are the two anonymous endpoints of this API, `GET /Catalogue/trainings` and
-`GET /Catalogue/trainings/{id}`, with a screen above each since ADR 0062. The second reads this
+Its readers are the two anonymous endpoints of this API, `GET /Catalog/trainings` and
+`GET /Catalog/trainings/{id}`, with a screen above each since ADR 0062. The second reads this
 index for one thing only — whether the training is on offer — and reads the write model for what it
 says, which is the shape a title-only index leaves: a description copied here would go stale on the
-next edit, and a trainer's name copied here would go stale on a rename no fact carries. Catalogue
+next edit, and a trainer's name copied here would go stale on a rename no fact carries. Catalog
 Discovery as a *context* — facets, a store of its own, a language of its own — still does not exist.
 
 **Why a transfer is one of the nine.** Nothing about the training's content changes when it
 changes hands, which is why it looks like an ownership detail and is not: the index is what a
-public catalogue would read, and the trainer a training is filed under is part of what that page
+public catalog would read, and the trainer a training is filed under is part of what that page
 shows. A seam described as fed by *create and edit* is a seam that would serve the wrong author
 ([ADR 0036](../adr/0036-model-the-decision-that-has-no-home-as-a-domain-service.md)).
 
@@ -172,7 +172,7 @@ trainer withdrew — must not have to guess which happened
 
 ---
 
-## Training Catalogue → Media Storage
+## Training Catalog → Media Storage
 
 **Pattern:** generic subdomain behind a port, with a deliberately reduced interface.
 
@@ -197,7 +197,7 @@ the AWS SDK.
 
 ---
 
-## Training Catalogue → Catalogue Discovery *(announced)*
+## Training Catalog → Catalog Discovery *(announced)*
 
 **Expected pattern:** downstream read model, fed by domain events, with its own storage and its own
 language.
@@ -207,8 +207,8 @@ it, and a reader who does not know that will read them as over-engineering.
 
 | Already there | For |
 |---|---|
-| A real search index, maintained on every create, edit, transfer, publication and withdrawal, cleared on deletion, told a trainer's standing in one call, and readable through `ITrainingSearchQuery` (ADR 0059) | The search a public page would read, already answering at `GET /Catalogue/trainings` |
-| A public portrait at `GET /Catalogue/trainings/{id}/photo/{photoId}`, whose address names a photo rather than a person and is therefore `immutable` by construction, serving only bytes the domain records as stripped of their metadata (ADR 0063) | A portrait served publicly, behind a CDN |
+| A real search index, maintained on every create, edit, transfer, publication and withdrawal, cleared on deletion, told a trainer's standing in one call, and readable through `ITrainingSearchQuery` (ADR 0059) | The search a public page would read, already answering at `GET /Catalog/trainings` |
+| A public portrait at `GET /Catalog/trainings/{id}/photo/{photoId}`, whose address names a photo rather than a person and is therefore `immutable` by construction, serving only bytes the domain records as stripped of their metadata (ADR 0063) | A portrait served publicly, behind a CDN |
 | A CQRS query side that projects into DTOs without loading aggregates | A read model that does not pay for the write model |
 
 **What is not decided:** whether discovery gets its own store, or reads a projection of the same
@@ -219,7 +219,7 @@ database. The facts it would subscribe to are now durable — `TrainingCreatedIn
 `TrainerSuspendedIntegrationEvent` and `TrainerReinstatedIntegrationEvent` land in the
 transactional outbox with every commit (ADR 0024, ADR 0056) —
 but the subscriber still does not exist. What ADR 0050 added to that list is the ability to express
-what a public catalogue must *not* show, and ADR 0056 the ability to express it about a trainer
+what a public catalog must *not* show, and ADR 0056 the ability to express it about a trainer
 rather than about each of their trainings — which is what makes this context buildable rather than
 merely announced. ADR 0059 went one step further and built the index those facts maintain, so what
 is missing here is no longer a store: it is a page, its facets, its ordering by anything other than
@@ -231,8 +231,8 @@ a title, and whatever else a discovery experience turns out to be.
 
 Upstream is whoever can change without asking. In this map:
 
-- **Identity is upstream of the catalogue** — the framework's model changes on its own schedule, and
+- **Identity is upstream of the catalog** — the framework's model changes on its own schedule, and
   the ACL absorbs it.
-- **The catalogue is upstream of everything else** — it publishes facts, and the consumers adapt.
+- **The catalog is upstream of everything else** — it publishes facts, and the consumers adapt.
   That is why every port it owns speaks the smallest possible vocabulary: a published language is
   only cheap to keep if there is little of it.

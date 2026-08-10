@@ -85,7 +85,7 @@ public abstract class AdministrativeNoticeTest<TFactory>(TFactory factory) : Int
     public async Task WithholdingATraining_NamesItAndItsReason_ToItsOwner()
     {
         var trainer = await RegisterTrainerAsync();
-        var title = $"Advanced domain modelling {Guid.NewGuid():N}";
+        var title = $"Advanced domain modeling {Guid.NewGuid():N}";
         var trainingId = await CreateTrainingAsync(trainer.Client, title);
 
         var administrator = await AuthHelper.SignInAsAdministratorAsync(Factory);

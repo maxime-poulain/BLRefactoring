@@ -21,7 +21,7 @@ namespace TrainingHub.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors;
 /// reached the domain, and left as a <see cref="Result"/>.
 /// <para>
 /// Returning rather than throwing also stops using an exception for an outcome every caller is
-/// expected to produce. Nothing is given up by it: the behaviour still returns before <c>next</c>
+/// expected to produce. Nothing is given up by it: the behavior still returns before <c>next</c>
 /// runs, so the handler is not entered and no aggregate is touched.
 /// </para>
 /// </remarks>
@@ -72,7 +72,7 @@ public sealed class ValidationPipelineBehavior<TRequest, TResponse>(
         // query validators of this stack guard one thing: an empty identifier reaching
         // EntityId.Create, which throws. This keeps that a 400 rather than the 500 it would
         // otherwise be. Giving queries the same treatment as commands means giving them a Result to
-        // fail into, which is a change to the read side rather than to this behaviour.
+        // fail into, which is a change to the read side rather than to this behavior.
         throw new ValidationException(failures);
     }
 }

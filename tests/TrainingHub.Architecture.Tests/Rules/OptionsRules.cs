@@ -9,7 +9,7 @@ namespace TrainingHub.Architecture.Tests.Rules;
 /// </summary>
 /// <remarks>
 /// Three options classes learned this one at a time — storage, mail, logging — and the outbox
-/// was the fourth, bound with no validation at all until ADR 0033. The rule generalises what the
+/// was the fourth, bound with no validation at all until ADR 0033. The rule generalizes what the
 /// precedents already agreed on, so the fifth section starts validated instead of rediscovering
 /// the lesson. Measured, not assumed: written against the unvalidated outbox binding, and it
 /// failed naming that line before the binding was converted.

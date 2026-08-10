@@ -8,7 +8,7 @@ using Xunit;
 namespace TrainingHub.Blazor.Client.Tests.Infrastructure;
 
 /// <summary>
-/// Behaviour covered for the provider that asks the BFF who the user is.
+/// Behavior covered for the provider that asks the BFF who the user is.
 /// </summary>
 /// <remarks>
 /// Identity used to be a JWT read out of local storage and parsed in the page. There is no token in

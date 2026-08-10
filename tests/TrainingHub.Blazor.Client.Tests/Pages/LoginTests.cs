@@ -13,7 +13,7 @@ using Xunit;
 namespace TrainingHub.Blazor.Client.Tests.Pages;
 
 /// <summary>
-/// Behaviour covered for the sign-in page.
+/// Behavior covered for the sign-in page.
 /// </summary>
 /// <remarks>
 /// The page's own logic is four lines long and one of them is a security control: where to go once
@@ -41,10 +41,10 @@ public sealed class LoginTests : ComponentTest
     }
 
     /// <summary>
-    /// Sign in, a return address that is a path, is honoured.
+    /// Sign in, a return address that is a path, is honored.
     /// </summary>
     [Fact]
-    public async Task SignIn_AReturnAddressThatIsAPath_IsHonoured()
+    public async Task SignIn_AReturnAddressThatIsAPath_IsHonored()
     {
         // Act
         var navigation = await SignInWith("/trainings/create");
@@ -54,10 +54,10 @@ public sealed class LoginTests : ComponentTest
     }
 
     /// <summary>
-    /// Sign in, no return address, goes to the catalogue.
+    /// Sign in, no return address, goes to the catalog.
     /// </summary>
     [Fact]
-    public async Task SignIn_NoReturnAddress_GoesToTheCatalogue()
+    public async Task SignIn_NoReturnAddress_GoesToTheCatalog()
     {
         // Act
         var navigation = await SignInWith(returnUrl: null);

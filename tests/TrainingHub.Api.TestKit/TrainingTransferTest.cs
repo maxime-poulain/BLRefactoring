@@ -15,7 +15,7 @@ namespace TrainingHub.Api.TestKit;
 
 /// <summary>
 /// The transfer rule over HTTP, on both hosts: a training changes hands when the recipient's
-/// catalogue allows it, and the transferred fact rides the outbox (ADR 0036).
+/// catalog allows it, and the transferred fact rides the outbox (ADR 0036).
 /// </summary>
 /// <remarks>
 /// The decision itself is <c>TrainingTransferDomainService</c>'s, proven in the domain suite against

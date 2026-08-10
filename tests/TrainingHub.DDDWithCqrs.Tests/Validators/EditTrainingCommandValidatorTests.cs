@@ -5,7 +5,7 @@ using Xunit;
 namespace TrainingHub.DDDWithCqrs.Tests.Validators;
 
 /// <summary>
-/// Behaviour covered for <c>EditTrainingCommandValidator</c>.
+/// Behavior covered for <c>EditTrainingCommandValidator</c>.
 /// </summary>
 public sealed class EditTrainingCommandValidatorTests
 {

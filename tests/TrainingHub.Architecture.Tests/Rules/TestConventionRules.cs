@@ -45,7 +45,7 @@ public sealed partial class TestConventionRules
             // naming what it rules out.
             .Where(file => file != "Directory.Packages.props" && !StatesTheseRules(file))
             .Select(file =>
-                $"'{file}' names the library ADR 0007 replaced with a fork on a permissive licence")
+                $"'{file}' names the library ADR 0007 replaced with a fork on a permissive license")
             .ShouldHold();
 
     /// <summary>

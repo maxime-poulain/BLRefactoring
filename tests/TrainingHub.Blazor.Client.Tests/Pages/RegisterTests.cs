@@ -12,7 +12,7 @@ using Xunit;
 namespace TrainingHub.Blazor.Client.Tests.Pages;
 
 /// <summary>
-/// Behaviour covered for the account-creation page.
+/// Behavior covered for the account-creation page.
 /// </summary>
 /// <remarks>
 /// This page is the only one in the application that reads a problem document's per-field map. The

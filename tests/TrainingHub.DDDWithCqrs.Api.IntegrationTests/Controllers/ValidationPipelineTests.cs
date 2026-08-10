@@ -34,9 +34,9 @@ namespace TrainingHub.DDDWithCqrs.Api.IntegrationTests.Controllers;
 /// </para>
 /// <para>
 /// This is the second time this file's subject has moved out from under it. ADR 0043 gave the
-/// judgement of an address back to the domain, and the test kept passing for a new reason — the
+/// judgment of an address back to the domain, and the test kept passing for a new reason — the
 /// handler ran and the value object refused. The remark below recorded that trap; this rewrite is
-/// what honouring it looks like.
+/// what honoring it looks like.
 /// </para>
 /// </remarks>
 [Collection("Api")]

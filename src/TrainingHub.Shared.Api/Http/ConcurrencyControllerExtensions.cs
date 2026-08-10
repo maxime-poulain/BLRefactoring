@@ -30,7 +30,7 @@ public static class ConcurrencyControllerExtensions
     // declares never reaches the OpenAPI document. The actions now bind it as a parameter and call
     // EntityTag.TryParse themselves. See ADR 0010.
     //
-    // One behavioural nuance came with the move. The old code took the first value of a
+    // One behavioral nuance came with the move. The old code took the first value of a
     // multi-valued If-Match; a bound string receives them joined by commas. Both fail TryParse and
     // come out as 428 — same answer, reached by a different route.
 

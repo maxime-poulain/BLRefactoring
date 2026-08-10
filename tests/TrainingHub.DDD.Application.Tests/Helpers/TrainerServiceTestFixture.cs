@@ -41,10 +41,10 @@ public sealed class TrainerServiceTestFixture
     {
         GivenCaller(CallerId);
 
-        PhotoSanitiser
-            .Setup(sanitiser => sanitiser.Sanitise(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<string>()))
+        PhotoSanitizer
+            .Setup(sanitizer => sanitizer.Sanitize(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<string>()))
             .Returns((ReadOnlyMemory<byte> content, string contentType) =>
-                Result<SanitisedPhoto>.Success(new SanitisedPhoto(content, contentType)));
+                Result<SanitizedPhoto>.Success(new SanitizedPhoto(content, contentType)));
     }
 
     /// <summary>Makes the service resolve <paramref name="trainerId"/> as the calling trainer.</summary>
@@ -77,13 +77,13 @@ public sealed class TrainerServiceTestFixture
     /// the tests here are about the order this service does things in, and the fixtures they upload
     /// are a valid signature followed by nothing in particular — a real decoder would refuse them,
     /// correctly, and every one of these tests would then be about the decoder. What the real one
-    /// does to real pixels is <c>SkiaSharpPhotoSanitiserTests</c>.
+    /// does to real pixels is <c>SkiaSharpPhotoSanitizerTests</c>.
     /// <para>
     /// It is still wired rather than bypassed, so a service that stopped calling it would fail the
     /// fact that says it must.
     /// </para>
     /// </remarks>
-    public Mock<IPhotoSanitiser> PhotoSanitiser { get; } = new();
+    public Mock<IPhotoSanitizer> PhotoSanitizer { get; } = new();
 
     /// <summary>
     /// The instant this fixture's clock is stopped at.
@@ -91,7 +91,7 @@ public sealed class TrainerServiceTestFixture
     public static readonly DateTime Now = new(2026, 8, 9, 12, 0, 0, DateTimeKind.Utc);
 
     /// <summary>
-    /// The clock the sanitisation stamp is read from, stopped so a fact can name the instant.
+    /// The clock the sanitization stamp is read from, stopped so a fact can name the instant.
     /// </summary>
     /// <remarks>
     /// Declared here rather than pulled from a package, which is what the two infrastructure
@@ -110,7 +110,7 @@ public sealed class TrainerServiceTestFixture
     public TrainerApplicationService CreateSut() => new(
         TrainerRepository.Object,
         PhotoStore.Object,
-        PhotoSanitiser.Object,
+        PhotoSanitizer.Object,
         CurrentUserService.Object,
         _clock,
         UnitOfWork.Object);

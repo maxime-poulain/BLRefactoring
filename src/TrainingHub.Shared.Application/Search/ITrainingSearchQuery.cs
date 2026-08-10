@@ -29,7 +29,7 @@ public interface ITrainingSearchQuery
     /// The page of offered trainings whose titles match every word of the term.
     /// </summary>
     /// <param name="term">
-    /// What to look for. A blank term is no term at all, and answers the offered catalogue — the
+    /// What to look for. A blank term is no term at all, and answers the offered catalog — the
     /// same reading the trainers' listing gives it (ADR 0055).
     /// </param>
     /// <param name="paging">The page asked for, under the published cap (ADR 0029).</param>
@@ -38,7 +38,7 @@ public interface ITrainingSearchQuery
     /// The page, in the total order the index is stored in, and the count of everything that
     /// matched — never a page filtered after it was read.
     /// </returns>
-    Task<PagedResult<CatalogueTrainingDto>> SearchAsync(
+    Task<PagedResult<CatalogTrainingDto>> SearchAsync(
         string? term,
         PageRequest paging,
         CancellationToken cancellationToken = default);

@@ -10,9 +10,9 @@ namespace TrainingHub.Shared.Application.IntegrationEvents;
 /// runs after it from a stored message, and keeping the two contracts apart keeps the two moments
 /// impossible to confuse (ADR 0024, ADR 0025). Delivery is at-least-once and settled per
 /// consumer: throwing is the protocol for "try again" — the worker records the failure against
-/// this consumer and re-runs only the consumers still owed, so a neighbour's failure no longer
+/// this consumer and re-runs only the consumers still owed, so a neighbor's failure no longer
 /// replays a delivery that already succeeded (ADR 0034). Idempotency drops from obligation to
-/// defence-in-depth; the residual window is a lapsed lease replaying the not-yet-settled.
+/// defense-in-depth; the residual window is a lapsed lease replaying the not-yet-settled.
 /// </remarks>
 /// <typeparam name="TEvent">The integration event this handler consumes.</typeparam>
 public interface IIntegrationEventHandler<in TEvent>

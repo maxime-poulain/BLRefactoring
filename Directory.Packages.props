@@ -33,7 +33,7 @@
     <PackageVersion Include="KubernetesClient" Version="17.0.14" />
     <!--
       Community fork of FluentAssertions 7, under Apache 2.0. FluentAssertions 8 moved to a
-      commercial Xceed licence; this keeps the same fluent API on a permissive one.
+      commercial Xceed license; this keeps the same fluent API on a permissive one.
     -->
     <PackageVersion Include="AwesomeAssertions" Version="9.5.0" />
     <!--
@@ -155,7 +155,7 @@
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
     <!--
       The imaging library, under MIT, and the one ADR 0021 named by name when it deferred this:
-      ImageSharp was declined there because its licence changes for commercial use above a revenue
+      ImageSharp was declined there because its license changes for commercial use above a revenue
       threshold, which is not a property a dependency should have. It decodes an uploaded portrait
       and re-encodes it without metadata, which is what keeps a phone's GPS coordinates off a public
       page. See ADR 0063.

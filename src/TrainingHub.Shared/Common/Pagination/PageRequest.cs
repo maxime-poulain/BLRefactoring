@@ -7,7 +7,7 @@ namespace TrainingHub.Shared.Common.Pagination;
 /// One value for every consumer of a page — the CQRS query that carries it, the layered
 /// application service that receives it, the repository question that takes it — so the bounds
 /// exist once instead of once per stack. It used to be the query side's <c>PagedQuery</c> base
-/// class; harmonising the two stacks turned it into shared vocabulary, beside <c>Result</c>,
+/// class; harmonizing the two stacks turned it into shared vocabulary, beside <c>Result</c>,
 /// because a page request is no more a query-side concept than a failure is.
 /// <para>
 /// The bounds are enforced at the HTTP boundary, where a caller can be told which field is wrong;

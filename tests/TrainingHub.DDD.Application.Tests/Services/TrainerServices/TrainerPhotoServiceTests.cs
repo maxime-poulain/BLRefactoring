@@ -11,7 +11,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.Services.TrainerServices;
 
 /// <summary>
-/// Behaviour covered for the photo use cases of <c>TrainerApplicationService</c>.
+/// Behavior covered for the photo use cases of <c>TrainerApplicationService</c>.
 /// </summary>
 /// <remarks>
 /// The rules about what an image may be are proven on the value object, where they live. What is

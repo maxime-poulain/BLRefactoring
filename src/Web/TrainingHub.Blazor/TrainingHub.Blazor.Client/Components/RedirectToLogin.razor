@@ -25,7 +25,7 @@
     /// <para>
     /// This used to redirect unconditionally, which was right while every guarded page asked only
     /// for a signed-in caller: the only way to be refused was to be nobody. The administration
-    /// pages are the first that refuse somebody, and against them the old behaviour sent a signed-in
+    /// pages are the first that refuse somebody, and against them the old behavior sent a signed-in
     /// trainer to a sign-in page they had already been through — a loop that reads as a broken
     /// application rather than as a decision, because signing in again lands them right back here.
     /// </para>

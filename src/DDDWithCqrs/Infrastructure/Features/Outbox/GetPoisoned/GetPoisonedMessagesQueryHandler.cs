@@ -10,7 +10,7 @@ namespace TrainingHub.DDDWithCqrs.Infrastructure.Features.Outbox.GetPoisoned;
 /// Answers the poison listing by asking the outbox's operator surface.
 /// </summary>
 /// <remarks>
-/// A pass-through, like the catalogue's, and for the neighbouring reason: what usually separates
+/// A pass-through, like the catalog's, and for the neighboring reason: what usually separates
 /// the two hosts is how each drives the write model, and there is no write model here at all. The
 /// envelope is a persistence shape this layer must not name, so the port answers the DTO and the
 /// handler carries it (ADR 0061).

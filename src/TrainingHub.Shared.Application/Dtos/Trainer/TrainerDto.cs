@@ -1,7 +1,7 @@
 namespace TrainingHub.Shared.Application.Dtos.Trainer;
 
 /// <summary>
-/// A trainer as the application layer hands it back: already valid, no behaviour attached.
+/// A trainer as the application layer hands it back: already valid, no behavior attached.
 /// </summary>
 public sealed class TrainerDto
 {
@@ -10,7 +10,7 @@ public sealed class TrainerDto
     /// </summary>
     /// <remarks>
     /// Carried to the API layer, which publishes it as an <c>ETag</c> and leaves it out of the
-    /// response contract. This read model is no longer serialised to callers, so it no longer
+    /// response contract. This read model is no longer serialized to callers, so it no longer
     /// needs to say so.
     /// </remarks>
     public byte[] RowVersion { get; init; } = [];

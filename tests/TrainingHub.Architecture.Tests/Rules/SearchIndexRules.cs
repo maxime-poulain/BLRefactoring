@@ -36,7 +36,7 @@ public sealed class SearchIndexRules
     /// The published language of this context is two ports — one that writes and one that reads —
     /// and its storage is nobody else's business. The temptation is specific rather than abstract:
     /// every query handler on the CQRS host projects columns out of a <c>DbSet</c>, so the obvious
-    /// way to write the catalogue's reader was to open one over the index. It would have worked,
+    /// way to write the catalog's reader was to open one over the index. It would have worked,
     /// and it would have made a bounded context into a table this application happens to share.
     /// <para>
     /// Read off the source, because the claim is about what a file <em>says</em>: a handler naming
@@ -73,7 +73,7 @@ public sealed class SearchIndexRules
     ];
 
     /// <summary>
-    /// No catalogue search, reads the write model.
+    /// No catalog search, reads the write model.
     /// </summary>
     /// <remarks>
     /// The point of having built an index. ADR 0055 refused this context a query surface until there
@@ -91,7 +91,7 @@ public sealed class SearchIndexRules
     [ArchitectureRule("0059",
         "a search that falls back on the aggregates has not been built; the index is the answer or " +
         "there is no index")]
-    public void NoCatalogueSearch_ReadsTheWriteModel() =>
+    public void NoCatalogSearch_ReadsTheWriteModel() =>
         SourceTree.SourceFiles
             .Select(SourceTree.Relative)
             .Where(file => file.StartsWith("src/", StringComparison.Ordinal))
@@ -101,7 +101,7 @@ public sealed class SearchIndexRules
             .SelectMany(file => TheWriteModel
                 .Where(term => Text(file).Contains(term, StringComparison.Ordinal))
                 .Select(term =>
-                    $"'{file}' names '{term}'. A catalogue search reads the index and nothing else: " +
+                    $"'{file}' names '{term}'. A catalog search reads the index and nothing else: " +
                     "reaching the aggregates from here restores the scan ADR 0055 recorded and " +
                     "leaves the index as decoration (ADR 0059)"))
             .ShouldHold();

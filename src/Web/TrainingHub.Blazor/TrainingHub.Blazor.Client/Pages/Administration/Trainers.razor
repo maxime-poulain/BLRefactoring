@@ -73,7 +73,7 @@
                 <MudTd DataLabel="Standing">
                     @* Only the sanctioned state gets a badge. Active is what a trainer is unless
                        something happened to them, and a chip on every row would make the one that
-                       matters harder to see — the same choice the trainer's own catalogue makes. *@
+                       matters harder to see — the same choice the trainer's own catalog makes. *@
                     @if (IsSuspended(context))
                     {
                         <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">
@@ -172,7 +172,7 @@
         {
             // The size travels unset: the default is the server's to choose and the cap the
             // server's to hold (ADR 0029). Blank means no filter, which the API already treats as
-            // absent, so nothing is normalised here.
+            // absent, so nothing is normalized here.
             _page = await AdministrationClient.GetTrainersAsync(_status, _search, _currentPage, null);
 
             // A page can fall past the end when a filter narrows the set under a caller who was
@@ -200,7 +200,7 @@
             title: "Suspend trainer",
             prompt: "Suspend",
             subject: $"{trainer.Firstname} {trainer.Lastname}",
-            consequence: "They keep their account and their trainings, and their catalogue leaves "
+            consequence: "They keep their account and their trainings, and their catalog leaves "
                          + "public view until the suspension is lifted. They are told by email, with "
                          + "this reason.",
             verb: "Suspend");
@@ -222,7 +222,7 @@
         // record about it that the trainer needs to read (ADR 0050).
         await RunAsync(
             () => AdministrationClient.ReinstateTrainerAsync(trainer.Id),
-            "Trainer reinstated. Their catalogue is on offer again.",
+            "Trainer reinstated. Their catalog is on offer again.",
             "reinstated");
 
     private async Task RunAsync(Func<Task> action, string success, string verb)

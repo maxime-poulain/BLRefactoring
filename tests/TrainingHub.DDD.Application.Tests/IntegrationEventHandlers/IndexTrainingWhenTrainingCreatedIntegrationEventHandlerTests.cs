@@ -7,7 +7,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.IntegrationEventHandlers;
 
 /// <summary>
-/// Behaviour covered for <c>IndexTrainingWhenTrainingCreatedIntegrationEventHandler</c>.
+/// Behavior covered for <c>IndexTrainingWhenTrainingCreatedIntegrationEventHandler</c>.
 /// </summary>
 public sealed class IndexTrainingWhenTrainingCreatedIntegrationEventHandlerTests
 {

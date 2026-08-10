@@ -23,7 +23,7 @@ public sealed class ReinstateTrainerCommand(Guid trainerId) : ICommand<Result>
 /// <remarks>
 /// No reason, and none is cleared here: the aggregate clears the one it was holding, because a
 /// reason outliving the state it motivates is the orphan half of ADR 0052's invariant. Nothing is
-/// restored either — the trainer's catalogue comes back exactly as they left it, which is the
+/// restored either — the trainer's catalog comes back exactly as they left it, which is the
 /// scenario that decided the shape of ADR 0050.
 /// </remarks>
 public sealed class ReinstateTrainerCommandHandler(

@@ -12,7 +12,7 @@ using Xunit;
 namespace TrainingHub.DDDWithCqrs.Tests.Handlers;
 
 /// <summary>
-/// Behaviour covered for <c>TransferTrainingCommandHandler</c>.
+/// Behavior covered for <c>TransferTrainingCommandHandler</c>.
 /// </summary>
 /// <remarks>
 /// The decision itself is <c>TrainingTransferDomainService</c>'s and is proven in the domain suite;
@@ -126,7 +126,7 @@ public sealed class TransferTrainingCommandHandlerTests
         var result = await sut.Handle(
             new TransferTrainingCommand(training.Id.Value, Guid.NewGuid()), CancellationToken.None);
 
-        result.ShouldContainError(TrainingErrorCodes.RecipientCatalogueFull);
+        result.ShouldContainError(TrainingErrorCodes.RecipientCatalogFull);
         _unitOfWork.Verify(uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 

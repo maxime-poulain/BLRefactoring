@@ -5,7 +5,7 @@ using Xunit;
 namespace TrainingHub.DDDWithCqrs.Tests.Validators;
 
 /// <summary>
-/// Behaviour covered for <c>DeleteTrainingCommandValidator</c>.
+/// Behavior covered for <c>DeleteTrainingCommandValidator</c>.
 /// </summary>
 public sealed class DeleteTrainingCommandValidatorTests
 {

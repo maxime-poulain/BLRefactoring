@@ -116,7 +116,7 @@ public sealed class SuspendedTrainerTests : ComponentTest
     }
 
     /// <summary>
-    /// The catalogue, a suspension in force, keeps its write controls and disables them.
+    /// The catalog, a suspension in force, keeps its write controls and disables them.
     /// </summary>
     /// <remarks>
     /// Asserted on every button the page renders rather than on a chosen one: what the sanction
@@ -124,7 +124,7 @@ public sealed class SuspendedTrainerTests : ComponentTest
     /// pass a narrower fact.
     /// </remarks>
     [Fact]
-    public void TheCatalogue_ASuspensionInForce_KeepsItsWriteControlsAndDisablesThem()
+    public void TheCatalog_ASuspensionInForce_KeepsItsWriteControlsAndDisablesThem()
     {
         // Act
         var page = Render<Trainings>();
@@ -142,7 +142,7 @@ public sealed class SuspendedTrainerTests : ComponentTest
         Topics = ["Backend"],
         Description = "A description long enough to be valid.",
         Prerequisites = "None to speak of.",
-        AcquiredSkills = "Modelling a domain.",
+        AcquiredSkills = "Modeling a domain.",
         Status = "Published"
     };
 }

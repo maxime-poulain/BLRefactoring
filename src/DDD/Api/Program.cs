@@ -1,4 +1,4 @@
-using TrainingHub.DDD.Application.Services.CatalogueServices;
+using TrainingHub.DDD.Application.Services.CatalogServices;
 using TrainingHub.DDD.Application.Services.OutboxServices;
 using TrainingHub.DDD.Application.Services.TrainerServices;
 using TrainingHub.DDD.Application.Services.TrainingServices;
@@ -49,7 +49,7 @@ builder.Services.AddTransient<ITrainerApplicationService, TrainerApplicationServ
 // The two application services that drive no aggregate: one reads the search index through the
 // query half of that context's published language (ADR 0059), the other reads and requeues the
 // platform's own delivery table (ADR 0061).
-builder.Services.AddTransient<ICatalogueApplicationService, CatalogueApplicationService>();
+builder.Services.AddTransient<ICatalogApplicationService, CatalogApplicationService>();
 builder.Services.AddTransient<IOutboxApplicationService, OutboxApplicationService>();
 
 builder.Services.AddInfrastructure(builder.Configuration);

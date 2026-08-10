@@ -85,7 +85,7 @@ public sealed partial class PipelineRules
     /// passed when none ran. A job skipped by a job-level condition still posts its check, and
     /// GitHub counts a skipped check as passing — so the sentence "its commit was already built when
     /// it was pushed" was load-bearing while being a claim about a run nothing looked at. It stops
-    /// being true whenever the push run is cancelled without reaching a runner, which this
+    /// being true whenever the push run is canceled without reaching a runner, which this
     /// repository has measured on its own default branch.
     /// <para>
     /// So the job must run in every case, and where it delegates it must read the other run's
@@ -167,9 +167,9 @@ public sealed partial class PipelineRules
         new[]
         {
             (Setting: "pull_request:",
-             Wrong: "analyses no pull request, so a regression is found after it is merged"),
+             Wrong: "analyzes no pull request, so a regression is found after it is merged"),
             (Setting: "branches: [master]",
-             Wrong: "analyses no push to master, so there is no baseline for a pull request to be " +
+             Wrong: "analyzes no push to master, so there is no baseline for a pull request to be " +
                     "compared against"),
             (Setting: "src/TrainingHub.GeneratedClients/**",
              Wrong: "measures the generated client like code somebody wrote — two thousand four " +

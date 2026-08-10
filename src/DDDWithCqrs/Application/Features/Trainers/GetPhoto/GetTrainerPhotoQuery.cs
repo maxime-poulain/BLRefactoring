@@ -9,8 +9,8 @@ namespace TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetPhoto;
 /// <param name="trainerId">The trainer whose photo is wanted.</param>
 /// <remarks>
 /// By identifier rather than "mine", unlike the commands beside it. Publishing a portrait is
-/// self-service; looking at one is what a catalogue of trainers does, and this query is already
-/// shaped for the day that catalogue is public.
+/// self-service; looking at one is what a catalog of trainers does, and this query is already
+/// shaped for the day that catalog is public.
 /// </remarks>
 public sealed class GetTrainerPhotoQuery(Guid trainerId) : IQuery<TrainerPhotoDto?>
 {

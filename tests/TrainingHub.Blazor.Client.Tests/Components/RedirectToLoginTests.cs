@@ -8,12 +8,12 @@ using Xunit;
 namespace TrainingHub.Blazor.Client.Tests.Components;
 
 /// <summary>
-/// Behaviour covered for the redirect an unauthenticated visitor lands on.
+/// Behavior covered for the redirect an unauthenticated visitor lands on.
 /// </summary>
 /// <remarks>
 /// Three things live here and nowhere else. The address the visitor asked for is carried into
 /// <c>returnUrl</c> so a deep link survives signing in — without it every bookmark and every
-/// expired session lands on the catalogue. The address is made relative before it is carried,
+/// expired session lands on the catalog. The address is made relative before it is carried,
 /// which is what stops a sign-in page from becoming a phishing hop: a redirect target taken from
 /// the address bar and replayed after authentication is an open redirect the moment it is allowed
 /// to name a host.
@@ -28,10 +28,10 @@ namespace TrainingHub.Blazor.Client.Tests.Components;
 public sealed class RedirectToLoginTests : ComponentTest
 {
     /// <summary>
-    /// Initialised, a deep link, remembers where the visitor was going.
+    /// Initialized, a deep link, remembers where the visitor was going.
     /// </summary>
     [Fact]
-    public void Initialised_ADeepLink_RemembersWhereTheVisitorWasGoing()
+    public void Initialized_ADeepLink_RemembersWhereTheVisitorWasGoing()
     {
         // Arrange
         var navigation = Navigation("http://localhost/trainings/create");
@@ -44,10 +44,10 @@ public sealed class RedirectToLoginTests : ComponentTest
     }
 
     /// <summary>
-    /// Initialised, at the root, has nothing to remember.
+    /// Initialized, at the root, has nothing to remember.
     /// </summary>
     [Fact]
-    public void Initialised_AtTheRoot_HasNothingToRemember()
+    public void Initialized_AtTheRoot_HasNothingToRemember()
     {
         // Arrange
         var navigation = Navigation("http://localhost/");
@@ -60,14 +60,14 @@ public sealed class RedirectToLoginTests : ComponentTest
     }
 
     /// <summary>
-    /// Initialised, the address carries a query, escapes it into one parameter.
+    /// Initialized, the address carries a query, escapes it into one parameter.
     /// </summary>
     /// <remarks>
     /// Unescaped, the requested query string would merge into the sign-in page's own and the part
     /// after the first ampersand would be read as a second parameter of the login address.
     /// </remarks>
     [Fact]
-    public void Initialised_TheAddressCarriesAQuery_EscapesItIntoOneParameter()
+    public void Initialized_TheAddressCarriesAQuery_EscapesItIntoOneParameter()
     {
         // Arrange
         var navigation = Navigation("http://localhost/trainings?page=2&size=10");
@@ -80,7 +80,7 @@ public sealed class RedirectToLoginTests : ComponentTest
     }
 
     /// <summary>
-    /// Initialised, a signed-in caller without the authority, says so instead of asking them to
+    /// Initialized, a signed-in caller without the authority, says so instead of asking them to
     /// sign in again.
     /// </summary>
     /// <remarks>
@@ -89,7 +89,7 @@ public sealed class RedirectToLoginTests : ComponentTest
     /// back underneath it.
     /// </remarks>
     [Fact]
-    public void Initialised_ASignedInCallerWithoutTheAuthority_SaysSoInsteadOfAskingThemToSignInAgain()
+    public void Initialized_ASignedInCallerWithoutTheAuthority_SaysSoInsteadOfAskingThemToSignInAgain()
     {
         // Arrange — authorization first: resolving a service seals the container, and Navigation
         // resolves the navigation manager.

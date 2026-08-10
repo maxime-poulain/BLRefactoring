@@ -105,7 +105,7 @@ public sealed class TrainerStandingTests
     /// </summary>
     /// <remarks>
     /// The scenario that decided the shape of the whole record: a sanction indistinguishable from
-    /// an erasure cannot be lifted, and one that rewrote the catalogue on the way in could not put
+    /// an erasure cannot be lifted, and one that rewrote the catalog on the way in could not put
     /// it back the way it was.
     /// </remarks>
     [Fact]

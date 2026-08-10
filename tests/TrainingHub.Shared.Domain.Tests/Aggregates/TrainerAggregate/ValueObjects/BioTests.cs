@@ -7,7 +7,7 @@ using Xunit;
 namespace TrainingHub.Shared.Domain.Tests.Aggregates.TrainerAggregate.ValueObjects;
 
 /// <summary>
-/// Behaviour covered for <c>Bio</c>.
+/// Behavior covered for <c>Bio</c>.
 /// </summary>
 public sealed class BioTests
 {

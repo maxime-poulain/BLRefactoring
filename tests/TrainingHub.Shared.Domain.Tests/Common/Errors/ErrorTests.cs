@@ -5,7 +5,7 @@ using Xunit;
 namespace TrainingHub.Shared.Domain.Tests.Common.Errors;
 
 /// <summary>
-/// Behaviour covered for <c>Error</c>.
+/// Behavior covered for <c>Error</c>.
 /// </summary>
 public sealed class ErrorTests
 {

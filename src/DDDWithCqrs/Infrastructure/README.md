@@ -21,7 +21,7 @@ by both stacks. What is here is what only the CQRS stack has.
 
 ## Why the query handlers are here rather than in Application
 
-A command handler orchestrates business: it loads aggregates, calls their behaviour and commits
+A command handler orchestrates business: it loads aggregates, calls their behavior and commits
 through the unit of work, and it needs no knowledge of EF Core. It belongs in Application, and that
 is where it is — in the same file as its command.
 

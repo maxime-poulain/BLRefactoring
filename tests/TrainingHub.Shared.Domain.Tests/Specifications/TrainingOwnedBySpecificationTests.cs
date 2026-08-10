@@ -7,7 +7,7 @@ using Xunit;
 namespace TrainingHub.Shared.Domain.Tests.Specifications;
 
 /// <summary>
-/// Behaviour covered for <see cref="TrainingOwnedBySpecification"/>: the ownership rule, asked
+/// Behavior covered for <see cref="TrainingOwnedBySpecification"/>: the ownership rule, asked
 /// both ways.
 /// </summary>
 public sealed class TrainingOwnedBySpecificationTests
@@ -43,7 +43,7 @@ public sealed class TrainingOwnedBySpecificationTests
     /// The aggregate, wears the rule.
     /// </summary>
     /// <remarks>
-    /// <c>Training.IsOwnedBy</c> is the specification worn as a behaviour method; asking either
+    /// <c>Training.IsOwnedBy</c> is the specification worn as a behavior method; asking either
     /// must be asking the same rule, or the aggregate's surface and the domain's statement have
     /// drifted apart.
     /// </remarks>

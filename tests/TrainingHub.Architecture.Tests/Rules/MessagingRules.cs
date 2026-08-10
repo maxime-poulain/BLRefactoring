@@ -236,7 +236,7 @@ public sealed partial class MessagingRules
             .Where(file => !file.EndsWith("ValidationPipelineBehavior.cs", StringComparison.Ordinal))
             .Select(file =>
                 $"'{file}' raises ErrorCodes.Validation. The code says a request was refused before " +
-                "any aggregate was reached, which only the validation behaviour is in a position to " +
+                "any aggregate was reached, which only the validation behavior is in a position to " +
                 "say — anywhere else it is a failure with an owner, and the owner should name it")
             .ShouldHold();
     }

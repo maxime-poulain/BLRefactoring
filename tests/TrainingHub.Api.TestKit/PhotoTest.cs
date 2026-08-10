@@ -25,7 +25,7 @@ namespace TrainingHub.Api.TestKit;
 /// <para>
 /// Run against both suites, like the CORS and ownership assertions beside it. Both hosts publish
 /// these three operations because a rule says they must; running the same assertions on both is
-/// what makes that parity mean the same behaviour rather than the same method names.
+/// what makes that parity mean the same behavior rather than the same method names.
 /// </para>
 /// </remarks>
 /// <typeparam name="TFactory">The suite's fixture.</typeparam>
@@ -47,7 +47,7 @@ public abstract class PhotoTest<TFactory>(TFactory factory) : IntegrationTest<TF
     /// </para>
     /// <para>
     /// What <em>is</em> a property is that the metadata does not survive, so the upload carries some:
-    /// an EXIF description a camera would have written. Whether the sanitiser strips is proved on
+    /// an EXIF description a camera would have written. Whether the sanitizer strips is proved on
     /// real bytes in its own unit tests; what this adds is that the pipeline calls it at all.
     /// </para>
     /// </remarks>
@@ -185,7 +185,7 @@ public abstract class PhotoTest<TFactory>(TFactory factory) : IntegrationTest<TF
         second.PhotoId.Should().NotBe(first.PhotoId!.Value);
         response.Content.Headers.ContentType!.MediaType.Should().Be(TrainerPhoto.JpegContentType);
 
-        // The picture's format rather than its bytes: what is served has been through the sanitiser,
+        // The picture's format rather than its bytes: what is served has been through the sanitizer,
         // so the question is whether it is the replacement's format and not the first upload's.
         (await response.Content.ReadAsByteArrayAsync()).Take(3).Should().Equal([0xFF, 0xD8, 0xFF]);
     }
@@ -328,7 +328,7 @@ public abstract class PhotoTest<TFactory>(TFactory factory) : IntegrationTest<TF
     /// hedge. A body-read failure inside model binding does not reliably reach the exception
     /// handler that would answer 413: MVC folds it into model state, and the caller is told 400
     /// with an unbound file instead. Both are honest refusals and both stop the read; pinning one
-    /// would be pinning a framework's internal routing, not this API's behaviour.
+    /// would be pinning a framework's internal routing, not this API's behavior.
     /// </para>
     /// </remarks>
     [Fact]

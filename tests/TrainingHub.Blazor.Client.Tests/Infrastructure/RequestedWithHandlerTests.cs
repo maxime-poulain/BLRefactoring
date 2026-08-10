@@ -6,7 +6,7 @@ using Xunit;
 namespace TrainingHub.Blazor.Client.Tests.Infrastructure;
 
 /// <summary>
-/// Behaviour covered for the handler that marks every call as coming from this application.
+/// Behavior covered for the handler that marks every call as coming from this application.
 /// </summary>
 /// <remarks>
 /// This header is a security control, not a convenience: the BFF authenticates with a cookie, and a

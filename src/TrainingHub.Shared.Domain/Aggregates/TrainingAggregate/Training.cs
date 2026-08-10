@@ -10,7 +10,7 @@ namespace TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
 /// A training a trainer publishes.
 /// <para>
 /// The aggregate root of its own boundary: its constructor is private, its topics are exposed
-/// read-only, and every transition goes through a behaviour method that either succeeds entirely
+/// read-only, and every transition goes through a behavior method that either succeeds entirely
 /// or changes nothing. It accepts value objects, never a raw <see langword="string"/> — turning
 /// input into those is the application layer's job.
 /// </para>
@@ -18,13 +18,13 @@ namespace TrainingHub.Shared.Domain.Aggregates.TrainingAggregate;
 public sealed class Training : AggregateRoot<TrainingId>
 {
     /// <summary>
-    /// How many trainings one trainer may publish: no trainer's catalogue holds more than ten.
+    /// How many trainings one trainer may publish: no trainer's catalog holds more than ten.
     /// </summary>
     /// <remarks>
     /// A business rule, not a technical bound — the number is the domain expert's, and it lives
     /// here because the rule is about trainings even though it is counted per trainer, exactly
     /// as title uniqueness is. <see cref="CreateAsync"/> enforces it; nothing else reads it as
-    /// permission to exist, so a catalogue that was over the limit before the rule existed keeps
+    /// permission to exist, so a catalog that was over the limit before the rule existed keeps
     /// its trainings and merely cannot grow.
     /// </remarks>
     public const int MaximumPerTrainer = 10;
@@ -33,7 +33,7 @@ public sealed class Training : AggregateRoot<TrainingId>
 
     /// <summary>
     /// The topics this training is filed under. Read-only: a caller changes them through a
-    /// behaviour method or not at all.
+    /// behavior method or not at all.
     /// </summary>
     public IReadOnlyCollection<Topic> Topics => _topics.AsReadOnly();
 
@@ -66,7 +66,7 @@ public sealed class Training : AggregateRoot<TrainingId>
     /// Whether this training is offered to the public or withdrawn from it.
     /// </summary>
     /// <remarks>
-    /// A training is born <see cref="TrainingStatus.Published"/>, which the initialiser states
+    /// A training is born <see cref="TrainingStatus.Published"/>, which the initializer states
     /// rather than the factory: there is no path that produces a training in any other state, so
     /// the default belongs to the field. It is only ever moved by <see cref="PublishAsync"/> and
     /// <see cref="Unpublish"/>, each of which announces the move.
@@ -140,7 +140,7 @@ public sealed class Training : AggregateRoot<TrainingId>
         ArgumentNullException.ThrowIfNull(trainerStanding);
 
         // Standing before capacity: a suspended trainer may not add to what the public can see,
-        // and that refusal does not depend on how full their catalogue is (ADR 0050).
+        // and that refusal does not depend on how full their catalog is (ADR 0050).
         if (await trainerStanding.IsSuspendedAsync(trainerId, cancellationToken))
         {
             return Result<Training>.Failure(TrainingErrorCodes.TrainerSuspended,
@@ -148,12 +148,12 @@ public sealed class Training : AggregateRoot<TrainingId>
         }
 
         // Asked before the content is even looked at: no title makes an eleventh training
-        // acceptable, so a full catalogue refuses the creation whole rather than per field.
+        // acceptable, so a full catalog refuses the creation whole rather than per field.
         // Creation-only on purpose — editing changes a training, never how many there are.
         var published = await trainingCounter.CountForTrainerAsync(trainerId, cancellationToken);
         if (published >= MaximumPerTrainer)
         {
-            return Result<Training>.Failure(TrainingErrorCodes.CatalogueFull,
+            return Result<Training>.Failure(TrainingErrorCodes.CatalogFull,
                 $"A trainer cannot publish more than {MaximumPerTrainer} trainings.");
         }
 
@@ -190,7 +190,7 @@ public sealed class Training : AggregateRoot<TrainingId>
     }
 
     /// <summary>
-    /// Offers this training to the public again, when its owner's standing and catalogue allow it.
+    /// Offers this training to the public again, when its owner's standing and catalog allow it.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -198,7 +198,7 @@ public sealed class Training : AggregateRoot<TrainingId>
     /// this method takes a counter. Once the quota counts published trainings alone, a trainer
     /// sitting at the limit could unpublish one, create a replacement, and republish the first —
     /// eleven trainings on offer, each one added through a check that passed. Publishing is the
-    /// second act that grows the public catalogue, so it answers the same rule creation does.
+    /// second act that grows the public catalog, so it answers the same rule creation does.
     /// </para>
     /// <para>
     /// Editing takes no such argument and never will: an edition changes a training, never how
@@ -244,7 +244,7 @@ public sealed class Training : AggregateRoot<TrainingId>
         var published = await trainingCounter.CountForTrainerAsync(TrainerId, cancellationToken);
         if (published >= MaximumPerTrainer)
         {
-            return Result.Failure(TrainingErrorCodes.CatalogueFull,
+            return Result.Failure(TrainingErrorCodes.CatalogFull,
                 $"A trainer cannot publish more than {MaximumPerTrainer} trainings.");
         }
 
@@ -300,7 +300,7 @@ public sealed class Training : AggregateRoot<TrainingId>
     /// precisely what stops its owner putting it back.
     /// <para>
     /// The training keeps its place in the quota. ADR 0050 made the ten count what the public can
-    /// see, on the grounds that a trainer who withdraws ten should not lose their catalogue for
+    /// see, on the grounds that a trainer who withdraws ten should not lose their catalog for
     /// ever — but that argument is about a <em>voluntary</em> withdrawal, and freeing a slot by
     /// being moderated is a perverse incentive. See
     /// <see cref="Specifications.TrainingCountsTowardTheQuotaSpecification"/>.
@@ -338,7 +338,7 @@ public sealed class Training : AggregateRoot<TrainingId>
     /// <see cref="TrainingStatus.Published"/>, and no memory of the state before the withholding is
     /// kept. The administration lifts an interdiction; it does not decide to put a training back in
     /// the window. Restoring the prior state would need a second field, written on every
-    /// withholding and read once — the kind of field ADR 0050 refused when the behaviour can be had
+    /// withholding and read once — the kind of field ADR 0050 refused when the behavior can be had
     /// without it (ADR 0052).
     /// </remarks>
     /// <returns>Success, or a refusal when there was nothing to lift.</returns>
@@ -369,7 +369,7 @@ public sealed class Training : AggregateRoot<TrainingId>
     /// <para>
     /// Deletion survives <see cref="Unpublish"/> rather than being replaced by it, and answers a
     /// different need: the training created by mistake, and the trainer exercising a right to have
-    /// their data removed — which a system that only ever hides things cannot honour.
+    /// their data removed — which a system that only ever hides things cannot honor.
     /// </para>
     /// </remarks>
     public void MarkForDeletion()

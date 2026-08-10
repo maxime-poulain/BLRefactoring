@@ -56,7 +56,7 @@ internal static partial class AdrCatalog
 
         if (records.Length == 0)
         {
-            // Vacuity again: a catalogue that found nothing makes every coverage rule pass forever.
+            // Vacuity again: a catalog that found nothing makes every coverage rule pass forever.
             throw new InvalidOperationException(
                 $"No architecture decision record was found under '{directory}'. The coverage rules " +
                 "answer to these files; with none of them read, they assert nothing.");

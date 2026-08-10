@@ -7,7 +7,7 @@ using Xunit;
 namespace TrainingHub.Shared.Domain.Tests.Aggregates.TrainingAggregate.ValueObjects;
 
 /// <summary>
-/// Behaviour covered for <c>WithholdingReason</c>.
+/// Behavior covered for <c>WithholdingReason</c>.
 /// </summary>
 public sealed class WithholdingReasonTests
 {

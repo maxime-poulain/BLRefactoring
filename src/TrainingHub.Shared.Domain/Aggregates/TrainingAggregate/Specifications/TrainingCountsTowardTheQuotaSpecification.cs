@@ -5,7 +5,7 @@ using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 namespace TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.Specifications;
 
 /// <summary>
-/// The training holds a place in its owner's catalogue quota: everything the owner has not
+/// The training holds a place in its owner's catalog quota: everything the owner has not
 /// withdrawn themselves.
 /// </summary>
 /// <remarks>
@@ -14,7 +14,7 @@ namespace TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.Specifications;
 /// It began as "every training the trainer owns", which was the same number until withdrawing became
 /// possible. ADR 0050 narrowed it to "is published": a trainer who unpublishes all ten of theirs
 /// offers the public nothing and must be able to write an eleventh, because the rule is about a
-/// catalogue on offer rather than about rows.
+/// catalog on offer rather than about rows.
 /// </para>
 /// <para>
 /// ADR 0052 widens it again, and the difference is <em>who withdrew it</em>. That argument was about

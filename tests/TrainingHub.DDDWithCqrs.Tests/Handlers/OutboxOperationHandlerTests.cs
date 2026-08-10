@@ -13,7 +13,7 @@ using Xunit;
 namespace TrainingHub.DDDWithCqrs.Tests.Handlers;
 
 /// <summary>
-/// Behaviour covered for the two handlers of the outbox's operator surface (ADR 0061).
+/// Behavior covered for the two handlers of the outbox's operator surface (ADR 0061).
 /// </summary>
 /// <remarks>
 /// One file for a query and a command, because the pair is the surface: what is worth pinning is

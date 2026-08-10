@@ -5,7 +5,7 @@ using Xunit;
 namespace TrainingHub.Shared.Api.Tests.Http;
 
 /// <summary>
-/// Behaviour covered for <c>EntityTag</c>.
+/// Behavior covered for <c>EntityTag</c>.
 /// </summary>
 public sealed class EntityTagTests
 {

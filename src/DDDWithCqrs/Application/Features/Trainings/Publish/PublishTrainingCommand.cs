@@ -21,7 +21,7 @@ public sealed class PublishTrainingCommand(Guid trainingId) : ICommand<Result>
 /// Runs <see cref="PublishTrainingCommand"/>.
 /// </summary>
 /// <remarks>
-/// Every rule is the aggregate's — already published, owner suspended, catalogue full — so this
+/// Every rule is the aggregate's — already published, owner suspended, catalog full — so this
 /// handler loads, asks, and saves. It answers a bare <see cref="Result"/> like every command: what
 /// the training now looks like is read back with a query.
 /// </remarks>

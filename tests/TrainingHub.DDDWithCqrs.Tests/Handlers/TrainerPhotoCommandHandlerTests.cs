@@ -15,7 +15,7 @@ using Xunit;
 namespace TrainingHub.DDDWithCqrs.Tests.Handlers;
 
 /// <summary>
-/// Behaviour covered for the photo command handlers.
+/// Behavior covered for the photo command handlers.
 /// </summary>
 /// <remarks>
 /// The same ordering the layered stack is held to, held to here as well. Both hosts publish the
@@ -34,16 +34,16 @@ public sealed class TrainerPhotoCommandHandlerTests
     /// A mock handing the bytes back unchanged, for the same reason the store beside it is one:
     /// these facts are about the order this handler does things in, and the fixture it uploads is a
     /// signature followed by nothing — a real decoder would refuse it and every fact here would
-    /// become a fact about the decoder. <c>SkiaSharpPhotoSanitiserTests</c> is where real pixels go.
+    /// become a fact about the decoder. <c>SkiaSharpPhotoSanitizerTests</c> is where real pixels go.
     /// </remarks>
-    private readonly Mock<IPhotoSanitiser> _photoSanitiser = new();
+    private readonly Mock<IPhotoSanitizer> _photoSanitizer = new();
 
     /// <summary>The instant the stamp is read from.</summary>
-    private static readonly DateTime SanitisedAt = new(2026, 8, 9, 12, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime SanitizedAt = new(2026, 8, 9, 12, 0, 0, DateTimeKind.Utc);
 
     private sealed class StoppedClock : TimeProvider
     {
-        public override DateTimeOffset GetUtcNow() => SanitisedAt;
+        public override DateTimeOffset GetUtcNow() => SanitizedAt;
     }
 
     private readonly TimeProvider _clock = new StoppedClock();
@@ -59,10 +59,10 @@ public sealed class TrainerPhotoCommandHandlerTests
     {
         _currentUserService.SetupGet(service => service.TrainerId).Returns(_callerId);
 
-        _photoSanitiser
-            .Setup(sanitiser => sanitiser.Sanitise(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<string>()))
+        _photoSanitizer
+            .Setup(sanitizer => sanitizer.Sanitize(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<string>()))
             .Returns((ReadOnlyMemory<byte> content, string contentType) =>
-                Result<SanitisedPhoto>.Success(new SanitisedPhoto(content, contentType)));
+                Result<SanitizedPhoto>.Success(new SanitizedPhoto(content, contentType)));
 
         _photoStore
             .Setup(store => store.StoreAsync(
@@ -241,7 +241,7 @@ public sealed class TrainerPhotoCommandHandlerTests
     private SetTrainerPhotoCommandHandler SetSut() => new(
         _trainerRepository.Object,
         _photoStore.Object,
-        _photoSanitiser.Object,
+        _photoSanitizer.Object,
         _currentUserService.Object,
         _clock,
         _unitOfWork.Object);

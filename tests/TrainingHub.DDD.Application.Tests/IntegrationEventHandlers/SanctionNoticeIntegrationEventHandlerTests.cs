@@ -9,7 +9,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.IntegrationEventHandlers;
 
 /// <summary>
-/// Behaviour covered for the three consumers that tell a trainer about a sanction.
+/// Behavior covered for the three consumers that tell a trainer about a sanction.
 /// </summary>
 /// <remarks>
 /// Two things are worth pinning here and nothing else is. The address: the notice goes to the
@@ -92,13 +92,13 @@ public sealed class SanctionNoticeIntegrationEventHandlerTests
 
         await sut.HandleAsync(
             new TrainingWithheldIntegrationEvent(
-                Guid.NewGuid(), trainerId, "Advanced domain modelling", "Reported for misleading claims."),
+                Guid.NewGuid(), trainerId, "Advanced domain modeling", "Reported for misleading claims."),
             CancellationToken.None);
 
         _emailSender.Verify(sender => sender.SendAsync(
                 It.Is<EmailMessage>(message =>
                     message.Recipient == AccountAddress
-                    && message.Body.Contains("Advanced domain modelling")
+                    && message.Body.Contains("Advanced domain modeling")
                     && message.Body.Contains("Reported for misleading claims.")),
                 It.IsAny<CancellationToken>()),
             Times.Once);

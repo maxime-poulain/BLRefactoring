@@ -11,7 +11,7 @@ using Xunit;
 namespace TrainingHub.DDDWithCqrs.Tests.Handlers;
 
 /// <summary>
-/// Behaviour covered for <c>EditTrainerCommandHandler</c>.
+/// Behavior covered for <c>EditTrainerCommandHandler</c>.
 /// </summary>
 public sealed class EditTrainerCommandHandlerTests
 {

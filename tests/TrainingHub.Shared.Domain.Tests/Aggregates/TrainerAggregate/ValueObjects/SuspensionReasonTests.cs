@@ -7,7 +7,7 @@ using Xunit;
 namespace TrainingHub.Shared.Domain.Tests.Aggregates.TrainerAggregate.ValueObjects;
 
 /// <summary>
-/// Behaviour covered for <c>SuspensionReason</c>.
+/// Behavior covered for <c>SuspensionReason</c>.
 /// </summary>
 public sealed class SuspensionReasonTests
 {

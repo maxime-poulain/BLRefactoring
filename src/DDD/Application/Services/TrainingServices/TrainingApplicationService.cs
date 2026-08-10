@@ -54,7 +54,7 @@ public interface ITrainingApplicationService
     /// "only your own" true here rather than a convention.
     /// <para>
     /// Paged since ADR 0029: it used to answer the whole collection, which is a defect that grows
-    /// with the data — and an asymmetry with the CQRS host that the harmonisation removed.
+    /// with the data — and an asymmetry with the CQRS host that the harmonization removed.
     /// </para>
     /// </remarks>
     Task<PagedResult<TrainingDto>> GetMineAsync(PageRequest paging, CancellationToken cancellationToken = default);
@@ -65,7 +65,7 @@ public interface ITrainingApplicationService
     Task<Result> DeleteAsync(Guid trainingId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Hands a training over to another trainer, when the recipient's catalogue allows it
+    /// Hands a training over to another trainer, when the recipient's catalog allows it
     /// (ADR 0036).
     /// </summary>
     Task<Result> TransferAsync(Guid trainingId, Guid recipientTrainerId, CancellationToken cancellationToken = default);

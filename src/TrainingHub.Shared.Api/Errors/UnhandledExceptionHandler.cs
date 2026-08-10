@@ -12,7 +12,7 @@ namespace TrainingHub.Shared.Api.Errors;
 /// Registered last, so it only sees what no other handler claimed.
 /// <para>
 /// The body used to be a bare JSON string — <c>WriteAsJsonAsync</c> applied to a
-/// <see langword="const"/> <see cref="string"/>, which serialises to <c>"An unexpected error…"</c>,
+/// <see langword="const"/> <see cref="string"/>, which serializes to <c>"An unexpected error…"</c>,
 /// quotes included: not an object, no status, no field to read. A client had no way to treat it
 /// like any other failure of the same API.
 /// </para>

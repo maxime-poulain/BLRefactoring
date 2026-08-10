@@ -56,11 +56,11 @@ public static class ServiceCollectionExtensions
         // (ADR 0061).
         services.AddHttpClient<IOutboxClient, OutboxClient>(HttpClientNames.Api);
         // Generated since ADR 0059 and registered only now, for the reason the administrative
-        // client gives above: nothing in the browser could reach the catalogue until there was a
+        // client gives above: nothing in the browser could reach the catalog until there was a
         // screen to ask from. It rides the same named client as the rest — the calls it makes carry
         // no token, and the proxy forwards its family of paths without asking for one, but they
         // still carry `X-Requested-With` and the forgery guard still applies (ADR 0062).
-        services.AddHttpClient<ICatalogueClient, CatalogueClient>(HttpClientNames.Api);
+        services.AddHttpClient<ICatalogClient, CatalogClient>(HttpClientNames.Api);
 
         return services;
     }

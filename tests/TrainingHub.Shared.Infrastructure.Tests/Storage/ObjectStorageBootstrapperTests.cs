@@ -10,7 +10,7 @@ using Xunit;
 namespace TrainingHub.Shared.Infrastructure.Tests.Storage;
 
 /// <summary>
-/// Behaviour covered for <c>ObjectStorageBootstrapper</c>.
+/// Behavior covered for <c>ObjectStorageBootstrapper</c>.
 /// </summary>
 /// <remarks>
 /// What is worth pinning here is when this does <em>nothing</em>. Creating a bucket that is missing

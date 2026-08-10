@@ -10,7 +10,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.Services.TrainingServices;
 
 /// <summary>
-/// Behaviour covered for the administrative use cases of <c>TrainingApplicationService</c>.
+/// Behavior covered for the administrative use cases of <c>TrainingApplicationService</c>.
 /// </summary>
 /// <remarks>
 /// The transitions and their refusals are the aggregate's rules and are proven in the domain suite.

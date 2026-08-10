@@ -7,7 +7,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.IntegrationEventHandlers;
 
 /// <summary>
-/// Behaviour covered for <c>SendWelcomeEmailWhenTrainerCreatedIntegrationEventHandler</c>.
+/// Behavior covered for <c>SendWelcomeEmailWhenTrainerCreatedIntegrationEventHandler</c>.
 /// </summary>
 public sealed class SendWelcomeEmailWhenTrainerCreatedIntegrationEventHandlerTests
 {

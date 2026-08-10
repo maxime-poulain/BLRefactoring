@@ -7,7 +7,7 @@ using Xunit;
 namespace TrainingHub.DDD.Application.Tests.IntegrationEventHandlers;
 
 /// <summary>
-/// Behaviour covered for the three consumers that keep the search index in step with a sanction.
+/// Behavior covered for the three consumers that keep the search index in step with a sanction.
 /// </summary>
 /// <remarks>
 /// The two trainer facts are what makes ADR 0050's derived visibility observable: a suspension
@@ -21,19 +21,19 @@ public sealed class SanctionIndexIntegrationEventHandlerTests
     private readonly Mock<ITrainingSearchIndexer> _searchIndexer = new();
 
     /// <summary>
-    /// Handle, a suspension, hides the catalogue in one call about the trainer.
+    /// Handle, a suspension, hides the catalog in one call about the trainer.
     /// </summary>
     [Fact]
-    public async Task Handle_ASuspension_HidesTheCatalogueInOneCallAboutTheTrainer()
+    public async Task Handle_ASuspension_HidesTheCatalogInOneCallAboutTheTrainer()
     {
         var trainerId = Guid.NewGuid();
 
-        var sut = new HideCatalogueWhenTrainerSuspendedIntegrationEventHandler(_searchIndexer.Object);
+        var sut = new HideCatalogWhenTrainerSuspendedIntegrationEventHandler(_searchIndexer.Object);
         await sut.HandleAsync(
             new TrainerSuspendedIntegrationEvent(trainerId, "Repeated breaches."), CancellationToken.None);
 
         _searchIndexer.Verify(
-            indexer => indexer.HideTrainerCatalogueAsync(trainerId, It.IsAny<CancellationToken>()),
+            indexer => indexer.HideTrainerCatalogAsync(trainerId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _searchIndexer.Verify(
@@ -43,18 +43,18 @@ public sealed class SanctionIndexIntegrationEventHandlerTests
     }
 
     /// <summary>
-    /// Handle, a reinstatement, shows the catalogue again.
+    /// Handle, a reinstatement, shows the catalog again.
     /// </summary>
     [Fact]
-    public async Task Handle_AReinstatement_ShowsTheCatalogueAgain()
+    public async Task Handle_AReinstatement_ShowsTheCatalogAgain()
     {
         var trainerId = Guid.NewGuid();
 
-        var sut = new ShowCatalogueWhenTrainerReinstatedIntegrationEventHandler(_searchIndexer.Object);
+        var sut = new ShowCatalogWhenTrainerReinstatedIntegrationEventHandler(_searchIndexer.Object);
         await sut.HandleAsync(new TrainerReinstatedIntegrationEvent(trainerId), CancellationToken.None);
 
         _searchIndexer.Verify(
-            indexer => indexer.ShowTrainerCatalogueAsync(trainerId, It.IsAny<CancellationToken>()),
+            indexer => indexer.ShowTrainerCatalogAsync(trainerId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _searchIndexer.Verify(
@@ -82,8 +82,8 @@ public sealed class SanctionIndexIntegrationEventHandlerTests
             Times.Once);
 
         _searchIndexer.Verify(
-            indexer => indexer.HideTrainerCatalogueAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            indexer => indexer.HideTrainerCatalogAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never,
-            "one training was withheld, not its owner's whole catalogue");
+            "one training was withheld, not its owner's whole catalog");
     }
 }

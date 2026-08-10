@@ -1,26 +1,26 @@
 using AwesomeAssertions;
 using Moq;
-using TrainingHub.DDDWithCqrs.Application.Features.Catalogue.GetOffered;
-using TrainingHub.DDDWithCqrs.Infrastructure.Features.Catalogue.GetOffered;
-using TrainingHub.Shared.Application.Catalogue;
+using TrainingHub.DDDWithCqrs.Application.Features.Catalog.GetOffered;
+using TrainingHub.DDDWithCqrs.Infrastructure.Features.Catalog.GetOffered;
+using TrainingHub.Shared.Application.Catalog;
 using TrainingHub.Shared.Application.Dtos.Training;
 using Xunit;
 
 namespace TrainingHub.DDDWithCqrs.Tests.Handlers;
 
 /// <summary>
-/// Behaviour covered for <c>GetOfferedTrainingQueryHandler</c>.
+/// Behavior covered for <c>GetOfferedTrainingQueryHandler</c>.
 /// </summary>
 /// <remarks>
-/// The twin of <c>CatalogueApplicationServiceTests</c>' last two facts, deliberately: what both
+/// The twin of <c>CatalogApplicationServiceTests</c>' last two facts, deliberately: what both
 /// hosts must do with a read model is arrive at the same port with the same arguments, and a fact
 /// that exists on only one of them says nothing about the parity ADR 0006 promises. What the port
 /// then does with the two authorities is exercised against a real database in
-/// <c>CatalogueDetailQueryTests</c>.
+/// <c>CatalogDetailQueryTests</c>.
 /// </remarks>
 public sealed class GetOfferedTrainingQueryHandlerTests
 {
-    private readonly Mock<ICatalogueDetailQuery> _catalogueDetail = new();
+    private readonly Mock<ICatalogDetailQuery> _catalogDetail = new();
 
     /// <summary>
     /// Handle, an identifier, asks the detail port for exactly it.
@@ -30,11 +30,11 @@ public sealed class GetOfferedTrainingQueryHandlerTests
     {
         var trainingId = Guid.CreateVersion7();
 
-        var sut = new GetOfferedTrainingQueryHandler(_catalogueDetail.Object);
+        var sut = new GetOfferedTrainingQueryHandler(_catalogDetail.Object);
 
         await sut.Handle(new GetOfferedTrainingQuery(trainingId), CancellationToken.None);
 
-        _catalogueDetail.Verify(
+        _catalogDetail.Verify(
             detail => detail.FindOfferedAsync(trainingId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -43,14 +43,14 @@ public sealed class GetOfferedTrainingQueryHandlerTests
     /// Handle, what the port answered, hands it back untouched.
     /// </summary>
     /// <remarks>
-    /// No projection on the way out, unlike this handler's neighbours: the port already answers the
+    /// No projection on the way out, unlike this handler's neighbors: the port already answers the
     /// published shape, and rebuilding it here would be a second place where the trainer's name
     /// could go missing.
     /// </remarks>
     [Fact]
     public async Task Handle_WhatThePortAnswered_HandsItBackUntouched()
     {
-        var answered = new CatalogueTrainingDetailDto
+        var answered = new CatalogTrainingDetailDto
         {
             Id = Guid.CreateVersion7(),
             Title = "Domain Driven Design",
@@ -61,11 +61,11 @@ public sealed class GetOfferedTrainingQueryHandlerTests
             AcquiredSkills = "Drawing a context map."
         };
 
-        _catalogueDetail
+        _catalogDetail
             .Setup(detail => detail.FindOfferedAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(answered);
 
-        var sut = new GetOfferedTrainingQueryHandler(_catalogueDetail.Object);
+        var sut = new GetOfferedTrainingQueryHandler(_catalogDetail.Object);
 
         var offered = await sut.Handle(
             new GetOfferedTrainingQuery(Guid.CreateVersion7()),
@@ -80,11 +80,11 @@ public sealed class GetOfferedTrainingQueryHandlerTests
     [Fact]
     public async Task Handle_NothingOnOffer_HandsTheNothingBack()
     {
-        _catalogueDetail
+        _catalogDetail
             .Setup(detail => detail.FindOfferedAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((CatalogueTrainingDetailDto?)null);
+            .ReturnsAsync((CatalogTrainingDetailDto?)null);
 
-        var sut = new GetOfferedTrainingQueryHandler(_catalogueDetail.Object);
+        var sut = new GetOfferedTrainingQueryHandler(_catalogDetail.Object);
 
         var offered = await sut.Handle(
             new GetOfferedTrainingQuery(Guid.CreateVersion7()),

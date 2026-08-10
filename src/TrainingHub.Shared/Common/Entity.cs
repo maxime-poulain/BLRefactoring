@@ -133,7 +133,7 @@ public interface IAuditable
     /// When the row behind this entity was first written.
     /// </summary>
     /// <remarks>
-    /// Set by the persistence layer's interceptor rather than by any behaviour method, so the
+    /// Set by the persistence layer's interceptor rather than by any behavior method, so the
     /// domain never has to be handed a clock.
     /// </remarks>
     DateTime CreatedOn { get; }

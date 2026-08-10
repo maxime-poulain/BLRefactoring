@@ -5,7 +5,7 @@ using Xunit;
 namespace TrainingHub.Shared.Api.Tests.Contracts;
 
 /// <summary>
-/// Behaviour covered for <c>NotEmptyIdentifierAttribute</c>.
+/// Behavior covered for <c>NotEmptyIdentifierAttribute</c>.
 /// </summary>
 /// <remarks>
 /// The attribute exists because <c>[Required]</c> cannot refuse <see cref="Guid.Empty"/> on a

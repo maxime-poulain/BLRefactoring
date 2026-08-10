@@ -83,7 +83,7 @@ public static class BffEndpoints
 
         if (!response.IsSuccessStatusCode)
         {
-            // The API's own verdict is passed through — a wrong password is its judgement to make.
+            // The API's own verdict is passed through — a wrong password is its judgment to make.
             // Its problem document is not: it describes a call the browser never made, to an
             // address it does not know. The status is the part that means something here.
             return Results.StatusCode((int)response.StatusCode);

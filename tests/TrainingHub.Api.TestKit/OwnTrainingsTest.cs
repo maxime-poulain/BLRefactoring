@@ -17,7 +17,7 @@ namespace TrainingHub.Api.TestKit;
 /// Two endpoints are covered here, because the API's promise is about the pair rather than either.
 /// <c>GET /Training/my-trainings</c> takes no identifier, so isolation is structural; but the list
 /// hands out identifiers, and <c>GET /Training/{id}</c> takes one, so scoping the list while leaving
-/// the read by identifier open would hide nothing. The four catalogue reads that used to sit beside
+/// the read by identifier open would hide nothing. The four catalog reads that used to sit beside
 /// them are gone; these two are what remain, and both are asserted.
 /// </para>
 /// <para>

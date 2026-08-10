@@ -44,7 +44,7 @@ public abstract class ConditionalRequestTest<TFactory>(TFactory factory) : Integ
     /// What republishing the version is actually for.
     /// </summary>
     /// <remarks>
-    /// The previous behaviour — a bare 200 — made this sequence impossible: the caller's only
+    /// The previous behavior — a bare 200 — made this sequence impossible: the caller's only
     /// version was the one the first edit had just replaced, so the second attempt could only be a
     /// 412. Correct, and useless. An extra GET was the sole way forward.
     /// </remarks>

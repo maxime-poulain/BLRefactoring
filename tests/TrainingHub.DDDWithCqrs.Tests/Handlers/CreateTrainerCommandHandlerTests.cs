@@ -8,7 +8,7 @@ using Xunit;
 namespace TrainingHub.DDDWithCqrs.Tests.Handlers;
 
 /// <summary>
-/// Behaviour covered for <c>CreateTrainerCommandHandler</c>.
+/// Behavior covered for <c>CreateTrainerCommandHandler</c>.
 /// </summary>
 public sealed class CreateTrainerCommandHandlerTests
 {

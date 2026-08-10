@@ -30,7 +30,7 @@ namespace TrainingHub.Shared.Api.Health;
 /// which.
 /// </para>
 /// <para>
-/// Public where its four siblings are internal, and for one reason: their whole behaviour belongs
+/// Public where its four siblings are internal, and for one reason: their whole behavior belongs
 /// to the dependency they wrap, so an end-to-end poll proves them. This one composes two contexts
 /// and a description, and its failing branch is the decision the record makes — a branch no
 /// integration test can reach without mutilating the migration history the whole suite shares. So

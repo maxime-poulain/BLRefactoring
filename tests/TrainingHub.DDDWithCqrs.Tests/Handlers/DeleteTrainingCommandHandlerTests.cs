@@ -11,7 +11,7 @@ using Xunit;
 namespace TrainingHub.DDDWithCqrs.Tests.Handlers;
 
 /// <summary>
-/// Behaviour covered for <c>DeleteTrainingCommandHandler</c>.
+/// Behavior covered for <c>DeleteTrainingCommandHandler</c>.
 /// </summary>
 public sealed class DeleteTrainingCommandHandlerTests
 {

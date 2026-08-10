@@ -76,7 +76,7 @@ public sealed partial class IntegrationEventRules
     [Fact]
     [ArchitectureRule("0002",
         "integration events must not inherit INotification: tolerable for an in-process message and wrong " +
-        "for one that is serialised and read back by another process")]
+        "for one that is serialized and read back by another process")]
     public void NoIntegrationEvent_TouchesTheMessagingLibrary() =>
         IntegrationEvents
             .Append(typeof(IIntegrationEvent))
@@ -317,7 +317,7 @@ public sealed partial class IntegrationEventRules
     /// crime scene"</em> — and a surface that offered a discard would hand that same deletion to a
     /// person, one click away from the listing that shows how noisy the backlog is.
     /// <para>
-    /// A closed set rather than a name check, on the mould of <c>IObjectStore</c>'s: what matters is
+    /// A closed set rather than a name check, on the mold of <c>IObjectStore</c>'s: what matters is
     /// not that nothing is called <c>Delete</c> but that nothing else is offered at all.
     /// </para>
     /// </remarks>

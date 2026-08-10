@@ -8,7 +8,7 @@ namespace TrainingHub.Shared.Api.Controllers;
 /// <summary>
 /// Base class for the trainer-facing controllers of both hosts: authenticated by default, behind
 /// <see cref="TrainerPolicy"/>, on the conventional route, with the <c>[ApiController]</c>
-/// behaviours.
+/// behaviors.
 /// </summary>
 /// <remarks>
 /// <see langword="abstract"/> on purpose. <c>[ApiController]</c> derives from

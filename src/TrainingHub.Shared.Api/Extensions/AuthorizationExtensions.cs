@@ -37,7 +37,7 @@ public static class AuthorizationExtensions
                 policy.Requirements.Add(new TrainingOwnerRequirement()));
 
             // Named at each write rather than carried by ApiControllerBase: a suspended trainer
-            // keeps every read, so a policy on the base would take their own profile and catalogue
+            // keeps every read, so a policy on the base would take their own profile and catalog
             // away from them — the alternative ADR 0053 rejected by name.
             options.AddPolicy(ActiveTrainerPolicy.Name, policy =>
                 policy.Requirements.Add(new ActiveTrainerRequirement()));

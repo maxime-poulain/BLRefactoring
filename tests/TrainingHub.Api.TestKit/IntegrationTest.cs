@@ -23,7 +23,7 @@ public interface IResettableDatabase
 /// </summary>
 /// <remarks>
 /// For the rare test that has to drive the application through its services rather than over
-/// HTTP, because the behaviour under test has no endpoint in front of it. Everything resolved
+/// HTTP, because the behavior under test has no endpoint in front of it. Everything resolved
 /// from such a scope is the real thing — the request-scoped <c>DbContext</c>, its interceptors,
 /// the repositories and the unit of work the host itself would use.
 /// </remarks>

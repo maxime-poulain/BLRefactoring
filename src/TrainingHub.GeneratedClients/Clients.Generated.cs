@@ -1021,7 +1021,7 @@ namespace TrainingHub.GeneratedClients
         /// <br/>    `POST /Training` already publishes.
         /// <br/>    The address requires a token the registration response does not hand out. That is not a
         /// <br/>reason to withhold it: Location identifies the resource created, it does not promise
-        /// <br/>the caller is authorised to read it, and the caller is one POST /Auth/login away.
+        /// <br/>the caller is authorized to read it, and the caller is one POST /Auth/login away.
         /// <br/>/Trainer/me was the wrong candidate to compare it against — it is an alias for
         /// <br/>whoever is calling, not the address of the thing this request created.
         /// <br/>    A username or email already in use is a 409, not a 400: the request is
@@ -1048,7 +1048,7 @@ namespace TrainingHub.GeneratedClients
         /// <br/>    `POST /Training` already publishes.
         /// <br/>    The address requires a token the registration response does not hand out. That is not a
         /// <br/>reason to withhold it: Location identifies the resource created, it does not promise
-        /// <br/>the caller is authorised to read it, and the caller is one POST /Auth/login away.
+        /// <br/>the caller is authorized to read it, and the caller is one POST /Auth/login away.
         /// <br/>/Trainer/me was the wrong candidate to compare it against — it is an alias for
         /// <br/>whoever is calling, not the address of the thing this request created.
         /// <br/>    A username or email already in use is a 409, not a 400: the request is
@@ -1066,7 +1066,7 @@ namespace TrainingHub.GeneratedClients
         /// Authenticates a user and generates a JWT token if the credentials are valid.
         /// </summary>
         /// <remarks>
-        /// The 401 used to be `Unauthorized("Invalid username or password.")`, which serialises to
+        /// The 401 used to be `Unauthorized("Invalid username or password.")`, which serializes to
         /// <br/>a bare JSON string — quotes included, no status, no member to read. ADR 0004 lists that
         /// <br/>exact shape as the worst of the four it removed, and then left it standing on the first
         /// <br/>call any client makes. The sentence is unchanged; only its wrapping is.
@@ -1081,7 +1081,7 @@ namespace TrainingHub.GeneratedClients
         /// Authenticates a user and generates a JWT token if the credentials are valid.
         /// </summary>
         /// <remarks>
-        /// The 401 used to be `Unauthorized("Invalid username or password.")`, which serialises to
+        /// The 401 used to be `Unauthorized("Invalid username or password.")`, which serializes to
         /// <br/>a bare JSON string — quotes included, no status, no member to read. ADR 0004 lists that
         /// <br/>exact shape as the worst of the four it removed, and then left it standing on the first
         /// <br/>call any client makes. The sentence is unchanged; only its wrapping is.
@@ -1137,7 +1137,7 @@ namespace TrainingHub.GeneratedClients
         /// <br/>    `POST /Training` already publishes.
         /// <br/>    The address requires a token the registration response does not hand out. That is not a
         /// <br/>reason to withhold it: Location identifies the resource created, it does not promise
-        /// <br/>the caller is authorised to read it, and the caller is one POST /Auth/login away.
+        /// <br/>the caller is authorized to read it, and the caller is one POST /Auth/login away.
         /// <br/>/Trainer/me was the wrong candidate to compare it against — it is an alias for
         /// <br/>whoever is calling, not the address of the thing this request created.
         /// <br/>    A username or email already in use is a 409, not a 400: the request is
@@ -1167,7 +1167,7 @@ namespace TrainingHub.GeneratedClients
         /// <br/>    `POST /Training` already publishes.
         /// <br/>    The address requires a token the registration response does not hand out. That is not a
         /// <br/>reason to withhold it: Location identifies the resource created, it does not promise
-        /// <br/>the caller is authorised to read it, and the caller is one POST /Auth/login away.
+        /// <br/>the caller is authorized to read it, and the caller is one POST /Auth/login away.
         /// <br/>/Trainer/me was the wrong candidate to compare it against — it is an alias for
         /// <br/>whoever is calling, not the address of the thing this request created.
         /// <br/>    A username or email already in use is a 409, not a 400: the request is
@@ -1278,7 +1278,7 @@ namespace TrainingHub.GeneratedClients
         /// Authenticates a user and generates a JWT token if the credentials are valid.
         /// </summary>
         /// <remarks>
-        /// The 401 used to be `Unauthorized("Invalid username or password.")`, which serialises to
+        /// The 401 used to be `Unauthorized("Invalid username or password.")`, which serializes to
         /// <br/>a bare JSON string — quotes included, no status, no member to read. ADR 0004 lists that
         /// <br/>exact shape as the worst of the four it removed, and then left it standing on the first
         /// <br/>call any client makes. The sentence is unchanged; only its wrapping is.
@@ -1296,7 +1296,7 @@ namespace TrainingHub.GeneratedClients
         /// Authenticates a user and generates a JWT token if the credentials are valid.
         /// </summary>
         /// <remarks>
-        /// The 401 used to be `Unauthorized("Invalid username or password.")`, which serialises to
+        /// The 401 used to be `Unauthorized("Invalid username or password.")`, which serializes to
         /// <br/>a bare JSON string — quotes included, no status, no member to read. ADR 0004 lists that
         /// <br/>exact shape as the worst of the four it removed, and then left it standing on the first
         /// <br/>call any client makes. The sentence is unchanged; only its wrapping is.
@@ -1519,33 +1519,33 @@ namespace TrainingHub.GeneratedClients
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial interface ICatalogueClient
+    public partial interface ICatalogClient
     {
-        /// <param name="term">Only trainings whose title matches every word of this, or the whole catalogue when it is
+        /// <param name="term">Only trainings whose title matches every word of this, or the whole catalog when it is
         /// <br/>absent.</param>
         /// <param name="page">The page to return, counted from 1.</param>
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedHttpResponseOfCatalogueTrainingHttpResponse> SearchTrainingsAsync(string? term, int? page, int? pageSize);
+        System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, int? page, int? pageSize);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <param name="term">Only trainings whose title matches every word of this, or the whole catalogue when it is
+        /// <param name="term">Only trainings whose title matches every word of this, or the whole catalog when it is
         /// <br/>absent.</param>
         /// <param name="page">The page to return, counted from 1.</param>
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedHttpResponseOfCatalogueTrainingHttpResponse> SearchTrainingsAsync(string? term, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken);
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<CatalogueTrainingDetailHttpResponse> GetOfferedTrainingAsync(System.Guid trainingId);
+        System.Threading.Tasks.Task<CatalogTrainingDetailHttpResponse> GetOfferedTrainingAsync(System.Guid trainingId);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<CatalogueTrainingDetailHttpResponse> GetOfferedTrainingAsync(System.Guid trainingId, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<CatalogTrainingDetailHttpResponse> GetOfferedTrainingAsync(System.Guid trainingId, System.Threading.CancellationToken cancellationToken);
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
@@ -1559,14 +1559,14 @@ namespace TrainingHub.GeneratedClients
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class CatalogueClient : ICatalogueClient
+    public partial class CatalogClient : ICatalogClient
     {
         private System.Net.Http.HttpClient _httpClient;
         private static System.Lazy<System.Text.Json.JsonSerializerOptions> _settings = new System.Lazy<System.Text.Json.JsonSerializerOptions>(CreateSerializerSettings, true);
         private System.Text.Json.JsonSerializerOptions _instanceSettings;
 
     #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public CatalogueClient(System.Net.Http.HttpClient httpClient)
+        public CatalogClient(System.Net.Http.HttpClient httpClient)
     #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
             _httpClient = httpClient;
@@ -1590,25 +1590,25 @@ namespace TrainingHub.GeneratedClients
         partial void PrepareRequest(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request, System.Text.StringBuilder urlBuilder);
         partial void ProcessResponse(System.Net.Http.HttpClient client, System.Net.Http.HttpResponseMessage response);
 
-        /// <param name="term">Only trainings whose title matches every word of this, or the whole catalogue when it is
+        /// <param name="term">Only trainings whose title matches every word of this, or the whole catalog when it is
         /// <br/>absent.</param>
         /// <param name="page">The page to return, counted from 1.</param>
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<PagedHttpResponseOfCatalogueTrainingHttpResponse> SearchTrainingsAsync(string? term, int? page, int? pageSize)
+        public virtual System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, int? page, int? pageSize)
         {
             return SearchTrainingsAsync(term, page, pageSize, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <param name="term">Only trainings whose title matches every word of this, or the whole catalogue when it is
+        /// <param name="term">Only trainings whose title matches every word of this, or the whole catalog when it is
         /// <br/>absent.</param>
         /// <param name="page">The page to return, counted from 1.</param>
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedHttpResponseOfCatalogueTrainingHttpResponse> SearchTrainingsAsync(string? term, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -1621,8 +1621,8 @@ namespace TrainingHub.GeneratedClients
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                 
-                    // Operation Path: "Catalogue/trainings"
-                    urlBuilder_.Append("Catalogue/trainings");
+                    // Operation Path: "Catalog/trainings"
+                    urlBuilder_.Append("Catalog/trainings");
                     urlBuilder_.Append('?');
                     if (term != null)
                     {
@@ -1663,7 +1663,7 @@ namespace TrainingHub.GeneratedClients
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<PagedHttpResponseOfCatalogueTrainingHttpResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<PagedHttpResponseOfCatalogTrainingHttpResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1702,7 +1702,7 @@ namespace TrainingHub.GeneratedClients
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<CatalogueTrainingDetailHttpResponse> GetOfferedTrainingAsync(System.Guid trainingId)
+        public virtual System.Threading.Tasks.Task<CatalogTrainingDetailHttpResponse> GetOfferedTrainingAsync(System.Guid trainingId)
         {
             return GetOfferedTrainingAsync(trainingId, System.Threading.CancellationToken.None);
         }
@@ -1710,7 +1710,7 @@ namespace TrainingHub.GeneratedClients
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<CatalogueTrainingDetailHttpResponse> GetOfferedTrainingAsync(System.Guid trainingId, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<CatalogTrainingDetailHttpResponse> GetOfferedTrainingAsync(System.Guid trainingId, System.Threading.CancellationToken cancellationToken)
         {
             if (trainingId == null)
                 throw new System.ArgumentNullException("trainingId");
@@ -1726,8 +1726,8 @@ namespace TrainingHub.GeneratedClients
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                 
-                    // Operation Path: "Catalogue/trainings/{trainingId}"
-                    urlBuilder_.Append("Catalogue/trainings/");
+                    // Operation Path: "Catalog/trainings/{trainingId}"
+                    urlBuilder_.Append("Catalog/trainings/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(trainingId, System.Globalization.CultureInfo.InvariantCulture)));
 
                     PrepareRequest(client_, request_, urlBuilder_);
@@ -1755,7 +1755,7 @@ namespace TrainingHub.GeneratedClients
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<CatalogueTrainingDetailHttpResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<CatalogTrainingDetailHttpResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1831,8 +1831,8 @@ namespace TrainingHub.GeneratedClients
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                 
-                    // Operation Path: "Catalogue/trainings/{trainingId}/photo/{photoId}"
-                    urlBuilder_.Append("Catalogue/trainings/");
+                    // Operation Path: "Catalog/trainings/{trainingId}/photo/{photoId}"
+                    urlBuilder_.Append("Catalog/trainings/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(trainingId, System.Globalization.CultureInfo.InvariantCulture)));
                     urlBuilder_.Append("/photo/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(photoId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -4601,10 +4601,10 @@ namespace TrainingHub.GeneratedClients
     }
 
     /// <summary>
-    /// The body of `GET /Catalogue/trainings/{id}`: one offered training, read in full (ADR 0062).
+    /// The body of `GET /Catalog/trainings/{id}`: one offered training, read in full (ADR 0062).
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class CatalogueTrainingDetailHttpResponse
+    public partial class CatalogTrainingDetailHttpResponse
     {
 
         /// <summary>
@@ -4675,10 +4675,10 @@ namespace TrainingHub.GeneratedClients
     }
 
     /// <summary>
-    /// A row of `GET /Catalogue/trainings`: a training anybody may be shown.
+    /// A row of `GET /Catalog/trainings`: a training anybody may be shown.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class CatalogueTrainingHttpResponse
+    public partial class CatalogTrainingHttpResponse
     {
 
         /// <summary>
@@ -5081,7 +5081,7 @@ namespace TrainingHub.GeneratedClients
     /// One page of a collection, as the API publishes it.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class PagedHttpResponseOfCatalogueTrainingHttpResponse
+    public partial class PagedHttpResponseOfCatalogTrainingHttpResponse
     {
 
         /// <summary>
@@ -5089,7 +5089,7 @@ namespace TrainingHub.GeneratedClients
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("items")]
         [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.List<CatalogueTrainingHttpResponse> Items { get; set; } = new System.Collections.Generic.List<CatalogueTrainingHttpResponse>();
+        public System.Collections.Generic.List<CatalogTrainingHttpResponse> Items { get; set; } = new System.Collections.Generic.List<CatalogTrainingHttpResponse>();
 
         /// <summary>
         /// The page returned, counted from 1.

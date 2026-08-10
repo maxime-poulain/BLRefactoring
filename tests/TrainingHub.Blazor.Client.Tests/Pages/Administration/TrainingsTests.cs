@@ -11,7 +11,7 @@ using Xunit;
 namespace TrainingHub.Blazor.Client.Tests.Pages.Administration;
 
 /// <summary>
-/// Behaviour covered for the administrative trainings page.
+/// Behavior covered for the administrative trainings page.
 /// </summary>
 /// <remarks>
 /// The screen a moderator decides on, so what it shows about a row is as much the subject as what

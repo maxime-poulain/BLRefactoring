@@ -14,7 +14,7 @@ namespace TrainingHub.Shared.Infrastructure.Tests.Outbox;
 /// first facts keep the two lists from drifting: every registered event must route without
 /// refusal, and anything the registry never named must be refused loudly rather than dropped.
 /// The later facts hold ADR 0034's isolation: a consumer's failure is its own outcome, never its
-/// neighbour's, and a delivery the ledger already recorded is never run again.
+/// neighbor's, and a delivery the ledger already recorded is never run again.
 /// </remarks>
 public sealed class IntegrationEventDispatcherTests
 {
@@ -93,10 +93,10 @@ public sealed class IntegrationEventDispatcherTests
     }
 
     /// <summary>
-    /// A throwing consumer, does not stop its neighbour.
+    /// A throwing consumer, does not stop its neighbor.
     /// </summary>
     [Fact]
-    public async Task AThrowingConsumer_DoesNotStopItsNeighbour()
+    public async Task AThrowingConsumer_DoesNotStopItsNeighbor()
     {
         var first = CreateConsumer("First");
         var thrown = new InvalidOperationException("the reaction failed");
@@ -109,7 +109,7 @@ public sealed class IntegrationEventDispatcherTests
         var outcome = await sut.DispatchAsync(fact, NothingDeliveredYet, CancellationToken.None);
 
         second.Verify(h => h.HandleAsync(fact, It.IsAny<CancellationToken>()), Times.Once,
-            "a neighbour's failure is the neighbour's outcome, not this consumer's");
+            "a neighbor's failure is the neighbor's outcome, not this consumer's");
         outcome.Delivered.Should().Equal("Second");
         outcome.Failures.Should().ContainSingle()
             .Which.Should().Be(new ConsumerFailure("First", thrown));

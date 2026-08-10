@@ -7,7 +7,7 @@ namespace TrainingHub.Shared.Api.Authorization;
 /// <remarks>
 /// Named at each write rather than carried by <c>ApiControllerBase</c>, because it is the one
 /// distinction a suspended trainer is entitled to: they keep every read and lose every write
-/// (ADR 0053). A policy on the base would take their profile and their catalogue away from them
+/// (ADR 0053). A policy on the base would take their profile and their catalog away from them
 /// too, which is the alternative that record rejected by name — "hiding them from their owner
 /// serves nobody".
 /// <para>

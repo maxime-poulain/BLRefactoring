@@ -64,7 +64,7 @@ public sealed class UserIdentityEnricher(IHttpContextAccessor httpContextAccesso
             return AnonymousIdentity;
         }
 
-        // The username first — it is what a reader recognises — and the subject claim when a
+        // The username first — it is what a reader recognizes — and the subject claim when a
         // token carries no name. Both claims are written by TokenService, so the last arm is a
         // token minted by something else entirely; saying so beats a blank.
         return user.Identity.Name

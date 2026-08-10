@@ -16,7 +16,7 @@ namespace TrainingHub.Shared.Api.Authorization;
 public static class IdentityRoles
 {
     /// <summary>
-    /// The authority over the catalogue: suspends a trainer, reinstates them, and acts on a
+    /// The authority over the catalog: suspends a trainer, reinstates them, and acts on a
     /// training its owner may not.
     /// </summary>
     /// <remarks>

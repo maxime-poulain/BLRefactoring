@@ -11,7 +11,7 @@ namespace TrainingHub.Architecture.Tests.Rules;
 /// are one transaction, and records the condition that makes it work: both contexts bind the same
 /// connection string, so the ambient transaction stays local and nothing is promoted to a
 /// coordinator that .NET does not carry outside Windows. A rule can hold the wiring; what the
-/// behaviour is worth is held by the fact in the shared TestKit, since a scope that rolls nothing
+/// behavior is worth is held by the fact in the shared TestKit, since a scope that rolls nothing
 /// back compiles perfectly.
 /// </remarks>
 public sealed class TransactionRules

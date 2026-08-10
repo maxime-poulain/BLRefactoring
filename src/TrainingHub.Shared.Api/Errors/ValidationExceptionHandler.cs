@@ -16,7 +16,7 @@ namespace TrainingHub.Shared.Api.Errors;
 /// a shape invented here and published nowhere.
 /// <para>
 /// What still reaches it is narrower than it was. A rejected command no longer throws — the CQRS
-/// validation behaviour returns a failed <c>Result</c>, which leaves as a <c>domainErrors</c>
+/// validation behavior returns a failed <c>Result</c>, which leaves as a <c>domainErrors</c>
 /// document like every other business failure. What is left is the query validators, which have no
 /// <c>Result</c> to fail into and whose rejections would otherwise become a 500 when an empty
 /// identifier reached <c>EntityId.Create</c>.

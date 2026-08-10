@@ -10,7 +10,7 @@ using Xunit;
 namespace TrainingHub.Shared.Api.Tests.Identity;
 
 /// <summary>
-/// Behaviour covered for <c>TokenService</c>: which claims a token carries, and which it does not.
+/// Behavior covered for <c>TokenService</c>: which claims a token carries, and which it does not.
 /// </summary>
 /// <remarks>
 /// The interesting half is the account that is nobody's trainer. Issuing a token to one used to be

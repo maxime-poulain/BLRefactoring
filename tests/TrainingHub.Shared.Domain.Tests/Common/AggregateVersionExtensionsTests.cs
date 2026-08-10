@@ -6,7 +6,7 @@ using Xunit;
 namespace TrainingHub.Shared.Domain.Tests.Common;
 
 /// <summary>
-/// Behaviour covered for <c>AggregateVersionExtensions</c>.
+/// Behavior covered for <c>AggregateVersionExtensions</c>.
 /// </summary>
 public sealed class AggregateVersionExtensionsTests
 {
