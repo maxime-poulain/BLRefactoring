@@ -99,22 +99,47 @@ public sealed class BffTests : IDisposable
     }
 
     /// <summary>
-    /// The home page is not prerendered.
+    /// The front door is the prerendered catalog.
     /// </summary>
     /// <remarks>
-    /// The other half of the closed set: everything outside the catalog keeps prerender off,
-    /// because those screens are interactive controls behind a sign-in and a prerendered pass
-    /// renders them inert. The landing page's words arrive only once WebAssembly boots, so their
-    /// absence from the raw HTML is what "off" looks like from outside.
+    /// The root serves the catalog itself — same page, same head — so a visitor's first address
+    /// is the shelf and a crawler reading <c>/</c> gets the catalog's own words as HTML
+    /// (ADR 0074). The canonical still names <c>/catalog</c>: two addresses, one page, and the
+    /// head says which one is the page.
     /// </remarks>
     [Fact]
-    public async Task The_home_page_is_not_prerendered()
+    public async Task The_front_door_is_the_prerendered_catalog()
     {
         var response = await _browser.GetAsync("/");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        (await response.Content.ReadAsStringAsync()).Should().NotContain("Trainers publish trainings",
+        var html = await response.Content.ReadAsStringAsync();
+
+        html.Should().Contain("Trainings on offer",
+            "the root is the catalog now, prerendered like the rest of the family (ADR 0074)");
+        html.Should().Contain("https://localhost/catalog",
+            "the canonical keeps naming /catalog, so the two addresses stay one page to an index");
+    }
+
+    /// <summary>
+    /// The login page is not prerendered.
+    /// </summary>
+    /// <remarks>
+    /// The other half of the closed set: everything outside the catalog keeps prerender off,
+    /// because those screens are interactive controls that a prerendered pass renders inert — a
+    /// sign-in form the user can see and type into but that drops the click until WebAssembly
+    /// boots. The page's words arriving only after the boot is what "off" looks like from
+    /// outside.
+    /// </remarks>
+    [Fact]
+    public async Task The_login_page_is_not_prerendered()
+    {
+        var response = await _browser.GetAsync("/login");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (await response.Content.ReadAsStringAsync()).Should().NotContain("have an account",
             "outside the catalog the first paint is the WebAssembly boot, not a prerendered form " +
             "that drops clicks (ADR 0072)");
     }

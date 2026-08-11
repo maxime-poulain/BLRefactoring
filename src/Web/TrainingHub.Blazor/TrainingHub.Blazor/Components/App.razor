@@ -14,15 +14,20 @@
         <title>TrainingHub</title>
         <meta name="description" content="TrainingHub — where trainers publish trainings, and anyone can browse them."/>
     }
-    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet"/>
+    @* Three faces, three jobs (the design's own vocabulary): Bricolage Grotesque carries the
+       display voice, Source Sans 3 carries the body, and IBM Plex Mono carries the counts and
+       labels — the machine's half of a catalog served by an engineering showcase. *@
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
     <link href=@Assets["_content/MudBlazor/MudBlazor.min.css"] rel="stylesheet"/>
+    <link href=@Assets["app.css"] rel="stylesheet"/>
     <ImportMap/>
 @*
     Prerendering is decided here, per request, and the decision is ADR 0072's: the catalog's
-    routes prerender, nothing else does.
+    routes prerender, nothing else does. The root is one of them now, because the catalog is the
+    front door — the same page answers both addresses (ADR 0074).
 
-    The three routes under /catalog are the application's public face — the pages ADR 0062 opened
-    to a visitor with no account, and the only ones a crawler is meant to read. They are pages of
+    The catalog's routes are the application's public face — the pages ADR 0062 opened to a
+    visitor with no account, and the only ones a crawler is meant to read. They are pages of
     content: what they show is fetched in OnInitializedAsync and handed to the interactive pass
     through PersistentComponentState, so the first paint is the real page rather than a spinner,
     and the WebAssembly boot does not fetch it again.
@@ -59,8 +64,9 @@
         new(prerender: IsCatalogRoute);
 
     /// <summary>
-    /// Whether the address is one of the catalog's routes: <c>/catalog</c> itself, or anything
-    /// beneath it — the training's page and the trainer's profile (ADR 0062, ADR 0070).
+    /// Whether the address is one of the catalog's routes: the root — the catalog is the front
+    /// door (ADR 0074) — <c>/catalog</c> itself, or anything beneath it: the training's page and
+    /// the trainer's profile (ADR 0062, ADR 0070).
     /// </summary>
     private bool IsCatalogRoute
     {
@@ -69,7 +75,8 @@
             var path = HttpContext?.Request.Path.Value;
 
             return path is not null
-                   && (string.Equals(path, "/catalog", StringComparison.OrdinalIgnoreCase)
+                   && (string.Equals(path, "/", StringComparison.Ordinal)
+                       || string.Equals(path, "/catalog", StringComparison.OrdinalIgnoreCase)
                        || path.StartsWith("/catalog/", StringComparison.OrdinalIgnoreCase));
         }
     }

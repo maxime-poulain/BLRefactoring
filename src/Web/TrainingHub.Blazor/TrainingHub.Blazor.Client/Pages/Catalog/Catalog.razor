@@ -1,3 +1,4 @@
+@page "/"
 @page "/catalog"
 @using TrainingHub.GeneratedClients
 @implements IDisposable
@@ -38,24 +39,24 @@
            matched against the words of a title, each by prefix (ADR 0059), and a topic narrows
            the search to one shelf (ADR 0069). *@
         <MudTextField T="string"
-                      Label="Search"
+                      Class="th-hero-search"
+                      Label="Search the shelf"
                       Value="@_term"
                       ValueChanged="OnTermChangedAsync"
                       DebounceInterval="400"
                       Variant="Variant.Outlined"
-                      Margin="Margin.Dense"
                       Clearable="true"
                       MaxLength="TermMaxLength"
                       Adornment="Adornment.Start"
                       AdornmentIcon="@Icons.Material.Filled.Search"
-                      HelperText="Title" />
+                      HelperText="Every word of a title, matched by prefix" />
 
         @* The catalog's facets, from GET /Catalog/topics: only topics with something on offer,
            each with its count, so a chip never leads to an empty shelf. Clicking the selected
            chip again lifts the filter — a facet is a lens, not a destination. *@
         @if (_facets is { Count: > 0 })
         {
-            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-3">
+            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-3 th-facets">
                 @foreach (var facet in _facets)
                 {
                     var topic = facet.Topic;
@@ -64,30 +65,34 @@
                              Color="@(topic == _topic ? Color.Primary : Color.Default)"
                              Variant="@(topic == _topic ? Variant.Filled : Variant.Outlined)"
                              OnClick="@(() => OnTopicClickedAsync(topic))">
+                        @* The shelf's mark: the same hue this topic's spines wear below, so the
+                           chip and the rows it filters read as one thing. *@
+                        <span class="th-mark" style="background-color: var(--th-spine-@TopicSlug(topic))"></span>
                         @topic (@facet.OfferedCount)
                     </MudChip>
                 }
             </MudStack>
         }
 
-        @* The catalog's two published orders (ADR 0071): by title, the default a visitor scans,
-           and newest first, the training's own age. A closed pair of chips rather than a sortable
-           table header, because the order is a named question the server answers — not a column
-           to click. *@
+        @* The catalog's two published orders (ADR 0071): newest first — the training's own age,
+           and the default since the catalog became the front door (ADR 0074) — and by title, for
+           whoever wants to scan the shelf. A closed pair of chips rather than a sortable table
+           header, because the order is a named question the server answers — not a column to
+           click. *@
         <MudStack Row="true" Spacing="1" Class="mt-3">
-            <MudChip T="string"
-                     Size="Size.Small"
-                     Color="@(_newestFirst ? Color.Default : Color.Primary)"
-                     Variant="@(_newestFirst ? Variant.Outlined : Variant.Filled)"
-                     OnClick="@(() => OnOrderChangedAsync(newestFirst: false))">
-                A–Z
-            </MudChip>
             <MudChip T="string"
                      Size="Size.Small"
                      Color="@(_newestFirst ? Color.Primary : Color.Default)"
                      Variant="@(_newestFirst ? Variant.Filled : Variant.Outlined)"
                      OnClick="@(() => OnOrderChangedAsync(newestFirst: true))">
                 Newest
+            </MudChip>
+            <MudChip T="string"
+                     Size="Size.Small"
+                     Color="@(_newestFirst ? Color.Default : Color.Primary)"
+                     Variant="@(_newestFirst ? Variant.Outlined : Variant.Filled)"
+                     OnClick="@(() => OnOrderChangedAsync(newestFirst: false))">
+                A–Z
             </MudChip>
         </MudStack>
     </MudPaper>
@@ -107,26 +112,25 @@
     }
     else
     {
-        <MudTable Items="@_page.Items" Hover="true" Elevation="1" T="CatalogTrainingHttpResponse">
-            <HeaderContent>
-                <MudTh>Title</MudTh>
-                <MudTh />
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Title">@context.Title</MudTd>
-                <MudTd>
-                    @* A title is all a search result holds, so the row leads somewhere rather than
-                       trying to say more: the description, the topics and the trainer's name are on
-                       the other side of this link (ADR 0062). *@
-                    <MudButton Size="Size.Small"
-                               Color="Color.Primary"
-                               Variant="Variant.Text"
-                               Href="@($"/catalog/{context.Id}")">
-                        Read more
-                    </MudButton>
-                </MudTd>
-            </RowTemplate>
-        </MudTable>
+        @* The shelf itself: each training is a spine — one thick edge carrying the shelf being
+           browsed, a title, a quiet cue. The whole row is the link, because a title is all a
+           search result holds and everything else is on the other side of it (ADR 0062). The
+           spine wears the browsed topic's hue, and the neutral tone when no shelf is chosen —
+           a search row does not carry its topics, and a color would be a guess. *@
+        <ul class="th-shelf">
+            @foreach (var (training, index) in _page.Items.Select((item, i) => (item, i)))
+            {
+                <li>
+                    <a class="th-row" style="--th-i: @index" href="@($"/catalog/{training.Id}")">
+                        <span class="th-spine" style="background-color: @SpineColor"></span>
+                        <span class="th-row-title">@training.Title</span>
+                        <MudIcon Icon="@Icons.Material.Filled.ChevronRight"
+                                 Size="Size.Small"
+                                 Class="th-row-cue" />
+                    </a>
+                </li>
+            }
+        </ul>
 
         @if (_page.TotalPages > 1)
         {
@@ -148,6 +152,15 @@
     private const string CatalogDescription =
         "Every training a trainer currently publishes on TrainingHub. Browse by topic, search by title — no account needed to look.";
 
+    // The hue the shelf's spines wear: the browsed topic's own, or the neutral tone when no
+    // shelf is chosen — a search row carries no topics, and a color would be a guess.
+    private string SpineColor =>
+        _topic is null ? "var(--th-spine-neutral)" : $"var(--th-spine-{TopicSlug(_topic)})";
+
+    // The CSS token half of a topic's name: lowercase, spaces as dashes, matching app.css.
+    private static string TopicSlug(string topic) =>
+        topic.ToLowerInvariant().Replace(' ', '-');
+
     // The address this page answers for, whatever address it was reached by.
     private string CanonicalUrl =>
         Navigation.GetUriWithQueryParameters(
@@ -164,7 +177,7 @@
     private List<CatalogTopicHttpResponse>? _facets;
     private string? _term;
     private string? _topic;
-    private bool _newestFirst;
+    private bool _newestFirst = true;
     private int _currentPage = 1;
     private bool _isLoading = true;
     private bool _restoredFromPrerender;
@@ -190,9 +203,10 @@
     [SupplyParameterFromQuery(Name = "page")]
     public int? PageParameter { get; set; }
 
-    // What the contract calls the non-default order. The default travels as no parameter at all,
-    // so the address of an unsorted catalog stays what it always was.
-    private string? Sort => _newestFirst ? "newest" : null;
+    // What the contract calls the non-default order. The default — newest first, since the
+    // catalog became the front door (ADR 0074) — travels as no parameter at all, so the address
+    // of an unsorted catalog stays what it always was.
+    private string? Sort => _newestFirst ? null : "title";
 
     /// <inheritdoc />
     protected override void OnInitialized()
@@ -218,7 +232,10 @@
     {
         var term = string.IsNullOrWhiteSpace(TermParameter) ? null : TermParameter;
         var topic = string.IsNullOrWhiteSpace(TopicParameter) ? null : TopicParameter;
-        var newestFirst = string.Equals(SortParameter, "newest", StringComparison.OrdinalIgnoreCase);
+
+        // Anything that is not the named alternative reads as the default, so an address with no
+        // sort — and one carrying a name the contract would refuse — both ask for newest.
+        var newestFirst = !string.Equals(SortParameter, "title", StringComparison.OrdinalIgnoreCase);
         var page = PageParameter is > 0 ? PageParameter.Value : 1;
 
         var alreadyShowing = !_isLoading
@@ -308,7 +325,7 @@
         {
             ["term"] = string.IsNullOrWhiteSpace(term) ? null : term,
             ["topic"] = topic,
-            ["sort"] = newestFirst ? "newest" : null,
+            ["sort"] = newestFirst ? null : "title",
             ["page"] = page == 1 ? null : page
         }));
 

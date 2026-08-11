@@ -15,16 +15,13 @@
             The page may have moved, or the address may have been mistyped. The catalog is the
             best place to start looking.
         </MudText>
-        <MudStack Row="true" Spacing="2">
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       Href="/catalog"
-                       StartIcon="@Icons.Material.Filled.Storefront">
-                Browse the catalog
-            </MudButton>
-            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Href="/">
-                Go home
-            </MudButton>
-        </MudStack>
+        @* One door where there used to be two: home and the catalog are the same page now
+           (ADR 0074), and offering both would be two buttons to one place. *@
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Href="/"
+                   StartIcon="@Icons.Material.Filled.Storefront">
+            Browse the catalog
+        </MudButton>
     </MudPaper>
 </MudContainer>

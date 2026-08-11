@@ -17,19 +17,18 @@ namespace TrainingHub.Blazor.Client.Tests.Pages;
 public sealed class NotFoundTests : ComponentTest
 {
     /// <summary>
-    /// Renders, says nothing is here, and offers the anonymous ways out.
+    /// Renders, says nothing is here, and offers the anonymous way out.
     /// </summary>
     [Fact]
-    public void Renders_SaysNothingIsHere_AndOffersTheAnonymousWaysOut()
+    public void Renders_SaysNothingIsHere_AndOffersTheAnonymousWayOut()
     {
         var page = Render<NotFound>();
 
         page.Markup.Should().Contain("There is nothing at this address");
 
-        var links = page.FindAll("a").Select(anchor => anchor.GetAttribute("href")).ToList();
-
-        links.Should().Contain("/catalog",
-            "the catalog is the one place a lost visitor can always go (ADR 0062)");
-        links.Should().Contain("/", "and home is the other");
+        page.FindAll("a").Select(anchor => anchor.GetAttribute("href"))
+            .Should().Contain("/",
+                "the catalog is the one place a lost visitor can always go, and it is the front " +
+                "door itself now (ADR 0062, ADR 0074)");
     }
 }

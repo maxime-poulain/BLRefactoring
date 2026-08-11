@@ -1,6 +1,6 @@
 # 0072 — Prerender the catalog's routes
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0074](0074-make-the-catalog-the-front-door.md): the closed set of prerendered routes gains the root, which serves the catalog itself
 - **Date:** 2026-08-10
 
 ## Context

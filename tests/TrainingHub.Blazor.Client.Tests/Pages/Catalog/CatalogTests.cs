@@ -191,23 +191,24 @@ public sealed class CatalogTests : ComponentTest
     }
 
     /// <summary>
-    /// Clicking the newest chip, asks the server for that order on the first page.
+    /// Clicking the alphabetical chip, asks the server for that order on the first page.
     /// </summary>
     /// <remarks>
     /// The page reset is the half worth pinning, as for the term and the topic: a reordered list
     /// is a different walk, and page four of one order says nothing about page four of the other
-    /// (ADR 0071). The default order travels as no parameter at all, which the render's own
-    /// verify above already pins.
+    /// (ADR 0071). The default — newest first, since the catalog became the front door
+    /// (ADR 0074) — travels as no parameter at all, which the render's own verify above already
+    /// pins; the alphabet is the order that has to be asked for.
     /// </remarks>
     [Fact]
-    public void ClickingTheNewestChip_AsksTheServerForThatOrderOnTheFirstPage()
+    public void ClickingTheAlphabeticalChip_AsksTheServerForThatOrderOnTheFirstPage()
     {
         var page = Render<CatalogPage>();
 
-        Chip(page, "Newest").Click();
+        Chip(page, "A–Z").Click();
 
         page.WaitForAssertion(() => _catalog.Verify(
-            client => client.SearchTrainingsAsync(null, null, "newest", 1, null),
+            client => client.SearchTrainingsAsync(null, null, "title", 1, null),
             Times.Once));
     }
 
@@ -225,12 +226,12 @@ public sealed class CatalogTests : ComponentTest
     {
         var navigation = Services.GetRequiredService<NavigationManager>();
 
-        navigation.NavigateTo("/catalog?term=domain&topic=Design&sort=newest&page=2");
+        navigation.NavigateTo("/catalog?term=domain&topic=Design&sort=title&page=2");
 
         Render<CatalogPage>();
 
         _catalog.Verify(
-            client => client.SearchTrainingsAsync("domain", "Design", "newest", 2, null),
+            client => client.SearchTrainingsAsync("domain", "Design", "title", 2, null),
             Times.Once);
     }
 
@@ -264,19 +265,21 @@ public sealed class CatalogTests : ComponentTest
     /// </summary>
     /// <remarks>
     /// Undoing every filter must give back the address the catalog always had — not one strewn
-    /// with <c>?term=&amp;sort=title&amp;page=1</c>. A default that travels as a parameter is a
+    /// with <c>?term=&amp;sort=newest&amp;page=1</c>. A default that travels as a parameter is a
     /// second spelling of the same address, and two spellings split every cache and comparison.
+    /// Newest is the default since the catalog became the front door (ADR 0074), so it is the
+    /// alphabet that writes itself into the address.
     /// </remarks>
     [Fact]
     public void TheDefaultQuestion_KeepsTheAddressBare()
     {
         var page = Render<CatalogPage>();
 
-        Chip(page, "Newest").Click();
-        page.WaitForAssertion(() =>
-            Services.GetRequiredService<NavigationManager>().Uri.Should().Contain("sort=newest"));
-
         Chip(page, "A–Z").Click();
+        page.WaitForAssertion(() =>
+            Services.GetRequiredService<NavigationManager>().Uri.Should().Contain("sort=title"));
+
+        Chip(page, "Newest").Click();
 
         page.WaitForAssertion(() =>
             Services.GetRequiredService<NavigationManager>().Uri.Should().NotContain("sort=",

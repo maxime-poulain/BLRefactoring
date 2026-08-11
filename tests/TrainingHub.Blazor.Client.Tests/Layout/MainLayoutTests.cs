@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using AwesomeAssertions;
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,14 +10,15 @@ using Xunit;
 namespace TrainingHub.Blazor.Client.Tests.Layout;
 
 /// <summary>
-/// Behavior covered for the application's frame: which doors show for whom.
+/// Behavior covered for the application's frame: which doors show for whom, and how the corner
+/// names its caller.
 /// </summary>
 /// <remarks>
-/// The layout is the one component every page renders inside, and until here no test had ever
-/// rendered it — the navigation it offers an anonymous visitor, a signed-in trainer and an
-/// administrator was three claims with nothing behind them. The assertions read the anchors
-/// rather than the words, because "TrainingHub" contains "Training" and a markup search would
-/// pass against the brand alone.
+/// The layout is the one component every page renders inside. The signed-in doors moved from a
+/// row of buttons into the user menu (ADR 0074), so the facts about them open the menu first —
+/// its content is not in the document until it is. The assertions read the anchors rather than
+/// the words, because "TrainingHub" contains "Training" and a markup search would pass against
+/// the brand alone.
 /// </remarks>
 public sealed class MainLayoutTests : ComponentTest
 {
@@ -53,19 +55,23 @@ public sealed class MainLayoutTests : ComponentTest
     }
 
     /// <summary>
-    /// Rendered signed in, offers the trainer's space, and no sign-in.
+    /// The open menu, offers the trainer's space, and no sign-in.
     /// </summary>
     [Fact]
-    public void RenderedSignedIn_OffersTheTrainersSpace_AndNoSignIn()
+    public void TheOpenMenu_OffersTheTrainersSpace_AndNoSignIn()
     {
         // Arrange
         this.AddAuthorization().SetAuthorized("alice");
 
-        // Act
         var layout = Render<MainLayout>();
 
+        // Act
+        layout.Find("button[aria-label='Account menu']").Click();
+
         // Assert
-        Links(layout).Should().Contain("/trainings").And.Contain("/profile").And.Contain("/catalog");
+        layout.WaitForAssertion(() =>
+            Links(layout).Should().Contain("/trainings").And.Contain("/profile"));
+        Links(layout).Should().Contain("/catalog");
         Links(layout).Should().NotContain("/login",
             "a signed-in trainer is not invited to sign in again");
         Links(layout).Should().NotContain("/administration/trainers",
@@ -73,7 +79,7 @@ public sealed class MainLayoutTests : ComponentTest
     }
 
     /// <summary>
-    /// Rendered as an administrator, offers the three administration doors too.
+    /// The open menu, offers an administrator the three administration doors too.
     /// </summary>
     /// <remarks>
     /// Hiding them from everyone else is courtesy, not security — the API refuses the calls
@@ -82,20 +88,123 @@ public sealed class MainLayoutTests : ComponentTest
     /// kind of broken.
     /// </remarks>
     [Fact]
-    public void RenderedAsAnAdministrator_OffersTheThreeAdministrationDoorsToo()
+    public void TheOpenMenu_OffersAnAdministratorTheThreeAdministrationDoorsToo()
     {
         // Arrange
         var authorization = this.AddAuthorization();
         authorization.SetAuthorized("root");
         authorization.SetRoles("Administrator");
 
+        var layout = Render<MainLayout>();
+
+        // Act
+        layout.Find("button[aria-label='Account menu']").Click();
+
+        // Assert
+        layout.WaitForAssertion(() =>
+            Links(layout).Should().Contain("/administration/trainers")
+                .And.Contain("/administration/trainings")
+                .And.Contain("/administration/outbox"));
+    }
+
+    /// <summary>
+    /// The menu, names the person the claims name.
+    /// </summary>
+    /// <remarks>
+    /// The claims are the token's own (<c>firstname</c>, <c>lastname</c>), minted at sign-in for
+    /// a trainer's account and carried through the cookie verbatim — so the name costs no call.
+    /// </remarks>
+    [Fact]
+    public void TheMenu_NamesThePersonTheClaimsName()
+    {
+        // Arrange
+        var authorization = this.AddAuthorization();
+        authorization.SetAuthorized("alice");
+        authorization.SetClaims(
+            new Claim("firstname", "Alice"),
+            new Claim("lastname", "Martin"));
+
         // Act
         var layout = Render<MainLayout>();
 
         // Assert
-        Links(layout).Should().Contain("/administration/trainers")
-            .And.Contain("/administration/trainings")
-            .And.Contain("/administration/outbox");
+        Activator(layout).TextContent.Should().Contain("Alice Martin",
+            "the corner identifies the signed-in person at a glance, by name");
+    }
+
+    /// <summary>
+    /// The menu, falls back to the accounts name, when the token names no person.
+    /// </summary>
+    /// <remarks>
+    /// An administrator's token carries no <c>firstname</c> and no <c>lastname</c> — an account
+    /// is not a person with a profile — so the account's own name is what shows.
+    /// </remarks>
+    [Fact]
+    public void TheMenu_FallsBackToTheAccountsName_WhenTheTokenNamesNoPerson()
+    {
+        // Arrange
+        this.AddAuthorization().SetAuthorized("root");
+
+        // Act
+        var layout = Render<MainLayout>();
+
+        // Assert
+        Activator(layout).TextContent.Should().Contain("root");
+        Activator(layout).TextContent.Should().Contain("R",
+            "with no photo the avatar shows initials rather than a placeholder face");
+    }
+
+    /// <summary>
+    /// The menu, shows the portrait, when there is one to show.
+    /// </summary>
+    /// <remarks>
+    /// The address comes from the same one read the standing comes from, and it is the
+    /// authenticated route with the photo's identity as a cache buster — never the public
+    /// portrait route, which answers 404 for a suspended trainer (ADR 0063).
+    /// </remarks>
+    [Fact]
+    public void TheMenu_ShowsThePortrait_WhenThereIsOneToShow()
+    {
+        // Arrange
+        const string Address =
+            "api/Trainer/9d1f7f2e-0e4a-4a1e-9f5f-2b3c4d5e6f70/photo?v=2b3c4d5e-6f70-4a1e-9f5f-9d1f7f2e0e4a";
+
+        Portrait.Setup(source => source.FindOwnPortraitAsync()).ReturnsAsync(Address);
+        this.AddAuthorization().SetAuthorized("alice");
+
+        // Act
+        var layout = Render<MainLayout>();
+
+        // Assert
+        layout.WaitForAssertion(() => layout.FindAll("img")
+            .Should().Contain(image => image.GetAttribute("src") == Address));
+    }
+
+    /// <summary>
+    /// Signing out from the menu, ends the session at the BFF.
+    /// </summary>
+    [Fact]
+    public void SigningOutFromTheMenu_EndsTheSessionAtTheBff()
+    {
+        // Arrange
+        var session = new Mock<IBffSessionClient>();
+        Services.AddSingleton(session.Object);
+        this.AddAuthorization().SetAuthorized("alice");
+
+        var layout = Render<MainLayout>();
+        layout.Find("button[aria-label='Account menu']").Click();
+
+        // Act
+        layout.WaitForAssertion(() => layout.FindAll(".mud-menu-item")
+            .Should().Contain(item => item.TextContent.Contains("Sign out", StringComparison.Ordinal)));
+        layout.FindAll(".mud-menu-item")
+            .Single(item => item.TextContent.Contains("Sign out", StringComparison.Ordinal))
+            .Click();
+
+        // Assert
+        layout.WaitForAssertion(() =>
+            session.Verify(client => client.LogoutAsync(), Times.Once,
+                "signing out is the BFF's business — it holds the only copy of the token (ADR 0009)"));
     }
 
     /// <summary>
@@ -114,7 +223,7 @@ public sealed class MainLayoutTests : ComponentTest
         layout.FindAll("a")
             .Single(anchor => anchor.TextContent.Trim() == "TrainingHub")
             .GetAttribute("href")
-            .Should().Be("/", "the brand is the way home, as on every site a visitor has ever used");
+            .Should().Be("/", "the brand is the way home, and home is the catalog now (ADR 0074)");
     }
 
     /// <summary>
@@ -170,6 +279,9 @@ public sealed class MainLayoutTests : ComponentTest
                 invocation.Identifier == "localStorage.setItem"
                 && Equals(invocation.Arguments[1], "light")));
     }
+
+    private static AngleSharp.Dom.IElement Activator(IRenderedComponent<MainLayout> layout) =>
+        layout.Find("button[aria-label='Account menu']");
 
     private static IReadOnlyList<string?> Links(IRenderedComponent<MainLayout> layout) =>
         [.. layout.FindAll("a").Select(anchor => anchor.GetAttribute("href"))];

@@ -1,22 +1,19 @@
 @using TrainingHub.Blazor.Client.Components
 @inherits LayoutComponentBase
-@using TrainingHub.Blazor.Client.Infrastructure
-@inject IBffSessionClient SessionClient
-@inject IAuthenticationStateNotifier AuthenticationNotifier
-@inject NavigationManager NavigationManager
 @inject IJSRuntime JS
 
-<MudThemeProvider @ref="_themeProvider" @bind-IsDarkMode="@_isDarkMode" />
+<MudThemeProvider @ref="_themeProvider" Theme="Theme" @bind-IsDarkMode="@_isDarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="1">
+    @* Ruled rather than floating: the frame stays quiet so the shelf below can speak. *@
+    <MudAppBar Elevation="0" Class="th-appbar">
         @* The brand is the way home, as on every site a visitor has ever used. A link rather
            than a MudText: the text told people where they were, and answered nothing when they
            clicked it. *@
-        <MudLink Href="/" Typo="Typo.h5" Color="Color.Inherit" Underline="Underline.None" Class="ml-3">
+        <MudLink Href="/" Typo="Typo.h5" Color="Color.Inherit" Underline="Underline.None" Class="ml-3 th-brand">
             TrainingHub
         </MudLink>
         @* Outside the AuthorizeView below, and that is the point: the catalog is the one screen
@@ -26,47 +23,9 @@
             Catalog
         </MudButton>
         <MudSpacer />
-        <AuthorizeView>
-            <Authorized>
-                <MudButton Variant="Variant.Text" Color="Color.Inherit" Href="/trainings">Trainings</MudButton>
-                <MudButton Variant="Variant.Text" Color="Color.Inherit" Href="/profile">Profile</MudButton>
-                @* The first thing in this front end conditioned on a role rather than merely on
-                   being signed in. The BFF canonicalises the token's short `role` claim precisely
-                   so that this works on either side of the cookie; until now nothing used it.
-                   Hiding the links is courtesy, not security — the API refuses the calls behind
-                   AdministratorPolicy whatever the browser renders (ADR 0051, ADR 0054).
-                   Context is named because the outer AuthorizeView already owns `context`. *@
-                <AuthorizeView Roles="Administrator" Context="administrator">
-                    <Authorized>
-                        <MudDivider Vertical="true" FlexItem="true" Class="mx-2" />
-                        <MudButton Variant="Variant.Text"
-                                   Color="Color.Inherit"
-                                   Href="/administration/trainers">
-                            Manage trainers
-                        </MudButton>
-                        <MudButton Variant="Variant.Text"
-                                   Color="Color.Inherit"
-                                   Href="/administration/trainings">
-                            Moderate trainings
-                        </MudButton>
-                        @* The third link administers the platform rather than the domain: the
-                           messages delivery gave up on, and the one way back in (ADR 0061). Same
-                           role, same URL space, and deliberately last — an operator reaches for it
-                           when something is wrong, not on their way to anything else. *@
-                        <MudButton Variant="Variant.Text"
-                                   Color="Color.Inherit"
-                                   Href="/administration/outbox">
-                            Outbox
-                        </MudButton>
-                    </Authorized>
-                </AuthorizeView>
-                <MudText Typo="Typo.body1" Class="mx-4">@context.User.Identity?.Name</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" OnClick="HandleLogout" />
-            </Authorized>
-            <NotAuthorized>
-                <MudButton Variant="Variant.Text" Color="Color.Inherit" Href="/login">Login</MudButton>
-            </NotAuthorized>
-        </AuthorizeView>
+        @* One component for the corner: Sign in for a visitor, the identity and its doors for a
+           signed-in caller. The row of buttons that used to sit here lives inside it (ADR 0074). *@
+        <UserMenu />
         <MudIconButton Icon="@Icons.Material.Filled.Brightness4"
                        Color="Color.Inherit"
                        aria-label="Toggle theme"
@@ -91,6 +50,73 @@
     // than in anything the server knows — nothing here identifies anybody (ADR 0009 took the
     // credential out of localStorage; a color preference is exactly what belongs in it).
     private const string ThemeKey = "theme";
+
+    // The application's own identity, in both modes: plaster and oak-ink grounds, bottle green
+    // for the actions, brass for the quiet seconds. The topic shelves' hues live in app.css —
+    // they are the shelf's colors, not the theme's.
+    private static readonly MudTheme Theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Background = "#F6F5F1",
+            Surface = "#FDFCFA",
+            AppbarBackground = "#F6F5F1",
+            AppbarText = "#1E241F",
+            DrawerBackground = "#F6F5F1",
+            TextPrimary = "#1E241F",
+            TextSecondary = "#5A6157",
+            Primary = "#1D4F3A",
+            Secondary = "#B08A3E",
+            LinesDefault = "#E2DFD7",
+            TableLines = "#E2DFD7"
+        },
+        PaletteDark = new PaletteDark
+        {
+            Background = "#14201A",
+            Surface = "#1B2A22",
+            AppbarBackground = "#14201A",
+            AppbarText = "#EDEAE2",
+            DrawerBackground = "#14201A",
+            TextPrimary = "#EDEAE2",
+            TextSecondary = "#9AA69C",
+            Primary = "#4E9B77",
+            Secondary = "#C9A45C",
+            LinesDefault = "#2C3B32",
+            TableLines = "#2C3B32"
+        },
+        Typography = new Typography
+        {
+            Default = new DefaultTypography
+            {
+                FontFamily = ["Source Sans 3", "sans-serif"]
+            },
+            H4 = new H4Typography
+            {
+                FontFamily = ["Bricolage Grotesque", "sans-serif"],
+                FontWeight = "700",
+                LetterSpacing = "-0.02em"
+            },
+            H5 = new H5Typography
+            {
+                FontFamily = ["Bricolage Grotesque", "sans-serif"],
+                FontWeight = "700",
+                LetterSpacing = "-0.01em"
+            },
+            H6 = new H6Typography
+            {
+                FontFamily = ["Bricolage Grotesque", "sans-serif"],
+                FontWeight = "600"
+            },
+            Caption = new CaptionTypography
+            {
+                FontFamily = ["IBM Plex Mono", "monospace"]
+            },
+            Overline = new OverlineTypography
+            {
+                FontFamily = ["IBM Plex Mono", "monospace"]
+            }
+        }
+    };
 
     private MudThemeProvider? _themeProvider;
     private bool _isDarkMode;
@@ -129,14 +155,5 @@
         _isDarkMode = !_isDarkMode;
 
         await JS.InvokeVoidAsync("localStorage.setItem", ThemeKey, _isDarkMode ? "dark" : "light");
-    }
-
-    private async Task HandleLogout()
-    {
-        // Signing out is the BFF's business: it drops the cookie, and with it the only copy of the
-        // token. There is nothing left in the browser to clear. See ADR 0009.
-        await SessionClient.LogoutAsync();
-        AuthenticationNotifier.NotifyAuthenticationChanged();
-        NavigationManager.NavigateTo("/login");
     }
 }
