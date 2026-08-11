@@ -5,6 +5,15 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <base href="/"/>
+    @if (!IsCatalogRoute)
+    {
+        @* The routes that do not prerender ship an empty head until WebAssembly boots; these two
+           lines are what a browser tab and a link unfurler see in the meantime. The catalog's
+           routes write their own head during the prerendered pass (ADR 0073), which is why they
+           are excluded — a second title here would double theirs. *@
+        <title>TrainingHub</title>
+        <meta name="description" content="TrainingHub — where trainers publish trainings, and anyone can browse them."/>
+    }
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet"/>
     <link href=@Assets["_content/MudBlazor/MudBlazor.min.css"] rel="stylesheet"/>
     <ImportMap/>

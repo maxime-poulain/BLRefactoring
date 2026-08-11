@@ -12,6 +12,21 @@
 
 <PageTitle>Catalog — TrainingHub</PageTitle>
 
+<HeadContent>
+    @* What this page says about itself to the machines that read it — search engines and the
+       unfurlers behind a shared link (ADR 0073). The canonical names the question, not the view:
+       it keeps the topic, a closed set of shelves, and drops the term, the sort and the page —
+       a free-text search is not an address to index, and every view of one canonicalizes to its
+       shelf. Built from the page's own parameters rather than the raw address, so a tracking
+       parameter a visitor arrived with cannot ride into it. *@
+    <meta name="description" content="@CatalogDescription"/>
+    <link rel="canonical" href="@CanonicalUrl"/>
+    <meta property="og:title" content="Catalog — TrainingHub"/>
+    <meta property="og:description" content="@CatalogDescription"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:url" content="@CanonicalUrl"/>
+</HeadContent>
+
 <MudContainer MaxWidth="MaxWidth.Large" Class="my-4">
     <MudText Typo="Typo.h4" Class="mb-2">Trainings on offer</MudText>
     <MudText Typo="Typo.body1" Class="mb-4">
@@ -128,6 +143,16 @@
     // The bound the contract publishes. Typing past it would be answered 400 by the server, so the
     // field refuses it here instead — the same reading the administrative screens give.
     private const int TermMaxLength = 100;
+
+    // One sentence for the description meta tag: what a search result quotes under the title.
+    private const string CatalogDescription =
+        "Every training a trainer currently publishes on TrainingHub. Browse by topic, search by title — no account needed to look.";
+
+    // The address this page answers for, whatever address it was reached by.
+    private string CanonicalUrl =>
+        Navigation.GetUriWithQueryParameters(
+            Navigation.ToAbsoluteUri("/catalog").ToString(),
+            new Dictionary<string, object?> { ["topic"] = _topic });
 
     // The keys the prerendered answers travel under, from the server's pass to the WebAssembly
     // one (ADR 0072). Whatever question the address asked is the question whose answer travels:

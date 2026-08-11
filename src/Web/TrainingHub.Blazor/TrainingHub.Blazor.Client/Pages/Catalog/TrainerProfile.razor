@@ -3,12 +3,40 @@
 @implements IDisposable
 @inject ICatalogClient CatalogClient
 @inject ISnackbar Snackbar
+@inject NavigationManager Navigation
 @inject PersistentComponentState ApplicationState
 
 @* No [Authorize] either, for the same reason as the pages it is reached from: a person with
    something on offer is part of the catalog, and the catalog answers anybody (ADR 0070). *@
 
 <PageTitle>@(_trainer is null ? "Trainer" : $"{_trainer.Firstname} {_trainer.Lastname}") — TrainingHub</PageTitle>
+
+<HeadContent>
+    @* What this page says about itself to the machines that read it (ADR 0073). The full head is
+       earned by having a profile to describe; the branches that render a panel instead say
+       noindex, for the training page's reason — a panel leaves as HTTP 200, and an index full
+       of GUIDs nobody offers serves no one. *@
+    <meta name="description" content="@(_trainer is null ? FallbackDescription : Description(_trainer))"/>
+    @if (_trainer is not null)
+    {
+        <link rel="canonical" href="@CanonicalUrl"/>
+        <meta property="og:title" content="@($"{_trainer.Firstname} {_trainer.Lastname} — TrainingHub")"/>
+        <meta property="og:description" content="@Description(_trainer)"/>
+        <meta property="og:type" content="website"/>
+        <meta property="og:url" content="@CanonicalUrl"/>
+        @if (_trainer.PhotoId is not null)
+        {
+            @* The crawler's door rather than the API's own portrait route: the /api guard asks
+               for headers a link unfurler does not send (ADR 0073). *@
+            <meta property="og:image" content="@PortraitDoorUrl(_trainer)"/>
+        }
+        @CatalogPageHead.JsonLdScript(PersonJsonLd(_trainer))
+    }
+    else if (!_isLoading)
+    {
+        <meta name="robots" content="noindex"/>
+    }
+</HeadContent>
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="my-4">
     <MudButton Variant="Variant.Text"
@@ -165,6 +193,34 @@
     /// </remarks>
     private static string PortraitUrl(CatalogTrainerHttpResponse trainer) =>
         $"api/Catalog/trainers/{trainer.Id}/photo/{trainer.PhotoId}";
+
+    // What the not-yet-loaded and not-available renders say — nothing about a person nobody can see.
+    private const string FallbackDescription = "A trainer with trainings on offer in the TrainingHub catalog.";
+
+    // The bio when there is one, and an honest count when there is not. The count is never zero:
+    // a profile with nothing on offer is a profile the API answered 404 for.
+    private static string Description(CatalogTrainerHttpResponse trainer) =>
+        CatalogPageHead.Summarize(
+            trainer.Bio,
+            $"{trainer.Trainings.Count} training{(trainer.Trainings.Count == 1 ? "" : "s")} offered by {trainer.Firstname} {trainer.Lastname}.");
+
+    // The address this page answers for: the bare route, whatever address it was reached by.
+    private string CanonicalUrl =>
+        Navigation.ToAbsoluteUri($"/catalog/trainers/{TrainerId}").ToString();
+
+    // Absolute because Open Graph consumers resolve nothing: they fetch the address as written.
+    private string PortraitDoorUrl(CatalogTrainerHttpResponse trainer) =>
+        Navigation.ToAbsoluteUri($"/portraits/trainers/{trainer.Id}/{trainer.PhotoId}").ToString();
+
+    // The honest subset of schema.org's Person: what this page actually knows about them.
+    private Dictionary<string, object?> PersonJsonLd(CatalogTrainerHttpResponse trainer) => new()
+    {
+        ["@context"] = "https://schema.org",
+        ["@type"] = "Person",
+        ["name"] = $"{trainer.Firstname} {trainer.Lastname}",
+        ["description"] = Description(trainer),
+        ["url"] = CanonicalUrl
+    };
 
     private Task Persist()
     {

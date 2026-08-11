@@ -3,11 +3,40 @@
 @implements IDisposable
 @inject ICatalogClient CatalogClient
 @inject ISnackbar Snackbar
+@inject NavigationManager Navigation
 @inject PersistentComponentState ApplicationState
 
 @* No [Authorize] either, for the same reason as the listing it is reached from (ADR 0062). *@
 
 <PageTitle>@(_training?.Title ?? "Training") — TrainingHub</PageTitle>
+
+<HeadContent>
+    @* What this page says about itself to the machines that read it (ADR 0073). The full head is
+       earned by having a training to describe; the branches that render a panel instead say
+       noindex, because a withdrawn or mistyped identifier still answers HTTP 200 — the router is
+       a client component with no status to set — and without the tag every GUID would be an
+       indexable page. *@
+    <meta name="description" content="@Description"/>
+    @if (_training is not null)
+    {
+        <link rel="canonical" href="@CanonicalUrl"/>
+        <meta property="og:title" content="@_training.Title"/>
+        <meta property="og:description" content="@Description"/>
+        <meta property="og:type" content="website"/>
+        <meta property="og:url" content="@CanonicalUrl"/>
+        @if (_training.TrainerPhotoId is not null)
+        {
+            @* The crawler's door rather than the API's own portrait route: the /api guard asks
+               for headers a link unfurler does not send (ADR 0073). *@
+            <meta property="og:image" content="@PortraitDoorUrl(_training)"/>
+        }
+        @CatalogPageHead.JsonLdScript(CourseJsonLd(_training))
+    }
+    else if (!_isLoading)
+    {
+        <meta name="robots" content="noindex"/>
+    }
+</HeadContent>
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="my-4">
     <MudButton Variant="Variant.Text"
@@ -166,6 +195,40 @@
     /// </remarks>
     private static string PortraitUrl(CatalogTrainingDetailHttpResponse training) =>
         $"api/Catalog/trainings/{training.Id}/photo/{training.TrainerPhotoId}";
+
+    // What a search result quotes under the title. The fallback is what the not-yet-loaded and
+    // not-found renders say — nothing about a training nobody can see.
+    private const string FallbackDescription = "A training on offer in the TrainingHub catalog.";
+
+    private string Description =>
+        CatalogPageHead.Summarize(_training?.Description, FallbackDescription);
+
+    // The address this page answers for: the bare route, whatever address it was reached by.
+    private string CanonicalUrl =>
+        Navigation.ToAbsoluteUri($"/catalog/{TrainingId}").ToString();
+
+    // Absolute because Open Graph consumers resolve nothing: they fetch the address as written.
+    private string PortraitDoorUrl(CatalogTrainingDetailHttpResponse training) =>
+        Navigation.ToAbsoluteUri(
+            $"/portraits/trainings/{training.Id}/{training.TrainerPhotoId}").ToString();
+
+    // The honest subset of schema.org's Course: name, description and provider are what this page
+    // actually knows. No offers and no price, because the domain has neither (ADR 0073). The
+    // provider is the platform rather than the person — the vocabulary wants an organization
+    // there, and the trainer is described on their own page.
+    private Dictionary<string, object?> CourseJsonLd(CatalogTrainingDetailHttpResponse training) => new()
+    {
+        ["@context"] = "https://schema.org",
+        ["@type"] = "Course",
+        ["name"] = training.Title,
+        ["description"] = CatalogPageHead.Summarize(training.Description, FallbackDescription),
+        ["url"] = CanonicalUrl,
+        ["provider"] = new Dictionary<string, object?>
+        {
+            ["@type"] = "Organization",
+            ["name"] = "TrainingHub"
+        }
+    };
 
     private Task Persist()
     {
