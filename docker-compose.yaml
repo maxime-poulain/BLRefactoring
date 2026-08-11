@@ -91,6 +91,11 @@ services:
       start_period: 5s
 
   ddd-api:
+    # Behind the full profile, with the two other hosts: a bare `docker compose up` starts the
+    # three dependencies alone, which is what a developer running the hosts from an IDE needs —
+    # the Development settings already point at localhost. `--profile full` is the whole stack,
+    # containers included (ADR 0075).
+    profiles: ["full"]
     build:
       context: .
       dockerfile: src/DDD/Api/Dockerfile
@@ -142,6 +147,7 @@ services:
   # services — over the same domain and the same database. Its environment is ddd-api's, because
   # the two hosts differ in how they are written and in nothing else.
   cqrs-api:
+    profiles: ["full"]
     build:
       context: .
       dockerfile: src/DDDWithCqrs/Api/Dockerfile
@@ -188,6 +194,7 @@ services:
 
   # The backend for frontend, and the only container a browser opens.
   bff:
+    profiles: ["full"]
     build:
       context: .
       dockerfile: src/Web/TrainingHub.Blazor/TrainingHub.Blazor/Dockerfile

@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 74 architecture decision records.
+2. `docs/adr/README.md` — the index of 75 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 192 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 193 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -23,13 +23,17 @@ dotnet build TrainingHub.slnx --configuration Release          # zero warnings, 
 dotnet test  TrainingHub.slnx --filter "FullyQualifiedName!~IntegrationTests"   # no Docker needed
 dotnet test  TrainingHub.slnx                                  # everything; needs Docker
 ./scripts/generate-clients.sh                                  # after any change to the API surface
-docker compose up -d                                           # the whole stack: 3 dependencies, 3 hosts
+./scripts/start-dependencies.sh                                # the 3 dependencies alone; hosts run from the IDE
+docker compose --profile full up -d --build                    # the whole stack: 3 dependencies, 3 hosts
 ```
 
-`docker compose up` builds an image per host and starts all six containers (ADR 0065). The BFF
-needs the developer's TLS certificate at `docker/https/traininghub.pfx` — one `dotnet dev-certs`
-command, in the README — because its session cookie is `__Host-` prefixed and a browser stores none
-over plain HTTP. Named here because the container fails to start without it.
+The bare `docker compose up` is the developer's command: the three host services sit behind the
+`full` profile, so it starts SQL Server, SeaweedFS and Mailpit alone and builds nothing (ADR 0075).
+The full profile builds an image per host and starts all six containers (ADR 0065). The BFF
+container needs the developer's TLS certificate at `docker/https/traininghub.pfx` — one
+`dotnet dev-certs` command, in the README — because its session cookie is `__Host-` prefixed and a
+browser stores none over plain HTTP. Named here because the container fails to start without it;
+the dependencies-only workflow needs no certificate at all.
 
 ## Traps that cost a CI round-trip
 

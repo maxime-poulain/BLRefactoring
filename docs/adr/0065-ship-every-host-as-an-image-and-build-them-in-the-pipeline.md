@@ -1,6 +1,6 @@
 # 0065 — Ship every host as an image, and build them in the pipeline
 
-- **Status:** Accepted — amended by [0067](0067-cache-the-image-layers-without-taking-a-dependency.md): the layer cache it turned down is taken, the objection having been the dependency rather than the caching; amended by [0068](0068-remove-the-image-layer-cache.md): the cache is removed on measurement, and building without one stands again
+- **Status:** Accepted — amended by [0067](0067-cache-the-image-layers-without-taking-a-dependency.md): the layer cache it turned down is taken, the objection having been the dependency rather than the caching; amended by [0068](0068-remove-the-image-layer-cache.md): the cache is removed on measurement, and building without one stands again; amended by [0075](0075-give-the-bare-compose-up-to-the-developer.md): the bare compose up starts the dependencies alone, and the stack whole moves behind the full profile
 - **Amends:** [0038](0038-derive-every-counted-claim-from-the-code.md)
 - **Date:** 2026-08-10
 
