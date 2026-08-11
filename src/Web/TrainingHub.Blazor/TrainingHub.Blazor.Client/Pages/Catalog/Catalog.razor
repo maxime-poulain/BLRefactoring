@@ -3,6 +3,7 @@
 @implements IDisposable
 @inject ICatalogClient CatalogClient
 @inject ISnackbar Snackbar
+@inject NavigationManager Navigation
 @inject PersistentComponentState ApplicationState
 
 @* No [Authorize], and it is the only routed page here without one. ADR 0059 built the index and
@@ -129,8 +130,8 @@
     private const int TermMaxLength = 100;
 
     // The keys the prerendered answers travel under, from the server's pass to the WebAssembly
-    // one (ADR 0072). Only the landing question is persisted — no term, no topic, page one —
-    // because that is the only question a prerender is ever asked.
+    // one (ADR 0072). Whatever question the address asked is the question whose answer travels:
+    // both passes serve the same request, so they read the same parameters.
     private const string PageKey = "catalog-page";
     private const string FacetsKey = "catalog-facets";
 
@@ -141,19 +142,41 @@
     private bool _newestFirst;
     private int _currentPage = 1;
     private bool _isLoading = true;
+    private bool _restoredFromPrerender;
     private PersistingComponentStateSubscription _persisting;
+
+    // The question the address asks. The URL is the one source of truth for what this screen
+    // shows: every control navigates, and this page only ever renders what its address says —
+    // which is what makes a search shareable, a bookmark honest, and the back button undo a
+    // filter instead of leaving the catalog.
+    /// <summary>What to look for, from the address.</summary>
+    [SupplyParameterFromQuery(Name = "term")]
+    public string? TermParameter { get; set; }
+
+    /// <summary>The shelf to browse, from the address.</summary>
+    [SupplyParameterFromQuery(Name = "topic")]
+    public string? TopicParameter { get; set; }
+
+    /// <summary>The order to read in, from the address (ADR 0071).</summary>
+    [SupplyParameterFromQuery(Name = "sort")]
+    public string? SortParameter { get; set; }
+
+    /// <summary>The page to show, from the address.</summary>
+    [SupplyParameterFromQuery(Name = "page")]
+    public int? PageParameter { get; set; }
 
     // What the contract calls the non-default order. The default travels as no parameter at all,
     // so the address of an unsorted catalog stays what it always was.
     private string? Sort => _newestFirst ? "newest" : null;
 
     /// <inheritdoc />
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         _persisting = ApplicationState.RegisterOnPersisting(Persist);
 
-        // The prerendered pass already asked; taking its answer is what keeps the first paint
-        // from being replaced by a spinner and the API from being asked twice (ADR 0072).
+        // The prerendered pass already asked the address's own question; taking its answer is
+        // what keeps the first paint from being replaced by a spinner and the API from being
+        // asked twice (ADR 0072).
         if (ApplicationState.TryTakeFromJson<PagedHttpResponseOfCatalogTrainingHttpResponse?>(
                 PageKey, out var prerendered)
             && prerendered is not null)
@@ -161,12 +184,48 @@
             ApplicationState.TryTakeFromJson(FacetsKey, out _facets);
             _page = prerendered;
             _isLoading = false;
+            _restoredFromPrerender = true;
+        }
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        var term = string.IsNullOrWhiteSpace(TermParameter) ? null : TermParameter;
+        var topic = string.IsNullOrWhiteSpace(TopicParameter) ? null : TopicParameter;
+        var newestFirst = string.Equals(SortParameter, "newest", StringComparison.OrdinalIgnoreCase);
+        var page = PageParameter is > 0 ? PageParameter.Value : 1;
+
+        var alreadyShowing = !_isLoading
+            && term == _term
+            && topic == _topic
+            && newestFirst == _newestFirst
+            && page == _currentPage;
+
+        _term = term;
+        _topic = topic;
+        _newestFirst = newestFirst;
+        _currentPage = page;
+
+        // The prerendered answer is the answer to this very address, so the first parameter pass
+        // has nothing to ask; every later pass is a navigation, and a navigation is a question.
+        if (_restoredFromPrerender)
+        {
+            _restoredFromPrerender = false;
             return;
         }
 
-        await LoadFacetsAsync();
+        if (alreadyShowing)
+        {
+            return;
+        }
+
+        if (_facets is null)
+        {
+            await LoadFacetsAsync();
+        }
+
         await LoadAsync();
-        StateHasChanged();
     }
 
     private Task Persist()
@@ -185,38 +244,48 @@
     /// <inheritdoc />
     public void Dispose() => _persisting.Dispose();
 
-    private async Task OnTermChangedAsync(string? term)
+    private Task OnTermChangedAsync(string? term)
     {
-        _term = term;
-        _currentPage = 1;
-        await LoadAsync();
+        Ask(term: term, topic: _topic, newestFirst: _newestFirst, page: 1);
+        return Task.CompletedTask;
     }
 
-    private async Task OnTopicClickedAsync(string topic)
+    private Task OnTopicClickedAsync(string topic)
     {
         // The same chip again lifts the filter rather than reasserting it.
-        _topic = topic == _topic ? null : topic;
-        _currentPage = 1;
-        await LoadAsync();
+        Ask(term: _term, topic: topic == _topic ? null : topic, newestFirst: _newestFirst, page: 1);
+        return Task.CompletedTask;
     }
 
-    private async Task OnPageSelectedAsync(int page)
+    private Task OnPageSelectedAsync(int page)
     {
-        _currentPage = page;
-        await LoadAsync();
+        Ask(term: _term, topic: _topic, newestFirst: _newestFirst, page: page);
+        return Task.CompletedTask;
     }
 
-    private async Task OnOrderChangedAsync(bool newestFirst)
+    private Task OnOrderChangedAsync(bool newestFirst)
     {
-        if (_newestFirst == newestFirst)
+        if (_newestFirst != newestFirst)
         {
-            return;
+            Ask(term: _term, topic: _topic, newestFirst: newestFirst, page: 1);
         }
 
-        _newestFirst = newestFirst;
-        _currentPage = 1;
-        await LoadAsync();
+        return Task.CompletedTask;
     }
+
+    /// <summary>
+    /// Asks by navigating: the address changes, the router hands the parameters back, and the
+    /// load follows from them. Defaults travel as no parameter at all, so the plain catalog
+    /// keeps the address it always had.
+    /// </summary>
+    private void Ask(string? term, string? topic, bool newestFirst, int page) =>
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
+        {
+            ["term"] = string.IsNullOrWhiteSpace(term) ? null : term,
+            ["topic"] = topic,
+            ["sort"] = newestFirst ? "newest" : null,
+            ["page"] = page == 1 ? null : page
+        }));
 
     private async Task LoadFacetsAsync()
     {

@@ -4,8 +4,9 @@
 @inject IBffSessionClient SessionClient
 @inject IAuthenticationStateNotifier AuthenticationNotifier
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
 
-<MudThemeProvider @bind-IsDarkMode="@_isDarkMode" />
+<MudThemeProvider @ref="_themeProvider" @bind-IsDarkMode="@_isDarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -66,7 +67,10 @@
                 <MudButton Variant="Variant.Text" Color="Color.Inherit" Href="/login">Login</MudButton>
             </NotAuthorized>
         </AuthorizeView>
-        <MudIconButton Icon="@Icons.Material.Filled.Brightness4" Color="Color.Inherit" OnClick="@ToggleDarkMode" />
+        <MudIconButton Icon="@Icons.Material.Filled.Brightness4"
+                       Color="Color.Inherit"
+                       aria-label="Toggle theme"
+                       OnClick="@ToggleThemeAsync" />
     </MudAppBar>
     <MudMainContent Class="pt-16 px-4">
         @* Above every routed page, because a suspension is not a fact about one screen. It renders
@@ -82,11 +86,49 @@
 </MudLayout>
 
 @code {
-    private bool _isDarkMode = false;
+    // The key the visitor's choice is kept under. Their choice, not their session: a theme is a
+    // preference of the person and the device, so it lives in the browser's own storage rather
+    // than in anything the server knows — nothing here identifies anybody (ADR 0009 took the
+    // credential out of localStorage; a color preference is exactly what belongs in it).
+    private const string ThemeKey = "theme";
 
-    private void ToggleDarkMode()
+    private MudThemeProvider? _themeProvider;
+    private bool _isDarkMode;
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// The theme resolves here rather than in an initializer, because both of its sources live in
+    /// the browser: the stored choice needs JS interop, and the system preference needs the
+    /// provider's own probe. Neither runs during a prerendered pass — this hook does not either —
+    /// so the server renders the light default and the first interactive frame corrects it.
+    /// </remarks>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var stored = await JS.InvokeAsync<string?>("localStorage.getItem", ThemeKey);
+
+        // A stored choice wins; without one the device answers. "Ask the system" is deliberately
+        // not stored, so a visitor who never touched the toggle follows their device when it
+        // changes its mind — storing the probe's answer would freeze a preference nobody expressed.
+        _isDarkMode = stored switch
+        {
+            "dark" => true,
+            "light" => false,
+            _ => _themeProvider is not null && await _themeProvider.GetSystemDarkModeAsync()
+        };
+
+        StateHasChanged();
+    }
+
+    private async Task ToggleThemeAsync()
     {
         _isDarkMode = !_isDarkMode;
+
+        await JS.InvokeVoidAsync("localStorage.setItem", ThemeKey, _isDarkMode ? "dark" : "light");
     }
 
     private async Task HandleLogout()

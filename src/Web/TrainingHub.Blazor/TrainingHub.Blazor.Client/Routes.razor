@@ -1,4 +1,5 @@
 @using TrainingHub.Blazor.Client.Components
+@using TrainingHub.Blazor.Client.Pages
 
 <CascadingAuthenticationState>
     <Router AppAssembly="typeof(Program).Assembly">
@@ -10,5 +11,13 @@
             </AuthorizeRouteView>
             <FocusOnNavigate RouteData="routeData" Selector="h1"/>
         </Found>
+        @* An unknown address renders a page rather than the blank screen the router used to show
+           over a mistyped link. The page is routable at /not-found besides, so it can be rendered,
+           tested and linked like any other. *@
+        <NotFound>
+            <LayoutView Layout="typeof(Layout.MainLayout)">
+                <NotFound />
+            </LayoutView>
+        </NotFound>
     </Router>
 </CascadingAuthenticationState>
