@@ -139,6 +139,53 @@ public sealed class CatalogTrainingTests : ComponentTest
     }
 
     /// <summary>
+    /// Renders, an offered training, leads each topic back to its shelf.
+    /// </summary>
+    /// <remarks>
+    /// A topic on the sheet is not a label: it is the address of every other training on the same
+    /// shelf, so the chip is an anchor into the filtered catalog (ADR 0069).
+    /// </remarks>
+    [Fact]
+    public void Renders_AnOfferedTraining_LeadsEachTopicBackToItsShelf()
+    {
+        _catalog
+            .Setup(client => client.GetOfferedTrainingAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(Offered());
+
+        var page = Render<CatalogTraining>(parameters => parameters
+            .Add(detail => detail.TrainingId, Guid.CreateVersion7()));
+
+        page.FindAll("a")
+            .Select(anchor => anchor.GetAttribute("href"))
+            .Should().Contain("/catalog?topic=Architecture");
+    }
+
+    /// <summary>
+    /// Renders, an offered training, wears one spine segment per topic in the shelf's hue.
+    /// </summary>
+    /// <remarks>
+    /// The sheet keeps the shelf's language: the left edge carries one band per topic, each in
+    /// the same hue that topic's spines and marks wear everywhere else, because the color encodes
+    /// which shelves this training sits on rather than decorating the card (ADR 0069).
+    /// </remarks>
+    [Fact]
+    public void Renders_AnOfferedTraining_WearsOneSpineSegmentPerTopic()
+    {
+        _catalog
+            .Setup(client => client.GetOfferedTrainingAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(Offered(topics: ["Design", "Leadership"]));
+
+        var page = Render<CatalogTraining>(parameters => parameters
+            .Add(detail => detail.TrainingId, Guid.CreateVersion7()));
+
+        var segments = page.FindAll(".th-sheet-spine > span");
+
+        segments.Should().HaveCount(2);
+        segments[0].GetAttribute("style").Should().Contain("--th-spine-design");
+        segments[1].GetAttribute("style").Should().Contain("--th-spine-leadership");
+    }
+
+    /// <summary>
     /// Renders, a training that is not on offer, says so without reporting a failure.
     /// </summary>
     /// <remarks>
@@ -187,16 +234,17 @@ public sealed class CatalogTrainingTests : ComponentTest
             headers: new Dictionary<string, IEnumerable<string>>(),
             innerException: null);
 
-    private static CatalogTrainingDetailHttpResponse Offered(Guid? trainerPhotoId = null) => new()
-    {
-        Id = Guid.CreateVersion7(),
-        Title = "Domain Driven Design",
-        TrainerName = "Ada Lovelace",
-        TrainerId = Guid.CreateVersion7(),
-        Topics = ["Architecture"],
-        Description = "What a bounded context is.",
-        Prerequisites = "None.",
-        AcquiredSkills = "Drawing a context map.",
-        TrainerPhotoId = trainerPhotoId
-    };
+    private static CatalogTrainingDetailHttpResponse Offered(
+        Guid? trainerPhotoId = null, List<string>? topics = null) => new()
+        {
+            Id = Guid.CreateVersion7(),
+            Title = "Domain Driven Design",
+            TrainerName = "Ada Lovelace",
+            TrainerId = Guid.CreateVersion7(),
+            Topics = topics ?? ["Architecture"],
+            Description = "What a bounded context is.",
+            Prerequisites = "None.",
+            AcquiredSkills = "Drawing a context map.",
+            TrainerPhotoId = trainerPhotoId
+        };
 }

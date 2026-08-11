@@ -6,9 +6,14 @@
 @inject ISnackbar Snackbar
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center" Style="height: 80vh;">
-    <MudPaper Elevation="4" Class="pa-8 w-100">
+    <MudPaper Elevation="4" Class="pa-8 w-100 th-sheet th-auth">
+        @* The desk's spine is brass — the identity's own metal, the one the avatar wears. *@
+        <span class="th-sheet-spine" aria-hidden="true">
+            <span style="background-color: var(--mud-palette-secondary)"></span>
+        </span>
+
         <MudStack Spacing="4">
-            <MudText Typo="Typo.h4" Align="Align.Center">Login</MudText>
+            <MudText Typo="Typo.h4">Sign in</MudText>
 
             <MudForm @ref="_form" @bind-IsValid="_isValid">
                 <MudTextField @bind-Value="_username"
@@ -47,7 +52,7 @@
                 }
                 else
                 {
-                    <span>Sign In</span>
+                    <span>Sign in</span>
                 }
             </MudButton>
 
@@ -117,7 +122,7 @@
 
             AuthenticationNotifier.NotifyAuthenticationChanged();
 
-            Snackbar.Add("Login successful!", Severity.Success);
+            Snackbar.Add("Signed in.", Severity.Success);
             NavigationManager.NavigateTo(ReturnUrl ?? "/trainings");
         }
         catch (Exception ex)

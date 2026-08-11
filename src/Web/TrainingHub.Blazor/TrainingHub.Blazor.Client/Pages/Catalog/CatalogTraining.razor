@@ -43,7 +43,7 @@
                Color="Color.Primary"
                Href="/catalog"
                StartIcon="@Icons.Material.Filled.ArrowBack"
-               Class="mb-4">
+               Class="mb-4 th-back">
         Back to the catalog
     </MudButton>
 
@@ -76,7 +76,17 @@
     }
     else
     {
-        <MudPaper Elevation="1" Class="pa-6">
+        <MudPaper Elevation="1" Class="pa-6 pl-8 th-sheet">
+            @* The sheet's spine, segmented: one band per topic, each in its shelf's hue, because
+               this training sits on every shelf its topics name (ADR 0069). The band's container
+               stays neutral, so a training naming no topic still reads as a book. *@
+            <span class="th-sheet-spine" aria-hidden="true">
+                @foreach (var topic in _training.Topics)
+                {
+                    <span style="background-color: @CatalogTopics.SpineVar(topic)"></span>
+                }
+            </span>
+
             <MudText Typo="Typo.h4" GutterBottom="true">@_training.Title</MudText>
 
             @* The name, and it is the whole reason this endpoint reads the write model rather than
@@ -105,21 +115,29 @@
 
             @if (_training.Topics.Count > 0)
             {
-                <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mb-6">
+                @* The catalog's own chips, marks included, and each one leads back to its shelf:
+                   a topic on a sheet is the address of every other training on it (ADR 0069). *@
+                <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mb-6 th-tags">
                     @foreach (var topic in _training.Topics)
                     {
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@topic</MudChip>
+                        <MudChip T="string"
+                                 Size="Size.Small"
+                                 Variant="Variant.Outlined"
+                                 Href="@($"/catalog?topic={Uri.EscapeDataString(topic)}")">
+                            <span class="th-mark" style="background-color: @CatalogTopics.SpineVar(topic)"></span>
+                            @topic
+                        </MudChip>
                     }
                 </MudStack>
             }
 
-            <MudText Typo="Typo.h6" GutterBottom="true">About</MudText>
+            <MudText Typo="Typo.h6" Class="th-cue-label" GutterBottom="true">About</MudText>
             <MudText Typo="Typo.body1" Class="mb-6">@_training.Description</MudText>
 
-            <MudText Typo="Typo.h6" GutterBottom="true">Prerequisites</MudText>
+            <MudText Typo="Typo.h6" Class="th-cue-label" GutterBottom="true">Prerequisites</MudText>
             <MudText Typo="Typo.body1" Class="mb-6">@_training.Prerequisites</MudText>
 
-            <MudText Typo="Typo.h6" GutterBottom="true">What you leave with</MudText>
+            <MudText Typo="Typo.h6" Class="th-cue-label" GutterBottom="true">What you leave with</MudText>
             <MudText Typo="Typo.body1">@_training.AcquiredSkills</MudText>
         </MudPaper>
     }

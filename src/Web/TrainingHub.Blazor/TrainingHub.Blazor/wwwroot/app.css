@@ -137,6 +137,65 @@
     font-size: 0.9rem;
 }
 
+/* ---------------------------------------------------------------- the sheet */
+
+/*
+    A card taken down from the shelf keeps the shelf's language: one spine on its left edge.
+    On a training it is segmented — one band per topic, each in its shelf's hue — because a
+    training sits on every shelf its topics name (ADR 0069). On a person, and on the desk a
+    visitor signs in at, the spine is brass: the identity's own metal, the one the avatar wears.
+*/
+.th-sheet {
+    position: relative;
+    overflow: hidden;
+}
+
+.th-sheet-spine {
+    position: absolute;
+    inset: 0 auto 0 0;
+    display: flex;
+    flex-direction: column;
+    width: 6px;
+    background-color: var(--th-spine-neutral);
+}
+
+.th-sheet-spine > span {
+    flex: 1;
+}
+
+/* A section's label on a sheet: the mono voice, because a label is the machine's half of the
+   card — the index, not the prose. Wins over the heading's own face by loading after it. */
+.th-cue-label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.75rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mud-palette-text-secondary);
+}
+
+/* The quiet way back, in the same voice. */
+.th-back {
+    font-family: "IBM Plex Mono", monospace;
+    letter-spacing: 0.06em;
+}
+
+/* The shelves a training sits on: the catalog's own chips, marks included. */
+.th-tags .mud-chip {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.78rem;
+}
+
+/* ---------------------------------------------------------------- the desk */
+
+/* The sign-in and register forms label their fields in the utility voice, like the hero. */
+.th-auth .mud-input-label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
 @keyframes th-shelve {
     from {
         opacity: 0;
