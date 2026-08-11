@@ -48,14 +48,20 @@ services:
       - seaweedfs_data:/data
       - ./docker/seaweedfs-s3.json:/etc/seaweedfs/s3.json:ro
     healthcheck:
-      # /dir/assign, which asks the master to allocate somewhere to put bytes. That is a stronger
-      # question than "is the master answering": until a volume server has registered, allocation
-      # fails while everything else looks healthy — a bucket can still be created, because that is
-      # metadata, and the first upload is what discovers the problem. The assigned id is discarded.
+      # An actual write, because it asks the question that matters: until a volume server has
+      # registered, allocation fails while everything else looks healthy — a bucket can still be
+      # created, because that is metadata, and the first upload is what discovers the problem.
+      # `weed upload` meets a volume-less master with "No writable volumes" and exit code 2, and
+      # the one-minute TTL makes the store forget each probe's thirteen bytes on its own.
       #
-      # Not the S3 port: an unsigned request there answers 403 and busybox wget treats that as a
-      # failure, so the check would never pass on a container that is perfectly well.
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:9333/dir/assign || exit 1"]
+      # `weed` itself and not wget, because this image holds exactly one file: /usr/bin/weed.
+      # No shell, no busybox — a CMD-SHELL check can never even start, it fails with "/bin/sh:
+      # no such file" while the process it is meant to probe runs fine, and `depends_on:
+      # service_healthy` then holds every host back forever. Asking the binary the image ships
+      # is the same lesson Mailpit's check below already carries.
+      #
+      # Not the S3 port: an unsigned request there answers 403, which no client reads as health.
+      test: ["CMD", "/usr/bin/weed", "upload", "-master", "localhost:9333", "-ttl", "1m", "/etc/hostname"]
       interval: 10s
       timeout: 5s
       retries: 5

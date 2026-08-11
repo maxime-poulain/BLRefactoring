@@ -1015,6 +1015,12 @@ without a version attribute, every version is exact, and transitive pinning is e
   of it over plain HTTP, and a container serving HTTP would render every page and sign nobody in.
   See [ADR 0065](docs/adr/0065-ship-every-host-as-an-image-and-build-them-in-the-pipeline.md).
 
+  On Linux, `chmod 644` the exported file: the export writes it readable by its owner alone, the
+  container runs the host as a non-root user, and the bind mount carries the host's permissions —
+  so the `bff` container dies on startup with `UnauthorizedAccessException` reading a certificate
+  that is right there. Docker Desktop's file sharing relaxes permissions, which is why the same
+  compose file starts on a Mac and crashes on a Linux box.
+
 ### Run the dependencies
 
 ```bash
