@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using TrainingHub.GeneratedClients;
@@ -208,6 +209,78 @@ public sealed class CatalogTests : ComponentTest
         page.WaitForAssertion(() => _catalog.Verify(
             client => client.SearchTrainingsAsync(null, null, "newest", 1, null),
             Times.Once));
+    }
+
+    /// <summary>
+    /// Rendered at an address asking a question, asks the server exactly it.
+    /// </summary>
+    /// <remarks>
+    /// The half that makes a search shareable: the address is the one source of truth, so a
+    /// bookmarked or pasted link renders the page it named rather than the default one. The
+    /// controls' clicks write the address (the facts around this one), and this fact is the
+    /// address being read back.
+    /// </remarks>
+    [Fact]
+    public void RenderedAtAnAddressAskingAQuestion_AsksTheServerExactlyIt()
+    {
+        var navigation = Services.GetRequiredService<NavigationManager>();
+
+        navigation.NavigateTo("/catalog?term=domain&topic=Design&sort=newest&page=2");
+
+        Render<CatalogPage>();
+
+        _catalog.Verify(
+            client => client.SearchTrainingsAsync("domain", "Design", "newest", 2, null),
+            Times.Once);
+    }
+
+    /// <summary>
+    /// Clicking a topic chip, writes the shelf into the address.
+    /// </summary>
+    /// <remarks>
+    /// The other half of shareability: what a visitor narrowed to is what their address bar says,
+    /// so copying the link copies the question. The page reset travels the same way — as no
+    /// <c>page</c> parameter at all, page one being the default.
+    /// </remarks>
+    [Fact]
+    public void ClickingATopicChip_WritesTheShelfIntoTheAddress()
+    {
+        _catalog
+            .Setup(client => client.GetTopicsAsync())
+            .ReturnsAsync(Facets(Facet("Programming", 3)));
+
+        var page = Render<CatalogPage>();
+
+        Chip(page, "Programming").Click();
+
+        var navigation = Services.GetRequiredService<NavigationManager>();
+
+        page.WaitForAssertion(() =>
+            navigation.Uri.Should().Contain("topic=Programming"));
+    }
+
+    /// <summary>
+    /// The default question, keeps the address bare.
+    /// </summary>
+    /// <remarks>
+    /// Undoing every filter must give back the address the catalog always had — not one strewn
+    /// with <c>?term=&amp;sort=title&amp;page=1</c>. A default that travels as a parameter is a
+    /// second spelling of the same address, and two spellings split every cache and comparison.
+    /// </remarks>
+    [Fact]
+    public void TheDefaultQuestion_KeepsTheAddressBare()
+    {
+        var page = Render<CatalogPage>();
+
+        Chip(page, "Newest").Click();
+        page.WaitForAssertion(() =>
+            Services.GetRequiredService<NavigationManager>().Uri.Should().Contain("sort=newest"));
+
+        Chip(page, "A–Z").Click();
+
+        page.WaitForAssertion(() =>
+            Services.GetRequiredService<NavigationManager>().Uri.Should().NotContain("sort=",
+                "the default order travels as no parameter at all"));
     }
 
     private static AngleSharp.Dom.IElement Chip(

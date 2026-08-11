@@ -117,6 +117,60 @@ public sealed class MainLayoutTests : ComponentTest
             .Should().Be("/", "the brand is the way home, as on every site a visitor has ever used");
     }
 
+    /// <summary>
+    /// The theme toggle, persists the choice.
+    /// </summary>
+    /// <remarks>
+    /// The half that makes the toggle a preference rather than a mood: without the write, every
+    /// visit started light again. The choice goes to the browser's own storage — a color is
+    /// exactly what belongs in localStorage now that ADR 0009 took the credential out of it.
+    /// </remarks>
+    [Fact]
+    public void TheThemeToggle_PersistsTheChoice()
+    {
+        // Arrange
+        this.AddAuthorization().SetNotAuthorized();
+
+        var layout = Render<MainLayout>();
+
+        // Act
+        layout.Find("button[aria-label='Toggle theme']").Click();
+
+        // Assert
+        layout.WaitForAssertion(() => JSInterop.Invocations
+            .Should().Contain(invocation =>
+                invocation.Identifier == "localStorage.setItem"
+                && Equals(invocation.Arguments[0], "theme")
+                && Equals(invocation.Arguments[1], "dark")));
+    }
+
+    /// <summary>
+    /// A stored dark choice, is applied on the first render.
+    /// </summary>
+    /// <remarks>
+    /// Proved through the toggle rather than through the palette: markup carries MudBlazor's
+    /// generated styles, which are not this suite's to read. If the stored "dark" was applied,
+    /// the next toggle stores "light" — and if it was not, this stores "dark" and fails.
+    /// </remarks>
+    [Fact]
+    public void AStoredDarkChoice_IsAppliedOnTheFirstRender()
+    {
+        // Arrange
+        this.AddAuthorization().SetNotAuthorized();
+        JSInterop.Setup<string?>("localStorage.getItem", "theme").SetResult("dark");
+
+        var layout = Render<MainLayout>();
+
+        // Act
+        layout.Find("button[aria-label='Toggle theme']").Click();
+
+        // Assert
+        layout.WaitForAssertion(() => JSInterop.Invocations
+            .Should().Contain(invocation =>
+                invocation.Identifier == "localStorage.setItem"
+                && Equals(invocation.Arguments[1], "light")));
+    }
+
     private static IReadOnlyList<string?> Links(IRenderedComponent<MainLayout> layout) =>
         [.. layout.FindAll("a").Select(anchor => anchor.GetAttribute("href"))];
 }
