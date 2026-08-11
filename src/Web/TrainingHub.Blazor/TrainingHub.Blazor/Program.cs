@@ -90,6 +90,11 @@ app.UseAntiforgery();
 // A 200 here means this process is up and routing — all a container restart decision should read.
 app.MapHealthChecks("/health/live");
 
+// Beside the health checks and outside the BFF's own group, because the audience is neither the
+// browser nor an operator: robots.txt, the sitemap and the portrait pass-throughs answer the
+// crawlers ADR 0072 started prerendering for (ADR 0073).
+app.MapCrawlerEndpoints();
+
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()

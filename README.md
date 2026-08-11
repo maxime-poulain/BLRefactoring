@@ -799,6 +799,14 @@ answer. The reasoning, the alternatives — in-memory tokens, refresh tokens, Du
 this does *not* protect against are in
 [ADR 0009](docs/adr/0009-hold-the-access-token-in-the-bff-instead-of-the-browser.md).
 
+**The catalog's routes are also the crawler's.** They prerender on the host, per request path
+([ADR 0072](docs/adr/0072-prerender-the-catalogs-routes.md)), and they describe themselves to the
+machines that read them: each page writes its own head — a description, a canonical naming which
+address is the page, Open Graph, JSON-LD — while the BFF serves `/robots.txt` and `/sitemap.xml`
+at the root, outside its guards, and a narrow `/portraits/…` pass-through so a link unfurler can
+fetch the face `og:image` names
+([ADR 0073](docs/adr/0073-describe-the-catalog-to-the-machines-that-read-it.md)).
+
 The trainer endpoints need no policy of their own beyond `Trainer`, because none of them takes an
 identifier and none of them destroys anything: reading and editing one's own profile are addressed
 as `/Trainer/me` and resolve the trainer from the `trainer_id` claim. There is nothing to tamper

@@ -98,5 +98,6 @@ simpler from the outside.
 | [0070](0070-open-a-trainers-public-page.md) | Open a trainer's public page | Accepted |
 | [0071](0071-give-the-catalog-a-second-published-order.md) | Give the catalog a second published order | Accepted |
 | [0072](0072-prerender-the-catalogs-routes.md) | Prerender the catalog's routes | Accepted |
+| [0073](0073-describe-the-catalog-to-the-machines-that-read-it.md) | Describe the catalog to the machines that read it | Accepted |
 | [0064](0064-write-this-repository-in-american-english.md) | Write this repository in American English | Accepted — amended by [0066](0066-close-the-spelling-rules-selection-against-its-exemptions.md): the selection is closed against its exemptions, so a file governed by neither fails the build |
 | [0065](0065-ship-every-host-as-an-image-and-build-them-in-the-pipeline.md) | Ship every host as an image, and build them in the pipeline | Accepted — amended by [0067](0067-cache-the-image-layers-without-taking-a-dependency.md): the layer cache it turned down is taken, the objection having been the dependency rather than the caching; amended by [0068](0068-remove-the-image-layer-cache.md): the cache is removed on measurement, and building without one stands again |

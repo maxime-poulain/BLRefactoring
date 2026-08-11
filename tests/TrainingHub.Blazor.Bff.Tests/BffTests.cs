@@ -133,6 +133,284 @@ public sealed class BffTests : IDisposable
         (await response.Content.ReadAsStringAsync()).Should().Be("Healthy");
     }
 
+    // ---------------------------------------------------------------- the crawler's doors
+
+    /// <summary>
+    /// Robots names the sitemap and shields the signed in spaces.
+    /// </summary>
+    /// <remarks>
+    /// Fetched bare — no marker header, no <c>Sec-Fetch-Site</c> — because that is how a crawler
+    /// arrives, and these doors exist for exactly that caller (ADR 0073).
+    /// </remarks>
+    [Fact]
+    public async Task Robots_names_the_sitemap_and_shields_the_signed_in_spaces()
+    {
+        var response = await _browser.GetAsync("/robots.txt");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK,
+            "a crawler sends none of the application's headers, and this door is outside every guard");
+        response.Content.Headers.ContentType!.MediaType.Should().Be("text/plain");
+
+        var body = await response.Content.ReadAsStringAsync();
+
+        body.Should().Contain("Sitemap: https://localhost/sitemap.xml",
+            "the sitemap line is absolute, built from the request's own origin");
+        body.Should().Contain("Disallow: /administration/")
+            .And.Contain("Disallow: /trainings")
+            .And.Contain("Disallow: /profile",
+                "the signed-in spaces are empty shells to a caller with no session");
+    }
+
+    /// <summary>
+    /// The sitemap lists what the catalog offers.
+    /// </summary>
+    [Fact]
+    public async Task The_sitemap_lists_what_the_catalog_offers()
+    {
+        const string TrainingA = "0f8fad5b-d9cb-469f-a165-70867728950e";
+        const string TrainingB = "7c9e6679-7425-40de-944b-e07fc1f90ae7";
+        const string Trainer = "9d1f7f2e-0e4a-4a1e-9f5f-2b3c4d5e6f70";
+
+        _factory.LoginApi.Respond = _ => RecordingHandler.Ok(
+            $$"""
+              {"items":[
+                  {"id":"{{TrainingA}}","trainerId":"{{Trainer}}","title":"Alpha"},
+                  {"id":"{{TrainingB}}","trainerId":"{{Trainer}}","title":"Beta"}],
+               "page":1,"pageSize":100,"totalCount":2,"totalPages":1,"hasNextPage":false}
+              """);
+
+        var response = await _browser.GetAsync("/sitemap.xml");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType!.MediaType.Should().Be("application/xml");
+
+        var body = await response.Content.ReadAsStringAsync();
+
+        body.Should().Contain("<loc>https://localhost/catalog</loc>",
+            "the listing itself is the first address a crawler should know");
+        body.Should().Contain($"<loc>https://localhost/catalog/{TrainingA}</loc>")
+            .And.Contain($"<loc>https://localhost/catalog/{TrainingB}</loc>");
+        body.Split($"<loc>https://localhost/catalog/trainers/{Trainer}</loc>").Should().HaveCount(2,
+            "a trainer with several trainings on offer is one address, not one per row");
+
+        var forwarded = _factory.LoginApi.Requests.Should().ContainSingle().Subject;
+
+        forwarded.Uri!.Query.Should().Contain("PageSize=100",
+            "the sitemap reads at the contract's own maximum — the fewest round trips the API allows");
+        forwarded.Authorization.Should().BeNull(
+            "the catalog's read is published and anonymous (ADR 0059), and the sitemap rides it");
+    }
+
+    /// <summary>
+    /// The sitemap says unavailable when the api is down.
+    /// </summary>
+    [Fact]
+    public async Task The_sitemap_says_unavailable_when_the_api_is_down()
+    {
+        _factory.LoginApi.Respond = _ => throw new HttpRequestException("The API is down.");
+
+        var response = await _browser.GetAsync("/sitemap.xml");
+
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable,
+            "a sitemap that answers half the truth teaches a crawler that the missing half is gone");
+    }
+
+    /// <summary>
+    /// A prerendered training page carries its head.
+    /// </summary>
+    [Fact]
+    public async Task A_prerendered_training_page_carries_its_head()
+    {
+        var trainingId = Guid.NewGuid();
+        var trainerId = Guid.NewGuid();
+        var photoId = Guid.NewGuid();
+
+        _factory.LoginApi.Respond = _ => RecordingHandler.Ok(
+            $$"""
+              {"id":"{{trainingId}}","title":"Domain Modeling","trainerId":"{{trainerId}}",
+               "trainerName":"Alice Martin","trainerPhotoId":"{{photoId}}","topics":["Design"],
+               "description":"Aggregates, invariants and the language they answer to.",
+               "prerequisites":"None.","acquiredSkills":"Modeling."}
+              """);
+
+        var response = await _browser.GetAsync($"/catalog/{trainingId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var html = await response.Content.ReadAsStringAsync();
+
+        html.Should().Contain("rel=\"canonical\"",
+            "the head reaches the prerendered HTML, which is all a crawler ever reads (ADR 0073)");
+        html.Should().Contain($"https://localhost/catalog/{trainingId}",
+            "the canonical names the bare route, whatever address the page was reached by");
+        html.Should().Contain($"https://localhost/portraits/trainings/{trainingId}/{photoId}",
+            "og:image points at the crawler's door, not at the /api route whose guard refuses an unfurler");
+    }
+
+    /// <summary>
+    /// A prerendered trainer page carries its head.
+    /// </summary>
+    [Fact]
+    public async Task A_prerendered_trainer_page_carries_its_head()
+    {
+        var trainerId = Guid.NewGuid();
+        var photoId = Guid.NewGuid();
+
+        _factory.LoginApi.Respond = _ => RecordingHandler.Ok(
+            $$"""
+              {"id":"{{trainerId}}","firstname":"Alice","lastname":"Martin",
+               "bio":"Teaches domain modeling.","photoId":"{{photoId}}",
+               "trainings":[{"id":"{{Guid.NewGuid()}}","trainerId":"{{trainerId}}","title":"Alpha"}]}
+              """);
+
+        var response = await _browser.GetAsync($"/catalog/trainers/{trainerId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var html = await response.Content.ReadAsStringAsync();
+
+        html.Should().Contain("rel=\"canonical\"")
+            .And.Contain($"https://localhost/catalog/trainers/{trainerId}",
+                "the person's page describes itself the way the training's does (ADR 0073)");
+        html.Should().Contain($"https://localhost/portraits/trainers/{trainerId}/{photoId}",
+            "og:image points at the crawler's door here too");
+    }
+
+    /// <summary>
+    /// A trainer nobody offers is marked noindex.
+    /// </summary>
+    [Fact]
+    public async Task A_trainer_nobody_offers_is_marked_noindex()
+    {
+        _factory.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.NotFound)
+        {
+            Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/problem+json")
+        };
+
+        var response = await _browser.GetAsync($"/catalog/trainers/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var html = await response.Content.ReadAsStringAsync();
+
+        html.Should().Contain("noindex",
+            "a profile that answers nothing leaves as HTTP 200, and the tag keeps it out of an index");
+        html.Should().NotContain("rel=\"canonical\"");
+    }
+
+    /// <summary>
+    /// A training nobody offers is marked noindex.
+    /// </summary>
+    [Fact]
+    public async Task A_training_nobody_offers_is_marked_noindex()
+    {
+        _factory.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.NotFound)
+        {
+            Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/problem+json")
+        };
+
+        var response = await _browser.GetAsync($"/catalog/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK,
+            "the router is a client component with no status to set, and this soft answer is " +
+            "exactly why the tag exists");
+
+        var html = await response.Content.ReadAsStringAsync();
+
+        html.Should().Contain("noindex",
+            "without the tag, every mistyped or withdrawn identifier is an indexable page (ADR 0073)");
+        html.Should().NotContain("rel=\"canonical\"",
+            "a canonical on the nothing-here panel would invite the indexing it is meant to prevent");
+    }
+
+    /// <summary>
+    /// A portrait is served to a caller with no headers.
+    /// </summary>
+    /// <remarks>
+    /// The defect this fact was written against: <c>og:image</c> pointing at the API's own portrait
+    /// route answers 403 to exactly its audience, because a link unfurler sends neither the marker
+    /// header nor <c>Sec-Fetch-Site</c> — the pinned behavior of the <c>/api</c> guard. The
+    /// pass-through is a narrow door beside that guard, not a relaxation of it (ADR 0073).
+    /// </remarks>
+    [Fact]
+    public async Task A_portrait_is_served_to_a_caller_with_no_headers()
+    {
+        byte[] pixels = [0x89, 0x50, 0x4E, 0x47];
+
+        _factory.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new ByteArrayContent(pixels)
+            {
+                Headers = { ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png") }
+            }
+        };
+
+        var trainingId = Guid.NewGuid();
+        var photoId = Guid.NewGuid();
+
+        var response = await _browser.GetAsync($"/portraits/trainings/{trainingId}/{photoId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK,
+            "a link unfurler fetching og:image sends none of the application's headers");
+        response.Content.Headers.ContentType!.MediaType.Should().Be("image/png");
+        (await response.Content.ReadAsByteArrayAsync()).Should().Equal(pixels);
+        response.Headers.CacheControl!.ToString().Should().Contain("immutable",
+            "the address carries the photo's identity, so the bytes it answers never change (ADR 0063)");
+
+        var forwarded = _factory.LoginApi.Requests.Should().ContainSingle().Subject;
+
+        forwarded.Uri!.AbsolutePath.Should().Be($"/Catalog/trainings/{trainingId}/photo/{photoId}");
+        forwarded.Authorization.Should().BeNull(
+            "the portrait is published (ADR 0063); there is no credential to attach and none to require");
+    }
+
+    /// <summary>
+    /// A trainers portrait is served through its own door.
+    /// </summary>
+    [Fact]
+    public async Task A_trainers_portrait_is_served_through_its_own_door()
+    {
+        var trainerId = Guid.NewGuid();
+        var photoId = Guid.NewGuid();
+
+        var response = await _browser.GetAsync($"/portraits/trainers/{trainerId}/{photoId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        _factory.LoginApi.Requests.Should().ContainSingle()
+            .Which.Uri!.AbsolutePath.Should().Be($"/Catalog/trainers/{trainerId}/photo/{photoId}",
+                "the trainer's door forwards to the trainer's published route, as the training's does");
+    }
+
+    /// <summary>
+    /// A portrait the api refuses answers the apis verdict.
+    /// </summary>
+    [Fact]
+    public async Task A_portrait_the_api_refuses_answers_the_apis_verdict()
+    {
+        _factory.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.NotFound);
+
+        var response = await _browser.GetAsync($"/portraits/trainings/{Guid.NewGuid()}/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound,
+            "a photo that was replaced answers 404 here for the same reason it does at the API");
+        response.Headers.CacheControl.Should().BeNull(
+            "a year of immutable is a promise about bytes, and a refusal carries none");
+    }
+
+    /// <summary>
+    /// A portrait answers unavailable when the api is down.
+    /// </summary>
+    [Fact]
+    public async Task A_portrait_answers_unavailable_when_the_api_is_down()
+    {
+        _factory.LoginApi.Respond = _ => throw new HttpRequestException("The API is down.");
+
+        var response = await _browser.GetAsync($"/portraits/trainings/{Guid.NewGuid()}/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+    }
+
     // ---------------------------------------------------------------- signing in
 
     /// <summary>

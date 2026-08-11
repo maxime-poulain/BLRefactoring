@@ -4,7 +4,8 @@ using Xunit;
 namespace TrainingHub.Architecture.Tests.Rules;
 
 /// <summary>
-/// Which routes prerender, and who decides (ADR 0072).
+/// Which routes prerender, who decides (ADR 0072), and what the prerendered pages say about
+/// themselves (ADR 0073).
 /// </summary>
 /// <remarks>
 /// The decision lived for a long time as a comment in <c>App.razor</c> saying it was not made.
@@ -74,6 +75,40 @@ public sealed class PrerenderingRules
                 $"'{file}' declares a @rendermode of its own. The decision belongs to " +
                 $"'{TheDecidingFile}', per request, or the closed set of prerendered routes " +
                 "stops being checkable (ADR 0072)")
+            .ShouldHold();
+    }
+
+    /// <summary>
+    /// Every prerendered page, describes itself to the crawler.
+    /// </summary>
+    /// <remarks>
+    /// The point of prerendering was never the HTML alone: it was giving the machines that read
+    /// the catalog something to read. A page that prerenders without a description has an engine
+    /// invent its snippet, and one without a canonical has every <c>?sort=</c> view compete with
+    /// the page it is a view of. The check is textual and per page, because the head is markup a
+    /// refactor can quietly drop while every behavior test stays green.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0073",
+        "each prerendered page describes itself: a head with a description for a search result " +
+        "to quote and a canonical naming which address is the page")]
+    public void EveryPrerenderedPage_DescribesItselfToTheCrawler()
+    {
+        string[] pages = ["Catalog.razor", "CatalogTraining.razor", "TrainerProfile.razor"];
+        string[] shapes = ["<HeadContent>", "name=\"description\"", "rel=\"canonical\""];
+
+        pages
+            .SelectMany(page => shapes.Select(shape => (Page: page, Shape: shape)))
+            .Selected("head shape a prerendered page must carry")
+            .Where(claim => !SourceTree.ReadText(Path.Combine(
+                    SourceTree.RepositoryRoot,
+                    $"{TheClientsPages}Pages/Catalog/{claim.Page}"
+                        .Replace('/', Path.DirectorySeparatorChar)))
+                .Contains(claim.Shape, StringComparison.Ordinal))
+            .Select(claim =>
+                $"'{claim.Page}' no longer contains '{claim.Shape}'. A prerendered page " +
+                "describes itself to the crawler it is prerendered for, or the machines reading " +
+                "the catalog are back to inventing its description (ADR 0073)")
             .ShouldHold();
     }
 }
