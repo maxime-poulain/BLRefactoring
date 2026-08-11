@@ -44,7 +44,8 @@ public sealed class CatalogController(ICatalogApplicationService catalogApplicat
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
     /// <returns>
     /// 200 OK with one page of trainings on offer.
-    /// 400 Bad Request when the term is too long, the topic is unknown or the page is out of range.
+    /// 400 Bad Request when the term is too long, the topic or the sort is unknown, or the page is
+    /// out of range.
     /// </returns>
     [HttpGet("trainings")]
     [ProducesResponseType(typeof(PagedHttpResponse<CatalogTrainingHttpResponse>), StatusCodes.Status200OK)]
@@ -55,11 +56,16 @@ public sealed class CatalogController(ICatalogApplicationService catalogApplicat
         CancellationToken cancellationToken = default)
     {
         var page = await catalogApplicationService.SearchAsync(
-            search?.Term,
-            // Blank is what an empty query parameter binds to, and it asks for no filter rather
-            // than for a topic called nothing — the same reading the status filters give it.
-            string.IsNullOrWhiteSpace(search?.Topic) ? null : search.Topic,
-            pagination.ToPageRequest(),
+            new CatalogSearchRequest
+            {
+                Term = search?.Term,
+                // Blank is what an empty query parameter binds to, and it asks for no filter
+                // rather than for a topic called nothing — the same reading the status filters
+                // give it.
+                Topic = string.IsNullOrWhiteSpace(search?.Topic) ? null : search.Topic,
+                Order = search.ToOrder(),
+                Paging = pagination.ToPageRequest()
+            },
             cancellationToken);
 
         return Ok(page.ToHttp(trainings => trainings.ToHttp()));

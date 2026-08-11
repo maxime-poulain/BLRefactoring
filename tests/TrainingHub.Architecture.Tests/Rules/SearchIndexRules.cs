@@ -136,6 +136,49 @@ public sealed class SearchIndexRules
     }
 
     /// <summary>
+    /// The catalog's reader, and the two names its orders answer to.
+    /// </summary>
+    private const string TheCatalogsReader = "src/TrainingHub.Shared.Infrastructure/Search/TrainingSearchQuery.cs";
+
+    /// <summary>
+    /// The catalog, orders only by its named orders.
+    /// </summary>
+    /// <remarks>
+    /// The two orders are the published set (ADR 0071): each is a named extension defined once in
+    /// <c>QueryableOrderingExtensions</c>, total by construction, and the reader chooses one. What
+    /// this refuses is the quiet third — an <c>OrderBy</c> written inline over the entries, which
+    /// would be an order nobody named, nobody published, and nobody made total. The facets' own
+    /// <c>OrderBy(facet ...)</c> stays out of reach on purpose: alphabetical facets are that
+    /// question's whole answer, not a page walk.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0071",
+        "the catalog's orders are a closed set of named total orders a caller chooses from, " +
+        "never a sort expression composed in place")]
+    public void TheCatalog_OrdersOnlyByItsNamedOrders()
+    {
+        var reader = Text(TheCatalogsReader);
+
+        new[] { "AlphabeticallyByTitle", "NewestOnOffer" }
+            .Selected("order the catalog publishes")
+            .Where(order => !reader.Contains(order + "()", StringComparison.Ordinal))
+            .Select(order =>
+                $"'{TheCatalogsReader}' no longer calls '{order}()'. The two published orders " +
+                "are the closed set a caller chooses from, and each exists exactly once, in " +
+                "QueryableOrderingExtensions (ADR 0071)")
+            .ShouldHold();
+
+        new[] { "OrderBy(entry", "OrderByDescending(entry" }
+            .Selected("shape of an inline order over the entries")
+            .Where(shape => reader.Contains(shape, StringComparison.Ordinal))
+            .Select(shape =>
+                $"'{TheCatalogsReader}' contains '{shape}'. An order written in place is one " +
+                "nobody named, nobody published and nobody made total: the reader chooses among " +
+                "the named extensions, or the order does not exist (ADR 0071)")
+            .ShouldHold();
+    }
+
+    /// <summary>
     /// The width the topics' configuration declares, read rather than restated.
     /// </summary>
     private static int TopicColumnBound()

@@ -218,6 +218,44 @@ public sealed class AnonymousAccessRules
                 "the read that lists people to anybody is the one ADR 0055 withdrew (ADR 0070)")
             .ShouldHold();
 
+    /// <summary>
+    /// The words a public contract must not carry: each names a fact the catalog deliberately
+    /// withholds — how to reach a person off the platform, and what the moderation knows.
+    /// </summary>
+    private static readonly string[] PrivateWords = ["Email", "Status", "Reason", "Suspension"];
+
+    /// <summary>
+    /// No catalog contract carries a private member.
+    /// </summary>
+    /// <remarks>
+    /// ADR 0070 decided the profile's shape by what it leaves out: no contact address, because the
+    /// platform is the channel; no status and no reason, because what the moderation knows is the
+    /// administration's read (ADR 0055). That was prose about absent properties — the one shape of
+    /// claim nothing fails when it stops being true, since adding <c>ContactEmail</c> to a
+    /// response breaks no build and no test. So the absence is asserted: no property of a
+    /// published catalog contract wears one of the withheld words.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0070",
+        "the public profile is a professional face, not a person's record: no contact address, " +
+        "no standing, no reason ever crosses the catalog's contracts")]
+    public void NoCatalogContract_CarriesAPrivateMember() =>
+        typeof(CatalogControllerBase).Assembly
+            .GetTypes()
+            .Where(type => type.Namespace == "TrainingHub.Shared.Api.Contracts.Catalog")
+            .SelectMany(contract => contract
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Select(property => (Contract: contract, Property: property)))
+            .Selected("property a catalog contract publishes")
+            .SelectMany(entry => PrivateWords
+                .Where(word => entry.Property.Name.Contains(word, StringComparison.Ordinal))
+                .Select(word =>
+                    $"{entry.Contract.Name}.{entry.Property.Name} carries '{word}'. The catalog " +
+                    "publishes a professional face and withholds the person's record: reaching " +
+                    "them happens on the platform, and their standing is the administration's " +
+                    "read (ADR 0055, ADR 0070)"))
+            .ShouldHold();
+
     /// <summary>Whether the segment after <c>trainers</c> is one constrained identifier.</summary>
     private static bool SaysWhichTrainer(string template)
     {

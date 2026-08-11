@@ -1,7 +1,10 @@
 using AwesomeAssertions;
+using Microsoft.EntityFrameworkCore;
+using TrainingHub.Shared.Application.Search;
 using TrainingHub.Shared.Common.Pagination;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using TrainingHub.Shared.Infrastructure.Search;
+using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Search;
 using Xunit;
 
 namespace TrainingHub.Shared.Infrastructure.Tests.Search;
@@ -33,7 +36,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Domain Modeling");
         await IndexedAsync(trainer, "Driven To Distraction");
 
-        var page = await Query().SearchAsync("domain driven", null, new PageRequest());
+        var page = await Query().SearchAsync("domain driven", null, CatalogOrder.Title, new PageRequest());
 
         page.Items.Should().ContainSingle().Which.Title.Should().Be("Domain Driven Design");
         page.TotalCount.Should().Be(1);
@@ -55,11 +58,11 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Refactoring Legacy Code");
         await IndexedAsync(trainer, "Craftsmanship");
 
-        var page = await Query().SearchAsync("refac", null, new PageRequest());
+        var page = await Query().SearchAsync("refac", null, CatalogOrder.Title, new PageRequest());
 
         page.Items.Should().ContainSingle().Which.Title.Should().Be("Refactoring Legacy Code");
 
-        var inside = await Query().SearchAsync("actor", null, new PageRequest());
+        var inside = await Query().SearchAsync("actor", null, CatalogOrder.Title, new PageRequest());
 
         inside.Items.Should().BeEmpty();
     }
@@ -81,7 +84,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
 
         await IndexedAsync(trainer, "Event Storming");
 
-        var page = await Query().SearchAsync(term, null, new PageRequest());
+        var page = await Query().SearchAsync(term, null, CatalogOrder.Title, new PageRequest());
 
         page.Items.Should().ContainSingle().Which.Title.Should().Be("Event Storming");
     }
@@ -100,7 +103,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
 
         await IndexedAsync(trainer, "Kept Quiet", published: false);
 
-        var page = await Query().SearchAsync("kept", null, new PageRequest());
+        var page = await Query().SearchAsync("kept", null, CatalogOrder.Title, new PageRequest());
 
         page.Items.Should().BeEmpty();
         page.TotalCount.Should().Be(0);
@@ -122,10 +125,10 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Sanctioned Course");
 
         await Indexer.HideTrainerCatalogAsync(trainer.Id.Value);
-        (await Query().SearchAsync("sanctioned", null, new PageRequest())).Items.Should().BeEmpty();
+        (await Query().SearchAsync("sanctioned", null, CatalogOrder.Title, new PageRequest())).Items.Should().BeEmpty();
 
         await Indexer.ShowTrainerCatalogAsync(trainer.Id.Value);
-        (await Query().SearchAsync("sanctioned", null, new PageRequest())).Items.Should().ContainSingle();
+        (await Query().SearchAsync("sanctioned", null, CatalogOrder.Title, new PageRequest())).Items.Should().ContainSingle();
     }
 
     /// <summary>
@@ -147,7 +150,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Alpha Course");
         await IndexedAsync(trainer, "Hidden Course", published: false);
 
-        var page = await Query().SearchAsync(term, null, new PageRequest());
+        var page = await Query().SearchAsync(term, null, CatalogOrder.Title, new PageRequest());
 
         page.Items.Select(training => training.Title).Should().Equal("Alpha Course", "Beta Course");
     }
@@ -169,7 +172,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Course Beta");
         await IndexedAsync(trainer, "Course Gamma");
 
-        var page = await Query().SearchAsync("course", null, new PageRequest { PageSize = 2 });
+        var page = await Query().SearchAsync("course", null, CatalogOrder.Title, new PageRequest { PageSize = 2 });
 
         page.Items.Should().HaveCount(2);
         page.TotalCount.Should().Be(3);
@@ -191,7 +194,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
 
         await IndexedAsync(trainer, "Anything At All");
 
-        var page = await Query().SearchAsync("--- !", null, new PageRequest());
+        var page = await Query().SearchAsync("--- !", null, CatalogOrder.Title, new PageRequest());
 
         page.Items.Should().ContainSingle();
     }
@@ -211,7 +214,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Refactoring Legacy Code", topics: ["Programming"]);
         await IndexedAsync(trainer, "Design Sprints", topics: ["Design"]);
 
-        var page = await Query().SearchAsync(null, "Design", new PageRequest());
+        var page = await Query().SearchAsync(null, "Design", CatalogOrder.Title, new PageRequest());
 
         page.Items.Should().ContainSingle().Which.Title.Should().Be("Design Sprints");
     }
@@ -228,9 +231,85 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Advanced Sketching", topics: ["Design"]);
         await IndexedAsync(trainer, "Basic Sketching", topics: ["Design"]);
 
-        var page = await Query().SearchAsync("advanced", "Design", new PageRequest());
+        var page = await Query().SearchAsync("advanced", "Design", CatalogOrder.Title, new PageRequest());
 
         page.Items.Should().ContainSingle().Which.Title.Should().Be("Advanced Sketching");
+    }
+
+    /// <summary>
+    /// Search async, the newest order, answers the youngest training first.
+    /// </summary>
+    /// <remarks>
+    /// The age is the training's own <c>CreatedOn</c>, read back from the write model (ADR 0071):
+    /// the suite's clock moves a second per reading, so the third training saved is the youngest
+    /// and must lead — where the default order would put "Alpha" first.
+    /// </remarks>
+    [Fact]
+    public async Task SearchAsync_TheNewestOrder_AnswersTheYoungestTrainingFirst()
+    {
+        var trainer = await GivenTrainerAsync();
+
+        await IndexedAsync(trainer, "Zebra Patterns");
+        await IndexedAsync(trainer, "Middle Management");
+        await IndexedAsync(trainer, "Alpha Testing");
+
+        var page = await Query().SearchAsync(null, null, CatalogOrder.Newest, new PageRequest());
+
+        page.Items.Select(training => training.Title).Should().ContainInOrder(
+            "Alpha Testing", "Middle Management", "Zebra Patterns");
+    }
+
+    /// <summary>
+    /// Search async, the newest order with tied ages, breaks the tie by identifier.
+    /// </summary>
+    /// <remarks>
+    /// The property ADR 0001 demands of every order: total, so a row cannot appear on two pages or
+    /// on none. Ties are manufactured by flattening the column after indexing, because the reader —
+    /// not the writer — is what this fact is about.
+    /// </remarks>
+    [Fact]
+    public async Task SearchAsync_TheNewestOrderWithTiedAges_BreaksTheTieByIdentifier()
+    {
+        var trainer = await GivenTrainerAsync();
+
+        await IndexedAsync(trainer, "First Saved");
+        await IndexedAsync(trainer, "Second Saved");
+
+        var sameInstant = new DateTime(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc);
+
+        await Context.Set<TrainingSearchEntry>()
+            .ExecuteUpdateAsync(entry => entry.SetProperty(row => row.CreatedOnUtc, sameInstant));
+
+        var page = await Query().SearchAsync(null, null, CatalogOrder.Newest, new PageRequest());
+
+        page.Items.Select(training => training.Id)
+            .Should().BeInAscendingOrder("the identifier settles what the clock left tied");
+    }
+
+    /// <summary>
+    /// Search async, the newest order, composes with the term, the topic and the page.
+    /// </summary>
+    /// <remarks>
+    /// The order is one axis of one composed query, not a different question: the filters narrow
+    /// the same set they narrow under the default order, and the count still describes what the
+    /// page walks (ADR 0029, ADR 0071).
+    /// </remarks>
+    [Fact]
+    public async Task SearchAsync_TheNewestOrder_ComposesWithTheTermTheTopicAndThePage()
+    {
+        var trainer = await GivenTrainerAsync();
+
+        await IndexedAsync(trainer, "Course One", topics: ["Design"]);
+        await IndexedAsync(trainer, "Course Two", topics: ["Design"]);
+        await IndexedAsync(trainer, "Course Three", topics: ["Marketing"]);
+        await IndexedAsync(trainer, "Course Four", topics: ["Design"]);
+
+        var page = await Query().SearchAsync(
+            "course", "Design", CatalogOrder.Newest, new PageRequest { PageSize = 2 });
+
+        page.TotalCount.Should().Be(3, "the topic filter narrows the count the page describes");
+        page.Items.Select(training => training.Title).Should().ContainInOrder(
+            "Course Four", "Course Two");
     }
 
     /// <summary>

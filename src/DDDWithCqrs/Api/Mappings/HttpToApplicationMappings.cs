@@ -213,6 +213,7 @@ public static class HttpToApplicationMappings
             // Blank is what an empty query parameter binds to, and it asks for no filter rather
             // than for a topic called nothing — the same reading the status filters give it.
             Topic = string.IsNullOrWhiteSpace(search?.Topic) ? null : search.Topic,
+            Order = search.ToOrder(),
             Paging = pagination.ToPageRequest()
         };
 

@@ -18,7 +18,7 @@ namespace TrainingHub.Blazor.Client.Infrastructure;
 /// </para>
 /// </remarks>
 public sealed class BffAuthenticationStateProvider(IHttpClientFactory httpClientFactory)
-    : AuthenticationStateProvider
+    : AuthenticationStateProvider, IAuthenticationStateNotifier
 {
     private const string UserEndpoint = "bff/user";
 

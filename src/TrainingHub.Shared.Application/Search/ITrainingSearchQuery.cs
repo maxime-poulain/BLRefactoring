@@ -17,10 +17,11 @@ namespace TrainingHub.Shared.Application.Search;
 /// this refuses to return.
 /// </para>
 /// <para>
-/// The port takes a term and page coordinates and nothing else. Not a predicate, not an ordering:
-/// the same line ADR 0055 drew on the repositories' named questions, drawn again on a read model,
-/// and for the same reason — a caller that composed the query would be writing SQL for a schema it
-/// cannot see.
+/// The port takes a term, page coordinates and one of two named orders, and nothing else. Not a
+/// predicate, not a sort expression: the same line ADR 0055 drew on the repositories' named
+/// questions, drawn again on a read model, and for the same reason — a caller that composed the
+/// query would be writing SQL for a schema it cannot see. An order is chosen from
+/// <see cref="CatalogOrder"/>'s closed set, never described (ADR 0071).
 /// </para>
 /// </remarks>
 public interface ITrainingSearchQuery
@@ -38,15 +39,20 @@ public interface ITrainingSearchQuery
     /// is <c>Topic</c>'s own form — a name that is not matches nothing, which is the honest answer
     /// to a question no shelf carries (ADR 0069).
     /// </param>
+    /// <param name="order">
+    /// Which of the two named orders to read the page in (ADR 0071). Both are total, so either
+    /// pages without a row appearing twice or never.
+    /// </param>
     /// <param name="paging">The page asked for, under the published cap (ADR 0029).</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>
-    /// The page, in the total order the index is stored in, and the count of everything that
-    /// matched — never a page filtered after it was read.
+    /// The page, in the order asked for, and the count of everything that matched — never a page
+    /// filtered after it was read.
     /// </returns>
     Task<PagedResult<CatalogTrainingDto>> SearchAsync(
         string? term,
         string? topic,
+        CatalogOrder order,
         PageRequest paging,
         CancellationToken cancellationToken = default);
 

@@ -5,6 +5,7 @@ using Bunit.TestDoubles;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using TrainingHub.Blazor.Client.Infrastructure;
 using TrainingHub.Blazor.Client.Pages;
 using TrainingHub.GeneratedClients;
 using Xunit;
@@ -15,23 +16,25 @@ namespace TrainingHub.Blazor.Client.Tests.Pages;
 /// Behavior covered for the account-creation page.
 /// </summary>
 /// <remarks>
-/// This page is the only one in the application that reads a problem document's per-field map. The
-/// API used to answer registration with a bare array of identity errors and now answers RFC 7807
-/// like everything else (ADR 0004), so the messages a user needs — "Email 'x' is already taken." —
-/// are inside the <c>errors</c> extension rather than in the title above it. NSwag models neither
-/// extension, so both arrive as <see cref="JsonElement"/> and the reading is hand-written. That is
-/// the part worth holding.
+/// The page registers through the BFF's own endpoint rather than the generated client: the
+/// generated one points at <c>/api/Auth/register</c>, which the proxy answers with a 401 for
+/// anyone without a session — and creating an account is the one thing a visitor with a session
+/// never does. What the endpoint passes through is a problem document (ADR 0004) whose per-field
+/// map carries the messages a user needs — "Email 'x' is already taken." — inside the
+/// <c>errors</c> extension rather than in the title above it. NSwag models neither extension, so
+/// both arrive as <see cref="JsonElement"/> and the reading is hand-written. That is the part
+/// worth holding.
 /// </remarks>
 public sealed class RegisterTests : ComponentTest
 {
-    private readonly Mock<IAuthClient> _auth = new();
+    private readonly Mock<IBffSessionClient> _session = new();
 
     /// <summary>
     /// Register tests.
     /// </summary>
     public RegisterTests()
     {
-        Services.AddSingleton(_auth.Object);
+        Services.AddSingleton(_session.Object);
     }
 
     /// <summary>
@@ -97,24 +100,20 @@ public sealed class RegisterTests : ComponentTest
     }
 
     /// <summary>
-    /// Register, the API was unreachable, does not show the generator's own sentence.
+    /// Register, the BFF was unreachable, reports an outage rather than a refusal.
     /// </summary>
     /// <remarks>
-    /// "The HTTP status code of the response was not expected (503)" is NSwag describing its own
-    /// disappointment. It belongs in the console.
+    /// The session client throws for a refusal it cannot read — a gateway's HTML page, an empty
+    /// body. Rendering that as a validation verdict would send the user back to their form; what
+    /// they need to hear is that the service, not their input, is the problem.
     /// </remarks>
     [Fact]
-    public async Task Register_TheApiWasUnreachable_DoesNotShowTheGeneratorsOwnSentence()
+    public async Task Register_TheBffWasUnreachable_ReportsAnOutageRatherThanARefusal()
     {
         // Arrange
-        _auth
-            .Setup(client => client.RegisterAsync(It.IsAny<RegisterHttpRequest>()))
-            .ThrowsAsync(new ApiException(
-                "The HTTP status code of the response was not expected (503).",
-                503,
-                response: null,
-                new Dictionary<string, IEnumerable<string>>(),
-                null));
+        _session
+            .Setup(client => client.RegisterAsync(It.IsAny<RegisterHttpRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Registration answered 503 without a problem document."));
 
         // Act
         await Register();
@@ -131,9 +130,9 @@ public sealed class RegisterTests : ComponentTest
     public async Task Register_Accepted_SendsTheVisitorToSignIn()
     {
         // Arrange
-        _auth
-            .Setup(client => client.RegisterAsync(It.IsAny<RegisterHttpRequest>()))
-            .ReturnsAsync(Guid.NewGuid());
+        _session
+            .Setup(client => client.RegisterAsync(It.IsAny<RegisterHttpRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ProblemDetails?)null);
 
         var navigation = (BunitNavigationManager)Services.GetRequiredService<NavigationManager>();
 
@@ -142,20 +141,19 @@ public sealed class RegisterTests : ComponentTest
 
         // Assert
         navigation.Uri.Should().Be("http://localhost/login");
-        _auth.Verify(client => client.RegisterAsync(It.Is<RegisterHttpRequest>(request =>
+        _session.Verify(client => client.RegisterAsync(It.Is<RegisterHttpRequest>(request =>
             request.Username == "john"
             && request.Email == "john@example.com"
             && request.Firstname == "John"
             && request.Lastname == "Doe"
             && request.Password == "Passw0rd!"
-            && request.ConfirmPassword == "Passw0rd!")), Times.Once);
+            && request.ConfirmPassword == "Passw0rd!"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private void GivenRejection(ProblemDetails problem) =>
-        _auth
-            .Setup(client => client.RegisterAsync(It.IsAny<RegisterHttpRequest>()))
-            .ThrowsAsync(new ApiException<ProblemDetails>(
-                "Bad Request", 400, response: null, new Dictionary<string, IEnumerable<string>>(), problem, null));
+        _session
+            .Setup(client => client.RegisterAsync(It.IsAny<RegisterHttpRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(problem);
 
     private static ProblemDetails Problem(string title, string? detail = null, string? errors = null)
     {

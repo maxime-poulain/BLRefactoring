@@ -1,7 +1,9 @@
 @page "/catalog/trainers/{TrainerId:guid}"
 @using TrainingHub.GeneratedClients
+@implements IDisposable
 @inject ICatalogClient CatalogClient
 @inject ISnackbar Snackbar
+@inject PersistentComponentState ApplicationState
 
 @* No [Authorize] either, for the same reason as the pages it is reached from: a person with
    something on offer is part of the catalog, and the catalog answers anybody (ADR 0070). *@
@@ -100,13 +102,33 @@
     [Parameter]
     public Guid TrainerId { get; set; }
 
+    // The key this page's prerendered answer travels under, from the server's pass to the
+    // WebAssembly one (ADR 0072).
+    private const string PersistenceKey = "catalog-trainer";
+
     private CatalogTrainerHttpResponse? _trainer;
     private bool _isLoading = true;
     private bool _isUnreachable;
+    private PersistingComponentStateSubscription _persisting;
+
+    /// <inheritdoc />
+    protected override void OnInitialized() =>
+        _persisting = ApplicationState.RegisterOnPersisting(Persist);
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
+        // The prerendered pass already asked; taking its answer is what keeps the first paint
+        // from being replaced by a spinner and the API from being asked twice (ADR 0072). A 404
+        // travels too — the panel it renders is as much the page as a profile is.
+        if (ApplicationState.TryTakeFromJson<CatalogTrainerHttpResponse?>(
+                PersistenceKey, out var prerendered))
+        {
+            _trainer = prerendered;
+            _isLoading = false;
+            return;
+        }
+
         _isLoading = true;
         _isUnreachable = false;
         try
@@ -143,4 +165,19 @@
     /// </remarks>
     private static string PortraitUrl(CatalogTrainerHttpResponse trainer) =>
         $"api/Catalog/trainers/{trainer.Id}/photo/{trainer.PhotoId}";
+
+    private Task Persist()
+    {
+        // An unreachable API is not an answer to hand over: the interactive pass should ask
+        // again rather than inherit a snackbar it never showed.
+        if (!_isUnreachable)
+        {
+            ApplicationState.PersistAsJson(PersistenceKey, _trainer);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public void Dispose() => _persisting.Dispose();
 }

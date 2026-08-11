@@ -42,6 +42,29 @@ public sealed class TrainingSearchIndexerTests : SearchIndexTest
     }
 
     /// <summary>
+    /// Index async, any training, writes the training's own age beside the title.
+    /// </summary>
+    /// <remarks>
+    /// The column the "newest" order sorts on (ADR 0071), and the property that matters is whose
+    /// instant it is: the training's <c>CreatedOn</c>, not the indexer's clock — this adapter
+    /// reads no clock at all, so a replay rewrites the same instant rather than a new one.
+    /// </remarks>
+    [Fact]
+    public async Task IndexAsync_AnyTraining_WritesTheTrainingsOwnAgeBesideTheTitle()
+    {
+        var trainer = await GivenTrainerAsync();
+        var training = await GivenTrainingAsync(trainer, "Aging Gracefully");
+
+        await Indexer.IndexAsync(training.Id.Value, trainer.Id.Value);
+
+        var entry = await EntryOfAsync(training.Id.Value);
+
+        entry.Should().NotBeNull();
+        entry!.CreatedOnUtc.Should().Be(training.CreatedOn,
+            "the age is a fact about the training, read back from the write model");
+    }
+
+    /// <summary>
     /// Index async, an unpublished training, writes it out of public view.
     /// </summary>
     /// <remarks>

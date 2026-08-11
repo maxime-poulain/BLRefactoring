@@ -73,6 +73,10 @@ public static class ServiceCollectionExtensions
         services.AddAuthorizationCore();
         services.AddScoped<BffAuthenticationStateProvider>();
         services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<BffAuthenticationStateProvider>());
+        // The same instance under its third face: what a page calls after signing in or out. An
+        // interface rather than the concrete class, because the prerendering host answers it too —
+        // with a no-op — and a layout that injected this provider could not render there (ADR 0072).
+        services.AddScoped<IAuthenticationStateNotifier>(sp => sp.GetRequiredService<BffAuthenticationStateProvider>());
         services.AddScoped<IBffSessionClient, BffSessionClient>();
 
         // Scoped, so the standing is read once and shared by the layout and every page that binds a

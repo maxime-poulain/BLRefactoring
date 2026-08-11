@@ -2,7 +2,7 @@
 @inherits LayoutComponentBase
 @using TrainingHub.Blazor.Client.Infrastructure
 @inject IBffSessionClient SessionClient
-@inject BffAuthenticationStateProvider AuthStateProvider
+@inject IAuthenticationStateNotifier AuthenticationNotifier
 @inject NavigationManager NavigationManager
 
 <MudThemeProvider @bind-IsDarkMode="@_isDarkMode" />
@@ -12,7 +12,12 @@
 
 <MudLayout>
     <MudAppBar Elevation="1">
-        <MudText Typo="Typo.h5" Class="ml-3">TrainingHub</MudText>
+        @* The brand is the way home, as on every site a visitor has ever used. A link rather
+           than a MudText: the text told people where they were, and answered nothing when they
+           clicked it. *@
+        <MudLink Href="/" Typo="Typo.h5" Color="Color.Inherit" Underline="Underline.None" Class="ml-3">
+            TrainingHub
+        </MudLink>
         @* Outside the AuthorizeView below, and that is the point: the catalog is the one screen
            that does not ask who is looking, so its link is there whether or not anybody is signed
            in (ADR 0062). *@
@@ -89,7 +94,7 @@
         // Signing out is the BFF's business: it drops the cookie, and with it the only copy of the
         // token. There is nothing left in the browser to clear. See ADR 0009.
         await SessionClient.LogoutAsync();
-        AuthStateProvider.NotifyAuthenticationChanged();
+        AuthenticationNotifier.NotifyAuthenticationChanged();
         NavigationManager.NavigateTo("/login");
     }
 }

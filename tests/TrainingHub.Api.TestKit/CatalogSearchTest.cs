@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using AwesomeAssertions;
 using TrainingHub.Shared.Api.Contracts.Trainers;
+using TrainingHub.Shared.Common.Pagination;
 using Xunit;
 
 namespace TrainingHub.Api.TestKit;
@@ -214,6 +215,173 @@ public abstract class CatalogSearchTest<TFactory>(TFactory factory) : Integratio
         var page = await anonymous.GetAsync("/Catalog/trainings?topic=Astrology&page=1&pageSize=10");
 
         page.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>
+    /// The newest order, answers the youngest training first, to a caller with no token.
+    /// </summary>
+    /// <remarks>
+    /// The whole chain of ADR 0071 in one fact: three creations commit their facts, the index
+    /// learns each training's own age through the outbox, and <c>?sort=newest</c> walks them
+    /// youngest first — where the default order would answer them alphabetically, which the same
+    /// page proves by asking both ways.
+    /// </remarks>
+    [Fact]
+    public async Task TheNewestOrder_AnswersTheYoungestTrainingFirst_ToACallerWithNoToken()
+    {
+        var trainer = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+
+        var oldest = await CreatedAsync(trainer, "Chronology Alpha");
+        var middle = await CreatedAsync(trainer, "Chronology Beta");
+        var youngest = await CreatedAsync(trainer, "Chronology Gamma");
+
+        (await WaitForCatalogAsync("chronology", holds: oldest)).Should().Contain(oldest);
+        (await WaitForCatalogAsync("chronology", holds: middle)).Should().Contain(middle);
+        (await WaitForCatalogAsync("chronology", holds: youngest)).Should().Contain(youngest);
+
+        var anonymous = Factory.CreateClient();
+
+        var newest = await IdentifiersOfAsync(
+            anonymous, "/Catalog/trainings?term=chronology&sort=newest&page=1&pageSize=50");
+        newest.Should().ContainInOrder(youngest, middle, oldest);
+
+        // The default order is the title's, and these titles were named to disagree with the
+        // clock — so the same page answering both ways is the proof that the sort did something.
+        var byTitle = await IdentifiersOfAsync(
+            anonymous, "/Catalog/trainings?term=chronology&page=1&pageSize=50");
+        byTitle.Should().ContainInOrder(oldest, middle, youngest);
+    }
+
+    /// <summary>
+    /// An unknown sort, is refused at the door.
+    /// </summary>
+    /// <remarks>
+    /// <c>[KnownSort]</c> answers at model binding, before anything asks the index — the catalog
+    /// publishes two orders, and a name outside the set is a question rather than a preference
+    /// (ADR 0071).
+    /// </remarks>
+    [Fact]
+    public async Task AnUnknownSort_IsRefusedAtTheDoor()
+    {
+        var anonymous = Factory.CreateClient();
+
+        var page = await anonymous.GetAsync("/Catalog/trainings?sort=fanciest&page=1&pageSize=10");
+
+        page.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>
+    /// The catalogs pages, tile the offered list, without a row appearing twice or never.
+    /// </summary>
+    /// <remarks>
+    /// The property ADR 0001 promises, asserted where a visitor meets it: over the anonymous
+    /// endpoint, after the outbox has fed the index. The five trainings are waited in one by one
+    /// first, so a short page means a wrong walk rather than an index that has not caught up.
+    /// </remarks>
+    [Fact]
+    public async Task TheCatalogsPages_TileTheOfferedList_WithoutARowAppearingTwiceOrNever()
+    {
+        var trainer = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        var expected = new List<Guid>();
+
+        for (var index = 1; index <= 5; index++)
+        {
+            expected.Add(await CreatedAsync(trainer, $"Tiling Walk {index}"));
+        }
+
+        foreach (var trainingId in expected)
+        {
+            (await WaitForCatalogAsync("tiling", holds: trainingId)).Should().Contain(trainingId);
+        }
+
+        var anonymous = Factory.CreateClient();
+        var walked = new List<Guid>();
+
+        for (var page = 1; page <= 3; page++)
+        {
+            var response = await anonymous.GetAsync(
+                $"/Catalog/trainings?term=tiling&page={page}&pageSize=2");
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+            body.GetProperty("totalCount").GetInt32().Should().Be(5);
+            body.GetProperty("totalPages").GetInt32().Should().Be(3);
+            body.GetProperty("hasNextPage").GetBoolean().Should().Be(page < 3);
+
+            walked.AddRange(body.GetProperty("items").EnumerateArray()
+                .Select(item => item.GetProperty("id").GetGuid()));
+        }
+
+        walked.Should().OnlyHaveUniqueItems("a row on two pages is the tie-break failing");
+        walked.Should().BeEquivalentTo(
+            expected,
+            options => options,
+            "a row on no page is the same failure from the other side");
+    }
+
+    /// <summary>
+    /// A page size beyond the cap, is refused rather than silently narrowed.
+    /// </summary>
+    /// <remarks>
+    /// The bound ADR 0029 publishes, asserted on the public endpoint too: the contract is shared,
+    /// and a cap enforced on one listing and forgotten on another would be two contracts wearing
+    /// one name.
+    /// </remarks>
+    [Fact]
+    public async Task APageSizeBeyondTheCap_IsRefusedRatherThanSilentlyNarrowed()
+    {
+        var anonymous = Factory.CreateClient();
+
+        var refused = await anonymous.GetAsync(
+            $"/Catalog/trainings?pageSize={PageRequest.MaxPageSize + 1}");
+
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>
+    /// A search with no paging at all, answers the default page.
+    /// </summary>
+    /// <remarks>
+    /// An unpaged call must not mean an unbounded read (ADR 0029): the absent contract binds to
+    /// null and the mapping applies the defaults, which this pins over the wire rather than in a
+    /// unit test's memory.
+    /// </remarks>
+    [Fact]
+    public async Task ASearchWithNoPagingAtAll_AnswersTheDefaultPage()
+    {
+        var anonymous = Factory.CreateClient();
+
+        var response = await anonymous.GetAsync("/Catalog/trainings");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        body.GetProperty("page").GetInt32().Should().Be(1);
+        body.GetProperty("pageSize").GetInt32().Should().Be(PageRequest.DefaultPageSize);
+    }
+
+    /// <summary>Creates one published training and answers its identifier.</summary>
+    private static async Task<Guid> CreatedAsync(HttpClient trainer, string title)
+    {
+        var created = await trainer.PostAsJsonAsync("/Training", TrainingRequests.Valid(title));
+
+        created.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        return await created.Content.ReadFromJsonAsync<Guid>();
+    }
+
+    /// <summary>The identifiers of one page, in the order the server answered them.</summary>
+    private static async Task<IReadOnlyList<Guid>> IdentifiersOfAsync(HttpClient client, string address)
+    {
+        var response = await client.GetAsync(address);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        return [.. body.GetProperty("items").EnumerateArray()
+            .Select(item => item.GetProperty("id").GetGuid())];
     }
 
     private async Task<IReadOnlyDictionary<string, int>> WaitForFacetsAsync(

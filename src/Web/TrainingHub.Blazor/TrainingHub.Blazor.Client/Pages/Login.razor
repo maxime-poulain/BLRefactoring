@@ -1,7 +1,7 @@
 @page "/login"
 @using TrainingHub.Blazor.Client.Infrastructure
 @inject IBffSessionClient SessionClient
-@inject BffAuthenticationStateProvider AuthStateProvider
+@inject IAuthenticationStateNotifier AuthenticationNotifier
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -115,7 +115,7 @@
                 return;
             }
 
-            AuthStateProvider.NotifyAuthenticationChanged();
+            AuthenticationNotifier.NotifyAuthenticationChanged();
 
             Snackbar.Add("Login successful!", Severity.Success);
             NavigationManager.NavigateTo(ReturnUrl ?? "/trainings");

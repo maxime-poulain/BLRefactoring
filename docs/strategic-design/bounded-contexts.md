@@ -369,10 +369,10 @@ know which of the things below were built for a context that may never be extrac
 outbox already stores, with its own read model. It would own no aggregate — a discovery context
 reads, it does not decide. What is missing is no longer a store, and no longer the experience
 either: ADR 0059 built the one and ADR 0062 the other. What is missing is the reason to extract a
-context — an ordering by anything other than a title, a store shaped by how a visitor browses
-rather than by how a trainer writes. The facets and the trainer's public page were on that list
-and arrived without needing one (ADR 0069, ADR 0070), which is itself evidence: until something on
-it cannot be served this way, a page over the same database is the honest size of it.
+context — a store shaped by how a visitor browses rather than by how a trainer writes. The
+facets, the trainer's public page and the second order were all on that list and arrived without
+needing one (ADR 0069, ADR 0070, ADR 0071), which is itself evidence: until something on it
+cannot be served this way, a page over the same database is the honest size of it.
 
 **Expected language:** *catalog*, *search result*, *facet*, *listing* — deliberately different
 words from the write side, because a search result is not a `Training`.

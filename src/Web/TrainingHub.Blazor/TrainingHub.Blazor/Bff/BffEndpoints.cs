@@ -8,12 +8,18 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 namespace TrainingHub.Blazor.Bff;
 
 /// <summary>
-/// The three endpoints the front end talks to directly. Everything else is forwarded.
+/// The four endpoints the front end talks to directly. Everything else is forwarded.
 /// </summary>
 /// <remarks>
 /// Sign-in cannot be forwarded like the rest: the API answers <c>/Auth/login</c> with the token
 /// itself, and handing that response back to the browser would undo the entire arrangement. So this
 /// host calls the API, keeps the token, and returns nothing but a cookie.
+/// <para>
+/// Registration could be forwarded — its response carries no credential — and deliberately is not:
+/// the proxy's anonymous family is exactly the catalog's controllers (ADR 0062), and widening that
+/// family for one POST would be a bigger door than one explicit endpoint beside sign-in. The
+/// account conversation belongs to this host either way.
+/// </para>
 /// </remarks>
 public static class BffEndpoints
 {
@@ -36,6 +42,8 @@ public static class BffEndpoints
         var bff = endpoints.MapGroup("/bff").AddEndpointFilter(RejectCrossSiteRequests);
 
         bff.MapPost("/login", LoginAsync).AllowAnonymous();
+
+        bff.MapPost("/register", RegisterAsync).AllowAnonymous();
 
         // The cast is load-bearing. LogoutAsync takes one HttpContext and returns a Task, which is
         // RequestDelegate's shape exactly, and that overload wins over the route-handler one: the
@@ -116,6 +124,38 @@ public static class BffEndpoints
             CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);
 
         return Results.NoContent();
+    }
+
+    /// <summary>
+    /// Creates an account, on behalf of a visitor who by definition has no session yet.
+    /// </summary>
+    /// <remarks>
+    /// Unlike sign-in, the API's problem document is passed through, body and content type alike:
+    /// it describes the very fields the browser submitted — a taken username, a refused password —
+    /// and the form reads the per-field messages out of it. The 201 is passed without its
+    /// <c>Location</c>: the address points into the API's own origin, which the browser cannot
+    /// reach, and the page navigates to sign-in rather than to the trainer it just became.
+    /// </remarks>
+    private static async Task<IResult> RegisterAsync(
+        RegisterHttpRequest registration,
+        IHttpClientFactory httpClientFactory,
+        CancellationToken cancellationToken)
+    {
+        var client = httpClientFactory.CreateClient(ApiClientName);
+
+        var response = await client.PostAsJsonAsync("/Auth/register", registration, cancellationToken);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return Results.StatusCode(StatusCodes.Status201Created);
+        }
+
+        var problem = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        return Results.Content(
+            problem,
+            response.Content.Headers.ContentType?.ToString(),
+            statusCode: (int)response.StatusCode);
     }
 
     private static async Task<IResult> LogoutAsync(HttpContext httpContext)

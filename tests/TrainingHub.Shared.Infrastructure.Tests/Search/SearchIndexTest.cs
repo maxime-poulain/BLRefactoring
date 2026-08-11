@@ -8,6 +8,7 @@ using TrainingHub.Shared.Domain.Tests.Helpers;
 using TrainingHub.Shared.Infrastructure.Search;
 using TrainingHub.Shared.Infrastructure.Tests.Queries;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
+using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Interceptors;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Search;
 using Xunit;
 
@@ -46,6 +47,10 @@ public abstract class SearchIndexTest : IAsyncLifetime
         Context = new TrainingContext(new DbContextOptionsBuilder<TrainingContext>()
             .UseSqlite(_connection)
             .ReplaceService<IModelCustomizer, RowVersionWrittenByTheTest>()
+            // The production interceptor, on a clock that moves a full second per reading: every
+            // training carries its own CreatedOn, so the facts about the "newest" order (ADR 0071)
+            // order real instants rather than a table of year-one defaults.
+            .AddInterceptors(new AuditableEntitiesInterceptor(new SteppingClock()))
             .Options);
 
         await Context.Database.EnsureCreatedAsync();
@@ -127,5 +132,16 @@ public abstract class SearchIndexTest : IAsyncLifetime
             .Include(entry => entry.Topics)
             .AsNoTracking()
             .FirstOrDefaultAsync(entry => entry.TrainingId == trainingId);
+    }
+
+    /// <summary>
+    /// A clock that moves a full second per reading, so what is saved first is older — by enough
+    /// that no rounding anywhere can make two instants one.
+    /// </summary>
+    private sealed class SteppingClock : TimeProvider
+    {
+        private DateTimeOffset _now = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+        public override DateTimeOffset GetUtcNow() => _now = _now.AddSeconds(1);
     }
 }

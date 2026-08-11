@@ -1,6 +1,6 @@
 # 0059 — Give the search index a body, and a query surface
 
-- **Status:** Accepted — amended by [0069](0069-give-the-catalog-its-first-facet.md): the index gains its first non-title dimension — the topics a training declares, served as the catalog's facets
+- **Status:** Accepted — amended by [0069](0069-give-the-catalog-its-first-facet.md): the index gains its first non-title dimension — the topics a training declares, served as the catalog's facets; amended by [0071](0071-give-the-catalog-a-second-published-order.md): the index gains the training's own age, and a second published order over it
 - **Amends:** [0055](0055-let-the-administration-read-what-the-catalogue-may-not.md)
 - **Date:** 2026-08-09
 
