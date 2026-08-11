@@ -43,7 +43,7 @@
                Color="Color.Primary"
                Href="/catalog"
                StartIcon="@Icons.Material.Filled.ArrowBack"
-               Class="mb-4">
+               Class="mb-4 th-back">
         Back to the catalog
     </MudButton>
 
@@ -76,7 +76,13 @@
     }
     else
     {
-        <MudPaper Elevation="1" Class="pa-6">
+        <MudPaper Elevation="1" Class="pa-6 pl-8 th-sheet">
+            @* The person's spine is brass — the identity's own metal, the one the avatar wears —
+               where a training's sheet wears the hues of its shelves. *@
+            <span class="th-sheet-spine" aria-hidden="true">
+                <span style="background-color: var(--mud-palette-secondary)"></span>
+            </span>
+
             @* The face beside the name when there is one to show, addressed by trainer and photo —
                what this page has in hand (ADR 0070). No avatar at all rather than a placeholder: a
                silhouette says "this person has no photo", and the honest reading also covers "they
@@ -93,32 +99,30 @@
 
             @if (!string.IsNullOrEmpty(_trainer.Bio))
             {
-                <MudText Typo="Typo.h6" GutterBottom="true">About</MudText>
+                <MudText Typo="Typo.h6" Class="th-cue-label" GutterBottom="true">About</MudText>
                 <MudText Typo="Typo.body1" Class="mb-6">@_trainer.Bio</MudText>
             }
 
-            <MudText Typo="Typo.h6" GutterBottom="true">Trainings on offer</MudText>
+            <MudText Typo="Typo.h6" Class="th-cue-label" GutterBottom="true">Trainings on offer</MudText>
 
             @* Never empty: a profile with nothing on offer is a profile the API answered 404 for,
-               so this table always has at least one row. Rows of the search's own shape, leading
-               where a search row leads (ADR 0062). *@
-            <MudTable Items="@_trainer.Trainings" Hover="true" Elevation="0" T="CatalogTrainingHttpResponse">
-                <HeaderContent>
-                    <MudTh>Title</MudTh>
-                    <MudTh />
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Title">@context.Title</MudTd>
-                    <MudTd>
-                        <MudButton Size="Size.Small"
-                                   Color="Color.Primary"
-                                   Variant="Variant.Text"
-                                   Href="@($"/catalog/{context.Id}")">
-                            Read more
-                        </MudButton>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
+               so this shelf always holds at least one row. Rows of the shelf's own shape, leading
+               where a shelf row leads — neutral spines, because a profile row does not say which
+               shelf it came from, and a color would be a guess (ADR 0062). *@
+            <ul class="th-shelf mt-2">
+                @foreach (var (training, index) in _trainer.Trainings.Select((item, i) => (item, i)))
+                {
+                    <li>
+                        <a class="th-row" style="--th-i: @index" href="@($"/catalog/{training.Id}")">
+                            <span class="th-spine" style="background-color: var(--th-spine-neutral)"></span>
+                            <span class="th-row-title">@training.Title</span>
+                            <MudIcon Icon="@Icons.Material.Filled.ChevronRight"
+                                     Size="Size.Small"
+                                     Class="th-row-cue" />
+                        </a>
+                    </li>
+                }
+            </ul>
         </MudPaper>
     }
 </MudContainer>

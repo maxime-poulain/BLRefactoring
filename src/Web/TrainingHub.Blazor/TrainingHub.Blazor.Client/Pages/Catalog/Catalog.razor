@@ -67,7 +67,7 @@
                              OnClick="@(() => OnTopicClickedAsync(topic))">
                         @* The shelf's mark: the same hue this topic's spines wear below, so the
                            chip and the rows it filters read as one thing. *@
-                        <span class="th-mark" style="background-color: var(--th-spine-@TopicSlug(topic))"></span>
+                        <span class="th-mark" style="background-color: @CatalogTopics.SpineVar(topic)"></span>
                         @topic (@facet.OfferedCount)
                     </MudChip>
                 }
@@ -155,11 +155,7 @@
     // The hue the shelf's spines wear: the browsed topic's own, or the neutral tone when no
     // shelf is chosen — a search row carries no topics, and a color would be a guess.
     private string SpineColor =>
-        _topic is null ? "var(--th-spine-neutral)" : $"var(--th-spine-{TopicSlug(_topic)})";
-
-    // The CSS token half of a topic's name: lowercase, spaces as dashes, matching app.css.
-    private static string TopicSlug(string topic) =>
-        topic.ToLowerInvariant().Replace(' ', '-');
+        _topic is null ? "var(--th-spine-neutral)" : CatalogTopics.SpineVar(_topic);
 
     // The address this page answers for, whatever address it was reached by.
     private string CanonicalUrl =>

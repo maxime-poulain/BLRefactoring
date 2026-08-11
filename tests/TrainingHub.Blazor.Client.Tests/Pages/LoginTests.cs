@@ -175,7 +175,7 @@ public sealed class LoginTests : ComponentTest
         // disabled element. Without this wait the click silently does nothing and every assertion
         // below passes for the wrong reason.
         var signIn = () => page.FindAll("button")
-            .Single(button => button.TextContent.Contains("Sign In", StringComparison.Ordinal));
+            .Single(button => button.TextContent.Contains("Sign in", StringComparison.Ordinal));
 
         page.WaitForState(() => !signIn().HasAttribute("disabled"));
 
