@@ -111,4 +111,47 @@ public sealed class PrerenderingRules
                 "the catalog are back to inventing its description (ADR 0073)")
             .ShouldHold();
     }
+
+    /// <summary>
+    /// The front door, is the catalog.
+    /// </summary>
+    /// <remarks>
+    /// Three shapes in three files, each a half of the same decision: the catalog page answers
+    /// the root as well as its own address, the deciding file keys the root into the prerendered
+    /// set, and the shared mapping's fallback is the newest order — so a visitor's first address
+    /// is the shelf, youngest first. Any one of them quietly dropped would leave the front door
+    /// half open: a root that boots empty, or a landing that opens on the alphabet.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0074",
+        "the root serves the catalog itself, prerendered, and the bare address answers newest " +
+        "first — the front door shows what recently went on offer")]
+    public void TheFrontDoor_IsTheCatalog()
+    {
+        const string TheCatalogPage = "Pages/Catalog/Catalog.razor";
+        const string TheSharedMapping =
+            "src/TrainingHub.Shared.Api/Contracts/Mappings/CatalogSearchMappings.cs";
+
+        static string Text(string relative) => SourceTree.ReadText(Path.Combine(
+            SourceTree.RepositoryRoot, relative.Replace('/', Path.DirectorySeparatorChar)));
+
+        new[]
+        {
+            (File: TheCatalogPage, Text: Text(TheClientsPages + TheCatalogPage),
+                Shape: "@page \"/\""),
+            (File: TheCatalogPage, Text: Text(TheClientsPages + TheCatalogPage),
+                Shape: "@page \"/catalog\""),
+            (File: TheDecidingFile, Text: Text(TheDecidingFile),
+                Shape: "string.Equals(path, \"/\", StringComparison.Ordinal)"),
+            (File: TheSharedMapping, Text: Text(TheSharedMapping),
+                Shape: ": CatalogOrder.Newest")
+        }
+            .Selected("shape the front door must keep")
+            .Where(claim => !claim.Text.Contains(claim.Shape, StringComparison.Ordinal))
+            .Select(claim =>
+                $"'{claim.File}' no longer contains '{claim.Shape}'. The catalog is the front " +
+                "door: one page behind two addresses, prerendered at the root, newest first by " +
+                "default (ADR 0074)")
+            .ShouldHold();
+    }
 }

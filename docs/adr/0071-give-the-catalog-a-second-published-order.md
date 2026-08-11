@@ -1,6 +1,6 @@
 # 0071 — Give the catalog a second published order
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0074](0074-make-the-catalog-the-front-door.md): the default order flips to newest first — the front door shows what recently went on offer, and the alphabet becomes the order a caller asks for
 - **Amends:** [0001](0001-paginate-on-the-query-side-over-a-total-order.md),
   [0029](0029-answer-a-list-the-same-way-on-both-hosts.md),
   [0059](0059-give-the-search-index-a-body-and-a-query-surface.md)

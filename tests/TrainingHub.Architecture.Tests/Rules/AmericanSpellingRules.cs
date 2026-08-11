@@ -364,6 +364,9 @@ public sealed partial class AmericanSpellingRules
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             ["LICENSE"] = "the MIT license, whose words belong to whoever wrote it and cannot be edited here",
+            ["LICENSE.txt"] = "a vendored skill's license text, whose words belong to its author for the same reason",
+            ["SKILL.md"] = "a vendored Claude skill's instructions, written outside this repository and kept " +
+                           "verbatim so an upstream update stays a copy rather than an edit",
             ["appsettings.Local.json"] = "a developer's private overrides, versioned by nothing (ADR 0035)",
             [".pfx"] = "a developer's private key, which is not text at all (ADR 0065)",
             [".log"] = "a rolling log a running host writes into the working tree, versioned by nothing (ADR 0026)",

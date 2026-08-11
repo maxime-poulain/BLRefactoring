@@ -80,8 +80,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IBffSessionClient, BffSessionClient>();
 
         // Scoped, so the standing is read once and shared by the layout and every page that binds a
-        // control to it (ADR 0057).
-        services.AddScoped<ITrainerStandingSource, TrainerStandingSource>();
+        // control to it (ADR 0057). The same instance under a second face: the user menu asks the
+        // same one read for the portrait's address, and two registrations would be two reads of one
+        // document.
+        services.AddScoped<TrainerStandingSource>();
+        services.AddScoped<ITrainerStandingSource>(sp => sp.GetRequiredService<TrainerStandingSource>());
+        services.AddScoped<ITrainerPortraitSource>(sp => sp.GetRequiredService<TrainerStandingSource>());
         services.AddTransient<RequestedWithHandler>();
         return services;
     }

@@ -41,7 +41,11 @@ builder.Services.AddScoped<AuthenticationStateProvider, HostAuthenticationStateP
 builder.Services.AddScoped<IAuthenticationStateNotifier>(serviceProvider =>
     (HostAuthenticationStateProvider)serviceProvider.GetRequiredService<AuthenticationStateProvider>());
 builder.Services.AddScoped<IBffSessionClient, BffSessionClient>();
-builder.Services.AddScoped<ITrainerStandingSource, TrainerStandingSource>();
+builder.Services.AddScoped<TrainerStandingSource>();
+builder.Services.AddScoped<ITrainerStandingSource>(serviceProvider =>
+    serviceProvider.GetRequiredService<TrainerStandingSource>());
+builder.Services.AddScoped<ITrainerPortraitSource>(serviceProvider =>
+    serviceProvider.GetRequiredService<TrainerStandingSource>());
 builder.Services.AddHttpClient<ICatalogClient, CatalogClient>(BffEndpoints.ApiClientName);
 builder.Services.AddHttpClient<ITrainerClient, TrainerClient>(BffEndpoints.ApiClientName);
 

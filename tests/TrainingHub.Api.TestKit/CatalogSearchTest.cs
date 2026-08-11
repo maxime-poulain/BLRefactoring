@@ -218,16 +218,18 @@ public abstract class CatalogSearchTest<TFactory>(TFactory factory) : Integratio
     }
 
     /// <summary>
-    /// The newest order, answers the youngest training first, to a caller with no token.
+    /// The bare catalog, answers the youngest training first, to a caller with no token.
     /// </summary>
     /// <remarks>
-    /// The whole chain of ADR 0071 in one fact: three creations commit their facts, the index
-    /// learns each training's own age through the outbox, and <c>?sort=newest</c> walks them
-    /// youngest first — where the default order would answer them alphabetically, which the same
-    /// page proves by asking both ways.
+    /// The whole chain of ADR 0071 in one fact, read the way ADR 0074 turned it: three creations
+    /// commit their facts, the index learns each training's own age through the outbox, and the
+    /// address with no sort at all — the front door — walks them youngest first. The alphabet is
+    /// the named alternative now, <c>?sort=title</c>, which the same page proves by asking both
+    /// ways; the titles were named to disagree with the clock so that each order refutes the
+    /// other. <c>?sort=newest</c> stays a valid spelling of the default.
     /// </remarks>
     [Fact]
-    public async Task TheNewestOrder_AnswersTheYoungestTrainingFirst_ToACallerWithNoToken()
+    public async Task TheBareCatalog_AnswersTheYoungestTrainingFirst_ToACallerWithNoToken()
     {
         var trainer = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
 
@@ -241,14 +243,16 @@ public abstract class CatalogSearchTest<TFactory>(TFactory factory) : Integratio
 
         var anonymous = Factory.CreateClient();
 
-        var newest = await IdentifiersOfAsync(
-            anonymous, "/Catalog/trainings?term=chronology&sort=newest&page=1&pageSize=50");
-        newest.Should().ContainInOrder(youngest, middle, oldest);
-
-        // The default order is the title's, and these titles were named to disagree with the
-        // clock — so the same page answering both ways is the proof that the sort did something.
-        var byTitle = await IdentifiersOfAsync(
+        var bare = await IdentifiersOfAsync(
             anonymous, "/Catalog/trainings?term=chronology&page=1&pageSize=50");
+        bare.Should().ContainInOrder(youngest, middle, oldest);
+
+        var explicitNewest = await IdentifiersOfAsync(
+            anonymous, "/Catalog/trainings?term=chronology&sort=newest&page=1&pageSize=50");
+        explicitNewest.Should().ContainInOrder(youngest, middle, oldest);
+
+        var byTitle = await IdentifiersOfAsync(
+            anonymous, "/Catalog/trainings?term=chronology&sort=title&page=1&pageSize=50");
         byTitle.Should().ContainInOrder(oldest, middle, youngest);
     }
 

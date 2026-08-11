@@ -30,6 +30,11 @@ public abstract class ComponentTest : BunitContext, IAsyncLifetime
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
 
+        // The default second is generous on an idle machine and a coin flip when every suite runs
+        // at once: a menu that opens through a popover needs two renders, and the CI runner owes
+        // neither of them a schedule. Five seconds changes nothing a passing test can observe.
+        DefaultWaitTimeout = TimeSpan.FromSeconds(5);
+
         Services.AddMudServices();
 
         // The catalog's pages hand their prerendered answer to the interactive pass through
@@ -42,10 +47,19 @@ public abstract class ComponentTest : BunitContext, IAsyncLifetime
         // the sanction says nothing about it; the suites that are override this.
         Standing.Setup(source => source.GetAsync()).ReturnsAsync(TrainerStanding.Active);
         Services.AddSingleton(Standing.Object);
+
+        // The user menu asks the same read for the caller's portrait address (ADR 0074). No photo
+        // by default — the initials path — so a suite that is not about the face says nothing
+        // about it; the facts that are override this.
+        Portrait.Setup(source => source.FindOwnPortraitAsync()).ReturnsAsync((string?)null);
+        Services.AddSingleton(Portrait.Object);
     }
 
     /// <summary>The standing every page reads, substituted so a suite can suspend its caller.</summary>
     protected Mock<ITrainerStandingSource> Standing { get; } = new();
+
+    /// <summary>The portrait the user menu shows, substituted so a fact can give its caller a face.</summary>
+    protected Mock<ITrainerPortraitSource> Portrait { get; } = new();
 
     /// <summary>The messages the page raised, in the order it raised them.</summary>
     /// <remarks>

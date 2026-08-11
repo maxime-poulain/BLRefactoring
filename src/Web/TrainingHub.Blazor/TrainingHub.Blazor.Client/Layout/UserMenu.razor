@@ -1,0 +1,130 @@
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using TrainingHub.Blazor.Client.Infrastructure
+@inject ITrainerPortraitSource PortraitSource
+@inject IBffSessionClient SessionClient
+@inject IAuthenticationStateNotifier AuthenticationNotifier
+@inject NavigationManager NavigationManager
+
+@* The top-right corner of every page: who is signed in, and their doors. A visitor gets the one
+   action that changes that; a signed-in caller gets a compact identity — the face when there is
+   one, the initials when there is not, and the person's name — opening onto the spaces that used
+   to sit as a row of buttons in the bar. Moving them here is what keeps the bar one brand, one
+   catalog and one identity wide (ADR 0074). *@
+
+@* The AuthorizeView's context is named because MudMenu's ActivatorContent owns the default
+   `context` for its own menu state. *@
+<AuthorizeView Context="account">
+    <Authorized>
+        <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+            <ActivatorContent>
+                @* A custom activator opens the menu itself: the context is the menu's own handle,
+                   and a button that never calls it is a button that opens nothing. *@
+                <MudButton Color="Color.Inherit"
+                           aria-label="Account menu"
+                           OnClick="@(args => context.ToggleAsync(args))">
+                    <MudAvatar Size="Size.Small" Class="mr-2 th-avatar">
+                        @if (_portrait is not null)
+                        {
+                            <MudImage Src="@_portrait" Alt="@DisplayName(account.User)"/>
+                        }
+                        else
+                        {
+                            @Initials(account.User)
+                        }
+                    </MudAvatar>
+                    @DisplayName(account.User)
+                    <MudIcon Icon="@Icons.Material.Filled.ArrowDropDown" Size="Size.Small"/>
+                </MudButton>
+            </ActivatorContent>
+            <ChildContent>
+                <MudMenuItem Href="/profile">Profile</MudMenuItem>
+                <MudMenuItem Href="/trainings">My trainings</MudMenuItem>
+                @* Courtesy, not security, as when these doors sat in the bar: the API refuses the
+                   calls behind AdministratorPolicy whatever the browser renders (ADR 0051,
+                   ADR 0054). Context is named because the outer AuthorizeView owns `context`. *@
+                <AuthorizeView Roles="Administrator" Context="administrator">
+                    <MudDivider/>
+                    <MudMenuItem Href="/administration/trainers">Manage trainers</MudMenuItem>
+                    <MudMenuItem Href="/administration/trainings">Moderate trainings</MudMenuItem>
+                    <MudMenuItem Href="/administration/outbox">Outbox</MudMenuItem>
+                </AuthorizeView>
+                <MudDivider/>
+                <MudMenuItem OnClick="HandleLogoutAsync">Sign out</MudMenuItem>
+            </ChildContent>
+        </MudMenu>
+    </Authorized>
+    <NotAuthorized>
+        <MudButton Variant="Variant.Text" Color="Color.Inherit" Href="/login">Sign in</MudButton>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    // The claim names are the API's own (TokenService writes them): minted for a trainer's
+    // account, absent for an administrator's, and carried into the cookie verbatim because no
+    // inbound map shortens them.
+    private const string FirstnameClaim = "firstname";
+    private const string LastnameClaim = "lastname";
+
+    private string? _portrait;
+    private bool _portraitAsked;
+
+    /// <summary>The authentication state, cascaded by the router's wrapper.</summary>
+    [CascadingParameter]
+    public Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// The portrait is asked for once per scope, and only for an authenticated caller: an
+    /// anonymous visitor has no profile to read, and asking would cost every catalog page a
+    /// refused call. The answer may legitimately be nothing — no photo, or an account that is
+    /// nobody's trainer — and nothing renders as initials rather than a placeholder face.
+    /// </remarks>
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_portraitAsked || AuthenticationStateTask is null)
+        {
+            return;
+        }
+
+        var state = await AuthenticationStateTask;
+
+        if (state.User.Identity?.IsAuthenticated != true)
+        {
+            return;
+        }
+
+        _portraitAsked = true;
+        _portrait = await PortraitSource.FindOwnPortraitAsync();
+    }
+
+    private static string DisplayName(ClaimsPrincipal user)
+    {
+        var firstname = user.FindFirst(FirstnameClaim)?.Value;
+        var lastname = user.FindFirst(LastnameClaim)?.Value;
+
+        // An administrator's token names no person, so the account's own name is the honest
+        // fallback rather than a blank.
+        return firstname is null || lastname is null
+            ? user.Identity?.Name ?? "Account"
+            : $"{firstname} {lastname}";
+    }
+
+    private static string Initials(ClaimsPrincipal user)
+    {
+        var parts = DisplayName(user).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        return parts.Length >= 2
+            ? $"{char.ToUpperInvariant(parts[0][0])}{char.ToUpperInvariant(parts[1][0])}"
+            : char.ToUpperInvariant(parts[0][0]).ToString();
+    }
+
+    private async Task HandleLogoutAsync()
+    {
+        // Signing out is the BFF's business: it drops the cookie, and with it the only copy of the
+        // token. There is nothing left in the browser to clear. See ADR 0009.
+        await SessionClient.LogoutAsync();
+        AuthenticationNotifier.NotifyAuthenticationChanged();
+        NavigationManager.NavigateTo("/login");
+    }
+}

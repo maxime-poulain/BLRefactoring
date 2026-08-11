@@ -133,20 +133,102 @@ public sealed class TrainerStandingSourceTests
         standing.Reason.Should().BeNull();
     }
 
-    private void Answering(string status, string? reason) =>
-        _trainerClient.Setup(client => client.GetCurrentAsync()).ReturnsAsync(Profile(status, reason));
+    /// <summary>
+    /// Find own portrait async, a trainer with a photo, answers the authenticated address.
+    /// </summary>
+    /// <remarks>
+    /// The authenticated route with the photo's identity as a cache buster — the same shape the
+    /// profile page builds (ADR 0063), and never the public portrait route, which answers 404 for
+    /// a suspended trainer who is still entitled to their own face.
+    /// </remarks>
+    [Fact]
+    public async Task FindOwnPortraitAsync_ATrainerWithAPhoto_AnswersTheAuthenticatedAddress()
+    {
+        var trainerId = Guid.NewGuid();
+        var photoId = Guid.NewGuid();
 
-    private static SwaggerResponse<TrainerHttpResponse> Profile(string status, string? reason) =>
+        Answering("Active", reason: null, trainerId, photoId);
+
+        var portrait = await new TrainerStandingSource(_trainerClient.Object).FindOwnPortraitAsync();
+
+        portrait.Should().Be($"api/Trainer/{trainerId}/photo?v={photoId}");
+    }
+
+    /// <summary>
+    /// Find own portrait async, no photo, answers nothing rather than a placeholder.
+    /// </summary>
+    [Fact]
+    public async Task FindOwnPortraitAsync_NoPhoto_AnswersNothingRatherThanAPlaceholder()
+    {
+        Answering("Active", reason: null);
+
+        var portrait = await new TrainerStandingSource(_trainerClient.Object).FindOwnPortraitAsync();
+
+        portrait.Should().BeNull("no photo renders as initials, never as a silhouette (ADR 0074)");
+    }
+
+    /// <summary>
+    /// Find own portrait async, the read failed, answers nothing.
+    /// </summary>
+    /// <remarks>
+    /// The same two cases as the standing's fallback: an administrator's account meets a refusal
+    /// and has no portrait on this surface at all, and an unreachable API means unknown.
+    /// </remarks>
+    [Fact]
+    public async Task FindOwnPortraitAsync_TheReadFailed_AnswersNothing()
+    {
+        _trainerClient
+            .Setup(client => client.GetCurrentAsync())
+            .ThrowsAsync(new ApiException(
+                "The HTTP status code of the response was not expected (403).",
+                403,
+                "",
+                new Dictionary<string, IEnumerable<string>>(),
+                null));
+
+        var portrait = await new TrainerStandingSource(_trainerClient.Object).FindOwnPortraitAsync();
+
+        portrait.Should().BeNull();
+    }
+
+    /// <summary>
+    /// The standing and the portrait, share one read.
+    /// </summary>
+    /// <remarks>
+    /// The reason the portrait source is a second face of this class rather than a class of its
+    /// own: both answers live in the same document, and the layout asking the API twice for it
+    /// would be the version that works and is wasteful — the version nobody notices.
+    /// </remarks>
+    [Fact]
+    public async Task TheStandingAndThePortrait_ShareOneRead()
+    {
+        Answering("Active", reason: null);
+
+        var source = new TrainerStandingSource(_trainerClient.Object);
+
+        await source.GetAsync();
+        await source.FindOwnPortraitAsync();
+
+        _trainerClient.Verify(client => client.GetCurrentAsync(), Times.Once);
+    }
+
+    private void Answering(string status, string? reason, Guid? trainerId = null, Guid? photoId = null) =>
+        _trainerClient.Setup(client => client.GetCurrentAsync())
+            .ReturnsAsync(Profile(status, reason, trainerId, photoId));
+
+    private static SwaggerResponse<TrainerHttpResponse> Profile(
+        string status, string? reason, Guid? trainerId = null, Guid? photoId = null) =>
         new(
             200,
             new Dictionary<string, IEnumerable<string>>(),
             new TrainerHttpResponse
             {
-                Id = Guid.NewGuid(),
+                Id = trainerId ?? Guid.NewGuid(),
                 Firstname = "Ada",
                 Lastname = "Lovelace",
                 ContactEmail = "ada@example.com",
                 Status = status,
-                SuspensionReason = reason
+                SuspensionReason = reason,
+                PhotoId = photoId
             });
 }

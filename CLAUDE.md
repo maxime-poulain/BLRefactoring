@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 73 architecture decision records.
+2. `docs/adr/README.md` — the index of 74 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 191 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 192 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -255,9 +255,11 @@ coming from outside this repository keeps the spelling its author gave it — `C
 `IPipelineBehavior`, `AuthorizationPolicy`, `Serializer` are what .NET calls them, and renaming them
 is not an option. The sixty-three records merged before ADR 0064 keep the words they were written
 with, because a merged record is never rewritten. `AmericanSpellingRules.cs` is invisible to its own
-rule, because it is the file that lists what the rule refuses. And four kinds of file are read by
+rule, because it is the file that lists what the rule refuses. And six kinds of file are read by
 nobody, each with its reason written beside it in that same file: the MIT license, a developer's
-`appsettings.Local.json` and their `.pfx`, and the rolling `.log` a running host leaves in the tree.
+`appsettings.Local.json` and their `.pfx`, the rolling `.log` a running host leaves in the tree,
+and the two files a vendored Claude skill carries — its `SKILL.md` and its `LICENSE.txt`, words
+written outside this repository and kept verbatim.
 
 **A file that is neither read nor declared unread fails the build**, which is the half worth
 remembering when adding a kind of file this repository has not held before.
