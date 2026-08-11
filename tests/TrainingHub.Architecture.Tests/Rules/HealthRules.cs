@@ -66,15 +66,16 @@ public sealed partial class HealthRules
     /// The bff, answers for its liveness.
     /// </summary>
     /// <remarks>
-    /// The literals differ from the API rule's on purpose: the BFF targets net9.0 and cannot
-    /// reach the net10 <c>Shared.Api</c> extension, so ADR 0037 gives it the two framework calls
-    /// inline — liveness only, because its world is the API and proxying a readiness answer would
-    /// be a decision of its own.
+    /// The literals differ from the API rule's on purpose. <c>AddApiHealth</c> registers probes for
+    /// a database, an object store and a mail server; the BFF owns none of the three, so ADR 0037
+    /// gives it the two framework calls inline — liveness only, because its world is the API and
+    /// proxying a readiness answer would be a decision of its own. The target framework was given
+    /// as the reason for a while and was never one; ADR 0076 removed it and left this standing.
     /// </remarks>
     [Fact]
     [ArchitectureRule("0037",
-        "every host answers for its own health: the BFF, out of the shared extension's reach, carries the " +
-        "framework's liveness pair inline")]
+        "every host answers for its own health: the BFF, owning no dependency to report readiness " +
+        "on, carries the framework's liveness pair inline")]
     public void TheBff_AnswersForItsLiveness()
     {
         var program = Path.Combine("src", "Web", "TrainingHub.Blazor", "TrainingHub.Blazor", "Program.cs");

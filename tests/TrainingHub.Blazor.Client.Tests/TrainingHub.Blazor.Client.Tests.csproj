@@ -1,10 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!--
-    net10.0 against a net9.0 component library, for the reason spelled out in the BFF suite beside
-    this one: the Blazor pair stays on net9.0 and the CI runner installs only the 10.0 runtime, so
-    a net9.0 test project would build and then fail to run.
-  -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <IsTestProject>true</IsTestProject>
@@ -23,16 +18,6 @@
       a size check, a cache-busting address and an error path that all existed only in a browser.
     -->
     <PackageReference Include="bunit" />
-    <!--
-      Overridden for this project alone. The Components family is centrally pinned to 9.0.18
-      because the Blazor projects target net9.0; bUnit's net10.0 assets ask for 10.0.10, and with
-      transitive pinning on, the mismatch is an error rather than a resolution. This project is the
-      one place where a net10.0 test host loads a net9.0 component library, so it is also the one
-      place where the 10.x assemblies are the right answer — the framework rolls forward, and the
-      pin stays true everywhere it describes something shipped.
-    -->
-    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" VersionOverride="10.0.10" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" VersionOverride="10.0.10" />
   </ItemGroup>
 
   <ItemGroup>

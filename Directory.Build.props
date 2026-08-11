@@ -4,9 +4,9 @@
     Shared MSBuild properties for every project of the solution. MSBuild imports
     this file automatically before each project body; a project can still
     override any value locally. Only properties that are genuinely common
-    belong here — target frameworks stay in the csproj files (the backend
-    targets net10.0 while the Blazor hosts and generated clients target
-    net9.0), and per-project concerns (RunPostBuildEvent…) stay local.
+    belong here — the target framework stays in the csproj files, one line
+    per project and the same line in each (ADR 0076), and per-project
+    concerns (RunPostBuildEvent…) stay local.
     https://learn.microsoft.com/visualstudio/msbuild/customize-by-directory
   -->
   <PropertyGroup>
@@ -41,13 +41,6 @@
       so nothing exempts it now — and the document ASP.NET Core publishes carries the result.
     -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-
-    <!--
-      AnalysisLevel follows the target framework, so the three net9.0 projects would analyze at a
-      different level from the other twenty-three and the ruleset would quietly differ across one
-      solution. Pinned after measuring that aligning them costs nothing.
-    -->
-    <AnalysisLevel>10.0</AnalysisLevel>
 
     <!--
       The .NET analyzers ship around four hundred and fifty CA rules and enable a fraction of them
