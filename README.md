@@ -1001,8 +1001,9 @@ without a version attribute, every version is exact, and transitive pinning is e
 - **.NET SDK 10**
 - **Docker** — for SQL Server, the object store and the mail server, for the three application
   images, and required by the integration tests
-- **A TLS certificate for the BFF container**, exported once from the certificate the SDK already
-  installed on this machine:
+- **A TLS certificate for the BFF container** — only when running the whole stack in containers
+  (the full profile below); the dependencies-only workflow needs none. Exported once from the
+  certificate the SDK already installed on this machine:
 
   ```bash
   dotnet dev-certs https --trust                                        # once per machine
@@ -1024,27 +1025,46 @@ without a version attribute, every version is exact, and transitive pinning is e
 ### Run the dependencies
 
 ```bash
-docker compose up -d sqlserver seaweedfs mailpit
+./scripts/start-dependencies.sh      # or: docker compose up -d --wait
 ```
 
-This starts SQL Server 2022 on port `1433`, SeaweedFS on `8333` (its S3 endpoint) and `9333`
-(the master's own UI), each with a named volume, and Mailpit on `1025` (SMTP) and `8025` — every
-email the hosts send is readable at <http://localhost:8025>. SeaweedFS rather than MinIO, whose community
-repository was archived in April 2026 and publishes no binaries; both speak S3, and the API talks to
-whichever through `AWSSDK.S3`, so the provider is four configuration values rather than a rewrite.
-The bucket is created at startup in `Development`, in the same spirit as the migrations below. See
+This is the daily command, and it is the bare compose up on purpose: the three host services sit
+behind the `full` profile, so what starts is the three dependencies alone — no image is built and
+no application container is created ([ADR 0075](docs/adr/0075-give-the-bare-compose-up-to-the-developer.md)).
+The script adds `--wait`, so it returns only once every healthcheck has passed, and prints where
+each dependency listens:
+
+| Dependency | Container | Ports on the host |
+|---|---|---|
+| SQL Server 2022 | `sqlserver` | `1433` (`sa` / `Password@`) |
+| SeaweedFS, the object store photos live in | `seaweedfs` | `8333` (S3), `9333` (the master's own UI) |
+| Mailpit, the mail sink | `mailpit` | `1025` (SMTP), `8025` (web UI and HTTP API) |
+
+The hosts are then run from an IDE or `dotnet run` (below) and reach the containers over those
+ports — every `appsettings.Development.json` already points at `localhost`. To check the
+dependencies by hand: `docker compose ps` shows all three `healthy`, every email the hosts send is
+readable at <http://localhost:8025>, and the store's own view is <http://localhost:9333>. Stopping
+them is `docker compose down`; the SQL Server and SeaweedFS volumes survive it, so the data is
+still there on the next start.
+
+SeaweedFS rather than MinIO, whose community repository was archived in April 2026 and publishes
+no binaries; both speak S3, and the API talks to whichever through `AWSSDK.S3`, so the provider is
+four configuration values rather than a rewrite. The bucket is created at startup in
+`Development`, in the same spirit as the migrations below. See
 [ADR 0021](docs/adr/0021-store-a-photo-beside-the-row-that-names-it.md).
 
 ### Or run everything
 
 ```bash
-docker compose up -d
+docker compose --profile full up -d --build
 ```
 
 Same three dependencies, plus an image per host: the layered API on <http://localhost:5085>, the
 CQRS API on <http://localhost:5086>, and the BFF — the one a browser opens — on
 <https://localhost:7068>. Six containers, and each answers for itself: since ADR 0037 the compose
 file polls every one of them, so `docker compose ps` shows `healthy` rather than merely running.
+This is the profile that needs the TLS certificate from the prerequisites, because the BFF runs in
+a container here.
 
 Two things are worth knowing before the first run. The CQRS host waits for the layered one rather
 than starting beside it, because in `Development` both apply their migrations at startup against one

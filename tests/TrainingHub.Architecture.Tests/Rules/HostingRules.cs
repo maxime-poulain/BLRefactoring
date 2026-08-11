@@ -16,8 +16,9 @@ namespace TrainingHub.Architecture.Tests.Rules;
 /// ran <c>docker build</c> by hand.
 /// <para>
 /// Both failures these rules guard are silent. A host that ships no image is not a broken build,
-/// it is a `docker compose up` that starts less than a reader expects; an image nothing builds is
-/// not a red pipeline, it is a Dockerfile that rots until the day it is needed. See ADR 0065.
+/// it is a `docker compose --profile full up` that starts less than a reader expects; an image
+/// nothing builds is not a red pipeline, it is a Dockerfile that rots until the day it is needed.
+/// See ADR 0065, and ADR 0075 for the profile the bare command deliberately leaves out.
 /// </para>
 /// </remarks>
 public sealed class HostingRules
@@ -50,6 +51,65 @@ public sealed class HostingRules
             .Selected("host this repository runs")
             .SelectMany(host => Missing(host, compose))
             .ShouldHold();
+    }
+
+    /// <summary>
+    /// Every host, stays behind the full profile.
+    /// </summary>
+    /// <remarks>
+    /// The other half of the bare <c>docker compose up</c> belonging to the developer: a host
+    /// service without the profile rejoins the default startup silently, and the first person to
+    /// notice is whoever wanted three containers and got a three-image build. The dependencies
+    /// carry no profile on purpose — they are what both workflows share — so the rule checks the
+    /// hosts alone.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0075",
+        "the bare compose up starts the dependencies alone; the hosts join only when the full " +
+        "profile is asked for")]
+    public void EveryHost_StaysBehindTheFullProfile()
+    {
+        var compose = SourceTree.ReadLines(Compose);
+
+        Hosts
+            .Selected("host this repository runs")
+            .Where(host => !ServiceBlock(compose, Image(host))
+                .Any(line => line.Contains("profiles: [\"full\"]", StringComparison.Ordinal)))
+            .Select(host =>
+                $"the service built from '{Image(host)}' carries no `profiles: [\"full\"]`, so a " +
+                "bare `docker compose up` builds and starts it. The default startup is the " +
+                "developer's three dependencies, and a host joins it only by profile (ADR 0075)")
+            .ShouldHold();
+    }
+
+    /// <summary>
+    /// The lines of the service block naming a Dockerfile, from its header to the next service.
+    /// </summary>
+    /// <remarks>
+    /// Textual on purpose, like the rest of this class: a service starts at a two-space key and
+    /// runs until the next one, which is how the compose file is actually indented.
+    /// </remarks>
+    private static IReadOnlyList<string> ServiceBlock(IReadOnlyList<string> compose, string dockerfile)
+    {
+        var anchor = compose
+            .Select((line, index) => (line, index))
+            .FirstOrDefault(candidate =>
+                candidate.line.Contains($"dockerfile: {dockerfile}", StringComparison.Ordinal))
+            .index;
+
+        var start = anchor;
+        while (start > 0 && !Regex.IsMatch(compose[start], "^  \\S", RegexOptions.None, TimeSpan.FromSeconds(1)))
+        {
+            start--;
+        }
+
+        var end = anchor + 1;
+        while (end < compose.Count && !Regex.IsMatch(compose[end], "^  \\S", RegexOptions.None, TimeSpan.FromSeconds(1)))
+        {
+            end++;
+        }
+
+        return [.. compose.Skip(start).Take(end - start)];
     }
 
     /// <summary>
@@ -299,8 +359,8 @@ public sealed class HostingRules
         {
             yield return
                 $"'docker-compose.yaml' builds no service from '{dockerfile}'. An image nothing " +
-                "starts is one a reader has to know about to use, and `docker compose up` is the " +
-                "sentence this repository tells them instead (ADR 0065)";
+                "starts is one a reader has to know about to use, and `docker compose --profile " +
+                "full up` is the sentence this repository tells them instead (ADR 0065, ADR 0075)";
         }
     }
 }
