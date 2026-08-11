@@ -1,6 +1,6 @@
 # 0019 — Enforce the ruleset this repository already declared
 
-- **Status:** Accepted — amended by [0020](0020-declare-every-rule-this-codebase-already-satisfies.md)
+- **Status:** Accepted — amended by [0020](0020-declare-every-rule-this-codebase-already-satisfies.md); amended by [0076](0076-target-one-framework-across-the-solution.md): the `AnalysisLevel` pin is removed — one framework across the solution makes it a no-op
 - **Date:** 2026-08-02
 
 ## Context

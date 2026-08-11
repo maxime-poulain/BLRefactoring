@@ -1,8 +1,4 @@
-# net9.0, not net10.0, and the one place in this repository where that matters. This host and the
-# WebAssembly client it serves target net9.0 — Program.cs says why, where it calls AddHealthChecks
-# inline rather than reaching for the net10 Shared.Api extension. The SDK below builds it anyway;
-# it is the runtime image that has to follow the target framework rather than the repository.
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 # TLS only, and the two API images are the ones that differ rather than this one. Those speak HTTP
 # because nothing but this host calls them, inside the compose network; this host is the one a
@@ -57,8 +53,9 @@ RUN apt-get update \
 
 # The aspnet images ship a non-root account for exactly this; running as root is the default only
 # because changing it would break images that write where they should not. No logs directory is
-# prepared here, unlike the two API images: this host logs to the console alone, Serilog and its
-# file sink being wired in Shared.Api, which targets net10 and is out of this host's reach.
+# prepared here, unlike the two API images: this host logs to the console alone. Serilog is the two
+# API hosts' dependency and not this one's — it owns no domain behavior and no persistence, and its
+# diagnostics have not yet earned one (ADR 0026).
 USER $APP_UID
 
 ENTRYPOINT ["dotnet", "TrainingHub.Blazor.dll"]

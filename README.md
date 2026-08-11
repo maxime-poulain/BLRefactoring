@@ -151,8 +151,8 @@ them — the layered one had none at all. See
 
 ### Solution layout
 
-Twenty-seven projects: sixteen under `src/`, eleven under `tests/`. The backend and all tests target
-**net10.0**; the Blazor pair and the generated clients target **net9.0**.
+Twenty-seven projects: sixteen under `src/`, eleven under `tests/`. Every one of them targets
+**net10.0** ([ADR 0076](docs/adr/0076-target-one-framework-across-the-solution.md)).
 
 | Project | Responsibility |
 |---|---|
@@ -223,8 +223,8 @@ flowchart LR
     BlazorHost --> BlazorClient
 ```
 
-The Blazor and generated-client projects form a separate net9.0 island; the backend graph is
-rooted at the shared kernel.
+The Blazor pair and the generated client form their own branch, reached by no backend project;
+the backend graph is rooted at the shared kernel.
 
 ---
 
@@ -1456,13 +1456,12 @@ one the analysis of `master` produces.
 ## Repository conventions
 
 - **Central package management.** Every NuGet version lives in `Directory.Packages.props`; no
-  project carries a `Version` attribute and no version is a wildcard. One project carries a
-  `VersionOverride`, which is the exception that has to be stated rather than discovered:
-  `TrainingHub.Blazor.Client.Tests` raises the ASP.NET Core Components family to 10.x for itself,
-  because bUnit's net10.0 assets require it while the Blazor projects target net9.0 and the central
-  pin follows them. Moving those projects to net10.0 removes the override and this sentence with it.
+  project carries a `Version` attribute, no version is a wildcard, and no project overrides a pin.
+  The one `VersionOverride` this repository had was the cost of a second target framework, and it
+  went when the framework did ([ADR 0076](docs/adr/0076-target-one-framework-across-the-solution.md)).
 - **Shared MSBuild properties.** `Nullable` and `ImplicitUsings` are enabled solution-wide from
-  the root `Directory.Build.props`; target frameworks stay per-project.
+  the root `Directory.Build.props`; the target framework stays per-project, one line each and the
+  same line in every one.
 - **Code style** is described in `.editorconfig`: file-scoped namespaces, `var`, Allman braces,
   naming conventions, and a hundred and sixty-one analyzer severities — all of them enforced at build
   time, including the formatting ones.

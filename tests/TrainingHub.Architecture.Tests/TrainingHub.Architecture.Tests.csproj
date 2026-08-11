@@ -71,11 +71,14 @@
     </ItemGroup>
 
     <!--
-      The remaining six test projects, for one rule and one rule only: "no type inherits this class".
-      That statement cannot be made from a partial view of the solution. A production class whose
-      only subclass is a test double is inherited, and demanding a `sealed` it cannot carry would be
-      a rule that is confidently wrong. So the project that says it has to see everything — which,
-      for a suite whose job is the shape of the whole solution, is the right shape to be in.
+      The remaining seven test projects, for one rule and one rule only: "no type inherits this
+      class". That statement cannot be made from a partial view of the solution. A production class
+      whose only subclass is a test double is inherited, and demanding a `sealed` it cannot carry
+      would be a rule that is confidently wrong. So the project that says it has to see everything —
+      which, for a suite whose job is the shape of the whole solution, is the right shape to be in.
+
+      The bUnit suite is here since ADR 0076 ended the package override that kept it out; before
+      that this list was short by one project, and the sealing rule was short by two classes.
     -->
     <ItemGroup>
         <ProjectReference Include="..\TrainingHub.Shared.Domain.Tests\TrainingHub.Shared.Domain.Tests.csproj" />
@@ -84,6 +87,7 @@
         <ProjectReference Include="..\TrainingHub.DDD.Application.Tests\TrainingHub.DDD.Application.Tests.csproj" />
         <ProjectReference Include="..\TrainingHub.DDDWithCqrs.Tests\TrainingHub.DDDWithCqrs.Tests.csproj" />
         <ProjectReference Include="..\TrainingHub.Blazor.Bff.Tests\TrainingHub.Blazor.Bff.Tests.csproj" />
+        <ProjectReference Include="..\TrainingHub.Blazor.Client.Tests\TrainingHub.Blazor.Client.Tests.csproj" />
     </ItemGroup>
 
 </Project>

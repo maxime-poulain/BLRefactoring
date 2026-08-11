@@ -13,6 +13,7 @@ using AuthHelper = TrainingHub.Api.TestKit.AuthHelper;
 // One anchor per unit-test project. They are referenced for a single rule — "nobody inherits this
 // class" — which cannot be answered without seeing every project that could inherit one.
 using BffSuite = TrainingHub.Blazor.Bff.Tests.RecordingHandler;
+using ClientSuite = TrainingHub.Blazor.Client.Tests.Pages.Catalog.CatalogTopicsTests;
 using CqrsUnitSuite = TrainingHub.DDDWithCqrs.Tests.Pagination.PaginationTests;
 using DomainSuite = TrainingHub.Shared.Domain.Tests.Aggregates.TrainingAggregate.ValueObjects.AcquiredSkillsTests;
 using InfrastructureSuite = TrainingHub.Shared.Infrastructure.Tests.Interceptors.AuditableEntitiesInterceptorTests;
@@ -96,16 +97,12 @@ internal static class Solution
     /// For the rules whose statement is about all of it at once. "Nobody inherits this class" cannot
     /// be said from a partial view — a production class whose only subclass is a test double is
     /// inherited, and sealing it would not compile — so the rule that says it has to see every test
-    /// project too. That is what the six unit-test references in this csproj are for; nothing else
+    /// project too. That is what the seven unit-test references in this csproj are for; nothing else
     /// uses them.
     /// <para>
-    /// TrainingHub.Blazor.Client.Tests is the one absentee, and it is worth naming rather than
-    /// leaving to be noticed. It overrides the centrally pinned Components version for itself —
-    /// bUnit's net10.0 assets want 10.x while the Blazor projects target net9.0 — and referencing
-    /// it from here drags that override into a project that also reaches the net9.0 graph, which
-    /// central transitive pinning refuses outright. The cost is two sealed classes this suite
-    /// cannot see. The fix is to move the Blazor projects to net10.0, at which point the override
-    /// disappears and so does this paragraph.
+    /// Whole since ADR 0076. The bUnit suite was the one absentee, kept out by a package override
+    /// that a second target framework required and that one framework ended — two classes this
+    /// list could not see came into view with it.
     /// </para>
     /// </remarks>
     public static readonly IReadOnlyList<Assembly> All =
@@ -118,6 +115,7 @@ internal static class Solution
         typeof(SharedApiSuite).Assembly,
         typeof(InfrastructureSuite).Assembly,
         typeof(BffSuite).Assembly,
+        typeof(ClientSuite).Assembly,
         typeof(Solution).Assembly
     ];
 

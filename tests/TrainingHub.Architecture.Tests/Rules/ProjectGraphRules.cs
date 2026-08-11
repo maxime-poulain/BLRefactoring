@@ -193,24 +193,39 @@ public sealed class ProjectGraphRules
     }
 
     /// <summary>
-    /// Only a test project, spans the two target frameworks.
+    /// Every project, targets the same framework.
     /// </summary>
+    /// <remarks>
+    /// One framework rather than a rule about which projects may span two, because the second one
+    /// was never decided — it was inherited, and it billed the repository in four currencies: a
+    /// package version overridden for one project because the central pin followed the island, a
+    /// runtime a developer had to install beside the SDK the README asks for, a host that built
+    /// and then refused to start, and a sealing rule that could not see two of its own classes.
+    /// See ADR 0076.
+    /// <para>
+    /// Written against the literal rather than against the majority: a solution that drifted onto
+    /// two frameworks would still satisfy "they all agree with whichever is commonest", which is
+    /// the failure this replaces.
+    /// </para>
+    /// </remarks>
     [Fact]
-    [ArchitectureRule("README#repository-conventions",
-        "the backend is net10.0 and the browser pair is net9.0; only a test may span the two")]
-    public void OnlyATestProject_SpansTheTwoTargetFrameworks() =>
+    [ArchitectureRule("0076",
+        "one target framework for the whole solution: a second one is an island, and it is paid " +
+        "for in overrides, in a runtime nobody was told to install, and in what a rule cannot see")]
+    public void EveryProject_TargetsTheSameFramework() =>
         ProjectGraph.Projects
             .Where(project => project.TargetFramework is not null)
             .Selected("project declaring a target framework")
-            .SelectMany(project => project.ProjectReferences
-                .Select(reference => (project, referenced: ProjectGraph.Project(reference)))
-                .Where(pair => pair.referenced.TargetFramework is not null
-                               && pair.referenced.TargetFramework != pair.project.TargetFramework)
-                .Where(pair => !pair.project.IsTestProject)
-                .Select(pair =>
-                    $"{pair.project.Name} ({pair.project.TargetFramework}) references " +
-                    $"{pair.referenced.Name} ({pair.referenced.TargetFramework})"))
+            .Where(project => project.TargetFramework != Framework)
+            .Select(project =>
+                $"{project.RelativePath} targets {project.TargetFramework} where the rest of the " +
+                $"solution targets {Framework}. A second framework is an island: the packages it " +
+                "pins diverge, the runtime it needs is one more thing to install, and a project on " +
+                "the far side of it cannot be referenced by one on this side (ADR 0076)")
             .ShouldHold();
+
+    /// <summary>The one framework this solution targets.</summary>
+    private const string Framework = "net10.0";
 
     /// <summary>
     /// Every test project, declares whether it is one.

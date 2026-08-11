@@ -62,10 +62,11 @@ builder.Services.AddBff(builder.Configuration);
 // Add services to the container.
 builder.Services.AddRazorComponents().AddInteractiveWebAssemblyComponents();
 
-// Liveness only, and the framework calls inline rather than the shared AddApiHealth pair: this
-// host targets net9.0, so the net10 Shared.Api extension is out of its reach. Readiness is not
-// proxied either — this host's world is the API, and answering for it would be a decision of its
-// own. See ADR 0037.
+// Liveness only, and the framework calls inline rather than the shared AddApiHealth pair: that
+// pair wires probes for a database, an object store and a mail server, and this host owns none of
+// them. Readiness is not proxied either — this host's world is the API, and answering for it would
+// be a decision of its own. See ADR 0037, and ADR 0076 for the target framework that used to be
+// given as the reason and never was one.
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
