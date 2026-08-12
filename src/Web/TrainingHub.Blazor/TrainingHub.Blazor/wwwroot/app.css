@@ -5,7 +5,10 @@
     Each topic of the closed set owns one muted hue, and that hue is the same everywhere it
     appears: on a facet chip's mark and on the spine of every row of a filtered shelf. The color
     encodes a fact of the model — a topic is a shelf (ADR 0069) — rather than decorating it.
-    Mid-luminance tones on purpose, so one set reads on both grounds.
+    One set reads on both grounds, measured rather than asserted: the worst of the twelve
+    pairings is 3.18:1 (marketing on the dark surface) and the best 5.29:1, all above the 3:1
+    a non-text mark owes a reader. That only became true when the dark ground stopped being
+    green — on the bottle-green surface these tones replaced, three of the six sat under it.
 */
 :root {
     --th-spine-programming: #4A6FA5;
@@ -15,6 +18,42 @@
     --th-spine-personal-development: #8A6FB8;
     --th-spine-leadership: #3E8798;
     --th-spine-neutral: color-mix(in srgb, var(--mud-palette-text-primary) 25%, transparent);
+}
+
+/*
+    The dark palette, a second time.
+
+    MudBlazor ships no palette in its stylesheet: every --mud-palette-* variable is written by
+    MudThemeProvider, into a :root block it renders as a component. During a prerendered pass that
+    block is rendered too — with the light palette, because C# has not yet learned what the visitor
+    chose. So the served HTML is a complete light page, and without what follows the correction
+    waits for WebAssembly.
+
+    These declarations are the same values PaletteDark carries in MainLayout, and they win because
+    :root[data-theme="dark"] outranks the plain :root the provider writes — specificity, not order,
+    so it holds wherever the provider's block lands in the document. Two consequences, both
+    deliberate: the values must stay identical, which is what an architecture rule checks rather
+    than trusts (ADR 0077), and the toggle must rewrite the attribute — a toggle that only told C#
+    would leave this block winning, and the page dark forever.
+*/
+:root[data-theme="dark"] {
+    --mud-palette-background: #0E0F10;
+    --mud-palette-background-gray: #141618;
+    --mud-palette-surface: #191B1D;
+    --mud-palette-appbar-background: #0E0F10;
+    --mud-palette-appbar-text: #F2F3F4;
+    --mud-palette-drawer-background: #0E0F10;
+    --mud-palette-text-primary: #F2F3F4;
+    --mud-palette-text-secondary: #9BA1A6;
+    --mud-palette-primary: #57A883;
+    --mud-palette-primary-text: #0E1210;
+    --mud-palette-secondary: #D2AC63;
+    --mud-palette-secondary-text: #141210;
+    --mud-palette-lines-default: #2A2E31;
+    --mud-palette-lines-inputs: #3A4045;
+    --mud-palette-table-lines: #2A2E31;
+    --mud-palette-divider: #2A2E31;
+    --mud-palette-action-default: rgba(242, 243, 244, 0.54);
 }
 
 /* ---------------------------------------------------------------- the frame */
@@ -30,9 +69,12 @@
     letter-spacing: -0.02em;
 }
 
+/* Ink on brass rather than white on brass: the initials sat at 2.35:1 over this gold, below
+   what any text owes a reader. The same ink reads on both modes' brass — 5.83:1 on the light
+   one, 8.74:1 on the dark. */
 .th-avatar {
     background-color: var(--mud-palette-secondary);
-    color: #FFFFFF;
+    color: #141210;
     font-family: "IBM Plex Mono", monospace;
     font-size: 0.8rem;
 }

@@ -2,7 +2,7 @@
 @inherits LayoutComponentBase
 @inject IJSRuntime JS
 
-<MudThemeProvider @ref="_themeProvider" Theme="Theme" @bind-IsDarkMode="@_isDarkMode" />
+<MudThemeProvider Theme="Theme" @bind-IsDarkMode="@_isDarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -51,8 +51,15 @@
     // credential out of localStorage; a color preference is exactly what belongs in it).
     private const string ThemeKey = "theme";
 
-    // The application's own identity, in both modes: plaster and oak-ink grounds, bottle green
-    // for the actions, brass for the quiet seconds. The topic shelves' hues live in app.css —
+    // Where the resolved answer is written, on the document element rather than in a variable: the
+    // sheet paints from it before any of this code runs, and this code reads it back rather than
+    // deciding a second time. One resolver, one truth (ADR 0077).
+    private const string ThemeAttribute = "data-theme";
+
+    // The application's own identity, in both modes: a plaster ground by day and a near-black
+    // neutral one by night, green for the actions, brass for the quiet seconds. The night ground
+    // carries no hue on purpose — a tinted dark theme reads as a color scheme rather than as dark,
+    // and the green that survives is the one doing work. The topic shelves' hues live in app.css:
     // they are the shelf's colors, not the theme's.
     private static readonly MudTheme Theme = new()
     {
@@ -70,19 +77,30 @@
             LinesDefault = "#E2DFD7",
             TableLines = "#E2DFD7"
         },
+        // Every value here is written a second time, in app.css's :root[data-theme="dark"] block,
+        // because that copy is the one that paints a prerendered page before this one exists
+        // (ADR 0077). The two are kept identical by a rule rather than by memory.
         PaletteDark = new PaletteDark
         {
-            Background = "#14201A",
-            Surface = "#1B2A22",
-            AppbarBackground = "#14201A",
-            AppbarText = "#EDEAE2",
-            DrawerBackground = "#14201A",
-            TextPrimary = "#EDEAE2",
-            TextSecondary = "#9AA69C",
-            Primary = "#4E9B77",
-            Secondary = "#C9A45C",
-            LinesDefault = "#2C3B32",
-            TableLines = "#2C3B32"
+            Background = "#0E0F10",
+            BackgroundGray = "#141618",
+            Surface = "#191B1D",
+            AppbarBackground = "#0E0F10",
+            AppbarText = "#F2F3F4",
+            DrawerBackground = "#0E0F10",
+            TextPrimary = "#F2F3F4",
+            TextSecondary = "#9BA1A6",
+            Primary = "#57A883",
+            // Ink, not the white MudBlazor defaults to: white over this green reads at 3.34:1,
+            // which a chip's label cannot live with. Dark on light green reads at 6.59:1.
+            PrimaryContrastText = "#0E1210",
+            Secondary = "#D2AC63",
+            SecondaryContrastText = "#141210",
+            LinesDefault = "#2A2E31",
+            LinesInputs = "#3A4045",
+            TableLines = "#2A2E31",
+            Divider = "#2A2E31",
+            ActionDefault = "rgba(242, 243, 244, 0.54)"
         },
         Typography = new Typography
         {
@@ -118,15 +136,15 @@
         }
     };
 
-    private MudThemeProvider? _themeProvider;
     private bool _isDarkMode;
 
     /// <inheritdoc />
     /// <remarks>
-    /// The theme resolves here rather than in an initializer, because both of its sources live in
-    /// the browser: the stored choice needs JS interop, and the system preference needs the
-    /// provider's own probe. Neither runs during a prerendered pass — this hook does not either —
-    /// so the server renders the light default and the first interactive frame corrects it.
+    /// The theme is decided before this component exists, by the script in the document's head:
+    /// it reads the stored choice, falls back to the device's preference, and stamps the answer on
+    /// the document element, so the first paint is already right on a prerendered page (ADR 0077).
+    /// What is left here is to tell C# what the page is already wearing — the toggle has to start
+    /// from the true state, and MudBlazor's own variables have to agree with the sheet's.
     /// </remarks>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -135,17 +153,9 @@
             return;
         }
 
-        var stored = await JS.InvokeAsync<string?>("localStorage.getItem", ThemeKey);
+        var painted = await JS.InvokeAsync<string?>("document.documentElement.getAttribute", ThemeAttribute);
 
-        // A stored choice wins; without one the device answers. "Ask the system" is deliberately
-        // not stored, so a visitor who never touched the toggle follows their device when it
-        // changes its mind — storing the probe's answer would freeze a preference nobody expressed.
-        _isDarkMode = stored switch
-        {
-            "dark" => true,
-            "light" => false,
-            _ => _themeProvider is not null && await _themeProvider.GetSystemDarkModeAsync()
-        };
+        _isDarkMode = string.Equals(painted, "dark", StringComparison.Ordinal);
 
         StateHasChanged();
     }
@@ -154,6 +164,13 @@
     {
         _isDarkMode = !_isDarkMode;
 
-        await JS.InvokeVoidAsync("localStorage.setItem", ThemeKey, _isDarkMode ? "dark" : "light");
+        var chosen = _isDarkMode ? "dark" : "light";
+
+        // Both writes, and neither is optional. The storage is what the next visit reads; the
+        // attribute is what this page is painted by, because app.css's dark block outranks the
+        // :root variables MudBlazor rewrites at runtime. A toggle that only told C# would leave
+        // that block winning, and a visitor who asked for light would stay in the dark.
+        await JS.InvokeVoidAsync("localStorage.setItem", ThemeKey, chosen);
+        await JS.InvokeVoidAsync("document.documentElement.setAttribute", ThemeAttribute, chosen);
     }
 }
