@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Components.Authorization;
+using TrainingHub.Blazor.Client.Authorization;
 using TrainingHub.GeneratedClients;
 
 namespace TrainingHub.Blazor.Client.Infrastructure;
@@ -9,8 +11,19 @@ namespace TrainingHub.Blazor.Client.Infrastructure;
 /// <remarks>
 /// Both answers come from the same <c>GET /Trainer/me</c>, so a second interface on the same
 /// class is what keeps the layout from asking the API twice for one document.
+/// <para>
+/// It also decides, once, whether that read is worth making at all. An account that is nobody's
+/// trainer has no standing and no portrait on this surface, and the API says so with a <c>403</c>
+/// — so an administrator used to spend one refused call per scope to be told what their own
+/// identity already said. Asking the identity first is what makes the refusal unnecessary rather
+/// than merely handled, and it belongs here rather than at the five call sites: the banner, the
+/// user menu and three pages all ask this class, and a guard repeated five times is four chances
+/// to forget it (ADR 0078).
+/// </para>
 /// </remarks>
-public sealed class TrainerStandingSource(ITrainerClient trainerClient)
+public sealed class TrainerStandingSource(
+    ITrainerClient trainerClient,
+    AuthenticationStateProvider authenticationStateProvider)
     : ITrainerStandingSource, ITrainerPortraitSource
 {
     private const string Suspended = "Suspended";
@@ -59,20 +72,34 @@ public sealed class TrainerStandingSource(ITrainerClient trainerClient)
 
     private async Task<TrainerHttpResponse?> ReadAsync()
     {
+        if (!await IsTrainerAsync())
+        {
+            // A visitor, or an account that is nobody's trainer. Either way this document is not
+            // theirs to have, and the API would say so: the same question, asked where it costs
+            // nothing instead of where it costs a round trip and a refusal.
+            return null;
+        }
+
         try
         {
             return (await trainerClient.GetCurrentAsync()).Result;
         }
         catch (ApiException exception)
         {
-            // Two cases, one answer. A 403 means the caller is an account that is nobody's trainer —
-            // an administrator — and has no standing and no portrait on this surface at all. Anything
-            // else means the read failed, and a banner raised by a failed read would accuse somebody
-            // of a sanction they may not be under. The generator's own sentence goes to the console,
-            // never on screen.
+            // The read failed, and a banner raised by a failed read would accuse somebody of a
+            // sanction they may not be under. The generator's own sentence goes to the console,
+            // never on screen. The caller's identity is checked above, so a 403 here means the
+            // cookie and the token have drifted apart — which is a failure, not an administrator.
             Console.Error.WriteLine(exception);
 
             return null;
         }
+    }
+
+    private async Task<bool> IsTrainerAsync()
+    {
+        var state = await authenticationStateProvider.GetAuthenticationStateAsync();
+
+        return state.User.HasClaim(claim => claim.Type == SessionClaims.TrainerId);
     }
 }

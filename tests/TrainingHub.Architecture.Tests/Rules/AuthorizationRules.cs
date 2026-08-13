@@ -1,6 +1,7 @@
 using System.Reflection;
 using TrainingHub.Architecture.Tests.Framework;
 using TrainingHub.Shared.Api.Authorization;
+using TrainingHub.Shared.Api.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
@@ -221,6 +222,106 @@ public sealed class AuthorizationRules
                 "and should not be: a suspended trainer keeps every read, and an administrator has " +
                 "no standing for the policy to ask about (ADR 0053)")
             .ShouldHold();
+
+    /// <summary>Where the browser's own vocabulary is written, and the guarded page families.</summary>
+    private const string SessionClaimsFile =
+        "src/Web/TrainingHub.Blazor/TrainingHub.Blazor.Client/Authorization/SessionClaims.cs";
+
+    private const string SessionPoliciesFile =
+        "src/Web/TrainingHub.Blazor/TrainingHub.Blazor.Client/Authorization/SessionPolicies.cs";
+
+    private const string SessionRolesFile =
+        "src/Web/TrainingHub.Blazor/TrainingHub.Blazor.Client/Authorization/SessionRoles.cs";
+
+    private const string TrainerPages =
+        "src/Web/TrainingHub.Blazor/TrainingHub.Blazor.Client/Pages/Trainings/";
+
+    private const string ProfilePages =
+        "src/Web/TrainingHub.Blazor/TrainingHub.Blazor.Client/Pages/Profile/";
+
+    private const string AdministrationPages =
+        "src/Web/TrainingHub.Blazor/TrainingHub.Blazor.Client/Pages/Administration/";
+
+    /// <summary>
+    /// The browser's trainer doors, ask the API's own question.
+    /// </summary>
+    /// <remarks>
+    /// Three claims in one, because they are one decision. The browser cannot reference the API's
+    /// assembly — it takes the generated clients and nothing else, and reaching for
+    /// <c>TrainerClaims</c> would invert the dependency the boundary exists to keep — so the claim
+    /// name and the policy name are written twice. That is safe exactly as long as something holds
+    /// the two copies equal, and this is that something: the strings are compared to the constants
+    /// the API itself registers its policy with.
+    /// <para>
+    /// The other two halves are structural rather than textual, so a page added tomorrow is
+    /// covered without anybody remembering this rule: every routed page of the trainer's two
+    /// families carries the policy, and every routed page of the administration carries the role.
+    /// The defect this record answers was precisely an asymmetry between those two families —
+    /// the administration guarded its pages, the trainer's space did not, and an administrator
+    /// walked into a surface the API refuses them.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0078",
+        "the browser asks the same question the API asks — is this caller somebody's trainer — " +
+        "and the doors it offers are the doors that open")]
+    public void TheBrowsersTrainerDoors_AskTheApisOwnQuestion() =>
+        Doors()
+            .Selected("browser door")
+            .Where(door => !SourceTree.ReadText(Absolute(door.File))
+                .Contains(door.Needle, StringComparison.Ordinal))
+            .Select(door => door.Complaint)
+            .ShouldHold();
+
+    /// <summary>
+    /// Every place the browser has to agree with the API, and what it has to say there.
+    /// </summary>
+    /// <remarks>
+    /// Two kinds, one shape. The three vocabulary files must each carry the API's own string,
+    /// because the browser writes those names again rather than referencing the assembly that
+    /// declares them. The routed pages must each carry their family's guard, which is the half
+    /// that keeps working when somebody adds a page next year without reading this.
+    /// </remarks>
+    private static IEnumerable<(string File, string Needle, string Complaint)> Doors()
+    {
+        yield return Vocabulary(SessionClaimsFile, TrainerClaims.TrainerId, "the claim the API mints");
+        yield return Vocabulary(SessionPoliciesFile, TrainerPolicy.Name, "the policy the API registers");
+        yield return Vocabulary(SessionRolesFile, IdentityRoles.Administrator, "the role the API grants");
+
+        foreach (var page in Guarded(TrainerPages, "[Authorize(Policy = ", "the trainer's own space")
+                     .Concat(Guarded(ProfilePages, "[Authorize(Policy = ", "the trainer's own space"))
+                     .Concat(Guarded(AdministrationPages, "[Authorize(Roles = ", "the administration")))
+        {
+            yield return page;
+        }
+    }
+
+    private static (string File, string Needle, string Complaint) Vocabulary(
+        string file, string expected, string what) =>
+        (file, $"\"{expected}\"",
+            $"'{file}' does not declare '{expected}', which is {what}. The browser writes these " +
+            "names again because it cannot reference the API's assembly, and a copy nothing " +
+            "compares is a copy that drifts in silence (ADR 0078)");
+
+    /// <summary>
+    /// Every routed page of a family, with the guard its family carries.
+    /// </summary>
+    /// <remarks>
+    /// Routed pages only: a dialog or a partial has no address to be refused at, and demanding an
+    /// attribute of one would be asking a component to authorize a caller who never arrived.
+    /// </remarks>
+    private static IEnumerable<(string File, string Needle, string Complaint)> Guarded(
+        string folder, string guard, string family) =>
+        Directory.EnumerateFiles(Absolute(folder), "*.razor", SearchOption.AllDirectories)
+            .Where(page => SourceTree.ReadText(page).Contains("@page ", StringComparison.Ordinal))
+            .Select(SourceTree.Relative)
+            .Select(page => (page, guard,
+                $"'{page}' is a routed page of {family} and carries no '{guard}'. A bare " +
+                "[Authorize] asks only whether somebody is signed in, which is how an " +
+                "administrator walked into the trainer's surface and met a 403 (ADR 0078)"));
+
+    private static string Absolute(string relative) =>
+        Path.Combine(SourceTree.RepositoryRoot, relative.Replace('/', Path.DirectorySeparatorChar));
 
     /// <summary>The HTTP verbs an action answers to, its own and its route attribute's.</summary>
     private static IReadOnlySet<string> Verbs(MethodInfo action) =>

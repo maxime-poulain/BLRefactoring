@@ -38,13 +38,19 @@
                 </MudButton>
             </ActivatorContent>
             <ChildContent>
-                <MudMenuItem Href="/profile">Profile</MudMenuItem>
-                <MudMenuItem Href="/trainings">My trainings</MudMenuItem>
+                @* The trainer's own two doors, behind the same question the API asks of the same
+                   claim: an account that is nobody's trainer has no profile to edit and no
+                   trainings to list, and offering it either is offering a refusal (ADR 0078). *@
+                <AuthorizeView Policy="@SessionPolicies.Trainer" Context="trainer">
+                    <MudMenuItem Href="/profile">Profile</MudMenuItem>
+                    <MudMenuItem Href="/trainings">My trainings</MudMenuItem>
+                    <MudDivider/>
+                </AuthorizeView>
                 @* Courtesy, not security, as when these doors sat in the bar: the API refuses the
                    calls behind AdministratorPolicy whatever the browser renders (ADR 0051,
                    ADR 0054). Context is named because the outer AuthorizeView owns `context`. *@
-                <AuthorizeView Roles="Administrator" Context="administrator">
-                    <MudDivider/>
+                <AuthorizeView Roles="@SessionRoles.Administrator" Context="administrator">
+                    <MudMenuItem Href="/administration">Administration</MudMenuItem>
                     <MudMenuItem Href="/administration/trainers">Manage trainers</MudMenuItem>
                     <MudMenuItem Href="/administration/trainings">Moderate trainings</MudMenuItem>
                     <MudMenuItem Href="/administration/outbox">Outbox</MudMenuItem>
@@ -60,12 +66,6 @@
 </AuthorizeView>
 
 @code {
-    // The claim names are the API's own (TokenService writes them): minted for a trainer's
-    // account, absent for an administrator's, and carried into the cookie verbatim because no
-    // inbound map shortens them.
-    private const string FirstnameClaim = "firstname";
-    private const string LastnameClaim = "lastname";
-
     private string? _portrait;
     private bool _portraitAsked;
 
@@ -100,8 +100,8 @@
 
     private static string DisplayName(ClaimsPrincipal user)
     {
-        var firstname = user.FindFirst(FirstnameClaim)?.Value;
-        var lastname = user.FindFirst(LastnameClaim)?.Value;
+        var firstname = user.FindFirst(SessionClaims.Firstname)?.Value;
+        var lastname = user.FindFirst(SessionClaims.Lastname)?.Value;
 
         // An administrator's token names no person, so the account's own name is the honest
         // fallback rather than a blank.

@@ -1,3 +1,4 @@
+using TrainingHub.Blazor.Client.Authorization;
 using TrainingHub.Blazor.Client.Infrastructure;
 using TrainingHub.GeneratedClients;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -70,7 +71,9 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
-        services.AddAuthorizationCore();
+        services.AddAuthorizationCore(options => options.AddPolicy(
+            SessionPolicies.Trainer,
+            policy => policy.RequireClaim(SessionClaims.TrainerId)));
         services.AddScoped<BffAuthenticationStateProvider>();
         services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<BffAuthenticationStateProvider>());
         // The same instance under its third face: what a page calls after signing in or out. An

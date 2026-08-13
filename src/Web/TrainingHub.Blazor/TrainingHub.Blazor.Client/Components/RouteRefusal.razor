@@ -1,3 +1,4 @@
+@using TrainingHub.Blazor.Client.Authorization
 @inject NavigationManager NavigationManager
 
 @if (_refused)
@@ -19,15 +20,23 @@
 
 @code {
     /// <summary>
-    /// Turns a refusal into whichever of the two things it actually is.
+    /// Turns a refusal into whichever of the three things it actually is.
     /// </summary>
     /// <remarks>
     /// <para>
     /// This used to redirect unconditionally, which was right while every guarded page asked only
     /// for a signed-in caller: the only way to be refused was to be nobody. The administration
-    /// pages are the first that refuse somebody, and against them the old behavior sent a signed-in
+    /// pages were the first that refuse somebody, and against them the old behavior sent a signed-in
     /// trainer to a sign-in page they had already been through — a loop that reads as a broken
     /// application rather than as a decision, because signing in again lands them right back here.
+    /// </para>
+    /// <para>
+    /// The third case is an administrator meeting the trainer's surface, and it is the one this
+    /// component answers with a destination rather than a page. An account that is nobody's trainer
+    /// is not missing an authority it might one day be granted — there is no version of it that
+    /// owns trainings — so the honest answer is the surface that is theirs. The refusal screen
+    /// stays for the opposite direction: a trainer who reaches for the administration is being told
+    /// no, and being told so is the point (ADR 0078).
     /// </para>
     /// <para>
     /// The anonymous half is untouched, deliberately, including the part that matters:
@@ -43,8 +52,17 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (await IsSignedInAsync())
+        var user = await CallerAsync();
+
+        if (user?.Identity?.IsAuthenticated == true)
         {
+            if (user.IsInRole(SessionRoles.Administrator))
+            {
+                // Their own surface, rather than a door they were never going to be let through.
+                NavigationManager.NavigateTo(AdministrationHome);
+                return;
+            }
+
             // Nothing to redirect to. Saying so is the whole change: the caller is not missing a
             // session, they are missing an authority, and only one of those has a remedy.
             _refused = true;
@@ -60,18 +78,18 @@
         NavigationManager.NavigateTo(login);
     }
 
-    private async Task<bool> IsSignedInAsync()
+    private const string AdministrationHome = "/administration";
+
+    private async Task<System.Security.Claims.ClaimsPrincipal?> CallerAsync()
     {
         // No cascading state at all is treated as anonymous rather than as an error: it is what a
         // component rendered outside CascadingAuthenticationState sees, and the safe reading of an
         // unknown caller is the one that asks them to sign in.
         if (AuthenticationState is null)
         {
-            return false;
+            return null;
         }
 
-        var state = await AuthenticationState;
-
-        return state.User.Identity?.IsAuthenticated == true;
+        return (await AuthenticationState).User;
     }
 }

@@ -1,0 +1,147 @@
+@page "/administration"
+@attribute [Authorize(Roles = SessionRoles.Administrator)]
+@using TrainingHub.GeneratedClients
+@inject IAdministrationClient AdministrationClient
+@inject IOutboxClient OutboxClient
+
+@* Where an administrator lands. It exists because the alternative was landing them on the
+   trainer's space, which is a surface their account has no standing on at all (ADR 0078).
+
+   It shows what the three doors hold rather than repeating their names: a count of what is there
+   and a count of what is waiting for a decision, which is the difference between a menu and a
+   place worth arriving at. Nothing here is a new question of the API — every number comes from a
+   list the administration already publishes, asked for one row so the total can be read off it. *@
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="my-4">
+    <MudText Typo="Typo.h4" Class="mb-2">Administration</MudText>
+    <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-6">
+        What this catalog holds, and what is waiting on you.
+    </MudText>
+
+    <MudGrid>
+        @foreach (var card in Cards)
+        {
+            <MudItem xs="12" md="4">
+                <MudPaper Elevation="0" Class="pa-6 h-100 th-sheet d-flex flex-column">
+                    <span class="th-sheet-spine" aria-hidden="true">
+                        <span style="background-color: @card.Spine"></span>
+                    </span>
+
+                    <MudText Typo="Typo.overline" Color="Color.Secondary">@card.Title</MudText>
+
+                    @if (_isLoading)
+                    {
+                        <MudSkeleton Width="4rem" Height="3rem" />
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.h3">@Count(card.Total)</MudText>
+                    }
+
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                        @if (_isLoading)
+                        {
+                            <text>&nbsp;</text>
+                        }
+                        else
+                        {
+                            @($"{Count(card.Waiting)} {card.WaitingLabel}")
+                        }
+                    </MudText>
+
+                    <MudSpacer />
+
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Primary"
+                               Href="@card.Href"
+                               EndIcon="@Icons.Material.Filled.ChevronRight"
+                               Class="align-self-start">
+                        @card.Action
+                    </MudButton>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+</MudContainer>
+
+@code {
+    // The words the domain publishes, compared ordinally by the server (ADR 0050).
+    private const string SuspendedStatus = "Suspended";
+    private const string WithheldStatus = "Withheld";
+
+    // One row is all that is read: the page size is the smallest a request may carry, and the
+    // total the server answers with is the whole point of the call.
+    private const int OneRow = 1;
+    private const int FirstPage = 1;
+
+    private bool _isLoading = true;
+
+    private int? _trainers;
+    private int? _suspendedTrainers;
+    private int? _trainings;
+    private int? _withheldTrainings;
+    private int? _poisoned;
+
+    private IEnumerable<Card> Cards =>
+    [
+        new("Trainers", _trainers, _suspendedTrainers, "under suspension",
+            "/administration/trainers", "Manage trainers",
+            "var(--th-spine-leadership)"),
+        new("Trainings", _trainings, _withheldTrainings, "withheld from the catalog",
+            "/administration/trainings", "Moderate trainings",
+            "var(--th-spine-programming)"),
+        new("Outbox", _poisoned, _poisoned, "waiting to be requeued",
+            "/administration/outbox", "Open the outbox",
+            "var(--th-spine-design)")
+    ];
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Five reads at once rather than in turn: they answer five independent questions and the page
+    /// is worth nothing until the last of them lands, so the wall clock is the slowest rather than
+    /// the sum. Each carries its own failure — a count that could not be read renders as a dash,
+    /// because a zero would be a claim, and the wrong one.
+    /// </remarks>
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(
+            Read(() => AdministrationClient.GetTrainersAsync(null, null, FirstPage, OneRow),
+                page => page.TotalCount, count => _trainers = count),
+            Read(() => AdministrationClient.GetTrainersAsync(SuspendedStatus, null, FirstPage, OneRow),
+                page => page.TotalCount, count => _suspendedTrainers = count),
+            Read(() => AdministrationClient.GetTrainingsAsync(null, null, FirstPage, OneRow),
+                page => page.TotalCount, count => _trainings = count),
+            Read(() => AdministrationClient.GetTrainingsAsync(WithheldStatus, null, FirstPage, OneRow),
+                page => page.TotalCount, count => _withheldTrainings = count),
+            Read(() => OutboxClient.GetPoisonAsync(FirstPage, OneRow),
+                page => page.TotalCount, count => _poisoned = count));
+
+        _isLoading = false;
+    }
+
+    private static async Task Read<TPage>(
+        Func<Task<TPage>> read, Func<TPage, int> total, Action<int> keep)
+    {
+        try
+        {
+            keep(total(await read()));
+        }
+        catch (ApiException exception)
+        {
+            // One unreadable count is not a broken page. The generator's own sentence goes to the
+            // console; the card says it does not know, which is what a dash means.
+            Console.Error.WriteLine(exception);
+        }
+    }
+
+    private static string Count(int? value) => value?.ToString() ?? "—";
+
+    private sealed record Card(
+        string Title,
+        int? Total,
+        int? Waiting,
+        string WaitingLabel,
+        string Href,
+        string Action,
+        string Spine);
+}
