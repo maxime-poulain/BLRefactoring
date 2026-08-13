@@ -5,6 +5,30 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <base href="/"/>
+    @* The theme, resolved before anything is painted, and the only place that resolves it.
+
+       It has to run here because the catalog's routes prerender (ADR 0072, ADR 0074): the server
+       sends a complete page painted with the light palette, the browser shows it at once, and C#
+       cannot correct it until WebAssembly has booted. That is not a frame of flash — it is the
+       whole time-to-interactive, on the three most public pages of the product.
+
+       A stored choice wins; without one the device answers, so a visitor who never touched the
+       toggle follows their system. The answer is stamped on the document element, and app.css
+       paints from it (ADR 0077). Wrapped in a try because a browser that refuses storage must
+       still get a page. *@
+    <script>
+        (function () {
+            try {
+                var stored = localStorage.getItem("theme");
+                var dark = stored === "dark"
+                    || (stored !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+                document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+            } catch (error) {
+                document.documentElement.setAttribute("data-theme", "light");
+            }
+        })();
+    </script>
     @if (!IsCatalogRoute)
     {
         @* The routes that do not prerender ship an empty head until WebAssembly boots; these two

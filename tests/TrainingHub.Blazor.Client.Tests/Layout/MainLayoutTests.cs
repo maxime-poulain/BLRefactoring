@@ -227,15 +227,17 @@ public sealed class MainLayoutTests : ComponentTest
     }
 
     /// <summary>
-    /// The theme toggle, persists the choice.
+    /// The theme toggle, persists the choice and repaints the document.
     /// </summary>
     /// <remarks>
-    /// The half that makes the toggle a preference rather than a mood: without the write, every
-    /// visit started light again. The choice goes to the browser's own storage — a color is
-    /// exactly what belongs in localStorage now that ADR 0009 took the credential out of it.
+    /// Two writes, and the fact exists because dropping either is silent. The storage is what the
+    /// next visit reads — a color is exactly what belongs in localStorage now that ADR 0009 took
+    /// the credential out of it. The attribute is what <em>this</em> page is painted by: the
+    /// sheet's dark block outranks the variables MudBlazor rewrites, so a toggle that only told C#
+    /// would leave a visitor who asked for light sitting in the dark (ADR 0077).
     /// </remarks>
     [Fact]
-    public void TheThemeToggle_PersistsTheChoice()
+    public void TheThemeToggle_PersistsTheChoiceAndRepaintsTheDocument()
     {
         // Arrange
         this.AddAuthorization().SetNotAuthorized();
@@ -251,22 +253,32 @@ public sealed class MainLayoutTests : ComponentTest
                 invocation.Identifier == "localStorage.setItem"
                 && Equals(invocation.Arguments[0], "theme")
                 && Equals(invocation.Arguments[1], "dark")));
+
+        JSInterop.Invocations
+            .Should().Contain(invocation =>
+                invocation.Identifier == "document.documentElement.setAttribute"
+                && Equals(invocation.Arguments[0], "data-theme")
+                && Equals(invocation.Arguments[1], "dark"),
+                "the page is painted from the attribute, so the toggle has to move it (ADR 0077)");
     }
 
     /// <summary>
-    /// A stored dark choice, is applied on the first render.
+    /// The theme the document already wears, is the one the layout starts from.
     /// </summary>
     /// <remarks>
-    /// Proved through the toggle rather than through the palette: markup carries MudBlazor's
-    /// generated styles, which are not this suite's to read. If the stored "dark" was applied,
-    /// the next toggle stores "light" — and if it was not, this stores "dark" and fails.
+    /// The layout no longer decides: the head's script did, before the first paint, and this reads
+    /// its answer back (ADR 0077). Proved through the toggle rather than through the palette —
+    /// markup carries MudBlazor's generated styles, which are not this suite's to read. If the
+    /// document's "dark" was taken, the next toggle stores "light"; if it was ignored, this stores
+    /// "dark" and fails.
     /// </remarks>
     [Fact]
-    public void AStoredDarkChoice_IsAppliedOnTheFirstRender()
+    public void TheThemeTheDocumentAlreadyWears_IsTheOneTheLayoutStartsFrom()
     {
         // Arrange
         this.AddAuthorization().SetNotAuthorized();
-        JSInterop.Setup<string?>("localStorage.getItem", "theme").SetResult("dark");
+        JSInterop.Setup<string?>("document.documentElement.getAttribute", "data-theme")
+            .SetResult("dark");
 
         var layout = Render<MainLayout>();
 

@@ -123,6 +123,35 @@ public sealed class BffTests : IDisposable
     }
 
     /// <summary>
+    /// The served page resolves its theme before it is painted.
+    /// </summary>
+    /// <remarks>
+    /// The half of ADR 0077 that only the wire can show. The page a prerendered route serves is
+    /// complete and painted the moment it arrives, so whatever decides the palette has to travel
+    /// inside it — in the head, ahead of the stylesheets, and before any of this application's C#
+    /// exists. A resolver that moved back into a component would still pass every bUnit fact and
+    /// still show a light page to somebody who asked for a dark one, for as long as the boot takes.
+    /// </remarks>
+    [Fact]
+    public async Task The_served_page_resolves_its_theme_before_it_is_painted()
+    {
+        var response = await _browser.GetAsync("/");
+
+        var html = await response.Content.ReadAsStringAsync();
+
+        html.Should().Contain("data-theme",
+            "the answer is stamped where a stylesheet can read it (ADR 0077)");
+        html.Should().Contain("prefers-color-scheme",
+            "a first visit has nothing stored, so the device answers");
+
+        // The sheets are addressed through the asset map, so their names carry a fingerprint and
+        // cannot be matched literally. The element that opens them can, and the order is the claim.
+        html.IndexOf("data-theme", StringComparison.Ordinal)
+            .Should().BeLessThan(html.IndexOf("<link", StringComparison.Ordinal),
+                "the resolver runs before the sheets it decides for, or the first paint is a guess");
+    }
+
+    /// <summary>
     /// The login page is not prerendered.
     /// </summary>
     /// <remarks>
