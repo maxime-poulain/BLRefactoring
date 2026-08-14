@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using MudBlazor;
+using System.Security.Claims;
+using TrainingHub.Blazor.Client.Authorization;
 using TrainingHub.Blazor.Client.Infrastructure;
 using TrainingHub.Blazor.Client.Pages;
 using TrainingHub.Blazor.Client.Tests.Infrastructure;
@@ -25,12 +27,20 @@ namespace TrainingHub.Blazor.Client.Tests.Pages;
 public sealed class LoginTests : ComponentTest
 {
     private readonly Mock<IBffSessionClient> _session = new();
+    private readonly BunitAuthorizationContext _caller;
 
     /// <summary>
     /// Login tests.
     /// </summary>
+    /// <remarks>
+    /// The identity is arranged rather than earned: the page reads it back from the provider after
+    /// telling it the cookie changed, so what stands in for "what /bff/user now answers" is this
+    /// context. Each fact says who signed in, because that is what decides where they land
+    /// (ADR 0078).
+    /// </remarks>
     public LoginTests()
     {
+        _caller = this.AddAuthorization();
         Services.AddSingleton(_session.Object);
         Services.AddSingleton<IAuthenticationStateNotifier>(new BffAuthenticationStateProvider(
             new StubHttpClientFactory(_ => new HttpResponseMessage(System.Net.HttpStatusCode.NoContent))));
@@ -46,6 +56,9 @@ public sealed class LoginTests : ComponentTest
     [Fact]
     public async Task SignIn_AReturnAddressThatIsAPath_IsHonored()
     {
+        // Arrange
+        SignsInAsTrainer();
+
         // Act
         var navigation = await SignInWith("/trainings/create");
 
@@ -54,16 +67,63 @@ public sealed class LoginTests : ComponentTest
     }
 
     /// <summary>
-    /// Sign in, no return address, goes to the trainings.
+    /// Sign in, a trainer with no return address, goes to their own trainings.
     /// </summary>
     [Fact]
-    public async Task SignIn_NoReturnAddress_GoesToTheTrainings()
+    public async Task SignIn_ATrainerWithNoReturnAddress_GoesToTheirOwnTrainings()
     {
+        // Arrange
+        SignsInAsTrainer();
+
         // Act
         var navigation = await SignInWith(returnUrl: null);
 
         // Assert
         navigation.Uri.Should().Be("http://localhost/trainings");
+    }
+
+    /// <summary>
+    /// Sign in, an administrator with no return address, goes to the administration.
+    /// </summary>
+    /// <remarks>
+    /// The defect this replaces: every caller landed on the trainer's space, which an
+    /// administrator's account has no standing on at all — the page's first act was a call the API
+    /// answers 403, rendered as a red banner over an empty panel inviting them to create a training
+    /// they cannot own (ADR 0051, ADR 0078).
+    /// </remarks>
+    [Fact]
+    public async Task SignIn_AnAdministratorWithNoReturnAddress_GoesToTheAdministration()
+    {
+        // Arrange
+        _caller.SetAuthorized("root");
+        _caller.SetRoles(SessionRoles.Administrator);
+
+        // Act
+        var navigation = await SignInWith(returnUrl: null);
+
+        // Assert
+        navigation.Uri.Should().Be("http://localhost/administration");
+    }
+
+    /// <summary>
+    /// Sign in, an account that is neither, goes to the catalog.
+    /// </summary>
+    /// <remarks>
+    /// No such account exists today — registering creates a trainer, and the seeder creates the one
+    /// administrator — but the code has to answer anyway, and the catalog is the one page that asks
+    /// nothing of anybody (ADR 0074).
+    /// </remarks>
+    [Fact]
+    public async Task SignIn_AnAccountThatIsNeither_GoesToTheCatalog()
+    {
+        // Arrange
+        _caller.SetAuthorized("nobody");
+
+        // Act
+        var navigation = await SignInWith(returnUrl: null);
+
+        // Assert
+        navigation.Uri.Should().Be("http://localhost/");
     }
 
     /// <summary>
@@ -83,6 +143,9 @@ public sealed class LoginTests : ComponentTest
     [InlineData("javascript:alert(1)")]
     public async Task SignIn_AReturnAddressNamingAnotherOrigin_IsRefused(string returnUrl)
     {
+        // Arrange
+        SignsInAsTrainer();
+
         // Act
         var navigation = await SignInWith(returnUrl);
 
@@ -148,6 +211,12 @@ public sealed class LoginTests : ComponentTest
         // Assert
         _session.Verify(
             client => client.LoginAsync("john", "secret", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    private void SignsInAsTrainer()
+    {
+        _caller.SetAuthorized("john");
+        _caller.SetClaims(new Claim(SessionClaims.TrainerId, Guid.NewGuid().ToString()));
     }
 
     private async Task<BunitNavigationManager> SignInWith(string? returnUrl)

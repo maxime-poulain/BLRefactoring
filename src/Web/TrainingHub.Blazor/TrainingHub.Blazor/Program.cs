@@ -1,6 +1,7 @@
 using TrainingHub.Blazor.Bff;
 using Microsoft.AspNetCore.Components.Authorization;
 using MudBlazor.Services;
+using TrainingHub.Blazor.Client.Authorization;
 using TrainingHub.Blazor.Client.Infrastructure;
 using TrainingHub.Blazor.Components;
 using TrainingHub.Blazor.Prerendering;
@@ -36,7 +37,13 @@ builder.Services.AddMudServices();
 //    "active" to a caller the API refuses.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddCascadingAuthenticationState();
-builder.Services.AddAuthorizationCore();
+// The same policy the browser registers, because the same components render on both sides of the
+// prerender. Left out here, a page carrying it would be refused during the prerendered pass and
+// granted a moment later — which reads as a flicker and is really two hosts disagreeing about who
+// the caller is (ADR 0078).
+builder.Services.AddAuthorizationCore(options => options.AddPolicy(
+    SessionPolicies.Trainer,
+    policy => policy.RequireClaim(SessionClaims.TrainerId)));
 builder.Services.AddScoped<AuthenticationStateProvider, HostAuthenticationStateProvider>();
 builder.Services.AddScoped<IAuthenticationStateNotifier>(serviceProvider =>
     (HostAuthenticationStateProvider)serviceProvider.GetRequiredService<AuthenticationStateProvider>());

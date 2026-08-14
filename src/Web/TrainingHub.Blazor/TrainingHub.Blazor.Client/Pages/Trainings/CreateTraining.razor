@@ -1,6 +1,6 @@
 @page "/trainings/create"
 @page "/trainings/edit/{Id:guid}"
-@attribute [Authorize]
+@attribute [Authorize(Policy = SessionPolicies.Trainer)]
 @using TrainingHub.Blazor.Client.Models
 @using TrainingHub.GeneratedClients
 @inject ITrainingClient TrainingClient

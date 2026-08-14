@@ -1,6 +1,6 @@
 # 0074 — Make the catalog the front door
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0078](0078-land-the-administrator-in-the-administration.md): the browser asks the API's own question about its caller, and the menu's trainer doors are qualified the way its administration doors already were
 - **Amends:** [0071](0071-give-the-catalog-a-second-published-order.md),
   [0072](0072-prerender-the-catalogs-routes.md)
 - **Date:** 2026-08-11

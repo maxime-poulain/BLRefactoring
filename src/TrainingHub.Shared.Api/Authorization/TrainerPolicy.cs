@@ -7,7 +7,7 @@ namespace TrainingHub.Shared.Api.Authorization;
 /// Carried by <c>ApiControllerBase</c>, so it holds for every action of both hosts rather than for
 /// a chosen few. It exists because an administrator is an account and not a trainer (ADR 0051):
 /// their token carries no <see cref="Identity.TrainerClaims.TrainerId"/>, and every one of the
-/// eleven places that reads it would otherwise raise — answering <c>500</c> to a caller whose only
+/// eighteen places that read it would otherwise raise — answering <c>500</c> to a caller whose only
 /// mistake was calling an endpoint that is not theirs.
 /// <para>
 /// Refusing once at the boundary is what keeps those eleven call sites free of the question.

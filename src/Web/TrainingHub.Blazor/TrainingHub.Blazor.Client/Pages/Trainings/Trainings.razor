@@ -1,5 +1,5 @@
 @page "/trainings"
-@attribute [Authorize]
+@attribute [Authorize(Policy = SessionPolicies.Trainer)]
 @using TrainingHub.GeneratedClients
 @inject ITrainingClient TrainingClient
 @inject IDialogService DialogService

@@ -57,7 +57,7 @@ public abstract class AdministratorTest<TFactory>(TFactory factory) : Integratio
     /// <remarks>
     /// Three actions across both controllers, chosen so that a read, a write and a creation are
     /// each represented: the policy sits on the shared base, so if it holds it holds for all
-    /// eighteen, and if somebody moves it onto individual actions this notices.
+    /// thirteen, and if somebody moves it onto individual actions this notices.
     /// </remarks>
     [Fact]
     public async Task AnAdministrator_IsRefusedTheTrainerSurface()

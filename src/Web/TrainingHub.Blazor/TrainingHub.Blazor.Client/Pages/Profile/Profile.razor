@@ -1,5 +1,5 @@
 @page "/profile"
-@attribute [Authorize]
+@attribute [Authorize(Policy = SessionPolicies.Trainer)]
 @using TrainingHub.GeneratedClients
 @inject ITrainerClient TrainerClient
 @inject NavigationManager NavigationManager

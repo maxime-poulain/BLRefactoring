@@ -2,6 +2,7 @@
 @using TrainingHub.Blazor.Client.Infrastructure
 @inject IBffSessionClient SessionClient
 @inject IAuthenticationStateNotifier AuthenticationNotifier
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 
@@ -66,7 +67,7 @@
 
 @code {
     /// <summary>
-    /// Where to go once signed in, as <c>RedirectToLogin</c> recorded it.
+    /// Where to go once signed in, as <c>RouteRefusal</c> recorded it.
     /// </summary>
     /// <remarks>
     /// Only a path is honored. The value arrives from the address bar, so anything that could name
@@ -94,6 +95,36 @@
     private bool _passwordVisible;
     private InputType _passwordInputType = InputType.Password;
     private string _passwordIcon = Icons.Material.Filled.VisibilityOff;
+
+    /// <summary>
+    /// The page a caller lands on when they asked for no page in particular.
+    /// </summary>
+    /// <remarks>
+    /// Chosen by what the caller is, from the identity the BFF has just re-read — the notifier
+    /// above drops the cached answer, so this asks the cookie rather than a memory of it. Sending
+    /// everybody to the trainer's space was the defect this replaces: an administrator is nobody's
+    /// trainer, and landed on a page the API refuses them (ADR 0051, ADR 0078).
+    /// <para>
+    /// The order settles the account that is both. A trainer with the administrator's role goes to
+    /// their own work, because that is what they are most of the time, and the administration stays
+    /// one click away in the corner — whereas the reverse would hide a person's own trainings
+    /// behind an authority they use occasionally.
+    /// </para>
+    /// </remarks>
+    private async Task<string> LandingAsync()
+    {
+        var user = (await AuthenticationStateProvider.GetAuthenticationStateAsync()).User;
+
+        if (user.HasClaim(claim => claim.Type == SessionClaims.TrainerId))
+        {
+            return "/trainings";
+        }
+
+        // Not a trainer, and not an administrator either: an account with neither is a caller this
+        // application has no space for, and the catalog is the one page that asks nothing of
+        // anybody (ADR 0074).
+        return user.IsInRole(SessionRoles.Administrator) ? "/administration" : "/";
+    }
 
     private void TogglePasswordVisibility()
     {
@@ -123,7 +154,7 @@
             AuthenticationNotifier.NotifyAuthenticationChanged();
 
             Snackbar.Add("Signed in.", Severity.Success);
-            NavigationManager.NavigateTo(ReturnUrl ?? "/trainings");
+            NavigationManager.NavigateTo(ReturnUrl ?? await LandingAsync());
         }
         catch (Exception ex)
         {

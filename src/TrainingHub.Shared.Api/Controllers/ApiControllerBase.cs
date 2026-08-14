@@ -16,7 +16,7 @@ namespace TrainingHub.Shared.Api.Controllers;
 /// controller in its own right — actionless and harmless, but a controller nonetheless. Being
 /// abstract keeps it out of the application model, as <see cref="AuthControllerBase"/> already is.
 /// <para>
-/// The 401 is declared here rather than on each of the eighteen actions below, for the same reason
+/// The 401 is declared here rather than on each of the thirteen actions below, for the same reason
 /// <c>[Authorize]</c> is: it is a property of every one of them. An unauthenticated call to any
 /// action of either host is answered 401 by the authentication middleware, and until now the
 /// document said so nowhere — so every generated client treated the one response it is guaranteed

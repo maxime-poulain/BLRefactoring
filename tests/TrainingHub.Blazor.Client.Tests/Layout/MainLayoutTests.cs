@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using AwesomeAssertions;
+using TrainingHub.Blazor.Client.Authorization;
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -61,7 +62,9 @@ public sealed class MainLayoutTests : ComponentTest
     public void TheOpenMenu_OffersTheTrainersSpace_AndNoSignIn()
     {
         // Arrange
-        this.AddAuthorization().SetAuthorized("alice");
+        var authorization = this.AddAuthorization();
+        authorization.SetAuthorized("alice");
+        authorization.SetPolicies(SessionPolicies.Trainer);
 
         var layout = Render<MainLayout>();
 
@@ -93,7 +96,7 @@ public sealed class MainLayoutTests : ComponentTest
         // Arrange
         var authorization = this.AddAuthorization();
         authorization.SetAuthorized("root");
-        authorization.SetRoles("Administrator");
+        authorization.SetRoles(SessionRoles.Administrator);
 
         var layout = Render<MainLayout>();
 
@@ -102,9 +105,13 @@ public sealed class MainLayoutTests : ComponentTest
 
         // Assert
         layout.WaitForAssertion(() =>
-            Links(layout).Should().Contain("/administration/trainers")
+            Links(layout).Should().Contain("/administration")
+                .And.Contain("/administration/trainers")
                 .And.Contain("/administration/trainings")
                 .And.Contain("/administration/outbox"));
+
+        Links(layout).Should().NotContain("/trainings").And.NotContain("/profile",
+            "an administrator is nobody's trainer: those two doors lead to a 403 (ADR 0078)");
     }
 
     /// <summary>

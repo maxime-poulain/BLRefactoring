@@ -1,5 +1,8 @@
+using System.Security.Claims;
 using AwesomeAssertions;
+using Microsoft.AspNetCore.Components.Authorization;
 using Moq;
+using TrainingHub.Blazor.Client.Authorization;
 using TrainingHub.Blazor.Client.Infrastructure;
 using TrainingHub.GeneratedClients;
 using Xunit;
@@ -30,7 +33,7 @@ public sealed class TrainerStandingSourceTests
     {
         Answering("Active", reason: null);
 
-        var standing = await new TrainerStandingSource(_trainerClient.Object).GetAsync();
+        var standing = await Source().GetAsync();
 
         standing.IsSuspended.Should().BeFalse();
         standing.Reason.Should().BeNull();
@@ -48,7 +51,7 @@ public sealed class TrainerStandingSourceTests
     {
         Answering("Suspended", Motive);
 
-        var standing = await new TrainerStandingSource(_trainerClient.Object).GetAsync();
+        var standing = await Source().GetAsync();
 
         standing.IsSuspended.Should().BeTrue();
         standing.Reason.Should().Be(Motive);
@@ -67,7 +70,7 @@ public sealed class TrainerStandingSourceTests
     {
         Answering("Active", reason: null);
 
-        var source = new TrainerStandingSource(_trainerClient.Object);
+        var source = Source();
 
         await source.GetAsync();
         await source.GetAsync();
@@ -91,7 +94,7 @@ public sealed class TrainerStandingSourceTests
             .ReturnsAsync(Profile("Active", reason: null))
             .ReturnsAsync(Profile("Suspended", Motive));
 
-        var source = new TrainerStandingSource(_trainerClient.Object);
+        var source = Source();
         var announced = 0;
         source.Changed += () => announced++;
 
@@ -127,7 +130,7 @@ public sealed class TrainerStandingSourceTests
                 new Dictionary<string, IEnumerable<string>>(),
                 null));
 
-        var standing = await new TrainerStandingSource(_trainerClient.Object).GetAsync();
+        var standing = await Source().GetAsync();
 
         standing.IsSuspended.Should().BeFalse();
         standing.Reason.Should().BeNull();
@@ -149,7 +152,7 @@ public sealed class TrainerStandingSourceTests
 
         Answering("Active", reason: null, trainerId, photoId);
 
-        var portrait = await new TrainerStandingSource(_trainerClient.Object).FindOwnPortraitAsync();
+        var portrait = await Source().FindOwnPortraitAsync();
 
         portrait.Should().Be($"api/Trainer/{trainerId}/photo?v={photoId}");
     }
@@ -162,7 +165,7 @@ public sealed class TrainerStandingSourceTests
     {
         Answering("Active", reason: null);
 
-        var portrait = await new TrainerStandingSource(_trainerClient.Object).FindOwnPortraitAsync();
+        var portrait = await Source().FindOwnPortraitAsync();
 
         portrait.Should().BeNull("no photo renders as initials, never as a silhouette (ADR 0074)");
     }
@@ -186,7 +189,7 @@ public sealed class TrainerStandingSourceTests
                 new Dictionary<string, IEnumerable<string>>(),
                 null));
 
-        var portrait = await new TrainerStandingSource(_trainerClient.Object).FindOwnPortraitAsync();
+        var portrait = await Source().FindOwnPortraitAsync();
 
         portrait.Should().BeNull();
     }
@@ -204,12 +207,60 @@ public sealed class TrainerStandingSourceTests
     {
         Answering("Active", reason: null);
 
-        var source = new TrainerStandingSource(_trainerClient.Object);
+        var source = Source();
 
         await source.GetAsync();
         await source.FindOwnPortraitAsync();
 
         _trainerClient.Verify(client => client.GetCurrentAsync(), Times.Once);
+    }
+
+    /// <summary>
+    /// Get async, an account that is nobody's trainer, asks the API nothing.
+    /// </summary>
+    /// <remarks>
+    /// The refusal used to be met rather than avoided: an administrator spent one <c>403</c> per
+    /// scope being told what their own identity already said, and the banner rendered from a
+    /// failure. Asking the claim first is what makes the call unnecessary — and the standing it
+    /// answers is active, because a caller with no standing is under no sanction (ADR 0078).
+    /// </remarks>
+    [Fact]
+    public async Task GetAsync_AnAccountThatIsNobodysTrainer_AsksTheApiNothing()
+    {
+        var standing = await Source(isTrainer: false).GetAsync();
+
+        standing.IsSuspended.Should().BeFalse();
+        _trainerClient.Verify(client => client.GetCurrentAsync(), Times.Never);
+    }
+
+    /// <summary>
+    /// Find own portrait async, an account that is nobody's trainer, asks the API nothing.
+    /// </summary>
+    [Fact]
+    public async Task FindOwnPortraitAsync_AnAccountThatIsNobodysTrainer_AsksTheApiNothing()
+    {
+        var portrait = await Source(isTrainer: false).FindOwnPortraitAsync();
+
+        portrait.Should().BeNull();
+        _trainerClient.Verify(client => client.GetCurrentAsync(), Times.Never);
+    }
+
+    private TrainerStandingSource Source(bool isTrainer = true) =>
+        new(_trainerClient.Object, new StubAuthenticationStateProvider(isTrainer));
+
+    /// <summary>
+    /// The identity the source reads before deciding whether the call is worth making.
+    /// </summary>
+    /// <remarks>
+    /// A trainer's identity carries the claim the API's own policy demands; an administrator's
+    /// carries the role and nothing else, which is exactly what <c>TokenService</c> mints.
+    /// </remarks>
+    private sealed class StubAuthenticationStateProvider(bool isTrainer) : AuthenticationStateProvider
+    {
+        public override Task<AuthenticationState> GetAuthenticationStateAsync() =>
+            Task.FromResult(new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(
+                isTrainer ? [new Claim(SessionClaims.TrainerId, Guid.NewGuid().ToString())] : [],
+                authenticationType: "test"))));
     }
 
     private void Answering(string status, string? reason, Guid? trainerId = null, Guid? photoId = null) =>

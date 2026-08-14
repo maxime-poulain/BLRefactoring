@@ -2,16 +2,17 @@ using AwesomeAssertions;
 using Bunit.TestDoubles;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using TrainingHub.Blazor.Client.Authorization;
 using TrainingHub.Blazor.Client.Components;
 using Xunit;
 
 namespace TrainingHub.Blazor.Client.Tests.Components;
 
 /// <summary>
-/// Behavior covered for the redirect an unauthenticated visitor lands on.
+/// Behavior covered for what a refused route does with its caller.
 /// </summary>
 /// <remarks>
-/// Three things live here and nowhere else. The address the visitor asked for is carried into
+/// Four things live here and nowhere else. The address the visitor asked for is carried into
 /// <c>returnUrl</c> so a deep link survives signing in — without it every bookmark and every
 /// expired session lands on the catalog. The address is made relative before it is carried,
 /// which is what stops a sign-in page from becoming a phishing hop: a redirect target taken from
@@ -24,8 +25,14 @@ namespace TrainingHub.Blazor.Client.Tests.Components;
 /// nobody. Against a page that asks for an authority it is a loop — sign in, come back, be refused,
 /// be sent to sign in.
 /// </para>
+/// <para>
+/// The fourth is the administrator meeting the trainer's surface. They are not missing an
+/// authority they might be granted — there is no version of an account that is nobody's trainer
+/// which owns trainings — so the refusal screen would be a dead end, and the answer is the surface
+/// that is theirs (ADR 0078).
+/// </para>
 /// </remarks>
-public sealed class RedirectToLoginTests : ComponentTest
+public sealed class RouteRefusalTests : ComponentTest
 {
     /// <summary>
     /// Initialized, a deep link, remembers where the visitor was going.
@@ -37,7 +44,7 @@ public sealed class RedirectToLoginTests : ComponentTest
         var navigation = Navigation("http://localhost/trainings/create");
 
         // Act
-        Render<RedirectToLogin>();
+        Render<RouteRefusal>();
 
         // Assert
         navigation.Uri.Should().Be("http://localhost/login?returnUrl=%2Ftrainings%2Fcreate");
@@ -53,7 +60,7 @@ public sealed class RedirectToLoginTests : ComponentTest
         var navigation = Navigation("http://localhost/");
 
         // Act
-        Render<RedirectToLogin>();
+        Render<RouteRefusal>();
 
         // Assert
         navigation.Uri.Should().Be("http://localhost/login");
@@ -73,7 +80,7 @@ public sealed class RedirectToLoginTests : ComponentTest
         var navigation = Navigation("http://localhost/trainings?page=2&size=10");
 
         // Act
-        Render<RedirectToLogin>();
+        Render<RouteRefusal>();
 
         // Assert
         navigation.Uri.Should().Be("http://localhost/login?returnUrl=%2Ftrainings%3Fpage%3D2%26size%3D10");
@@ -97,7 +104,7 @@ public sealed class RedirectToLoginTests : ComponentTest
         var navigation = Navigation("http://localhost/administration/trainers");
 
         // Act
-        var page = Render<RedirectToLogin>();
+        var page = Render<RouteRefusal>();
 
         // Assert
         navigation.Uri.Should().Be(
@@ -105,6 +112,32 @@ public sealed class RedirectToLoginTests : ComponentTest
             "a caller who is already signed in has nothing to gain from the sign-in page");
 
         page.Markup.Should().Contain("authority", "the refusal has to say what is actually missing");
+    }
+
+    /// <summary>
+    /// Initialized, an administrator on the trainer's surface, sends them to their own.
+    /// </summary>
+    /// <remarks>
+    /// The refusal screen would be honest and useless here: an account that is nobody's trainer is
+    /// not one authority away from owning trainings, it is a different kind of actor (ADR 0051).
+    /// So this is the one refusal that answers with a destination.
+    /// </remarks>
+    [Fact]
+    public void Initialized_AnAdministratorOnTheTrainersSurface_SendsThemToTheirOwn()
+    {
+        // Arrange
+        var authorization = AddAuthorization();
+        authorization.SetAuthorized("root");
+        authorization.SetRoles(SessionRoles.Administrator);
+        var navigation = Navigation("http://localhost/trainings");
+
+        // Act
+        Render<RouteRefusal>();
+
+        // Assert
+        navigation.Uri.Should().Be(
+            "http://localhost/administration",
+            "the administration is where an account that is nobody's trainer belongs (ADR 0078)");
     }
 
     private BunitNavigationManager Navigation(string uri)
