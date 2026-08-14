@@ -145,7 +145,17 @@ jobs:
           # that as repetition and is not wrong about the text — only about what the text is. Left
           # measured, the gate fails on any change touching both hosts, for a decision this
           # repository made on purpose. See ADR 0049, and the rule that keeps this list from
-          # quietly growing past the two hosts.
+          # quietly growing past what a record admits.
+          #
+          # The third entry is a written corpus rather than a host, and ADR 0079 is what admits it.
+          # DevelopmentCatalog.cs is ninety-six training blueprints across twelve areas of
+          # expertise: each is a record of the same shape carrying different prose, so a detector
+          # that anonymizes literals sees one block repeated a hundred times and reads it as
+          # duplication. It is a table that happens to be written in C#, and no arrangement of it
+          # inside the language changes that — flattening the twelve areas leaves ninety-six
+          # identical `new(...)` shapes. Measured, it alone put the new-code figure at twenty
+          # percent. The rule below holds this list to the hosts plus the corpora a record names,
+          # so a fourth entry still has to argue for itself.
           dotnet sonarscanner begin \
             /k:"maxime-poulain_BLRefactoring" \
             /o:"9c1eb57d24115cbbd103219f" \
@@ -154,7 +164,7 @@ jobs:
             /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
             /d:sonar.cs.vstest.reportsPaths="TestResults/*.trx" \
             /d:sonar.exclusions="src/TrainingHub.GeneratedClients/**,**/Migrations/**" \
-            /d:sonar.cpd.exclusions="src/DDD/Api/**,src/DDDWithCqrs/Api/**" \
+            /d:sonar.cpd.exclusions="src/DDD/Api/**,src/DDDWithCqrs/Api/**,src/TrainingHub.Shared.Infrastructure/Development/DevelopmentCatalog.cs" \
             /d:sonar.qualitygate.wait=${{ github.event_name == 'pull_request' }}
 
           # --no-incremental, because the scanner works by hooking the compilation: a project MSBuild

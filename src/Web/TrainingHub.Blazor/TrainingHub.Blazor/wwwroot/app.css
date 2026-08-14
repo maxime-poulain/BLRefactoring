@@ -5,18 +5,35 @@
     Each topic of the closed set owns one muted hue, and that hue is the same everywhere it
     appears: on a facet chip's mark and on the spine of every row of a filtered shelf. The color
     encodes a fact of the model — a topic is a shelf (ADR 0069) — rather than decorating it.
-    One set reads on both grounds, measured rather than asserted: the worst of the twelve
+    One set reads on both grounds, measured rather than asserted: the worst of the thirty-two
     pairings is 3.18:1 (marketing on the dark surface) and the best 5.29:1, all above the 3:1
     a non-text mark owes a reader. That only became true when the dark ground stopped being
     green — on the bottle-green surface these tones replaced, three of the six sat under it.
+
+    Sixteen shelves rather than six, so the hues are placed rather than picked: the ten added
+    with the wider vocabulary (ADR 0079) fill the gaps the first six left on the wheel, no two
+    within twelve degrees of each other. A closed set that doubles is a palette that stops being
+    a list of favorites and starts being a partition, so these are declared around the wheel
+    rather than in the domain's order: two neighbors here are two hues that must not be confused,
+    and reading them in sequence is how one sees that none are.
 */
 :root {
-    --th-spine-programming: #4A6FA5;
+    --th-spine-security: #B0524E;
     --th-spine-design: #B65C32;
-    --th-spine-marketing: #A34E6E;
+    --th-spine-devops: #AE8038;
+    --th-spine-testing-and-quality: #99872F;
     --th-spine-business: #7A8450;
-    --th-spine-personal-development: #8A6FB8;
+    --th-spine-agile-practices: #6E9455;
+    --th-spine-databases: #4E8C61;
+    --th-spine-web-development: #3D9B85;
     --th-spine-leadership: #3E8798;
+    --th-spine-cloud-computing: #5590B5;
+    --th-spine-programming: #4A6FA5;
+    --th-spine-software-architecture: #5E68B0;
+    --th-spine-personal-development: #8A6FB8;
+    --th-spine-data-and-analytics: #9560AE;
+    --th-spine-project-management: #9C5F92;
+    --th-spine-marketing: #A34E6E;
     --th-spine-neutral: color-mix(in srgb, var(--mud-palette-text-primary) 25%, transparent);
 }
 

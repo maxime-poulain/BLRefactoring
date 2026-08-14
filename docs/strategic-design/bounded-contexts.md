@@ -68,7 +68,7 @@ name in the code; that is the point of a ubiquitous language.
 | **TrainingDescription** | What the training covers | Required, at most 500 characters |
 | **TrainingPrerequisites** | What a participant needs beforehand | Required, at most 500 characters |
 | **AcquiredSkills** | What a participant leaves with | Required, at most 500 characters |
-| **Topic** | What a training is filed under | A **closed set of six**: Programming, Design, Marketing, Business, Personal Development, Leadership |
+| **Topic** | What a training is filed under | A **closed set of sixteen**: Programming, Design, Marketing, Business, Personal Development, Leadership, Software Architecture, Cloud Computing, DevOps, Databases, Security, Web Development, Data and Analytics, Testing and Quality, Project Management, Agile Practices — each a subject, never a product (ADR 0079) |
 | **TrainingStatus** | Whether a training is offered to the public, withdrawn by its owner, or kept back by the administration | `Published`, `Unpublished` or `Withheld`; born published, and only the owner's two states are the owner's to leave |
 | **TrainerStatus** | Whether a trainer is in good standing or under sanction | `Active` or `Suspended`; the whole of a suspension is this one field and its reason |
 | **WithholdingReason** | Why the administration kept a training back, in its own words | Required, at most 500 characters; present if and only if the training is `Withheld` |

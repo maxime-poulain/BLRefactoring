@@ -140,6 +140,81 @@ public sealed class HostingRules
     }
 
     /// <summary>
+    /// Every image, compiles under this repository's ruleset.
+    /// </summary>
+    /// <remarks>
+    /// The third time a build context lost a file it needed, and the first time the loss was
+    /// invisible rather than fatal. The two failures above this one announce themselves: a missing
+    /// <c>Directory.Packages.props</c> fails restore, a hidden folder of source fails compilation.
+    /// A missing <c>.editorconfig</c> fails nothing — the compiler falls back to the analyzer's own
+    /// defaults, the image builds green, and what it built is the same source under somebody else's
+    /// hundred and sixty-one severities.
+    /// <para>
+    /// It stayed invisible because this file almost only <em>tightens</em>: a rule promoted to an
+    /// error that quietly returns to a warning inside the container costs a green build, not a red
+    /// one. The first line that <em>loosens</em> — a demotion carrying its argument, which
+    /// <c>EveryDemotedRule_SaysWhyItWasDemoted</c> requires of every one of them — is the first that
+    /// turns the divergence into a failure, and that is how this was found: an image refusing a
+    /// diagnostic the repository had decided, in writing, not to raise.
+    /// </para>
+    /// <para>
+    /// The population is derived rather than listed, for the reason ADR 0041 gives: what MSBuild and
+    /// Roslyn read implicitly from the root is a set that grows — a <c>Directory.Build.targets</c>, a
+    /// <c>.globalconfig</c> — and a rule reading its own copy of that set holds nothing the day one
+    /// is added.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0065",
+        "an image is built from this repository's source under this repository's rules: the build " +
+        "configuration the root carries is copied into the context, or the container compiles the " +
+        "same files under somebody else's defaults and says nothing")]
+    public void EveryImage_CompilesUnderThisRepositorysRuleset() =>
+        Hosts
+            .Selected("host this repository runs")
+            .SelectMany(Uncopied)
+            .ShouldHold();
+
+    /// <summary>What the root reads implicitly and a host's Dockerfile never names.</summary>
+    private static IEnumerable<string> Uncopied(string host)
+    {
+        var dockerfile = Image(host);
+        var text = SourceTree.ReadText(Path.Combine(SourceTree.RepositoryRoot, dockerfile));
+
+        return BuildConfiguration
+            .Where(file => !text.Contains(file, StringComparison.Ordinal))
+            .Select(file =>
+                $"'{dockerfile}' never copies '{file}'. It sits at the root, so `COPY src/ src/` " +
+                "does not reach it, and the build stage compiles without it — under the analyzer's " +
+                "defaults rather than this repository's. That is green when the file only promotes " +
+                "a rule and red the first time it demotes one (ADR 0065)");
+    }
+
+    /// <summary>
+    /// The build configuration the repository root carries, derived rather than listed.
+    /// </summary>
+    /// <remarks>
+    /// The root alone: a <c>.editorconfig</c> deeper in the tree travels with the folder it governs,
+    /// under a <c>COPY</c> that already names it. What escapes such a copy is exactly what is not
+    /// under one — the files both tools find by walking up from the source they are compiling.
+    /// </remarks>
+    private static IReadOnlyList<string> BuildConfiguration { get; } =
+    [
+        .. SourceTree.AllFiles
+            .Select(SourceTree.Relative)
+            .Where(file => !file.Contains('/', StringComparison.Ordinal))
+            .Where(IsReadImplicitly)
+            .OrderBy(file => file, StringComparer.Ordinal)
+    ];
+
+    /// <summary>Whether MSBuild or Roslyn reads a root file without anything importing it.</summary>
+    private static bool IsReadImplicitly(string file) =>
+        file is ".editorconfig" or ".globalconfig"
+        || (file.StartsWith("Directory.", StringComparison.Ordinal)
+            && (file.EndsWith(".props", StringComparison.Ordinal)
+                || file.EndsWith(".targets", StringComparison.Ordinal)));
+
+    /// <summary>
     /// The image build, carries no layer cache.
     /// </summary>
     /// <remarks>

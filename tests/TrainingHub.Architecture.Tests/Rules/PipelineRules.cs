@@ -190,6 +190,24 @@ public sealed partial class PipelineRules
     }
 
     /// <summary>
+    /// The corpora exempt from the duplication measure for a reason other than being a host.
+    /// </summary>
+    /// <remarks>
+    /// Exempt <em>by name</em>, in the mold ADR 0066 sets for everything this repository excuses:
+    /// nothing is exempt by being forgotten, and each entry carries the argument it was admitted on.
+    /// A path here is a file whose repetition is its data — a table written in the language rather
+    /// than beside it — and not one whose repetition somebody has not got round to removing. The
+    /// distinction is the whole of ADR 0049, and it is why this is a registry of two fields instead
+    /// of a longer string in a workflow.
+    /// </remarks>
+    private static readonly (string Path, string Why)[] WrittenCorpora =
+    [
+        ("src/TrainingHub.Shared.Infrastructure/Development/DevelopmentCatalog.cs",
+         "ninety-six training blueprints across twelve areas of expertise, each a record of the " +
+         "same shape carrying different prose (ADR 0079)")
+    ];
+
+    /// <summary>
     /// The duplication measure, excludes the hosts written twice and nothing else.
     /// </summary>
     /// <remarks>
@@ -205,19 +223,28 @@ public sealed partial class PipelineRules
     /// It is the <em>duplication</em> measure that is relaxed and not the analysis — a host path in
     /// <c>sonar.exclusions</c> would stop measuring bugs and coverage on the busiest files in the
     /// repository to settle a duplication figure. And the exemption does not <em>grow</em>: anything
-    /// in <c>sonar.cpd.exclusions</c> that is not a host is a suppression wearing this record's
-    /// clothes.
+    /// in <c>sonar.cpd.exclusions</c> that is neither a host nor a corpus this repository named is a
+    /// suppression wearing this record's clothes.
     /// </para>
     /// <para>
     /// The third clause is the one worth the rule. Without it this is a line in a workflow that
     /// anybody can lengthen by one path the next time a figure is inconvenient, which is the move
     /// <c>CLAUDE.md</c> forbids: never act on a finding to make it stop reporting. See ADR 0049.
     /// </para>
+    /// <para>
+    /// ADR 0079 widened it by exactly one category, and the widening is what the fourth clause is
+    /// for. A written corpus is a table that happens to be in C#: the shape repeats because it is
+    /// the shape, and no arrangement inside the language changes that. So corpora are admitted —
+    /// through <see cref="WrittenCorpora"/>, where each carries its argument — and a registered path
+    /// that names no file fails, so the registry cannot rot into a wildcard by outliving what it
+    /// described.
+    /// </para>
     /// </remarks>
     [Fact]
     [ArchitectureRule("0049",
         "duplication is measured where repetition is a defect: the two hosts are exempt because two rules " +
-        "require their published declarations to be identical, and nothing else is")]
+        "require their published declarations to be identical, a written corpus is exempt because its " +
+        "shape is its data (ADR 0079), and nothing else is")]
     public void TheDuplicationMeasure_ExcludesTheHostsWrittenTwiceAndNothingElse()
     {
         var text = SourceTree.ReadText(Workflow);
@@ -244,10 +271,20 @@ public sealed partial class PipelineRules
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Where(path => !hosts.Any(host =>
                     string.Equals(path, Everything(host), StringComparison.Ordinal)))
+                .Where(path => !WrittenCorpora.Any(corpus =>
+                    string.Equals(path, corpus.Path, StringComparison.Ordinal)))
                 .Select(path =>
-                    $"'{path}' is exempt from the duplication measure and is not a host of this API. " +
-                    "ADR 0049 exempts the code this repository writes twice on purpose; anything else " +
-                    "under that setting is a finding being silenced rather than answered"))
+                    $"'{path}' is exempt from the duplication measure, and is neither a host of this " +
+                    "API nor a corpus this repository named. ADR 0049 exempts the code written twice " +
+                    "on purpose and ADR 0079 the tables written in C#; anything else under that " +
+                    "setting is a finding being silenced rather than answered"))
+            .Concat(WrittenCorpora
+                .Where(corpus => !File.Exists(Path.Combine(
+                    SourceTree.RepositoryRoot, corpus.Path.Replace('/', Path.DirectorySeparatorChar))))
+                .Select(corpus =>
+                    $"'{corpus.Path}' is registered as a written corpus — {corpus.Why} — and no such " +
+                    "file exists. An exemption that outlives what it described stops naming anything, " +
+                    "and the next reader has no way to tell it from a wildcard"))
             .ShouldHold();
     }
 

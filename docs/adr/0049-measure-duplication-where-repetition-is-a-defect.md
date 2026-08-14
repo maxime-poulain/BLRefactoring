@@ -1,6 +1,6 @@
 # 0049 — Measure duplication where repetition is a defect
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0079](0079-build-the-development-catalog-with-the-domain.md): a written corpus joins the two hosts under the duplication exemption, named in a registry that carries its argument
 - **Amends:** [0017](0017-measure-what-the-rules-cannot-with-sonarqube-cloud.md)
 - **Date:** 2026-08-07
 

@@ -114,6 +114,11 @@ await app.EnsureDatabasesAreUpToDateAsync();
 // that grants a role, on either host.
 await app.EnsureAdministratorAsync();
 
+// And after the administrator, because the catalog is what an administrator is there to look at.
+// Development only, and a no-op unless DevelopmentData:Enabled says otherwise — five hundred
+// trainings is not something to discover on a machine that was only supposed to start (ADR 0079).
+await app.EnsureDevelopmentCatalogAsync();
+
 app.Run();
 
 /// <summary>
