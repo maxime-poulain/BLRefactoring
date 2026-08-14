@@ -55,6 +55,9 @@ builder.Services.AddScoped<ITrainerPortraitSource>(serviceProvider =>
     serviceProvider.GetRequiredService<TrainerStandingSource>());
 builder.Services.AddHttpClient<ICatalogClient, CatalogClient>(BffEndpoints.ApiClientName);
 builder.Services.AddHttpClient<ITrainerClient, TrainerClient>(BffEndpoints.ApiClientName);
+// Resolved because the catalog's pages inject it and they prerender here; never used during the
+// prerendered pass, because the dialog that deposits a token only opens interactively (ADR 0083).
+builder.Services.AddSingleton<TurnstileTokenAccessor>();
 
 // This host is the backend for frontend. It terminates authentication, keeps the API's access
 // token in a cookie the browser cannot read, and forwards everything under /api to the API with

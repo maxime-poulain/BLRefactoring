@@ -1,13 +1,16 @@
 using TrainingHub.Shared.Api.Contracts;
 using TrainingHub.Shared.Api.Contracts.Catalog;
+using TrainingHub.Shared.Api.Extensions;
 using TrainingHub.Shared.Api.Contracts.Mappings;
 using TrainingHub.Shared.Api.Contracts.Pagination;
 using TrainingHub.Shared.Api.Controllers;
 using TrainingHub.Shared.Api.Http;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 using TrainingHub.DDDWithCqrs.Api.Mappings;
+using TrainingHub.Shared.Common.Errors;
 using TrainingHub.Shared.CQS;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace TrainingHub.DDDWithCqrs.Api.Controller;
 
@@ -28,7 +31,10 @@ namespace TrainingHub.DDDWithCqrs.Api.Controller;
 /// (ADR 0063).
 /// </para>
 /// </remarks>
-public sealed class CatalogController(IQueryDispatcher queryDispatcher) : CatalogControllerBase
+public sealed class CatalogController(
+    IQueryDispatcher queryDispatcher,
+    ICommandDispatcher commandDispatcher)
+    : CatalogControllerBase
 {
     /// <summary>
     /// Searches the offered catalog by title, or lists it when no term is given.
@@ -199,6 +205,57 @@ public sealed class CatalogController(IQueryDispatcher queryDispatcher) : Catalo
             HttpToApplicationMappings.ToGetTrainerProfileByTrainerIdQuery(trainerId), cancellationToken);
 
         return profile is null ? NotFound() : Ok(profile.ToHttp());
+    }
+
+    /// <summary>
+    /// Carries a visitor's message to the trainer they wrote to.
+    /// </summary>
+    /// <remarks>
+    /// The one write on this controller, and it changes no aggregate: what it commits is the fact
+    /// that a visitor wrote, which the outbox delivers to the one consumer allowed to know where
+    /// the trainer reads their mail (ADR 0082). Anonymous like everything else here — a stranger
+    /// reading a catalog is exactly who this is for.
+    /// <para>
+    /// <b>202 rather than 200 or 201.</b> Nothing was created and nothing is done yet: the message
+    /// is accepted and leaves when the delivery worker next runs, so a caller is told what is true
+    /// (ADR 0002, ADR 0011).
+    /// </para>
+    /// <para>
+    /// The rate limiter is partitioned by the trainer the route names rather than by the caller's
+    /// address, and that is deliberate: behind the proxy every browser arrives wearing the same
+    /// address, so a per-caller window here would be one global window. What this bounds is how
+    /// much mail one trainer can be made to receive; the BFF bounds how much one visitor can send
+    /// (ADR 0082).
+    /// </para>
+    /// </remarks>
+    /// <param name="trainerId">The trainer the route names.</param>
+    /// <param name="request">The message, from the body.</param>
+    /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
+    /// <returns>
+    /// 202 Accepted when the message has been taken in hand.
+    /// 400 Bad Request when the message is malformed.
+    /// 404 Not Found when there is no offering trainer with this identifier.
+    /// 429 Too Many Requests when this trainer has been written to too often.
+    /// </returns>
+    [HttpPost("trainers/{trainerId:guid}/contact")]
+    [EnableRateLimiting(ContactRateLimiting.PolicyName)]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<IActionResult> ContactTrainerAsync(
+        [NotEmptyIdentifier] Guid trainerId,
+        [FromBody] ContactTrainerHttpRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await commandDispatcher.DispatchAsync(
+            request.ToCommand(trainerId), cancellationToken);
+
+        return result.Match<IActionResult>(
+            Accepted,
+            errors => errors.Any(error => error.ErrorCode == ErrorCodes.NotFound)
+                ? NotFound()
+                : this.Problem(StatusCodes.Status400BadRequest, errors));
     }
 
     /// <summary>

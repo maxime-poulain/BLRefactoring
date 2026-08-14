@@ -35,6 +35,15 @@ public sealed class SmtpEmailSender(IOptions<SmtpOptions> options) : IEmailSende
         mime.Subject = message.Subject;
         mime.Body = new TextPart(TextFormat.Plain) { Text = message.Body };
 
+        // The From stays this application's own even when the message is somebody else's: sending
+        // as the visitor would be a forgery every receiving domain with an SPF record is entitled
+        // to refuse. Reply-To is the header that exists for exactly this — the message comes from
+        // the platform, and the answer goes to the person (ADR 0082).
+        if (!string.IsNullOrWhiteSpace(message.ReplyTo))
+        {
+            mime.ReplyTo.Add(MailboxAddress.Parse(message.ReplyTo));
+        }
+
         using var client = new SmtpClient();
 
         await client.ConnectAsync(

@@ -71,6 +71,10 @@ builder.Services.AddApiIdentity(builder.Configuration);
 builder.Services.AddJwtBearerAuthentication(builder.Configuration);
 builder.Services.AddApiAuthorization();
 
+// The window bounding how much mail one trainer can be made to receive, partitioned by the
+// recipient because behind the proxy every caller wears the same address (ADR 0082).
+builder.Services.AddRateLimiter(ContactRateLimiting.Configure);
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -96,6 +100,9 @@ app.UseApiCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// After authorization, so a refused caller is refused before a window is spent on them.
+app.UseRateLimiter();
 
 app.MapControllers();
 

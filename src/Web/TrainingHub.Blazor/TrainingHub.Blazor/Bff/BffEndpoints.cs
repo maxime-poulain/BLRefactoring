@@ -4,11 +4,13 @@ using TrainingHub.Blazor.Client.Infrastructure;
 using TrainingHub.GeneratedClients;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace TrainingHub.Blazor.Bff;
 
 /// <summary>
-/// The four endpoints the front end talks to directly. Everything else is forwarded.
+/// The endpoints the front end talks to directly. Everything else is forwarded.
 /// </summary>
 /// <remarks>
 /// Sign-in cannot be forwarded like the rest: the API answers <c>/Auth/login</c> with the token
@@ -19,6 +21,13 @@ namespace TrainingHub.Blazor.Bff;
 /// the proxy's anonymous family is exactly the catalog's controllers (ADR 0062), and widening that
 /// family for one POST would be a bigger door than one explicit endpoint beside sign-in. The
 /// account conversation belongs to this host either way.
+/// </para>
+/// <para>
+/// The contact message is the reverse case: it <em>was</em> forwarded, and deliberately no longer
+/// is (ADR 0083). Its endpoint stands at the very address the proxy used to serve, because the
+/// message now pays a toll on the way through — a Turnstile token, judged here, where the secret
+/// key lives and the visitor's connection ends — and a proxied twin of the path would be a way
+/// around the toll booth.
 /// </para>
 /// </remarks>
 public static class BffEndpoints
@@ -57,6 +66,19 @@ public static class BffEndpoints
         bff.MapPost("/logout", (Delegate)LogoutAsync).RequireAuthorization();
 
         bff.MapGet("/user", GetUser).AllowAnonymous();
+
+        bff.MapGet("/turnstile", GetTurnstileSettings).AllowAnonymous();
+
+        // Outside the /bff group, at the address the proxy used to forward: the template outranks
+        // the catch-all route, so every contact message lands here and none slips past the token
+        // judgment below (ADR 0083). The forgery guard still applies — the /api middleware demands
+        // the application's header on every write — and the per-visitor window moves here with the
+        // endpoint, since this is now where the visitor's messages arrive.
+        endpoints.MapPost(
+                $"{BffExtensions.ApiPrefix}/{BffExtensions.AnonymousSegment}/trainers/{{trainerId:guid}}/contact",
+                ContactTrainerAsync)
+            .AllowAnonymous()
+            .RequireRateLimiting(BffExtensions.ContactWindowPolicy);
 
         return endpoints;
     }
@@ -157,6 +179,81 @@ public static class BffEndpoints
             response.Content.Headers.ContentType?.ToString(),
             statusCode: (int)response.StatusCode);
     }
+
+    /// <summary>
+    /// Carries a visitor's message to the API, once their Turnstile token holds up.
+    /// </summary>
+    /// <remarks>
+    /// The token rides a header rather than the body, so what is forwarded is exactly the contract
+    /// the API publishes — the API never learns a challenge existed (ADR 0083). A missing token is
+    /// refused without asking Cloudflare anything, and a refused one answers the same 403, worded
+    /// for the person who sees it: a visitor whose widget expired, not only a bot. The API's own
+    /// verdicts — the 404 of a trainer the catalog will not show, the 400 of a malformed message,
+    /// the 429 of a buried recipient — pass through body and status alike, because the form reads
+    /// the per-field messages out of the problem document the way registration's does.
+    /// <para>
+    /// With no key pair configured there is no judgment to make: an operator who supplied neither
+    /// key chose to run without the challenge, and the message is forwarded as it was before the
+    /// challenge existed — the honeypot and both rate windows still standing (ADR 0082, ADR 0083).
+    /// </para>
+    /// </remarks>
+    private static async Task<IResult> ContactTrainerAsync(
+        Guid trainerId,
+        ContactTrainerHttpRequest message,
+        [FromHeader(Name = BffContract.TurnstileTokenHeader)] string? turnstileToken,
+        ITurnstileVerifier turnstile,
+        IOptions<TurnstileOptions> options,
+        IHttpClientFactory httpClientFactory,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        if (options.Value.IsConfigured
+            && (string.IsNullOrWhiteSpace(turnstileToken)
+                || !await turnstile.IsGenuineAsync(
+                    turnstileToken,
+                    httpContext.Connection.RemoteIpAddress?.ToString(),
+                    cancellationToken)))
+        {
+            return Results.Problem(
+                title: "The anti-robot check did not pass.",
+                detail: "Complete the check in the form and send your message again.",
+                statusCode: StatusCodes.Status403Forbidden);
+        }
+
+        var client = httpClientFactory.CreateClient(ApiClientName);
+
+        var response = await client.PostAsJsonAsync(
+            $"/{BffExtensions.AnonymousSegment}/trainers/{trainerId}/contact",
+            message,
+            cancellationToken);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return Results.StatusCode(StatusCodes.Status202Accepted);
+        }
+
+        var problem = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        return Results.Content(
+            problem,
+            response.Content.Headers.ContentType?.ToString(),
+            statusCode: (int)response.StatusCode);
+    }
+
+    /// <summary>
+    /// The public half of the Turnstile key pair, for the widget to render with.
+    /// </summary>
+    /// <remarks>
+    /// The browser has to be told the site key somehow, and the WebAssembly application carries no
+    /// configuration of its own (ADR 0035): this endpoint is the one channel, anonymous because the
+    /// key is public by design — it is in the page source of every site that renders the widget.
+    /// With no pair configured the answer is a null key, which the dialog reads as "no challenge
+    /// to render" (ADR 0083); there is always a document, and it always parses, for the reason
+    /// <see cref="GetUser"/> gives.
+    /// </remarks>
+    private static IResult GetTurnstileSettings(IOptions<TurnstileOptions> options) =>
+        Results.Ok(new TurnstileSettings(
+            options.Value.IsConfigured ? options.Value.SiteKey : null));
 
     private static async Task<IResult> LogoutAsync(HttpContext httpContext)
     {

@@ -73,15 +73,22 @@ public static class ServiceCollectionExtensions
             // implements it — resolved through ITrainerRepository for the same reason as above.
             .AddScoped<ITrainerStanding>(serviceProvider =>
                 (TrainerRepository)serviceProvider.GetRequiredService<ITrainerRepository>())
-            // The read side of five questions that used to cost a whole aggregate, or would have:
+            // The read side of six questions that used to cost a whole aggregate, or would have:
             // who owns this training, which trainer is behind this Identity user, where a trainer
-            // is reachable as a person, what a page of trainers is called, and whether a trainer is
-            // under suspension. Each answer is a handful of columns, and none of these ports can
-            // write — which is what a post-commit consumer may hold (ADR 0056). Two of them are
-            // read on the authorization path, before any use case runs (ADR 0053).
+            // is reachable as a person, where they are reachable as a professional, what a page of
+            // trainers is called, and whether a trainer is under suspension. Each answer is a
+            // handful of columns, and none of these ports can write — which is what a post-commit
+            // consumer may hold (ADR 0056). Two of them are read on the authorization path, before
+            // any use case runs (ADR 0053).
+            //
+            // The fourth and the third are deliberately not one port: an account address is a
+            // credential and a contact address is something a trainer published, and keeping them
+            // apart here is what keeps a sanction and a visitor's message from ever reaching the
+            // wrong one (ADR 0082).
             .AddScoped<ITrainingOwnerQuery, TrainingOwnerQuery>()
             .AddScoped<ITrainerIdentityQuery, TrainerIdentityQuery>()
             .AddScoped<ITrainerAccountQuery, TrainerAccountQuery>()
+            .AddScoped<ITrainerContactQuery, TrainerContactQuery>()
             .AddScoped<ITrainerNamesQuery, TrainerNamesQuery>()
             .AddScoped<ITrainerStandingQuery, TrainerStandingQuery>()
             // Scoped like the DbContext it stages rows into: the publisher must share the unit of
@@ -89,9 +96,10 @@ public static class ServiceCollectionExtensions
             .AddScoped<IIntegrationEventPublisher, OutboxIntegrationEventPublisher>()
             // The outbox's read side (ADR 0025, hardened per ADR 0033): the worker each host
             // runs, the processor it scopes per batch, the dispatcher that routes a fact to its
-            // consumers, and the fourteen consumers themselves — the policies that used to run
-            // inside the transaction, reattached after the commit, and the six that answer a
-            // sanction (ADR 0056). The options bind above, validated.
+            // consumers, and the fifteen consumers themselves — the policies that used to run
+            // inside the transaction, reattached after the commit, the six that answer a sanction
+            // (ADR 0056), and the one that carries a visitor's message to a trainer (ADR 0082).
+            // The options bind above, validated.
             .AddScoped<OutboxProcessor>()
             .AddScoped<IntegrationEventDispatcher>()
             .AddScoped<IIntegrationEventHandler<TrainerCreatedIntegrationEvent>,
@@ -106,6 +114,8 @@ public static class ServiceCollectionExtensions
                 SendReinstatementNoticeWhenTrainerReinstatedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<TrainerReinstatedIntegrationEvent>,
                 ShowCatalogWhenTrainerReinstatedIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<TrainerContactedIntegrationEvent>,
+                SendContactMessageWhenTrainerContactedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<TrainingCreatedIntegrationEvent>,
                 IndexTrainingWhenTrainingCreatedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<TrainingEditedIntegrationEvent>,

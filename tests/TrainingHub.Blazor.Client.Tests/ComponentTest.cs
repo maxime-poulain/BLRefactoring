@@ -53,6 +53,11 @@ public abstract class ComponentTest : BunitContext, IAsyncLifetime
         // about it; the facts that are override this.
         Portrait.Setup(source => source.FindOwnPortraitAsync()).ReturnsAsync((string?)null);
         Services.AddSingleton(Portrait.Object);
+
+        // The real accessor rather than a mock, because both public pages inject it and the one
+        // fact about it reads what was deposited (ADR 0083). Registered here the way the browser
+        // registers it: one instance, shared by the page and the handler.
+        Services.AddSingleton<TurnstileTokenAccessor>();
     }
 
     /// <summary>The standing every page reads, substituted so a suite can suspend its caller.</summary>

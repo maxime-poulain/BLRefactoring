@@ -3,6 +3,8 @@ using AwesomeAssertions;
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using MudBlazor;
+using TrainingHub.Blazor.Client.Components;
 using TrainingHub.Blazor.Client.Pages.Catalog;
 using TrainingHub.GeneratedClients;
 using Xunit;
@@ -22,8 +24,14 @@ public sealed class CatalogTrainingTests : ComponentTest
 {
     private readonly Mock<ICatalogClient> _catalog = new();
 
+    private readonly Mock<IDialogService> _dialogs = new();
+
     /// <summary>Catalog training tests.</summary>
-    public CatalogTrainingTests() => Services.AddSingleton(_catalog.Object);
+    public CatalogTrainingTests()
+    {
+        Services.AddSingleton(_catalog.Object);
+        Services.AddSingleton(_dialogs.Object);
+    }
 
     /// <summary>
     /// Renders, asks the server for the training the route names.
@@ -225,6 +233,90 @@ public sealed class CatalogTrainingTests : ComponentTest
         Shown().Should().ContainSingle()
             .Which.Message.Should().Be("The training could not be loaded.");
     }
+
+    /// <summary>
+    /// Contact confirmed, sends the message to the training's own trainer and names the training.
+    /// </summary>
+    /// <remarks>
+    /// The page's half of the dialog's contract, and the two identifiers each doing their one job:
+    /// the trainer the response named is who the message is for, and the training the route names
+    /// only says what prompted it — the recipient is decided by the API from the address alone,
+    /// so this page never learns where the message ends up (ADR 0082).
+    /// </remarks>
+    [Fact]
+    public void ContactConfirmed_SendsToTheTrainingsTrainer_AndNamesTheTraining()
+    {
+        var trainingId = Guid.CreateVersion7();
+        var training = Offered();
+
+        _catalog
+            .Setup(client => client.GetOfferedTrainingAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(training);
+        WireDialog(DialogResult.Ok(new ContactDraft(
+            "Grace", "Hopper", "grace@example.org", "I would like to book this training.",
+            Website: null, TurnstileToken: "token-the-widget-minted")));
+
+        var page = Render<CatalogTraining>(parameters => parameters
+            .Add(view => view.TrainingId, trainingId));
+
+        page.WaitForAssertion(() => Contact(page).HasAttribute("disabled").Should().BeFalse());
+        Contact(page).Click();
+
+        page.WaitForAssertion(() => _catalog.Verify(
+            client => client.ContactTrainerAsync(
+                training.TrainerId,
+                It.Is<ContactTrainerHttpRequest>(request =>
+                    request.TrainingId == trainingId
+                    && request.SenderEmailAddress == "grace@example.org")),
+            Times.Once));
+
+        Shown().Should().ContainSingle()
+            .Which.Message.Should().Be("Your message is on its way to Ada Lovelace.");
+    }
+
+    /// <summary>
+    /// Contact canceled, sends nothing at all.
+    /// </summary>
+    [Fact]
+    public void ContactCanceled_SendsNothingAtAll()
+    {
+        _catalog
+            .Setup(client => client.GetOfferedTrainingAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(Offered());
+        WireDialog(DialogResult.Cancel());
+
+        var page = Render<CatalogTraining>(parameters => parameters
+            .Add(view => view.TrainingId, Guid.CreateVersion7()));
+
+        page.WaitForAssertion(() => Contact(page).HasAttribute("disabled").Should().BeFalse());
+        Contact(page).Click();
+
+        page.WaitForAssertion(() => _dialogs.Verify(
+            service => service.ShowAsync<ContactTrainerDialog>(
+                It.IsAny<string?>(), It.IsAny<DialogParameters>(), It.IsAny<DialogOptions>()),
+            Times.Once));
+
+        _catalog.Verify(
+            client => client.ContactTrainerAsync(It.IsAny<Guid>(), It.IsAny<ContactTrainerHttpRequest>()),
+            Times.Never);
+    }
+
+    private void WireDialog(DialogResult result)
+    {
+        var reference = new Mock<IDialogReference>();
+
+        reference
+            .SetupGet(dialog => dialog.Result)
+            .Returns(Task.FromResult<DialogResult?>(result));
+
+        _dialogs
+            .Setup(service => service.ShowAsync<ContactTrainerDialog>(
+                It.IsAny<string?>(), It.IsAny<DialogParameters>(), It.IsAny<DialogOptions>()))
+            .ReturnsAsync(reference.Object);
+    }
+
+    private static AngleSharp.Dom.IElement Contact(IRenderedComponent<CatalogTraining> page) =>
+        page.FindAll("button").Single(button => button.TextContent.Contains("Contact", StringComparison.Ordinal));
 
     private static ApiException NotFound() =>
         new(

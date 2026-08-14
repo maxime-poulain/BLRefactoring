@@ -1,7 +1,10 @@
 @page "/catalog/{TrainingId:guid}"
+@using TrainingHub.Blazor.Client.Infrastructure
 @using TrainingHub.GeneratedClients
 @implements IDisposable
 @inject ICatalogClient CatalogClient
+@inject IDialogService DialogService
+@inject TurnstileTokenAccessor TurnstileTokens
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @inject PersistentComponentState ApplicationState
@@ -111,6 +114,18 @@
                         @_training.TrainerName
                     </MudLink>
                 </MudText>
+                <MudSpacer />
+                @* The same channel the profile offers, from the page a visitor is actually on when
+                   a training convinces them (ADR 0082). Asleep until the interactive runtime
+                   attaches, for the profile's reason (ADR 0072). *@
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.MailOutline"
+                           Disabled="@(!_isInteractive)"
+                           OnClick="ContactAsync"
+                           Class="th-contact">
+                    Contact @_training.TrainerName
+                </MudButton>
             </MudStack>
 
             @if (_training.Topics.Count > 0)
@@ -144,7 +159,10 @@
 </MudContainer>
 
 @code {
+    private const int StatusBadRequest = 400;
+    private const int StatusForbidden = 403;
     private const int StatusNotFound = 404;
+    private const int StatusTooManyRequests = 429;
 
     /// <summary>The training the route names.</summary>
     [Parameter]
@@ -157,11 +175,27 @@
     private CatalogTrainingDetailHttpResponse? _training;
     private bool _isLoading = true;
     private bool _isUnreachable;
+    private bool _isInteractive;
     private PersistingComponentStateSubscription _persisting;
 
     /// <inheritdoc />
     protected override void OnInitialized() =>
         _persisting = ApplicationState.RegisterOnPersisting(Persist);
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// This never runs during the prerendered pass, and that absence is the mechanism: the contact
+    /// button wakes here, so the static paint offers it visibly disabled rather than pretending a
+    /// dialog could open where no runtime is attached (ADR 0072, ADR 0082).
+    /// </remarks>
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _isInteractive = true;
+            StateHasChanged();
+        }
+    }
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
@@ -247,6 +281,77 @@
             ["name"] = "TrainingHub"
         }
     };
+
+    /// <summary>
+    /// Opens the contact dialog and carries what the visitor wrote to the API.
+    /// </summary>
+    /// <remarks>
+    /// The training travels with the message, and it only names what prompted it: the recipient is
+    /// the trainer the route's training belongs to, decided by the API from the address alone —
+    /// this page never learns, and never sends, where the message ends up (ADR 0082).
+    /// </remarks>
+    private async Task ContactAsync()
+    {
+        if (_training is null)
+        {
+            return;
+        }
+
+        var draft = await ContactTrainerDialogs.AskAsync(DialogService, _training.TrainerName);
+
+        if (draft is null)
+        {
+            return;
+        }
+
+        try
+        {
+            // The token rides a header the next request picks up, not the body: the deposit is
+            // what keeps the generated client's signature — and the API's contract — free of the
+            // BFF's own toll (ADR 0083).
+            TurnstileTokens.Deposit(draft.TurnstileToken);
+
+            await CatalogClient.ContactTrainerAsync(_training.TrainerId, new ContactTrainerHttpRequest
+            {
+                SenderFirstname = draft.Firstname,
+                SenderLastname = draft.Lastname,
+                SenderEmailAddress = draft.EmailAddress,
+                Message = draft.Message,
+                TrainingId = TrainingId,
+                Website = draft.Website
+            });
+
+            Snackbar.Add($"Your message is on its way to {_training.TrainerName}.", Severity.Success);
+        }
+        catch (ApiException<ProblemDetails> exception) when (exception.StatusCode == StatusBadRequest)
+        {
+            foreach (var message in ProblemDetailsMessages.Read(exception.Result, "The message was not accepted."))
+            {
+                Snackbar.Add(message, Severity.Error);
+            }
+        }
+        catch (ApiException exception) when (exception.StatusCode == StatusForbidden)
+        {
+            // The BFF's refusal, not the API's: the anti-robot token did not hold up — expired
+            // between solving and sending, most likely — and a fresh dialog mints a fresh one.
+            Snackbar.Add("The anti-robot check did not pass. Please try sending again.", Severity.Warning);
+        }
+        catch (ApiException exception) when (exception.StatusCode == StatusTooManyRequests)
+        {
+            // The window is the trainer's, not the visitor's: what ran out is how much mail one
+            // person can be made to receive (ADR 0082), so waiting is the honest advice.
+            Snackbar.Add($"{_training.TrainerName} has received a lot of messages just now. Try again in a minute.", Severity.Warning);
+        }
+        catch (ApiException exception) when (exception.StatusCode == StatusNotFound)
+        {
+            Snackbar.Add("This trainer can no longer be contacted.", Severity.Error);
+        }
+        catch (Exception)
+        {
+            // The message is ours rather than the server's, for the reason the loads above give.
+            Snackbar.Add("The message could not be sent. Try again in a moment.", Severity.Error);
+        }
+    }
 
     private Task Persist()
     {

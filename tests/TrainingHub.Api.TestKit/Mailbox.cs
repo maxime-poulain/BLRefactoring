@@ -72,8 +72,10 @@ public static class Mailbox
     /// identical at every earlier instant, so the only honest way to assert the second is to give
     /// delivery the same time the positive proofs get and find nothing.
     /// <para>
-    /// It is worth spending exactly once — on the release that ADR 0052 says earns no fact at all,
-    /// which no other kind of test can distinguish from one whose message is merely slow.
+    /// It is worth spending only where nothing arriving is the decision itself: the release that
+    /// ADR 0052 says earns no fact at all, and the honeypot that ADR 0082 says earns a success and
+    /// no message — each indistinguishable, at every earlier instant, from one whose message is
+    /// merely slow.
     /// </para>
     /// </remarks>
     /// <param name="factory">The suite's fixture.</param>

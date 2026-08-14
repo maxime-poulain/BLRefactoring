@@ -1,3 +1,4 @@
+using System.Threading.RateLimiting;
 using TrainingHub.Blazor.Client.Infrastructure;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -56,6 +57,26 @@ public static class BffExtensions
 
     private const string AnonymousRouteId = "catalog";
 
+    /// <summary>
+    /// The rate-limiter policy bounding how many messages one visitor can send (ADR 0082).
+    /// </summary>
+    /// <remarks>
+    /// The sender-side half of the contact form's anti-abuse pair, and it lives on this host
+    /// because only this host can see the sender: the BFF terminates the browser's connection, so
+    /// the remote address here is the visitor's own, where the API sees every caller wearing this
+    /// proxy's. The API holds the other half — a window around the recipient. The endpoint it
+    /// bounds is the BFF's own contact endpoint (ADR 0083), not a proxied route: the proxy
+    /// forwards no contact path at all.
+    /// </remarks>
+    public const string ContactWindowPolicy = "contact-per-visitor";
+
+    // Five messages a minute is a person writing, and well past it: the form takes longer than
+    // twelve seconds to fill honestly. QueueLimit stays zero because a queued refusal is a slower
+    // refusal, not an admission.
+    private const int ContactPermitsPerWindow = 5;
+
+    private static readonly TimeSpan ContactWindow = TimeSpan.FromMinutes(1);
+
     // YARP's own AuthorizationConstants are internal, so the policies are named by their literals
     // here — as the authenticated route has always done. The comparison is case-insensitive.
     private const string DefaultPolicy = "default";
@@ -112,10 +133,48 @@ public static class BffExtensions
 
         services.AddAuthorization();
 
+        services.AddRateLimiter(options =>
+        {
+            // A refusal answers 429 and nothing else, like the API's own window: no Retry-After,
+            // because telling a script when to come back is doing its scheduling for it (ADR 0082).
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+            options.AddPolicy(ContactWindowPolicy, context =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    // The visitor's own address — real on this host, and the whole reason the
+                    // window sits here rather than on the API (ADR 0082).
+                    context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = ContactPermitsPerWindow,
+                        Window = ContactWindow,
+                        QueueLimit = 0
+                    }));
+        });
+
         // The API client this host uses for the endpoints it serves itself — sign-in, mostly.
         // Forwarded traffic does not go through it; YARP handles that.
         services.AddHttpClient(BffEndpoints.ApiClientName, client =>
             client.BaseAddress = new Uri(apiBaseAddress));
+
+        services.AddOptions<TurnstileOptions>()
+            .Bind(configuration.GetSection(TurnstileOptions.SectionName))
+            // Both keys or neither: absent, the challenge is off by decision (ADR 0083), where
+            // half a pair is not a smaller configuration but a broken one, refused before the
+            // first visitor finds out (ADR 0033).
+            .Validate(
+                turnstile => string.IsNullOrWhiteSpace(turnstile.SiteKey)
+                    == string.IsNullOrWhiteSpace(turnstile.SecretKey),
+                $"'{TurnstileOptions.SectionName}:SiteKey' and " +
+                $"'{TurnstileOptions.SectionName}:SecretKey' travel as a pair or not at all.")
+            .ValidateOnStart();
+
+        // Cloudflare's own origin, pinned here rather than configured: there is exactly one place
+        // this question can be asked, and an option would only invite pointing the guard at a
+        // service that answers yes to everything.
+        services.AddHttpClient(TurnstileVerifier.ClientName, client =>
+            client.BaseAddress = new Uri("https://challenges.cloudflare.com"));
+        services.AddSingleton<ITurnstileVerifier, TurnstileVerifier>();
 
         services
             .AddReverseProxy()
@@ -168,6 +227,10 @@ public static class BffExtensions
 
         app.UseAuthentication();
         app.UseAuthorization();
+
+        // After authorization, before the endpoints run: the contact endpoint names a rate-limiter
+        // policy, and naming one is inert until this middleware is in the pipeline.
+        app.UseRateLimiter();
 
         app.MapBffEndpoints();
         app.MapReverseProxy();
@@ -223,16 +286,21 @@ public static class BffExtensions
         (HttpMethods.IsGet(request.Method) || HttpMethods.IsHead(request.Method))
         && string.Equals(request.Headers[FetchSiteHeader], SameOrigin, StringComparison.Ordinal);
 
+    // No contact route, and its absence is the decision (ADR 0083): the one write on the anonymous
+    // family is answered by this host's own endpoint, which stands at the same address and judges
+    // the visitor's Turnstile token before anything is forwarded. A proxied contact path would be a
+    // door around that judgment — the endpoint's template outranks the catch-all below, and a rule
+    // holds this table to naming no contact path at all.
     private static IReadOnlyList<RouteConfig> BuildRoutes() =>
     [
-        // The public catalog, and nothing else. Ordered first because both matches are
-        // catch-alls: leaving the choice to route precedence would make the narrower path's
-        // priority an accident of the framework rather than a decision (ADR 0062).
+        // The public catalog, and nothing else. Each Order written out: leaving the choice to
+        // route precedence would make a narrower path's priority an accident of the framework
+        // rather than a decision (ADR 0062).
         new RouteConfig
         {
             RouteId = AnonymousRouteId,
             ClusterId = RouteAndClusterId,
-            Order = 0,
+            Order = 1,
             // No policy to satisfy, and none needed: what sits behind this path is the one
             // controller base that declares no 401 and no 403, so the API is the authority on who
             // may read it. The token transform below is unchanged and simply adds no header when
@@ -246,7 +314,7 @@ public static class BffExtensions
         {
             RouteId = RouteAndClusterId,
             ClusterId = RouteAndClusterId,
-            Order = 1,
+            Order = 2,
             // Authorization is required here rather than left to the API: for everything but the
             // catalog, an anonymous call would be forwarded without a token and answered 401
             // anyway, one network hop later.

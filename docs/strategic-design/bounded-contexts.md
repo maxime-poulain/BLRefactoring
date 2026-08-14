@@ -266,8 +266,9 @@ Registration, authentication, token issuance, lockout.
 - **Fed by:** the transactional outbox, end to end. Registration, address changes and the
   administration's decisions commit `TrainerCreatedIntegrationEvent`,
   `TrainerContactEmailChangedIntegrationEvent`, `TrainerSuspendedIntegrationEvent`,
-  `TrainerReinstatedIntegrationEvent` and `TrainingWithheldIntegrationEvent` with the change
-  itself (ADR 0002, ADR 0024, ADR 0056), and the delivery worker hands each fact to the consumer
+  `TrainerReinstatedIntegrationEvent`, `TrainingWithheldIntegrationEvent` and
+  `TrainerContactedIntegrationEvent` with the change
+  itself (ADR 0002, ADR 0024, ADR 0056, ADR 0082), and the delivery worker hands each fact to the consumer
   that composes its `EmailMessage` — after the commit, at-least-once (ADR 0025). The three
   sanction notices go to the account's address rather than the published contact address, resolved
   through `ITrainerAccountQuery` when the notice is sent.

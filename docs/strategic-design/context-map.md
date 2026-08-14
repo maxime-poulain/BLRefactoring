@@ -99,9 +99,10 @@ trainers because it is never shown one.
 
 **The seam:** `Shared.Application/Notifications/IEmailSender.cs` — and, since the outbox landed, the facts that feed it:
 `TrainerCreatedIntegrationEvent`, `TrainerContactEmailChangedIntegrationEvent`,
-`TrainerSuspendedIntegrationEvent`, `TrainerReinstatedIntegrationEvent` and
-`TrainingWithheldIntegrationEvent`, committed to the
-outbox by five policies in `Shared.Application/EventHandlers/` (ADR 0002, ADR 0024, ADR 0056).
+`TrainerSuspendedIntegrationEvent`, `TrainerReinstatedIntegrationEvent`,
+`TrainingWithheldIntegrationEvent` and `TrainerContactedIntegrationEvent`, committed to the
+outbox by six policies in `Shared.Application/EventHandlers/` (ADR 0002, ADR 0024, ADR 0056,
+ADR 0082).
 A second port sits beside the sender for the three sanction notices, `ITrainerAccountQuery` —
 one of the three read ports in `Shared.Application/Queries/`, and the only one that opens two
 stores. Those notices are addressed to the account rather than to the published contact address,

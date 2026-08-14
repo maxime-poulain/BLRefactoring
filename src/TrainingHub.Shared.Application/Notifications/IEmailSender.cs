@@ -17,7 +17,16 @@ public interface IEmailSender
 /// <summary>
 /// The email to send through an <see cref="IEmailSender"/>.
 /// </summary>
+/// <remarks>
+/// The four notices this application sends on its own behalf leave <paramref name="ReplyTo"/> unset
+/// and are answered at the sender address the options declare. The one message it forwards on
+/// somebody else's behalf sets it, because the person who should receive the answer is not the
+/// person who sent it (ADR 0082).
+/// </remarks>
 /// <param name="Recipient">The address the email is sent to.</param>
 /// <param name="Subject">The subject line.</param>
 /// <param name="Body">The plain-text body.</param>
-public sealed record EmailMessage(string Recipient, string Subject, string Body);
+/// <param name="ReplyTo">
+/// The address an answer should go to, or <see langword="null"/> to let it come back here.
+/// </param>
+public sealed record EmailMessage(string Recipient, string Subject, string Body, string? ReplyTo = null);

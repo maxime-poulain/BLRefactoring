@@ -1,4 +1,5 @@
 using System.Reflection;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using TrainingHub.Architecture.Tests.Framework;
 using TrainingHub.Blazor.Bff;
@@ -219,6 +220,87 @@ public sealed class AnonymousAccessRules
             .ShouldHold();
 
     /// <summary>
+    /// The layers a request runs in, and therefore the layers that may never read the address.
+    /// </summary>
+    private static readonly string[] TheRequestPath =
+    [
+        "src/DDD/",
+        "src/DDDWithCqrs/",
+        "src/TrainingHub.Shared.Api/",
+        "src/Web/"
+    ];
+
+    /// <summary>
+    /// The trainer's contact address, is read only where it is sent.
+    /// </summary>
+    /// <remarks>
+    /// ADR 0070 said the catalog withholds a contact address; ADR 0082 made the platform the channel
+    /// that promise assumed, and this is what keeps the two compatible. The neighboring rule asserts
+    /// that no answered contract <em>carries</em> the address, which is the symptom. This asserts the
+    /// cause: the port that reads it is named only by its adapter, the composition root and the one
+    /// integration-event handler that sends the mail — all of which run in the outbox worker, after
+    /// the commit, with no request in sight.
+    /// <para>
+    /// That is a stronger claim than "no response has an Email property", because it forecloses the
+    /// step before: a controller, a command handler or a Blazor page cannot obtain the address at
+    /// all, so no amount of mapping could leak it. A visitor who opens the contact form causes no
+    /// read of it anywhere.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0082",
+        "the trainer's contact address is read in one place and it is the moment of sending: no " +
+        "layer that serves a request can obtain it, so no response can disclose it")]
+    public void TheTrainersContactAddress_IsReadOnlyWhereItIsSent() =>
+        SourceTree.SourceFiles
+            .Select(SourceTree.Relative)
+            .Where(file => TheRequestPath.Any(layer => file.StartsWith(layer, StringComparison.Ordinal)))
+            .Selected("source file on the path a request runs")
+            .Where(file => SourceTree.ReadText(Path.Combine(
+                    SourceTree.RepositoryRoot, file.Replace('/', Path.DirectorySeparatorChar)))
+                .Contains("ITrainerContactQuery", StringComparison.Ordinal))
+            .Select(file =>
+                $"'{file}' names 'ITrainerContactQuery'. The address a trainer publishes is read " +
+                "once, in the consumer that sends the message, inside the outbox worker: a layer " +
+                "that serves a request must not be able to obtain it at all, which is what keeps " +
+                "it out of every response by construction (ADR 0070, ADR 0082)")
+            .ShouldHold();
+
+    /// <summary>
+    /// The file declaring the proxy's route table, which the rule below holds shut.
+    /// </summary>
+    private const string TheProxysRouteTable = "src/Web/TrainingHub.Blazor/TrainingHub.Blazor/Bff/BffExtensions.cs";
+
+    /// <summary>
+    /// The proxy forwards no contact path.
+    /// </summary>
+    /// <remarks>
+    /// ADR 0083 put a Turnstile judgment in front of the one anonymous write, and placed it in a
+    /// BFF endpoint standing at the very address the proxy used to serve. The endpoint's template
+    /// outranks the catalog's catch-all, so every contact message lands on the judgment — but only
+    /// while the route table names no contact path of its own. A dedicated proxied route, like the
+    /// one this feature shipped with before the challenge existed, would quietly outrank the
+    /// endpoint back and become a door around the toll booth. That is one deleted route away from
+    /// returning, so its absence is asserted: the file that builds the routes must not name the
+    /// path.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0083",
+        "the proxy forwards no contact path: the BFF's own endpoint is the only door, and the " +
+        "visitor's proof is judged before anything is forwarded")]
+    public void TheProxy_ForwardsNoContactPath() =>
+        new[] { TheProxysRouteTable }
+            .Selected("file declaring the proxy's route table")
+            .Where(file => SourceTree.ReadText(Path.Combine(
+                    SourceTree.RepositoryRoot, file.Replace('/', Path.DirectorySeparatorChar)))
+                .Contains("/contact", StringComparison.OrdinalIgnoreCase))
+            .Select(file =>
+                $"'{file}' names a contact path. The contact message pays a toll at the BFF's own " +
+                "endpoint — the Turnstile judgment — and a proxied route for the same path would " +
+                "outrank it and forward the message unjudged (ADR 0083)")
+            .ShouldHold();
+
+    /// <summary>
     /// The words a public contract must not carry: each names a fact the catalog deliberately
     /// withholds — how to reach a person off the platform, and what the moderation knows.
     /// </summary>
@@ -232,21 +314,32 @@ public sealed class AnonymousAccessRules
     /// platform is the channel; no status and no reason, because what the moderation knows is the
     /// administration's read (ADR 0055). That was prose about absent properties — the one shape of
     /// claim nothing fails when it stops being true, since adding <c>ContactEmail</c> to a
-    /// response breaks no build and no test. So the absence is asserted: no property of a
-    /// published catalog contract wears one of the withheld words.
+    /// response breaks no build and no test. So the absence is asserted.
+    /// <para>
+    /// <b>Over what the catalog answers, and derived rather than filtered by namespace</b>
+    /// (ADR 0082). The population used to be every type under <c>Contracts.Catalog</c>, which read
+    /// as "the catalog names no address anywhere" and was never the decision: what ADR 0070
+    /// withheld is the trainer's address, a fact this API <em>discloses</em>. The moment the
+    /// platform became the channel it also began accepting a visitor's own address, on a request —
+    /// the opposite kind of thing, and one a name collision would have refused.
+    /// </para>
+    /// <para>
+    /// So the set is read off the actions themselves, through their return types and their
+    /// <c>[ProducesResponseType]</c>, and walked into the properties those carry. That is stricter
+    /// than the namespace filter rather than looser: a withheld word on a nested type the old
+    /// population never reached now fails too.
+    /// </para>
     /// </remarks>
     [Fact]
     [ArchitectureRule("0070",
         "the public profile is a professional face, not a person's record: no contact address, " +
         "no standing, no reason ever crosses the catalog's contracts")]
     public void NoCatalogContract_CarriesAPrivateMember() =>
-        typeof(CatalogControllerBase).Assembly
-            .GetTypes()
-            .Where(type => type.Namespace == "TrainingHub.Shared.Api.Contracts.Catalog")
+        Answered()
             .SelectMany(contract => contract
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Select(property => (Contract: contract, Property: property)))
-            .Selected("property a catalog contract publishes")
+            .Selected("property a catalog contract answers with")
             .SelectMany(entry => PrivateWords
                 .Where(word => entry.Property.Name.Contains(word, StringComparison.Ordinal))
                 .Select(word =>
@@ -255,6 +348,74 @@ public sealed class AnonymousAccessRules
                     "them happens on the platform, and their standing is the administration's " +
                     "read (ADR 0055, ADR 0070)"))
             .ShouldHold();
+
+    /// <summary>
+    /// Every contract a catalog action answers with, and everything reachable from one.
+    /// </summary>
+    /// <remarks>
+    /// Read off the actions rather than off a namespace, and closed over the property graph so a
+    /// withheld word cannot hide one level down. Only types this repository declares are followed:
+    /// a <c>Guid</c> and a <c>string</c> have no properties worth walking, and a framework type
+    /// would walk forever.
+    /// </remarks>
+    private static IEnumerable<Type> Answered()
+    {
+        var found = new HashSet<Type>();
+
+        var roots = Solution.Hosts
+            .SelectMany(host => host.DeclaredTypes())
+            .Where(type => typeof(CatalogControllerBase).IsAssignableFrom(type) && !type.IsAbstract)
+            .SelectMany(controller => controller.GetMethods(BindingFlags.Public | BindingFlags.Instance))
+            .SelectMany(action => action
+                .GetCustomAttributes<ProducesResponseTypeAttribute>(inherit: true)
+                .Select(answer => answer.Type)
+                .Append(action.ReturnType));
+
+        foreach (var root in roots)
+        {
+            Walk(root, found);
+        }
+
+        return found;
+    }
+
+    /// <summary>Adds the type and everything its properties reach, unwrapping the wrappers.</summary>
+    private static void Walk(Type type, HashSet<Type> found)
+    {
+        var subject = Unwrapped(type);
+
+        if (subject.Assembly != typeof(CatalogControllerBase).Assembly || !found.Add(subject))
+        {
+            return;
+        }
+
+        foreach (var property in subject.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        {
+            Walk(property.PropertyType, found);
+        }
+    }
+
+    /// <summary>
+    /// The contract inside a task, an action result, a nullable or a collection.
+    /// </summary>
+    private static Type Unwrapped(Type type)
+    {
+        var subject = type;
+
+        while (subject.IsGenericType)
+        {
+            var argument = subject.GetGenericArguments()[0];
+
+            if (argument == subject)
+            {
+                break;
+            }
+
+            subject = argument;
+        }
+
+        return subject.IsArray ? subject.GetElementType() ?? subject : subject;
+    }
 
     /// <summary>Whether the segment after <c>trainers</c> is one constrained identifier.</summary>
     private static bool SaysWhichTrainer(string template)

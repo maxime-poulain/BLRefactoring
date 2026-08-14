@@ -1082,6 +1082,263 @@ public sealed class BffTests : IDisposable
             lastname = "Martin"
         });
 
+    /// <summary>
+    /// A contact message with a genuine token reaches the API, and never through the proxy.
+    /// </summary>
+    /// <remarks>
+    /// The whole shape of ADR 0083 in one fact. The token is judged first — the siteverify call
+    /// carries the secret and the token, which is the one place the secret may travel — and only
+    /// then is the message forwarded, over the BFF's own client. The proxy staying silent is the
+    /// load-bearing half: the endpoint stands at the very address the proxy used to serve, so a
+    /// proxied twin would be a door around the judgment, and this fact is what notices one coming
+    /// back.
+    /// </remarks>
+    [Fact]
+    public async Task A_contact_message_with_a_genuine_token_reaches_the_api_and_never_the_proxy()
+    {
+        _factory.TurnstileApi.Respond = _ => RecordingHandler.Ok("""{"success":true}""");
+        _factory.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.Accepted);
+        var trainerId = Guid.NewGuid();
+
+        var accepted = await ContactAsync(trainerId, "a-token-the-widget-minted");
+
+        accepted.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var judged = _factory.TurnstileApi.Requests.Should().ContainSingle().Subject;
+        judged.Uri!.AbsolutePath.Should().Be("/turnstile/v0/siteverify");
+        judged.Body.Should().Contain(BffFactory.TurnstileSecretKey,
+            "the secret is how this host proves itself to Cloudflare, and this call is the one " +
+            "place it may travel");
+        judged.Body.Should().Contain("a-token-the-widget-minted");
+
+        var forwarded = _factory.LoginApi.Requests.Should().ContainSingle().Subject;
+        forwarded.Uri!.AbsolutePath.Should().Be($"/Catalog/trainers/{trainerId}/contact");
+        forwarded.Body.Should().NotContain("a-token-the-widget-minted",
+            "the API never learns a challenge existed: what is forwarded is exactly the " +
+            "contract it publishes");
+
+        _factory.ProxiedApi.Requests.Should().BeEmpty(
+            "the proxy forwards no contact path: the endpoint is the only door (ADR 0083)");
+    }
+
+    /// <summary>
+    /// A token cloudflare refuses is answered 403 and the message is never forwarded.
+    /// </summary>
+    [Fact]
+    public async Task A_token_cloudflare_refuses_is_answered_403_and_the_message_is_never_forwarded()
+    {
+        _factory.TurnstileApi.Respond = _ => RecordingHandler.Ok("""{"success":false}""");
+
+        var refused = await ContactAsync(Guid.NewGuid(), "a-token-somebody-already-spent");
+
+        refused.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        _factory.LoginApi.Requests.Should().BeEmpty(
+            "a message whose sender could not be vouched for is refused before any work is done " +
+            "on it");
+        _factory.ProxiedApi.Requests.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// A contact message with no token is refused without asking cloudflare anything.
+    /// </summary>
+    [Fact]
+    public async Task A_contact_message_with_no_token_is_refused_without_asking_cloudflare()
+    {
+        var refused = await ContactAsync(Guid.NewGuid(), token: null);
+
+        refused.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        _factory.TurnstileApi.Requests.Should().BeEmpty(
+            "an absent token needs no verdict: there is nothing to verify");
+        _factory.LoginApi.Requests.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// The apis own verdict passes through the contact endpoint, body and status alike.
+    /// </summary>
+    /// <remarks>
+    /// The form reads the per-field messages out of the problem document the way registration's
+    /// does, so the endpoint must hand the document over rather than summarize it.
+    /// </remarks>
+    [Fact]
+    public async Task The_apis_own_verdict_passes_through_the_contact_endpoint()
+    {
+        _factory.TurnstileApi.Respond = _ => RecordingHandler.Ok("""{"success":true}""");
+        _factory.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.NotFound)
+        {
+            Content = new StringContent(
+                """{"title":"Not Found","status":404}""",
+                System.Text.Encoding.UTF8,
+                "application/problem+json")
+        };
+
+        var answered = await ContactAsync(Guid.NewGuid(), "a-genuine-token");
+
+        answered.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        answered.Content.Headers.ContentType!.MediaType.Should().Be("application/problem+json");
+        (await answered.Content.ReadAsStringAsync()).Should().Contain("Not Found");
+    }
+
+    /// <summary>
+    /// The turnstile site key is served to the front end and the secret never is.
+    /// </summary>
+    /// <remarks>
+    /// The WebAssembly application carries no configuration of its own (ADR 0035), so this
+    /// endpoint is the one channel the widget's public key reaches a browser through — and the
+    /// pair's other half must not ride along, because everything this endpoint answers ends up in
+    /// the page.
+    /// </remarks>
+    [Fact]
+    public async Task The_turnstile_site_key_is_served_to_the_front_end_and_the_secret_never_is()
+    {
+        var answered = await SendAsync(HttpMethod.Get, "bff/turnstile");
+
+        answered.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await answered.Content.ReadAsStringAsync();
+
+        body.Should().Contain(BffFactory.TurnstileSiteKey);
+        body.Should().NotContain(BffFactory.TurnstileSecretKey,
+            "the secret's one place to travel is the siteverify call, never a browser");
+    }
+
+    /// <summary>
+    /// With no key pair a contact message is forwarded without a token being asked for.
+    /// </summary>
+    /// <remarks>
+    /// The off state ADR 0083 decided: an operator who configured neither key chose to run
+    /// without the challenge, and the message travels as it did before the challenge existed —
+    /// with the honeypot and both windows still standing. Cloudflare staying silent is the half
+    /// worth asserting, because a verifier consulted with no secret would refuse everything and
+    /// quietly close the form for every visitor.
+    /// </remarks>
+    [Fact]
+    public async Task With_no_key_pair_a_contact_message_is_forwarded_without_a_token()
+    {
+        using var unconfigured = new BffFactory(turnstileSiteKey: null, turnstileSecretKey: null);
+        using var browser = unconfigured.CreateBrowser();
+        unconfigured.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.Accepted);
+        var trainerId = Guid.NewGuid();
+
+        var accepted = await ContactAsync(trainerId, token: null, browser);
+
+        accepted.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        unconfigured.TurnstileApi.Requests.Should().BeEmpty(
+            "with no pair there is no judgment to ask for");
+        unconfigured.LoginApi.Requests.Should().ContainSingle()
+            .Which.Uri!.AbsolutePath.Should().Be($"/Catalog/trainers/{trainerId}/contact");
+        unconfigured.ProxiedApi.Requests.Should().BeEmpty(
+            "the endpoint is the only door whether or not the challenge is on (ADR 0083)");
+    }
+
+    /// <summary>
+    /// With no key pair the turnstile endpoint answers no site key.
+    /// </summary>
+    /// <remarks>
+    /// The dialog reads a null key as "no challenge to render" — there is always a document, and
+    /// it always parses, so the browser never has to treat an off state as an error.
+    /// </remarks>
+    [Fact]
+    public async Task With_no_key_pair_the_turnstile_endpoint_answers_no_site_key()
+    {
+        using var unconfigured = new BffFactory(turnstileSiteKey: null, turnstileSecretKey: null);
+        using var browser = unconfigured.CreateBrowser();
+
+        var request = new HttpRequestMessage(HttpMethod.Get, "bff/turnstile");
+        request.Headers.Add(BffContract.RequestedWithHeader, BffContract.RequestedWithValue);
+
+        var answered = await browser.SendAsync(request);
+
+        answered.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var settings = await answered.Content.ReadFromJsonAsync<TurnstileSettings>();
+
+        settings!.SiteKey.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Half a key pair refuses to start.
+    /// </summary>
+    /// <remarks>
+    /// One key without the other is not a smaller configuration but a broken one: a site key with
+    /// no secret would render a widget whose every token is then refused, and a secret with no
+    /// site key would judge tokens no widget can mint. Startup is where that surfaces, not the
+    /// first visitor (ADR 0033, ADR 0083).
+    /// </remarks>
+    [Fact]
+    public void Half_a_key_pair_refuses_to_start()
+    {
+        using var half = new BffFactory(turnstileSecretKey: null);
+
+        FluentActions.Invoking(half.CreateBrowser)
+            .Should().Throw<Exception>()
+            .Which.ToString().Should().Contain("travel as a pair or not at all");
+    }
+
+    /// <summary>
+    /// A visitors sixth contact in a minute is refused at this door.
+    /// </summary>
+    /// <remarks>
+    /// The sender-side half of the contact form's anti-abuse pair, and the only place it can live:
+    /// this host sees the visitor's own address, where the API sees every caller wearing the
+    /// proxy's (ADR 0082). The refusal must happen here to mean anything, so the last assertion is
+    /// the one that matters — the API was sent exactly the admitted five, and never the sixth.
+    /// </remarks>
+    [Fact]
+    public async Task A_visitors_sixth_contact_in_a_minute_is_refused_at_this_door()
+    {
+        _factory.TurnstileApi.Respond = _ => RecordingHandler.Ok("""{"success":true}""");
+        _factory.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.Accepted);
+        var trainerId = Guid.NewGuid();
+
+        for (var sent = 0; sent < 5; sent++)
+        {
+            var admitted = await ContactAsync(trainerId, "a-genuine-token");
+
+            admitted.StatusCode.Should().Be(
+                HttpStatusCode.Accepted, "five messages a minute is a person writing");
+        }
+
+        var refused = await ContactAsync(trainerId, "a-genuine-token");
+
+        refused.StatusCode.Should().Be(
+            HttpStatusCode.TooManyRequests,
+            "past the window the refusal is this host's own: the visitor's address is real here " +
+            "and gone one hop later (ADR 0082)");
+        _factory.LoginApi.Requests.Should().HaveCount(
+            5, "a message refused at the door must never reach the API");
+        _factory.TurnstileApi.Requests.Should().HaveCount(
+            5, "the window closes before the endpoint runs, so the refused sixth costs no " +
+               "verification either");
+    }
+
+    /// <summary>
+    /// The catalogs reads never pay the contact windows toll.
+    /// </summary>
+    /// <remarks>
+    /// The window is the contact endpoint's, not the family's: exhausting it with writes must
+    /// leave the reads answering, or a burst of messages could take the whole catalog offline for
+    /// everyone behind one address.
+    /// </remarks>
+    [Fact]
+    public async Task The_catalogs_reads_never_pay_the_contact_windows_toll()
+    {
+        _factory.TurnstileApi.Respond = _ => RecordingHandler.Ok("""{"success":true}""");
+        _factory.ProxiedApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.Accepted);
+        var trainerId = Guid.NewGuid();
+
+        for (var sent = 0; sent < 6; sent++)
+        {
+            await ContactAsync(trainerId, "a-genuine-token");
+        }
+
+        var read = await SendAsync(HttpMethod.Get, AnonymousPath);
+
+        read.StatusCode.Should().Be(
+            HttpStatusCode.Accepted,
+            "the stub answers 202 to whatever reaches it, and reaching it is the assertion: the " +
+            "window bounds the one write, never the reads beside it");
+    }
+
     /// <summary>The ticket inside the session cookie, opened with the host's own format.</summary>
     private AuthenticationTicket Unprotect(string setCookie)
     {
@@ -1106,5 +1363,33 @@ public sealed class BffTests : IDisposable
         request.Headers.Add(BffContract.RequestedWithHeader, BffContract.RequestedWithValue);
 
         return _browser.SendAsync(request);
+    }
+
+    /// <summary>Sends a contact message the way the front end does: forgery header always, the
+    /// Turnstile token when the widget minted one. A fact about another host — the unconfigured
+    /// one, mostly — hands in that host's own browser.</summary>
+    private Task<HttpResponseMessage> ContactAsync(Guid trainerId, string? token, HttpClient? browser = null)
+    {
+        var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            $"api/Catalog/trainers/{trainerId}/contact")
+        {
+            Content = JsonContent.Create(new
+            {
+                senderFirstname = "Grace",
+                senderLastname = "Hopper",
+                senderEmailAddress = "grace@example.org",
+                message = "I would like to book this training."
+            })
+        };
+
+        request.Headers.Add(BffContract.RequestedWithHeader, BffContract.RequestedWithValue);
+
+        if (token is not null)
+        {
+            request.Headers.Add(BffContract.TurnstileTokenHeader, token);
+        }
+
+        return (browser ?? _browser).SendAsync(request);
     }
 }

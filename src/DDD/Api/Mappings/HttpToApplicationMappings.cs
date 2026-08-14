@@ -1,4 +1,6 @@
 using TrainingHub.Shared.Api.Contracts.Auth;
+using TrainingHub.Shared.Api.Contracts.Catalog;
+using TrainingHub.Shared.Api.Contracts.Mappings;
 using TrainingHub.Shared.Api.Contracts.Trainers;
 using TrainingHub.Shared.Api.Contracts.Trainings;
 using TrainingHub.Shared.Application.Dtos.Trainer;
@@ -88,6 +90,32 @@ public static class HttpToApplicationMappings
             Description = request.Description,
             Prerequisites = request.Prerequisites,
             AcquiredSkills = request.AcquiredSkills
+        };
+    }
+
+    /// <summary>
+    /// Builds the request carrying a visitor's message to a trainer (ADR 0082).
+    /// </summary>
+    /// <remarks>
+    /// The trainer comes from the route and everything else from the body, which is the whole of
+    /// the privacy argument in one signature: a caller names who they are writing to, never where
+    /// it goes.
+    /// </remarks>
+    public static TrainerContactRequest ToApplicationRequest(
+        this ContactTrainerHttpRequest request,
+        Guid trainerId)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        return new TrainerContactRequest
+        {
+            TrainerId = trainerId,
+            TrainingId = request.TrainingId,
+            SenderFirstname = request.SenderFirstname,
+            SenderLastname = request.SenderLastname,
+            SenderEmailAddress = request.SenderEmailAddress,
+            Message = request.Message,
+            LooksAutomated = request.LooksAutomated()
         };
     }
 }

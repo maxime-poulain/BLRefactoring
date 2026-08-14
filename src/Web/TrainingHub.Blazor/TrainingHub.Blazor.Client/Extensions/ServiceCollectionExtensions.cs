@@ -38,7 +38,10 @@ public static class ServiceCollectionExtensions
         // origin, and the host decides what sits behind /api. See ADR 0009.
         services.AddHttpClient(HttpClientNames.Api, (serviceProvider, client) =>
                 client.BaseAddress = new Uri(Origin(serviceProvider), "api/"))
-            .AddHttpMessageHandler<RequestedWithHandler>();
+            .AddHttpMessageHandler<RequestedWithHandler>()
+            // Second in the chain and mostly idle: it attaches the Turnstile token a contact
+            // message deposited, and nothing on any other call (ADR 0083).
+            .AddHttpMessageHandler<TurnstileTokenHandler>();
 
         services.AddHttpClient(HttpClientNames.Bff, (serviceProvider, client) =>
                 client.BaseAddress = Origin(serviceProvider))
@@ -90,6 +93,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITrainerStandingSource>(sp => sp.GetRequiredService<TrainerStandingSource>());
         services.AddScoped<ITrainerPortraitSource>(sp => sp.GetRequiredService<TrainerStandingSource>());
         services.AddTransient<RequestedWithHandler>();
+        // The accessor is the one instance the dialog's page and the handler share; the handler
+        // itself is transient like its sibling above (ADR 0083).
+        services.AddSingleton<TurnstileTokenAccessor>();
+        services.AddTransient<TurnstileTokenHandler>();
         return services;
     }
 
