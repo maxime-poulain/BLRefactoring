@@ -1,6 +1,6 @@
 # 0069 — Give the catalog its first facet
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0080](0080-let-a-visitor-browse-several-shelves-at-once.md): the topic filter becomes a selection joined by *or*, and the facet counts stop being the whole catalog's to answer the term the visitor typed
 - **Amends:** [0059](0059-give-the-search-index-a-body-and-a-query-surface.md)
 - **Date:** 2026-08-10
 

@@ -200,6 +200,103 @@ public abstract class CatalogSearchTest<TFactory>(TFactory factory) : Integratio
     }
 
     /// <summary>
+    /// Two shelves, answer their union, to a caller with no token.
+    /// </summary>
+    /// <remarks>
+    /// ADR 0080 over the wire, on the one point that could be got backwards: a training answers as
+    /// soon as it sits on <em>at least one</em> of the ticked shelves. The third training is what
+    /// makes the fact say something — a union that swallowed it would be no filter at all — and all
+    /// three are waited into the unfiltered catalog first, so what the filtered read leaves out is a
+    /// refusal rather than an index that has not caught up.
+    /// <para>
+    /// The parameter repeats rather than joining, which is the half that keeps every address shared
+    /// before this change answering what it answered then.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task TwoShelves_AnswerTheirUnion_ToACallerWithNoToken()
+    {
+        var trainer = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+
+        var design = await trainer.PostAsJsonAsync(
+            "/Training", TrainingRequests.Valid("Shelving Sketches", topics: ["Design"]));
+        design.StatusCode.Should().Be(HttpStatusCode.Created);
+        var designId = await design.Content.ReadFromJsonAsync<Guid>();
+
+        var marketing = await trainer.PostAsJsonAsync(
+            "/Training", TrainingRequests.Valid("Shelving Pitches", topics: ["Marketing"]));
+        marketing.StatusCode.Should().Be(HttpStatusCode.Created);
+        var marketingId = await marketing.Content.ReadFromJsonAsync<Guid>();
+
+        var leadership = await trainer.PostAsJsonAsync(
+            "/Training", TrainingRequests.Valid("Shelving Teams", topics: ["Leadership"]));
+        leadership.StatusCode.Should().Be(HttpStatusCode.Created);
+        var leadershipId = await leadership.Content.ReadFromJsonAsync<Guid>();
+
+        (await WaitForCatalogAsync("shelving", holds: designId)).Should().Contain(designId);
+        (await WaitForCatalogAsync("shelving", holds: marketingId)).Should().Contain(marketingId);
+        (await WaitForCatalogAsync("shelving", holds: leadershipId)).Should().Contain(leadershipId);
+
+        var anonymous = Factory.CreateClient();
+        var shelves = await IdentifiersOfAsync(
+            anonymous,
+            "/Catalog/trainings?term=shelving&topic=Design&topic=Marketing&page=1&pageSize=50");
+
+        shelves.Should().Contain(designId, "a training on the first ticked shelf answers (ADR 0080)");
+        shelves.Should().Contain(marketingId, "so does one on the second — the shelves widen");
+        shelves.Should().NotContain(leadershipId,
+            "a shelf nobody ticked is still a shelf the question left out");
+    }
+
+    /// <summary>
+    /// The catalogs facets, count what the term leaves standing.
+    /// </summary>
+    /// <remarks>
+    /// The reversal ADR 0080 makes to ADR 0069, end to end: the counts used to describe the whole
+    /// catalog whatever a visitor had typed. Read under a word only one training carries, the row
+    /// of chips is that training's shelf and nothing else — every other topic being absent rather
+    /// than zero, which is ADR 0069's promise holding over a narrower population.
+    /// </remarks>
+    [Fact]
+    public async Task TheCatalogsFacets_CountWhatTheTermLeavesStanding()
+    {
+        var trainer = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+
+        var created = await trainer.PostAsJsonAsync(
+            "/Training", TrainingRequests.Valid("Fathoming Currents", topics: ["Databases"]));
+        created.StatusCode.Should().Be(HttpStatusCode.Created);
+        var trainingId = await created.Content.ReadFromJsonAsync<Guid>();
+
+        (await WaitForCatalogAsync("fathoming", holds: trainingId)).Should().Contain(trainingId);
+
+        var counted = await WaitForFacetsAsync(term: "fathoming", holds: "Databases");
+
+        counted.Should().ContainSingle(
+            "the facets answer the term, so only the shelf its one match sits on has rows to " +
+            "group (ADR 0080)")
+            .Which.Key.Should().Be("Databases");
+    }
+
+    /// <summary>
+    /// An unknown topic among known ones, is refused at the door.
+    /// </summary>
+    /// <remarks>
+    /// The silent failure ADR 0080 closed, over the wire: the filter became a sequence, and an
+    /// attribute that judged a string and passed everything else would have let a bound collection
+    /// through untouched — the boundary still there, still running, and refusing nothing.
+    /// </remarks>
+    [Fact]
+    public async Task AnUnknownTopicAmongKnownOnes_IsRefusedAtTheDoor()
+    {
+        var anonymous = Factory.CreateClient();
+
+        var page = await anonymous.GetAsync(
+            "/Catalog/trainings?topic=Design&topic=Astrology&page=1&pageSize=10");
+
+        page.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>
     /// An unknown topic, is refused at the door.
     /// </summary>
     /// <remarks>
@@ -388,18 +485,29 @@ public abstract class CatalogSearchTest<TFactory>(TFactory factory) : Integratio
             .Select(item => item.GetProperty("id").GetGuid())];
     }
 
+    /// <summary>
+    /// Polls the facets until they hold — or stop holding — a topic, and answers what was last read.
+    /// </summary>
+    /// <param name="holds">The topic to wait for, or <see langword="null"/>.</param>
+    /// <param name="holdsNot">The topic to wait out, or <see langword="null"/>.</param>
+    /// <param name="term">
+    /// The term to count under, or <see langword="null"/> for the whole catalog. The endpoint takes
+    /// one since ADR 0080, and a caller that gives none asks exactly what every caller asked before.
+    /// </param>
     private async Task<IReadOnlyDictionary<string, int>> WaitForFacetsAsync(
         string? holds = null,
-        string? holdsNot = null)
+        string? holdsNot = null,
+        string? term = null)
     {
         var timeout = TimeSpan.FromSeconds(15);
         var started = DateTime.UtcNow;
         var anonymous = Factory.CreateClient();
+        var address = term is null ? "/Catalog/topics" : $"/Catalog/topics?term={term}";
         IReadOnlyDictionary<string, int> lastSeen = new Dictionary<string, int>();
 
         while (DateTime.UtcNow - started < timeout)
         {
-            var response = await anonymous.GetAsync("/Catalog/topics");
+            var response = await anonymous.GetAsync(address);
             response.StatusCode.Should().Be(HttpStatusCode.OK);
 
             var body = await response.Content.ReadFromJsonAsync<JsonElement>();

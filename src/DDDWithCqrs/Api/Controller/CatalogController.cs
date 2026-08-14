@@ -39,12 +39,12 @@ public sealed class CatalogController(IQueryDispatcher queryDispatcher) : Catalo
     /// has no term because a moderator needs the states this index refuses to hold (ADR 0055,
     /// ADR 0059).
     /// </remarks>
-    /// <param name="search">The term, from the query string.</param>
+    /// <param name="search">The term, the shelves and the order, from the query string.</param>
     /// <param name="pagination">The page asked for.</param>
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
     /// <returns>
     /// 200 OK with one page of trainings on offer.
-    /// 400 Bad Request when the term is too long, the topic or the sort is unknown, or the page is
+    /// 400 Bad Request when the term is too long, a topic or the sort is unknown, or the page is
     /// out of range.
     /// </returns>
     [HttpGet("trainings")]
@@ -61,27 +61,38 @@ public sealed class CatalogController(IQueryDispatcher queryDispatcher) : Catalo
     }
 
     /// <summary>
-    /// Lists the catalog's facets: each topic at least one offered training declares, with its
-    /// count.
+    /// Lists the catalog's facets under a term: each topic at least one matching training declares,
+    /// with its count.
     /// </summary>
     /// <remarks>
     /// The browse half of the search above (ADR 0069). Counted over the same composed visibility
     /// the search reads, so a suspension or a withholding moves these numbers the moment its
     /// consumer runs — a facet never promises a shelf the search would answer empty.
+    /// <para>
+    /// It carries a term and nothing else (ADR 0080). A contract of its own rather than the
+    /// search's, because binding that one would publish an endpoint taking a topic and a sort it
+    /// answers nothing about. The shelves are left out on purpose: under a widening filter,
+    /// counting each topic against the ticked ones would give every facet the size of the whole
+    /// selection, and the figures would stop telling the shelves apart. The term is bounded by the
+    /// same length the search bounds it by, so the same word is refused the same way at both doors.
+    /// </para>
     /// </remarks>
+    /// <param name="facets">The term the facets are counted under.</param>
     /// <param name="cancellationToken">Cancellation token for the asynchronous operation.</param>
     /// <returns>
-    /// 200 OK with the facets, alphabetically by topic; empty when nothing is on offer.
+    /// 200 OK with the facets, alphabetically by topic; empty when nothing matches.
     /// </returns>
     [HttpGet("topics")]
     [ProducesResponseType(typeof(CatalogTopicsHttpResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<CatalogTopicsHttpResponse>> GetTopicsAsync(
+        [FromQuery] CatalogFacetsHttpRequest? facets,
         CancellationToken cancellationToken = default)
     {
-        var facets = await queryDispatcher.DispatchAsync(
-            HttpToApplicationMappings.ToGetCatalogTopicsQuery(), cancellationToken);
+        var counted = await queryDispatcher.DispatchAsync(
+            facets.ToGetCatalogTopicsQuery(), cancellationToken);
 
-        return Ok(facets.ToHttp());
+        return Ok(counted.ToHttp());
     }
 
     /// <summary>

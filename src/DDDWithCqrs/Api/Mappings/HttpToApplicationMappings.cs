@@ -210,18 +210,18 @@ public static class HttpToApplicationMappings
         PaginationHttpRequest? pagination) => new()
         {
             Term = search?.Term,
-            // Blank is what an empty query parameter binds to, and it asks for no filter rather
-            // than for a topic called nothing — the same reading the status filters give it.
-            Topic = string.IsNullOrWhiteSpace(search?.Topic) ? null : search.Topic,
+            Topics = search.ToTopics(),
             Order = search.ToOrder(),
             Paging = pagination.ToPageRequest()
         };
 
-    /// <summary>Builds the query listing the catalog's facets (ADR 0069).</summary>
+    /// <summary>Builds the query listing the catalog's facets (ADR 0069, ADR 0080).</summary>
     /// <remarks>
-    /// Nothing to carry: a visitor asking what there is to browse has nothing to say yet.
+    /// It carries the term and not the shelves, because that is what the counts are read under:
+    /// a facet answers what it would contribute to the search the visitor has typed.
     /// </remarks>
-    public static GetCatalogTopicsQuery ToGetCatalogTopicsQuery() => new();
+    public static GetCatalogTopicsQuery ToGetCatalogTopicsQuery(
+        this CatalogFacetsHttpRequest? facets) => new() { Term = facets?.Term };
 
     /// <summary>Builds the query reading one offered training in full (ADR 0062).</summary>
     /// <remarks>

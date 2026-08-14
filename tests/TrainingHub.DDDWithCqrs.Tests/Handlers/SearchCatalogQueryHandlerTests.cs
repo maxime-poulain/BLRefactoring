@@ -32,7 +32,7 @@ public sealed class SearchCatalogQueryHandlerTests
 
         _trainingSearch
             .Setup(search => search.SearchAsync(
-                "event storming", "Design", CatalogOrder.Newest, paging, It.IsAny<CancellationToken>()))
+                "event storming", new[] { "Design" }, CatalogOrder.Newest, paging, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PagedResult<CatalogTrainingDto>([], 3, 5, 0));
 
         var sut = new SearchCatalogQueryHandler(_trainingSearch.Object);
@@ -41,7 +41,7 @@ public sealed class SearchCatalogQueryHandlerTests
             new SearchCatalogQuery
             {
                 Term = "event storming",
-                Topic = "Design",
+                Topics = ["Design"],
                 Order = CatalogOrder.Newest,
                 Paging = paging
             },
@@ -49,7 +49,7 @@ public sealed class SearchCatalogQueryHandlerTests
 
         _trainingSearch.Verify(
             search => search.SearchAsync(
-                "event storming", "Design", CatalogOrder.Newest, paging, It.IsAny<CancellationToken>()),
+                "event storming", new[] { "Design" }, CatalogOrder.Newest, paging, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -72,7 +72,7 @@ public sealed class SearchCatalogQueryHandlerTests
         _trainingSearch
             .Setup(search => search.SearchAsync(
                 It.IsAny<string?>(),
-                It.IsAny<string?>(),
+                It.IsAny<IReadOnlyCollection<string>>(),
                 It.IsAny<CatalogOrder>(),
                 It.IsAny<PageRequest>(),
                 It.IsAny<CancellationToken>()))

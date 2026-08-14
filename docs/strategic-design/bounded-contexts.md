@@ -357,7 +357,9 @@ know which of the things below were built for a context that may never be extrac
 - **The catalog's facets** exist (ADR 0069): the index files each entry under the topics its
   training declares, `GET /Catalog/topics` counts the offered shelves — absent rather than zero —
   and the search takes a `topic`. The first word of this context's expected language, spoken by
-  running code.
+  running code. ADR 0080 turned that word plural: the search takes as many shelves as a visitor
+  ticks and answers whatever sits on at least one of them, and the counts answer the term they
+  typed rather than the whole catalog.
 - **The trainer's public page** exists (ADR 0070): `GET /Catalog/trainers/{id}` answers who an
   offering person is and what they offer — visibility from the index, identity read live from the
   write model — and the navigation runs both ways between a training and its author. Offered or

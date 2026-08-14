@@ -21,10 +21,10 @@ public sealed class CatalogSearchRequest
     public string? Term { get; init; }
 
     /// <summary>
-    /// The canonical name of a topic to browse, or <see langword="null"/> for all of them
-    /// (ADR 0069).
+    /// The canonical names of the topics to browse. Empty is every topic rather than none, and a
+    /// training answers when it carries any of them (ADR 0069, ADR 0080).
     /// </summary>
-    public string? Topic { get; init; }
+    public IReadOnlyCollection<string> Topics { get; init; } = [];
 
     /// <summary>
     /// Which of the catalog's two published orders to read the page in (ADR 0071).

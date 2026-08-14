@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc;
 using TrainingHub.Shared.Application.Search;
 using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 
@@ -36,20 +37,38 @@ public sealed class CatalogSearchHttpRequest
     public string? Term { get; init; }
 
     /// <summary>
-    /// Only trainings filed under this topic, or every topic when it is absent.
+    /// Only trainings filed under at least one of these topics, or every topic when none is given.
     /// </summary>
     /// <remarks>
-    /// A name from the domain's closed set, refused at model binding when it is anything else —
-    /// <c>[KnownTopic]</c> asks the domain rather than restating its list. Composable with the
-    /// term: a visitor can browse a shelf and search along it in the same breath (ADR 0069).
+    /// Names from the domain's closed set, refused at model binding when any of them is anything
+    /// else — <c>[KnownTopic]</c> asks the domain rather than restating its list, and judges a
+    /// sequence name by name. Composable with the term: a visitor can browse several shelves and
+    /// search along them in the same breath (ADR 0069, ADR 0080).
+    /// <para>
+    /// <b>The wire name stays singular.</b> The property is plural because it holds several, but
+    /// the parameter is still <c>topic</c>, repeated — <c>?topic=Design&amp;topic=Programming</c>.
+    /// That is what keeps every address already shared, bookmarked or indexed answering exactly
+    /// what it answered before: a lone <c>?topic=Design</c> binds to a sequence of one, and neither
+    /// a redirect nor a second spelling has to exist.
+    /// </para>
+    /// <para>
+    /// <b>No length bound and no count bound, and both absences are decisions.</b>
+    /// <c>[StringLength]</c> is gone because it casts what it is given to a string and would throw
+    /// on a sequence — and because it was never the thing doing the work: a name outside the closed
+    /// set is refused by identity, which subsumes any length. Nothing caps how many may arrive
+    /// either, because nothing needs to: unknown names are refused, the known ones are sixteen, and
+    /// the layer below deduplicates — so a caller who sends a thousand is asking a question with at
+    /// most sixteen distinct parts, under the collection size the framework already bounds binding
+    /// by.
+    /// </para>
     /// </remarks>
+    [FromQuery(Name = "topic")]
     [KnownTopic(typeof(Topic))]
-    [StringLength(50)]
-    public string? Topic { get; init; }
+    public string[]? Topics { get; init; }
 
     /// <summary>
-    /// Which of the catalog's published orders to read the page in, or the default — by title —
-    /// when it is absent.
+    /// Which of the catalog's published orders to read the page in, or the default — the newest
+    /// first — when it is absent.
     /// </summary>
     /// <remarks>
     /// A name from a closed set, refused at model binding when it is anything else —

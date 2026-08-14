@@ -33,7 +33,7 @@ public sealed class CatalogApplicationServiceTests
 
         _trainingSearch
             .Setup(search => search.SearchAsync(
-                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CatalogOrder>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string?>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CatalogOrder>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PagedResult<CatalogTrainingDto>([], 2, 10, 0));
 
         var sut = new CatalogApplicationService(_trainingSearch.Object, _catalogDetail.Object);
@@ -41,14 +41,14 @@ public sealed class CatalogApplicationServiceTests
         await sut.SearchAsync(new CatalogSearchRequest
         {
             Term = "domain",
-            Topic = "Programming",
+            Topics = ["Programming"],
             Order = CatalogOrder.Newest,
             Paging = paging
         });
 
         _trainingSearch.Verify(
             search => search.SearchAsync(
-                "domain", "Programming", CatalogOrder.Newest, paging, It.IsAny<CancellationToken>()),
+                "domain", new[] { "Programming" }, CatalogOrder.Newest, paging, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -70,7 +70,7 @@ public sealed class CatalogApplicationServiceTests
 
         _trainingSearch
             .Setup(search => search.SearchAsync(
-                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CatalogOrder>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string?>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CatalogOrder>(), It.IsAny<PageRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(answered);
 
         var sut = new CatalogApplicationService(_trainingSearch.Object, _catalogDetail.Object);
@@ -178,11 +178,11 @@ public sealed class CatalogApplicationServiceTests
         var facets = new List<TopicFacetDto> { new() { Topic = "Design", OfferedCount = 2 } };
 
         _trainingSearch
-            .Setup(search => search.FacetsAsync(It.IsAny<CancellationToken>()))
+            .Setup(search => search.FacetsAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(facets);
 
         var sut = new CatalogApplicationService(_trainingSearch.Object, _catalogDetail.Object);
 
-        (await sut.GetFacetsAsync()).Should().BeSameAs(facets);
+        (await sut.GetFacetsAsync(term: null)).Should().BeSameAs(facets);
     }
 }
