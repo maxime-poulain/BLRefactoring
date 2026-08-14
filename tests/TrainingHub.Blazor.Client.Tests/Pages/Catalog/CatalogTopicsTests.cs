@@ -12,6 +12,12 @@ namespace TrainingHub.Blazor.Client.Tests.Pages.Catalog;
 /// properties app.css declares. What is worth pinning is the seam between the two — every admitted
 /// topic answers its own hue, and an unknown name answers the neutral tone rather than an
 /// undefined variable a browser would silently paint as nothing.
+/// <para>
+/// The spelling is what this suite holds, one row per topic. That the rows cover the domain's set
+/// at all is a different question, and one this project cannot ask — it references the browser and
+/// not the domain. <c>EveryTopicTheDomainDeclares_OwnsAShelfHue</c> asks it instead, from the suite
+/// that can see both.
+/// </para>
 /// </remarks>
 public sealed class CatalogTopicsTests
 {
@@ -25,6 +31,16 @@ public sealed class CatalogTopicsTests
     [InlineData("Business", "var(--th-spine-business)")]
     [InlineData("Personal Development", "var(--th-spine-personal-development)")]
     [InlineData("Leadership", "var(--th-spine-leadership)")]
+    [InlineData("Software Architecture", "var(--th-spine-software-architecture)")]
+    [InlineData("Cloud Computing", "var(--th-spine-cloud-computing)")]
+    [InlineData("DevOps", "var(--th-spine-devops)")]
+    [InlineData("Databases", "var(--th-spine-databases)")]
+    [InlineData("Security", "var(--th-spine-security)")]
+    [InlineData("Web Development", "var(--th-spine-web-development)")]
+    [InlineData("Data and Analytics", "var(--th-spine-data-and-analytics)")]
+    [InlineData("Testing and Quality", "var(--th-spine-testing-and-quality)")]
+    [InlineData("Project Management", "var(--th-spine-project-management)")]
+    [InlineData("Agile Practices", "var(--th-spine-agile-practices)")]
     public void SpineVar_AnAdmittedTopic_AnswersItsOwnHue(string topic, string expected) =>
         CatalogTopics.SpineVar(topic).Should().Be(expected);
 

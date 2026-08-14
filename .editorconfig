@@ -629,3 +629,15 @@ dotnet_diagnostic.CA1508.severity = warning
 # shapes again. Marking the folder as generated is the mechanism meant for this.
 [**/Migrations/*.cs]
 generated_code = true
+
+
+# CA5394: Do not use insecure randomness
+# The development corpus is generated from a Random seeded with a constant, and the constant is the
+# whole point: two runs of the seeder have to produce the same five hundred trainings, so that a
+# screenshot keeps matching the database and a test can assert what was built. A cryptographic
+# generator would make that impossible by construction. Nothing drawn here protects anything — a
+# catalog size, a hue, which sentence a biography closes with — and the one credential the seeder
+# writes is a fixed word committed in plain sight beside it. The rule stays an error everywhere
+# else, which is where an unpredictable number is what somebody's security depends on.
+[src/TrainingHub.Shared.Infrastructure/Development/*.cs]
+dotnet_diagnostic.CA5394.severity = none

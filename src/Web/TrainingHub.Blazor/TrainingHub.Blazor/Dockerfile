@@ -11,11 +11,15 @@ WORKDIR /src
 
 # Copy solution and project files for layer-cached restore.
 #
-# The two Directory.*.props come first and are not optional. Central package management lives in
+# The three root files come first and none of them is optional. Central package management lives in
 # Directory.Packages.props, so without it every PackageReference below has no version and restore
 # fails; Directory.Build.props carries Nullable and ImplicitUsings, which would silently switch off
-# rather than fail. `COPY src/ src/` further down does not reach either — they sit at the root.
-COPY Directory.Build.props Directory.Packages.props ./
+# rather than fail; .editorconfig carries every analyzer severity this repository chose, and without
+# it the build stage compiles the same source under the analyzers' own defaults — which stays green
+# for as long as those choices only tighten a rule, and goes red the first time one of them
+# deliberately loosens one. `COPY src/ src/` further down reaches none of the three — they sit at
+# the root.
+COPY Directory.Build.props Directory.Packages.props .editorconfig ./
 COPY TrainingHub.slnx .
 COPY src/TrainingHub.GeneratedClients/TrainingHub.GeneratedClients.csproj src/TrainingHub.GeneratedClients/
 COPY src/Web/TrainingHub.Blazor/TrainingHub.Blazor.Client/TrainingHub.Blazor.Client.csproj src/Web/TrainingHub.Blazor/TrainingHub.Blazor.Client/

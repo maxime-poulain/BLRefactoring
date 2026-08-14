@@ -328,7 +328,7 @@ nothing to refuse.
 | `TrainingDescription` | Non-empty, at most 500 characters | `InvalidDescription` |
 | `TrainingPrerequisites` | Non-empty, at most 500 characters | `InvalidPrerequisites` |
 | `AcquiredSkills` | Non-empty, at most 500 characters | `InvalidAcquiredSkills` |
-| `Topic` | Closed set of six values, resolved by name | `InvalidTopic` |
+| `Topic` | Closed set of sixteen values, resolved by name | `InvalidTopic` |
 | `TrainingStatus` | Closed set of three: `Published`, `Unpublished`, `Withheld` | — |
 | `TrainerStatus` | Closed set of two: `Active`, `Suspended` | — |
 | `TrainerPhoto` | Non-empty, at most 5 MiB, PNG/JPEG/WebP — and the bytes must be what the content type declares | `PhotoEmpty`, `PhotoTooLarge`, `PhotoFormatNotSupported`, `PhotoContentMismatch` |
@@ -338,8 +338,12 @@ Three behaviors are worth knowing:
 - **`TrainingTitle` compares case-insensitively.** `"Intro to C#"` and `"INTRO TO C#"` are the
   same title, which is what makes the uniqueness rule meaningful.
 - **`Topic` is a closed enumeration**, not free text: Programming, Design, Marketing, Business,
-  Personal Development, Leadership. `Topic.TryFromName` resolves a name without throwing — an
-  unrecognized name is a validation error produced by the application layer, never an exception.
+  Personal Development, Leadership, Software Architecture, Cloud Computing, DevOps, Databases,
+  Security, Web Development, Data and Analytics, Testing and Quality, Project Management, Agile
+  Practices. Every one of them is a *subject* rather than a product — Cloud Computing rather than
+  Azure, Databases rather than PostgreSQL — because a closed set that admits a product has to admit
+  the next one (ADR 0079). `Topic.TryFromName` resolves a name without throwing — an unrecognized
+  name is a validation error produced by the application layer, never an exception.
 - **The two statuses resolve by name and throw**, unlike `Topic`, and the asymmetry is the point:
   a topic name arrives from a client and is reported back with everything else that was wrong,
   while a status name arrives from the column the domain wrote it to. A word the domain does not
@@ -1172,6 +1176,50 @@ the Blazor front end shows two navigation entries nobody else sees, `/administra
 `/administration/trainings`. The same authority is reachable through the API, `/scalar/v1` in
 Development being the quickest way in.
 
+#### A catalog to look at
+
+An empty database proves nothing. Every screen in this product is correct over one row and exercised
+by none of it: the pagination fits on one page, the search matches whatever was just typed into it,
+the facets offer a single subject, a trainer's profile holds one training, and the newest-first
+order sorts a set of one. So there is a written catalog, and it is not on by default:
+
+```bash
+# in appsettings.Local.json, or as an environment variable for the compose service
+DevelopmentData__Enabled=true       # absent means off
+DevelopmentData__Trainings=500      # the default
+DevelopmentData__Password=toto      # what the committed Development file already names
+```
+
+It creates **exactly that many trainings**, across as many trainers as it takes to give each of them
+between one and five — about a hundred and seventy people, with names, biographies written for their
+area of expertise, generated portraits, and courses whose prerequisites match what their titles
+promise. Around eight percent of the trainings are unpublished by their owner, four percent withheld
+by the administration with a reason, and five percent of the trainers are under sanction, so every
+administrative filter has something to show. The creation dates are spread over eighteen months.
+
+**Every seeded account signs in with the password `DevelopmentData:Password` names**, which the
+committed Development configuration sets to `toto` beside the administrator's own key — so there is
+nothing to set up first, and a host asked to seed without one reports the missing key rather than
+inventing a credential. The usernames are `firstname.lastname` — the log names the first one it creates. Nothing about Identity is relaxed to allow that word: the
+configured policy asks for four characters and neither a digit nor an uppercase letter nor a symbol,
+so it passes as written, through the production hasher.
+
+Three things are worth knowing before running it
+([ADR 0079](docs/adr/0079-build-the-development-catalog-with-the-domain.md)):
+
+- **It is idempotent and deletes nothing.** The accounts are named deterministically, so a trainer
+  who already exists is skipped whole. A second run is a no-op; an interrupted one resumes.
+- **It builds the data with the domain.** Every trainer goes through `Trainer.Create`, every training
+  through `Training.CreateAsync` with the same three ports the application layer resolves, every
+  portrait through the sanitizer and the object store. Nothing is inserted behind the aggregates'
+  backs except the audit stamp, which the interceptor makes unreachable any other way.
+- **About a hundred and seventy welcome emails are really sent**, one SMTP connection each, once the
+  outbox worker starts. Mailpit absorbs them; without an SMTP server they become poison messages and
+  light the readiness probe, which is the system working rather than failing.
+
+Development only, and one of three gates — the others being the environment and the OpenAPI
+generation pass, which loads a host for real.
+
 #### Sending real email
 
 Locally every message ends in **Mailpit**, and Mailpit is a sink: it accepts anything and relays
@@ -1463,7 +1511,7 @@ one the analysis of `master` produces.
   the root `Directory.Build.props`; the target framework stays per-project, one line each and the
   same line in every one.
 - **Code style** is described in `.editorconfig`: file-scoped namespaces, `var`, Allman braces,
-  naming conventions, and a hundred and sixty-one analyzer severities — all of them enforced at build
+  naming conventions, and a hundred and sixty-two analyzer severities — all of them enforced at build
   time, including the formatting ones.
 - **Line endings** are normalized to LF by `.gitattributes`, in the repository and the working
   tree, whatever the contributor's platform.
@@ -1485,7 +1533,7 @@ one the analysis of `master` produces.
   `maxime-poulain_`, which is the SonarCloud project key and cannot be renamed from here. The name
   itself is written down in exactly two places, and
   [ADR 0022](docs/adr/0022-name-the-repository-after-the-domain-it-serves.md) is one of them.
-- **The build fails on a warning.** `.editorconfig` sets a hundred and sixty-one analyzer rules on
+- **The build fails on a warning.** `.editorconfig` sets a hundred and sixty-two analyzer rules on
   purpose, and `Directory.Build.props` turns a warning into an error, so the severities written
   there are rules rather than preferences — an architecture rule checks that they stay that way.
   Every rule is either enforced or demoted with the argument for lowering it written beside it;

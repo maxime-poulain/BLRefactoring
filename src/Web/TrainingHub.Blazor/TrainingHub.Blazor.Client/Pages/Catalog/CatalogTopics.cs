@@ -23,6 +23,16 @@ public static class CatalogTopics
             "Business" => "var(--th-spine-business)",
             "Personal Development" => "var(--th-spine-personal-development)",
             "Leadership" => "var(--th-spine-leadership)",
+            "Software Architecture" => "var(--th-spine-software-architecture)",
+            "Cloud Computing" => "var(--th-spine-cloud-computing)",
+            "DevOps" => "var(--th-spine-devops)",
+            "Databases" => "var(--th-spine-databases)",
+            "Security" => "var(--th-spine-security)",
+            "Web Development" => "var(--th-spine-web-development)",
+            "Data and Analytics" => "var(--th-spine-data-and-analytics)",
+            "Testing and Quality" => "var(--th-spine-testing-and-quality)",
+            "Project Management" => "var(--th-spine-project-management)",
+            "Agile Practices" => "var(--th-spine-agile-practices)",
             _ => "var(--th-spine-neutral)"
         };
 }

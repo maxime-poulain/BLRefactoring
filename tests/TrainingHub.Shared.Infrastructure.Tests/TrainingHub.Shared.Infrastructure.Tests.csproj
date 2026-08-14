@@ -20,6 +20,9 @@
          (ADR 0032) and would run the comparison in LINQ to objects anyway, which is the one thing
          that query must not be proven by. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <!-- For DevelopmentSeedExtensionsTests: the seeder is an extension of IHost and reaches
+         everything through the scopes it opens, so proving it takes a real host to build. -->
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
   </ItemGroup>
 
   <ItemGroup>

@@ -122,6 +122,13 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
+    <!--
+      The host builder itself, for DevelopmentSeedExtensionsTests. The seeder is an extension of
+      IHost and reaches everything through the scopes it opens, so proving it takes a real host
+      rather than a container of services — and src/ needs only the abstractions below, because a
+      host is something the API projects are handed rather than something they build.
+    -->
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />

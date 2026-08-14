@@ -40,6 +40,56 @@ public sealed class Topic : ValueObject
     public static readonly Topic Leadership = new("Leadership");
 
     /// <summary>
+    /// The shape of a system, and the decisions that are expensive to reverse.
+    /// </summary>
+    public static readonly Topic SoftwareArchitecture = new("Software Architecture");
+
+    /// <summary>
+    /// Running software on somebody else's machines, and paying for what it uses.
+    /// </summary>
+    public static readonly Topic CloudComputing = new("Cloud Computing");
+
+    /// <summary>
+    /// The path from a commit to production, and who walks it.
+    /// </summary>
+    public static readonly Topic DevOps = new("DevOps");
+
+    /// <summary>
+    /// Storing what must outlive the process, and asking it questions.
+    /// </summary>
+    public static readonly Topic Databases = new("Databases");
+
+    /// <summary>
+    /// Keeping what is private private, and what is trusted trustworthy.
+    /// </summary>
+    public static readonly Topic Security = new("Security");
+
+    /// <summary>
+    /// What a browser renders, and the code behind it.
+    /// </summary>
+    public static readonly Topic WebDevelopment = new("Web Development");
+
+    /// <summary>
+    /// Turning what happened into something a decision can rest on.
+    /// </summary>
+    public static readonly Topic DataAndAnalytics = new("Data and Analytics");
+
+    /// <summary>
+    /// Knowing that it works, and knowing it still does.
+    /// </summary>
+    public static readonly Topic TestingAndQuality = new("Testing and Quality");
+
+    /// <summary>
+    /// Scope, sequence, and the promises a team can keep.
+    /// </summary>
+    public static readonly Topic ProjectManagement = new("Project Management");
+
+    /// <summary>
+    /// Working in short loops, and changing course on evidence.
+    /// </summary>
+    public static readonly Topic AgilePractices = new("Agile Practices");
+
+    /// <summary>
     /// Every topic there is, in declaration order.
     /// </summary>
     /// <remarks>
@@ -48,9 +98,18 @@ public sealed class Topic : ValueObject
     /// as-is: any caller could clear the domain's closed enumeration for the lifetime of the
     /// process, since the cache is static. The lazy fill was unguarded too, so two threads
     /// arriving together each built their own copy.
+    /// <para>
+    /// The six broad categories this started with described a training platform in general; the ten
+    /// beside them describe this one. Every addition is a <em>subject</em> rather than a product —
+    /// Cloud Computing rather than Azure, Databases rather than PostgreSQL — because a closed set
+    /// that admits a product has to admit the next one, and a taxonomy that grows with the market
+    /// stops being a taxonomy (ADR 0079).
+    /// </para>
     /// </remarks>
     private static readonly IReadOnlyList<Topic> All = ImmutableArray.Create(
-        Programming, Design, Marketing, Business, PersonalDevelopment, Leadership);
+        Programming, Design, Marketing, Business, PersonalDevelopment, Leadership,
+        SoftwareArchitecture, CloudComputing, DevOps, Databases, Security,
+        WebDevelopment, DataAndAnalytics, TestingAndQuality, ProjectManagement, AgilePractices);
 
     /// <summary>
     /// The topic's name, as the domain spells it.
