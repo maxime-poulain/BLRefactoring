@@ -32,7 +32,7 @@ public sealed class GetCatalogTopicsQueryHandlerTests
         };
 
         _trainingSearch
-            .Setup(search => search.FacetsAsync(It.IsAny<CancellationToken>()))
+            .Setup(search => search.FacetsAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(answered);
 
         var sut = new GetCatalogTopicsQueryHandler(_trainingSearch.Object);

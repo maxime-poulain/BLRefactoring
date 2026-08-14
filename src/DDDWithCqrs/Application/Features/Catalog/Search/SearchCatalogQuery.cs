@@ -33,7 +33,7 @@ public sealed class SearchCatalogQuery : IQuery<PagedResult<CatalogTrainingDto>>
     /// The canonical name of a topic to browse, or <see langword="null"/> for all of them
     /// (ADR 0069).
     /// </summary>
-    public string? Topic { get; init; }
+    public IReadOnlyCollection<string> Topics { get; init; } = [];
 
     /// <summary>
     /// Which of the catalog's two published orders to read the page in (ADR 0071).

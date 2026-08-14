@@ -1523,35 +1523,37 @@ namespace TrainingHub.GeneratedClients
     {
         /// <param name="term">Only trainings whose title matches every word of this, or the whole catalog when it is
         /// <br/>absent.</param>
-        /// <param name="topic">Only trainings filed under this topic, or every topic when it is absent.</param>
-        /// <param name="sort">Which of the catalog's published orders to read the page in, or the default — by title —
-        /// <br/>when it is absent.</param>
+        /// <param name="sort">Which of the catalog's published orders to read the page in, or the default — the newest
+        /// <br/>first — when it is absent.</param>
         /// <param name="page">The page to return, counted from 1.</param>
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, string? topic, string? sort, int? page, int? pageSize);
+        System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, System.Collections.Generic.IEnumerable<string>? topic, string? sort, int? page, int? pageSize);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="term">Only trainings whose title matches every word of this, or the whole catalog when it is
         /// <br/>absent.</param>
-        /// <param name="topic">Only trainings filed under this topic, or every topic when it is absent.</param>
-        /// <param name="sort">Which of the catalog's published orders to read the page in, or the default — by title —
-        /// <br/>when it is absent.</param>
+        /// <param name="sort">Which of the catalog's published orders to read the page in, or the default — the newest
+        /// <br/>first — when it is absent.</param>
         /// <param name="page">The page to return, counted from 1.</param>
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, string? topic, string? sort, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, System.Collections.Generic.IEnumerable<string>? topic, string? sort, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken);
 
+        /// <param name="term">Only the shelves a training matching every word of this declares, or all of them when it is
+        /// <br/>absent.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<CatalogTopicsHttpResponse> GetTopicsAsync();
+        System.Threading.Tasks.Task<CatalogTopicsHttpResponse> GetTopicsAsync(string? term);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <param name="term">Only the shelves a training matching every word of this declares, or all of them when it is
+        /// <br/>absent.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<CatalogTopicsHttpResponse> GetTopicsAsync(System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<CatalogTopicsHttpResponse> GetTopicsAsync(string? term, System.Threading.CancellationToken cancellationToken);
 
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
@@ -1625,14 +1627,13 @@ namespace TrainingHub.GeneratedClients
 
         /// <param name="term">Only trainings whose title matches every word of this, or the whole catalog when it is
         /// <br/>absent.</param>
-        /// <param name="topic">Only trainings filed under this topic, or every topic when it is absent.</param>
-        /// <param name="sort">Which of the catalog's published orders to read the page in, or the default — by title —
-        /// <br/>when it is absent.</param>
+        /// <param name="sort">Which of the catalog's published orders to read the page in, or the default — the newest
+        /// <br/>first — when it is absent.</param>
         /// <param name="page">The page to return, counted from 1.</param>
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, string? topic, string? sort, int? page, int? pageSize)
+        public virtual System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, System.Collections.Generic.IEnumerable<string>? topic, string? sort, int? page, int? pageSize)
         {
             return SearchTrainingsAsync(term, topic, sort, page, pageSize, System.Threading.CancellationToken.None);
         }
@@ -1640,14 +1641,13 @@ namespace TrainingHub.GeneratedClients
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="term">Only trainings whose title matches every word of this, or the whole catalog when it is
         /// <br/>absent.</param>
-        /// <param name="topic">Only trainings filed under this topic, or every topic when it is absent.</param>
-        /// <param name="sort">Which of the catalog's published orders to read the page in, or the default — by title —
-        /// <br/>when it is absent.</param>
+        /// <param name="sort">Which of the catalog's published orders to read the page in, or the default — the newest
+        /// <br/>first — when it is absent.</param>
         /// <param name="page">The page to return, counted from 1.</param>
         /// <param name="pageSize">How many items to return.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, string? topic, string? sort, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<PagedHttpResponseOfCatalogTrainingHttpResponse> SearchTrainingsAsync(string? term, System.Collections.Generic.IEnumerable<string>? topic, string? sort, int? page, int? pageSize, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -1669,7 +1669,7 @@ namespace TrainingHub.GeneratedClients
                     }
                     if (topic != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("Topic")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(topic, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                            foreach (var item_ in topic) { urlBuilder_.Append(System.Uri.EscapeDataString("topic")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(item_, System.Globalization.CultureInfo.InvariantCulture))).Append('&'); }
                     }
                     if (sort != null)
                     {
@@ -1747,17 +1747,21 @@ namespace TrainingHub.GeneratedClients
             }
         }
 
+        /// <param name="term">Only the shelves a training matching every word of this declares, or all of them when it is
+        /// <br/>absent.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<CatalogTopicsHttpResponse> GetTopicsAsync()
+        public virtual System.Threading.Tasks.Task<CatalogTopicsHttpResponse> GetTopicsAsync(string? term)
         {
-            return GetTopicsAsync(System.Threading.CancellationToken.None);
+            return GetTopicsAsync(term, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <param name="term">Only the shelves a training matching every word of this declares, or all of them when it is
+        /// <br/>absent.</param>
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<CatalogTopicsHttpResponse> GetTopicsAsync(System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<CatalogTopicsHttpResponse> GetTopicsAsync(string? term, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -1772,6 +1776,12 @@ namespace TrainingHub.GeneratedClients
                 
                     // Operation Path: "Catalog/topics"
                     urlBuilder_.Append("Catalog/topics");
+                    urlBuilder_.Append('?');
+                    if (term != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("Term")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(term, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    urlBuilder_.Length--;
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -1804,6 +1814,16 @@ namespace TrainingHub.GeneratedClients
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         {

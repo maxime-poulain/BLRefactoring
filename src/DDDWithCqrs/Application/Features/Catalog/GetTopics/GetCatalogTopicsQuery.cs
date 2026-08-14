@@ -8,8 +8,19 @@ namespace TrainingHub.DDDWithCqrs.Application.Features.Catalog.GetTopics;
 /// count (ADR 0069).
 /// </summary>
 /// <remarks>
-/// The emptiest query this application carries, and honestly so: a visitor asking what there is to
-/// browse has nothing to say yet. No validator, by the line ADR 0046 draws — a validator guards
-/// what a message carries, and this one carries nothing.
+/// It carried nothing until the counts had to answer the search the visitor had typed (ADR 0080).
+/// Now it carries the term, and with it a validator — the line ADR 0046 draws is that a validator
+/// guards what a message carries, so a message that starts carrying something starts needing one.
+/// <para>
+/// It does not carry the shelves. Under a widening filter, counting each topic against the ticked
+/// ones would give every facet the size of the whole selection and the figures would stop telling
+/// the shelves apart.
+/// </para>
 /// </remarks>
-public sealed class GetCatalogTopicsQuery : IQuery<IReadOnlyList<TopicFacetDto>>;
+public sealed class GetCatalogTopicsQuery : IQuery<IReadOnlyList<TopicFacetDto>>
+{
+    /// <summary>
+    /// The term the facets are counted under, or <see langword="null"/> for the whole catalog.
+    /// </summary>
+    public string? Term { get; init; }
+}

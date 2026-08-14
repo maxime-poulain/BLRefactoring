@@ -34,11 +34,19 @@ public sealed class SearchCatalogQueryValidator : AbstractValidator<SearchCatalo
             .WithMessage("A search term cannot be longer than a title.");
 
         // The domain is asked rather than a list restated, exactly as [KnownTopic] asks it at the
-        // boundary (ADR 0069). Null passes — no filter is an ordinary question.
-        RuleFor(query => query.Topic)
+        // boundary (ADR 0069). An empty collection passes — no filter is an ordinary question —
+        // and each name that is there is judged on its own, so the message names the entry that
+        // was wrong rather than the whole filter (ADR 0080).
+        RuleForEach(query => query.Topics)
             .Must(topic => Topic.TryFromName(topic, out _))
-            .When(query => query.Topic is not null)
             .WithMessage("A topic filter must name a topic this catalog knows.");
+
+        // Not a duplicate of the rule above: a blank is dropped by the boundary's normalization,
+        // so one that reaches a dispatcher came from somewhere that did not go through it. The
+        // application layer never assumes the boundary checked first (ADR 0046).
+        RuleForEach(query => query.Topics)
+            .NotEmpty()
+            .WithMessage("A topic filter cannot be blank.");
 
         // The boundary translates a sort name to a member and refuses the rest, but an enum is
         // only a promise at a dispatcher: any integer casts into one, so the closed set is

@@ -29,7 +29,11 @@ public sealed class CatalogTests : ComponentTest
 
         _catalog
             .Setup(client => client.SearchTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(),
+                It.IsAny<IEnumerable<string>?>(),
+                It.IsAny<string?>(),
+                It.IsAny<int?>(),
+                It.IsAny<int?>()))
             .ReturnsAsync(Page(totalCount: 0));
     }
 
@@ -76,7 +80,11 @@ public sealed class CatalogTests : ComponentTest
 
         _catalog
             .Setup(client => client.SearchTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(),
+                It.IsAny<IEnumerable<string>?>(),
+                It.IsAny<string?>(),
+                It.IsAny<int?>(),
+                It.IsAny<int?>()))
             .ReturnsAsync(Page(totalCount: 1, Offered(trainingId, "Domain Driven Design")));
 
         var page = Render<CatalogPage>();
@@ -112,7 +120,11 @@ public sealed class CatalogTests : ComponentTest
     {
         _catalog
             .Setup(client => client.SearchTrainingsAsync(
-                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
+                It.IsAny<string?>(),
+                It.IsAny<IEnumerable<string>?>(),
+                It.IsAny<string?>(),
+                It.IsAny<int?>(),
+                It.IsAny<int?>()))
             .ThrowsAsync(new HttpRequestException("no route to host"));
 
         Render<CatalogPage>();
@@ -125,14 +137,15 @@ public sealed class CatalogTests : ComponentTest
     /// Renders, topics on offer, shows one chip per facet with its count.
     /// </summary>
     /// <remarks>
-    /// The facets come from their own endpoint rather than from the page of results, so the chips
-    /// describe the whole catalog while the table describes the current question (ADR 0069).
+    /// The facets come from their own endpoint rather than from the page of results, so a count is
+    /// what the term leaves standing on that shelf rather than what the current page happens to
+    /// show (ADR 0069, ADR 0080).
     /// </remarks>
     [Fact]
     public void Renders_TopicsOnOffer_ShowsOneChipPerFacetWithItsCount()
     {
         _catalog
-            .Setup(client => client.GetTopicsAsync())
+            .Setup(client => client.GetTopicsAsync(It.IsAny<string?>()))
             .ReturnsAsync(Facets(Facet("Programming", 3), Facet("Design", 1)));
 
         var page = Render<CatalogPage>();
@@ -153,7 +166,7 @@ public sealed class CatalogTests : ComponentTest
     public void ClickingATopicChip_AsksTheServerForThatShelfOnTheFirstPage()
     {
         _catalog
-            .Setup(client => client.GetTopicsAsync())
+            .Setup(client => client.GetTopicsAsync(It.IsAny<string?>()))
             .ReturnsAsync(Facets(Facet("Programming", 3)));
 
         var page = Render<CatalogPage>();
@@ -161,7 +174,7 @@ public sealed class CatalogTests : ComponentTest
         Chip(page, "Programming").Click();
 
         page.WaitForAssertion(() => _catalog.Verify(
-            client => client.SearchTrainingsAsync(null, "Programming", null, 1, null),
+            client => client.SearchTrainingsAsync(null, new[] { "Programming" }, null, 1, null),
             Times.Once));
     }
 
@@ -176,7 +189,7 @@ public sealed class CatalogTests : ComponentTest
     public void ClickingTheSelectedChipAgain_LiftsTheFilter()
     {
         _catalog
-            .Setup(client => client.GetTopicsAsync())
+            .Setup(client => client.GetTopicsAsync(It.IsAny<string?>()))
             .ReturnsAsync(Facets(Facet("Programming", 3)));
 
         var page = Render<CatalogPage>();
@@ -188,6 +201,163 @@ public sealed class CatalogTests : ComponentTest
         page.WaitForAssertion(() => _catalog.Verify(
             client => client.SearchTrainingsAsync(null, null, null, 1, null),
             Times.Exactly(2)));
+    }
+
+    /// <summary>
+    /// Clicking a second topic chip, asks for both shelves rather than for the latest.
+    /// </summary>
+    /// <remarks>
+    /// The fact the whole change exists for. A second chip used to replace the first, which made
+    /// the row of facets read as a set of radio buttons; it now widens the question, and a training
+    /// answers as soon as it sits on one of the lit shelves (ADR 0080). The order the two travel in
+    /// is the sorted one rather than the clicked one — pinned here as well, because that is what
+    /// keeps one selection spelled one way.
+    /// </remarks>
+    [Fact]
+    public void ClickingASecondTopicChip_AsksForBothShelvesRatherThanTheLatest()
+    {
+        _catalog
+            .Setup(client => client.GetTopicsAsync(It.IsAny<string?>()))
+            .ReturnsAsync(Facets(Facet("Programming", 3), Facet("Design", 1)));
+
+        var page = Render<CatalogPage>();
+
+        Chip(page, "Programming").Click();
+        page.WaitForAssertion(() => Chip(page, "Programming").ClassList.Should().Contain("mud-chip-filled"));
+        Chip(page, "Design").Click();
+
+        page.WaitForAssertion(() => _catalog.Verify(
+            client => client.SearchTrainingsAsync(null, new[] { "Design", "Programming" }, null, 1, null),
+            Times.Once));
+    }
+
+    /// <summary>
+    /// Clicking one of two lit chips, lifts that shelf alone.
+    /// </summary>
+    /// <remarks>
+    /// The gesture is unchanged — a lit chip still turns itself off — but it no longer takes the
+    /// rest of the selection with it.
+    /// </remarks>
+    [Fact]
+    public void ClickingOneOfTwoLitChips_LiftsThatShelfAlone()
+    {
+        _catalog
+            .Setup(client => client.GetTopicsAsync(It.IsAny<string?>()))
+            .ReturnsAsync(Facets(Facet("Programming", 3), Facet("Design", 1)));
+
+        var page = Render<CatalogPage>();
+
+        Chip(page, "Programming").Click();
+        page.WaitForAssertion(() => Chip(page, "Programming").ClassList.Should().Contain("mud-chip-filled"));
+        Chip(page, "Design").Click();
+        page.WaitForAssertion(() => Chip(page, "Design").ClassList.Should().Contain("mud-chip-filled"));
+        Chip(page, "Programming").Click();
+
+        page.WaitForAssertion(() => _catalog.Verify(
+            client => client.SearchTrainingsAsync(null, new[] { "Design" }, null, 1, null),
+            Times.Once));
+    }
+
+    /// <summary>
+    /// Clicking a second topic chip, writes both shelves into the address, sorted.
+    /// </summary>
+    /// <remarks>
+    /// Shareability, for a question that now has several parts: the parameter stays singular and
+    /// repeats, so every address that worked before still works, and the parts are sorted so that
+    /// two visitors who ticked the same shelves in opposite orders end up on the same address —
+    /// which is what keeps the canonical single (ADR 0073, ADR 0080).
+    /// </remarks>
+    [Fact]
+    public void ClickingASecondTopicChip_WritesBothShelvesIntoTheAddressSorted()
+    {
+        _catalog
+            .Setup(client => client.GetTopicsAsync(It.IsAny<string?>()))
+            .ReturnsAsync(Facets(Facet("Programming", 3), Facet("Design", 1)));
+
+        var page = Render<CatalogPage>();
+        var navigation = Services.GetRequiredService<NavigationManager>();
+
+        Chip(page, "Programming").Click();
+        page.WaitForAssertion(() => navigation.Uri.Should().Contain("topic=Programming"));
+        Chip(page, "Design").Click();
+
+        page.WaitForAssertion(() => navigation.Uri.Should().Contain(
+            "topic=Design&topic=Programming",
+            "one selection is one address, whatever order its shelves were ticked in"));
+    }
+
+    /// <summary>
+    /// Clearing the topics, asks the whole catalog again and takes the shelves out of the address.
+    /// </summary>
+    /// <remarks>
+    /// Undoing a selection chip by chip was free while only one could be lit. With several it is
+    /// one click per shelf, so the row carries one gesture back to the whole catalog.
+    /// </remarks>
+    [Fact]
+    public void ClearingTheTopics_AsksTheWholeCatalogAgain()
+    {
+        _catalog
+            .Setup(client => client.GetTopicsAsync(It.IsAny<string?>()))
+            .ReturnsAsync(Facets(Facet("Programming", 3), Facet("Design", 1)));
+
+        var page = Render<CatalogPage>();
+        var navigation = Services.GetRequiredService<NavigationManager>();
+
+        Chip(page, "Programming").Click();
+        page.WaitForAssertion(() => Chip(page, "Programming").ClassList.Should().Contain("mud-chip-filled"));
+        Chip(page, "Design").Click();
+        page.WaitForAssertion(() => navigation.Uri.Should().Contain("topic=Design"));
+
+        Chip(page, "Clear topics").Click();
+
+        page.WaitForAssertion(() => navigation.Uri.Should().NotContain("topic="));
+        page.WaitForAssertion(() => _catalog.Verify(
+            client => client.SearchTrainingsAsync(null, null, null, 1, null),
+            Times.Exactly(2)));
+    }
+
+    /// <summary>
+    /// The clearing chip, with nothing selected, is not shown at all.
+    /// </summary>
+    /// <remarks>
+    /// An escape from a state nobody is in reads as a filter of its own, and a row of facets whose
+    /// last member never does anything is a row a visitor learns to distrust.
+    /// </remarks>
+    [Fact]
+    public void TheClearingChip_WithNothingSelected_IsNotShown()
+    {
+        _catalog
+            .Setup(client => client.GetTopicsAsync(It.IsAny<string?>()))
+            .ReturnsAsync(Facets(Facet("Programming", 3)));
+
+        var page = Render<CatalogPage>();
+
+        page.Markup.Should().NotContain("Clear topics");
+
+        Chip(page, "Programming").Click();
+
+        page.WaitForAssertion(() => page.Markup.Should().Contain("Clear topics"));
+    }
+
+    /// <summary>
+    /// Rendered at an address asking for two shelves, asks the server for both.
+    /// </summary>
+    /// <remarks>
+    /// The address read back, for the selection it can now carry: a pasted link to a two-shelf
+    /// question renders that question rather than the first shelf of it.
+    /// </remarks>
+    [Fact]
+    public void RenderedAtAnAddressAskingForTwoShelves_AsksTheServerForBoth()
+    {
+        var navigation = Services.GetRequiredService<NavigationManager>();
+
+        navigation.NavigateTo("/catalog?topic=Programming&topic=Design");
+
+        Render<CatalogPage>();
+
+        _catalog.Verify(
+            client => client.SearchTrainingsAsync(null, new[] { "Design", "Programming" }, null, 1, null),
+            Times.Once);
     }
 
     /// <summary>
@@ -231,7 +401,7 @@ public sealed class CatalogTests : ComponentTest
         Render<CatalogPage>();
 
         _catalog.Verify(
-            client => client.SearchTrainingsAsync("domain", "Design", "title", 2, null),
+            client => client.SearchTrainingsAsync("domain", new[] { "Design" }, "title", 2, null),
             Times.Once);
     }
 
@@ -247,7 +417,7 @@ public sealed class CatalogTests : ComponentTest
     public void ClickingATopicChip_WritesTheShelfIntoTheAddress()
     {
         _catalog
-            .Setup(client => client.GetTopicsAsync())
+            .Setup(client => client.GetTopicsAsync(It.IsAny<string?>()))
             .ReturnsAsync(Facets(Facet("Programming", 3)));
 
         var page = Render<CatalogPage>();

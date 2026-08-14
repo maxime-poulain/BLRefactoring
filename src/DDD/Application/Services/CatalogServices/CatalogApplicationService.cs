@@ -32,11 +32,14 @@ public interface ICatalogApplicationService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// The facets of the offered catalog: each topic at least one offered training declares, with
-    /// its count.
+    /// The facets of the offered catalog under a term: each topic at least one matching training
+    /// declares, with its count (ADR 0080).
     /// </summary>
+    /// <param name="term">The term the facets are counted under, read as the search reads it.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    Task<IReadOnlyList<TopicFacetDto>> GetFacetsAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<TopicFacetDto>> GetFacetsAsync(
+        string? term,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// One offered training in full, or <see langword="null"/> when there is none a visitor may see.
@@ -124,13 +127,14 @@ public sealed class CatalogApplicationService(
         ArgumentNullException.ThrowIfNull(request);
 
         return await trainingSearch.SearchAsync(
-            request.Term, request.Topic, request.Order, request.Paging, cancellationToken);
+            request.Term, request.Topics, request.Order, request.Paging, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<TopicFacetDto>> GetFacetsAsync(
+        string? term,
         CancellationToken cancellationToken = default) =>
-        await trainingSearch.FacetsAsync(cancellationToken);
+        await trainingSearch.FacetsAsync(term, cancellationToken);
 
     /// <inheritdoc />
     public async Task<CatalogTrainingDetailDto?> FindOfferedAsync(

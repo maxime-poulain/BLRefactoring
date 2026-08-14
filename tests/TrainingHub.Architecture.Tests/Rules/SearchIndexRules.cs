@@ -179,6 +179,78 @@ public sealed class SearchIndexRules
     }
 
     /// <summary>
+    /// What narrowing the page and the facets are obliged to share, and how many times each may be
+    /// written for that to still be one narrowing.
+    /// </summary>
+    /// <remarks>
+    /// Two counts are exact and one is a floor, and the difference says what each is guarding. The
+    /// visibility predicate and the term's <c>LIKE</c> exist once because a second copy is a second
+    /// question — the moment one drifts, a facet advertises a shelf the search answers nothing on.
+    /// The call is a floor because a third read of the offered entries would be welcome, so long as
+    /// it goes through the same door.
+    /// </remarks>
+    private static readonly (string Shape, int Times, bool Exactly, string Why)[] TheSharedNarrowing =
+    [
+        ("entry.IsPublished", 1, true,
+         "what 'on offer' means is composed once and read by both, so a facet cannot be counted " +
+         "over a population the search would not answer"),
+        ("EF.Functions.Like", 1, true,
+         "the term is matched in one place; a second copy is a second reading of the same words, " +
+         "and the numbers beside the chips would start describing a different search"),
+        ("OfferedMatching(term)", 2, false,
+         "both reads go through the shared narrowing — the page and the facets, and anything " +
+         "asking the same question later")
+    ];
+
+    /// <summary>
+    /// The catalog's facets, are counted under the same question the search answers.
+    /// </summary>
+    /// <remarks>
+    /// ADR 0069 counted the facets over the whole catalog and said so; ADR 0080 reversed it, and
+    /// the reversal only holds if the two reads narrow identically. The failure it refuses is the
+    /// quiet one: nothing breaks when the facets keep a copy of the predicate and the search
+    /// changes: every suite stays green, and a visitor is shown a chip reading twelve that answers
+    /// an empty page. Read off the source, because the claim is about what the file <em>says</em> —
+    /// the duplication would compile, and a signature check would see two methods that still take a
+    /// term.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0080",
+        "a facet is counted under the same question the search answers: both reads narrow through " +
+        "one method, so a chip can never advertise a shelf the search would empty")]
+    public void TheCatalogsFacets_AreCountedUnderTheSameQuestionTheSearchAnswers()
+    {
+        var reader = Text(TheCatalogsReader);
+
+        TheSharedNarrowing
+            .Selected("shape the page and the facets share")
+            .Where(shared => shared.Exactly
+                ? Occurrences(reader, shared.Shape) != shared.Times
+                : Occurrences(reader, shared.Shape) < shared.Times)
+            .Select(shared =>
+                $"'{TheCatalogsReader}' writes '{shared.Shape}' " +
+                $"{Occurrences(reader, shared.Shape)} times, and it must be " +
+                $"{(shared.Exactly ? "exactly" : "at least")} {shared.Times}: " +
+                $"{shared.Why} (ADR 0080)")
+            .ShouldHold();
+    }
+
+    /// <summary>How many times a shape appears in a text, counted ordinally.</summary>
+    private static int Occurrences(string text, string shape)
+    {
+        var count = 0;
+
+        for (var at = text.IndexOf(shape, StringComparison.Ordinal);
+             at >= 0;
+             at = text.IndexOf(shape, at + shape.Length, StringComparison.Ordinal))
+        {
+            count++;
+        }
+
+        return count;
+    }
+
+    /// <summary>
     /// The width the topics' configuration declares, read rather than restated.
     /// </summary>
     private static int TopicColumnBound()

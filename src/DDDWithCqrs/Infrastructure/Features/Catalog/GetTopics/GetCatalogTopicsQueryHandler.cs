@@ -25,6 +25,6 @@ public sealed class GetCatalogTopicsQueryHandler(ITrainingSearchQuery trainingSe
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        return await trainingSearch.FacetsAsync(cancellationToken);
+        return await trainingSearch.FacetsAsync(request.Term, cancellationToken);
     }
 }

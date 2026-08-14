@@ -52,8 +52,10 @@
                       HelperText="Every word of a title, matched by prefix" />
 
         @* The catalog's facets, from GET /Catalog/topics: only topics with something on offer,
-           each with its count, so a chip never leads to an empty shelf. Clicking the selected
-           chip again lifts the filter — a facet is a lens, not a destination. *@
+           each with its count under the term being searched, so a chip never leads to an empty
+           shelf (ADR 0080). Several may be lit at once and they widen rather than narrow — a
+           training answers as soon as it sits on one of them. Clicking a lit chip lifts that one
+           alone; the whole selection comes off with the last chip in the row. *@
         @if (_facets is { Count: > 0 })
         {
             <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="mt-3 th-facets">
@@ -62,13 +64,29 @@
                     var topic = facet.Topic;
                     <MudChip T="string"
                              Size="Size.Small"
-                             Color="@(topic == _topic ? Color.Primary : Color.Default)"
-                             Variant="@(topic == _topic ? Variant.Filled : Variant.Outlined)"
+                             Color="@(_topics.Contains(topic) ? Color.Primary : Color.Default)"
+                             Variant="@(_topics.Contains(topic) ? Variant.Filled : Variant.Outlined)"
                              OnClick="@(() => OnTopicClickedAsync(topic))">
                         @* The shelf's mark: the same hue this topic's spines wear below, so the
                            chip and the rows it filters read as one thing. *@
                         <span class="th-mark" style="background-color: @CatalogTopics.SpineVar(topic)"></span>
                         @topic (@facet.OfferedCount)
+                    </MudChip>
+                }
+
+                @* One gesture back to the whole catalog. It only exists while there is something
+                   to clear, because a permanently lit escape from a state nobody is in reads as a
+                   filter of its own. Undoing a selection chip by chip was free when there was only
+                   ever one lit; with several it is one click per shelf. *@
+                @if (_topics.Count > 0)
+                {
+                    <MudChip T="string"
+                             Size="Size.Small"
+                             Color="Color.Default"
+                             Variant="Variant.Text"
+                             Icon="@Icons.Material.Filled.Close"
+                             OnClick="@(() => OnTopicsClearedAsync())">
+                        Clear topics
                     </MudChip>
                 }
             </MudStack>
@@ -155,13 +173,13 @@
     // The hue the shelf's spines wear: the browsed topic's own, or the neutral tone when no
     // shelf is chosen — a search row carries no topics, and a color would be a guess.
     private string SpineColor =>
-        _topic is null ? "var(--th-spine-neutral)" : CatalogTopics.SpineVar(_topic);
+        _topics.Count == 1 ? CatalogTopics.SpineVar(_topics[0]) : "var(--th-spine-neutral)";
 
     // The address this page answers for, whatever address it was reached by.
     private string CanonicalUrl =>
         Navigation.GetUriWithQueryParameters(
             Navigation.ToAbsoluteUri("/catalog").ToString(),
-            new Dictionary<string, object?> { ["topic"] = _topic });
+            new Dictionary<string, object?> { ["topic"] = Shelves });
 
     // The keys the prerendered answers travel under, from the server's pass to the WebAssembly
     // one (ADR 0072). Whatever question the address asked is the question whose answer travels:
@@ -172,7 +190,7 @@
     private PagedHttpResponseOfCatalogTrainingHttpResponse? _page;
     private List<CatalogTopicHttpResponse>? _facets;
     private string? _term;
-    private string? _topic;
+    private IReadOnlyList<string> _topics = [];
     private bool _newestFirst = true;
     private int _currentPage = 1;
     private bool _isLoading = true;
@@ -189,7 +207,7 @@
 
     /// <summary>The shelf to browse, from the address.</summary>
     [SupplyParameterFromQuery(Name = "topic")]
-    public string? TopicParameter { get; set; }
+    public string[]? TopicParameter { get; set; }
 
     /// <summary>The order to read in, from the address (ADR 0071).</summary>
     [SupplyParameterFromQuery(Name = "sort")]
@@ -227,7 +245,7 @@
     protected override async Task OnParametersSetAsync()
     {
         var term = string.IsNullOrWhiteSpace(TermParameter) ? null : TermParameter;
-        var topic = string.IsNullOrWhiteSpace(TopicParameter) ? null : TopicParameter;
+        var topics = Shelved(TopicParameter);
 
         // Anything that is not the named alternative reads as the default, so an address with no
         // sort — and one carrying a name the contract would refuse — both ask for newest.
@@ -236,12 +254,14 @@
 
         var alreadyShowing = !_isLoading
             && term == _term
-            && topic == _topic
+            && topics.SequenceEqual(_topics, StringComparer.Ordinal)
             && newestFirst == _newestFirst
             && page == _currentPage;
 
+        var termChanged = term != _term;
+
         _term = term;
-        _topic = topic;
+        _topics = topics;
         _newestFirst = newestFirst;
         _currentPage = page;
 
@@ -258,7 +278,10 @@
             return;
         }
 
-        if (_facets is null)
+        // The counts answer the term (ADR 0080), so they are stale the moment it moves — not
+        // merely absent. Reloading only when they have never been fetched would leave every chip
+        // advertising the whole catalog to a visitor who has typed something.
+        if (_facets is null || termChanged)
         {
             await LoadFacetsAsync();
         }
@@ -284,20 +307,26 @@
 
     private Task OnTermChangedAsync(string? term)
     {
-        Ask(term: term, topic: _topic, newestFirst: _newestFirst, page: 1);
+        Ask(term: term, topics: _topics, newestFirst: _newestFirst, page: 1);
         return Task.CompletedTask;
     }
 
     private Task OnTopicClickedAsync(string topic)
     {
         // The same chip again lifts the filter rather than reasserting it.
-        Ask(term: _term, topic: topic == _topic ? null : topic, newestFirst: _newestFirst, page: 1);
+        Ask(term: _term, topics: Toggled(topic), newestFirst: _newestFirst, page: 1);
+        return Task.CompletedTask;
+    }
+
+    private Task OnTopicsClearedAsync()
+    {
+        Ask(term: _term, topics: [], newestFirst: _newestFirst, page: 1);
         return Task.CompletedTask;
     }
 
     private Task OnPageSelectedAsync(int page)
     {
-        Ask(term: _term, topic: _topic, newestFirst: _newestFirst, page: page);
+        Ask(term: _term, topics: _topics, newestFirst: _newestFirst, page: page);
         return Task.CompletedTask;
     }
 
@@ -305,7 +334,7 @@
     {
         if (_newestFirst != newestFirst)
         {
-            Ask(term: _term, topic: _topic, newestFirst: newestFirst, page: 1);
+            Ask(term: _term, topics: _topics, newestFirst: newestFirst, page: 1);
         }
 
         return Task.CompletedTask;
@@ -316,20 +345,51 @@
     /// load follows from them. Defaults travel as no parameter at all, so the plain catalog
     /// keeps the address it always had.
     /// </summary>
-    private void Ask(string? term, string? topic, bool newestFirst, int page) =>
+    private void Ask(string? term, IReadOnlyList<string> topics, bool newestFirst, int page) =>
         Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
         {
             ["term"] = string.IsNullOrWhiteSpace(term) ? null : term,
-            ["topic"] = topic,
+            // Repeated rather than joined, and sorted rather than in the order they were ticked:
+            // one selection is one address, which is what keeps the canonical below from having a
+            // spelling per click order (ADR 0073, ADR 0080). An empty selection is no parameter at
+            // all, exactly as a blank term and a first page are.
+            ["topic"] = topics.Count == 0 ? null : topics.ToArray(),
             ["sort"] = newestFirst ? null : "title",
             ["page"] = page == 1 ? null : page
         }));
+
+    /// <summary>The shelves an address asks for: blanks dropped, duplicates collapsed, sorted.</summary>
+    /// <remarks>
+    /// Sorted here rather than at the point of writing, so that an address typed by hand and one
+    /// this page wrote are read as the same question — and so the <c>alreadyShowing</c> comparison
+    /// above can be a sequence comparison rather than a set one.
+    /// </remarks>
+    private static IReadOnlyList<string> Shelved(string[]? asked) =>
+        asked is null
+            ? []
+            : [.. asked
+                .Where(topic => !string.IsNullOrWhiteSpace(topic))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(topic => topic, StringComparer.Ordinal)];
+
+    /// <summary>The selection with that shelf added, or removed when it was already there.</summary>
+    /// <remarks>
+    /// The multi-select reading of what a chip does. Clicking one that is already lit still lifts
+    /// it — the gesture is unchanged, it just no longer takes the others with it.
+    /// </remarks>
+    private IReadOnlyList<string> Toggled(string topic) =>
+        Shelved(_topics.Contains(topic)
+            ? [.. _topics.Where(shelf => !string.Equals(shelf, topic, StringComparison.Ordinal))]
+            : [.. _topics, topic]);
+
+    /// <summary>The shelves as the address spells them, or nothing when none is picked.</summary>
+    private string[]? Shelves => _topics.Count == 0 ? null : _topics.ToArray();
 
     private async Task LoadFacetsAsync()
     {
         try
         {
-            _facets = (await CatalogClient.GetTopicsAsync()).Topics;
+            _facets = (await CatalogClient.GetTopicsAsync(_term)).Topics;
         }
         catch (Exception)
         {
@@ -344,12 +404,14 @@
         _isLoading = true;
         try
         {
-            _page = await CatalogClient.SearchTrainingsAsync(_term, _topic, Sort, _currentPage, null);
+            // Asked with the address's own spelling — no shelf is no parameter, not an empty list
+            // — so the question the API is asked is the question the address shows.
+            _page = await CatalogClient.SearchTrainingsAsync(_term, Shelves, Sort, _currentPage, null);
 
             if (_currentPage > _page.TotalPages)
             {
                 _currentPage = _page.TotalPages;
-                _page = await CatalogClient.SearchTrainingsAsync(_term, _topic, Sort, _currentPage, null);
+                _page = await CatalogClient.SearchTrainingsAsync(_term, Shelves, Sort, _currentPage, null);
             }
         }
         catch (Exception)

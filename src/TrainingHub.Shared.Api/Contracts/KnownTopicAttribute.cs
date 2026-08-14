@@ -44,19 +44,28 @@ public sealed class KnownTopicAttribute : ValidationAttribute
     }
 
     /// <summary>
-    /// Answers whether the value names a topic the domain declares.
+    /// Answers whether the value names topics the domain declares.
     /// </summary>
     /// <param name="value">The bound value, possibly <see langword="null"/>.</param>
     /// <returns>
-    /// <see langword="false"/> only for a non-blank string that no topic answers to. Null and blank
-    /// pass, and so does anything that is not a string — the framework convention for an attribute
-    /// asked about a type it does not judge.
+    /// <see langword="false"/> for a non-blank string that no topic answers to, and for a sequence
+    /// carrying one. Null and blank pass, so does an empty sequence, and so does anything that is
+    /// neither — the framework convention for an attribute asked about a type it does not judge.
     /// </returns>
     public override bool IsValid(object? value) => value switch
     {
         null => true,
         string name when string.IsNullOrWhiteSpace(name) => true,
         string name => NamesOf(_topicType).Contains(name),
+
+        // Judged name by name, because the filter became several of them (ADR 0080). The arm is
+        // load-bearing rather than tidy: without it a bound collection would fall through to the
+        // catch-all below and pass unconditionally, and the boundary would stop refusing unknown
+        // topics — silently, because passing is exactly what this attribute is supposed to do when
+        // handed a type it has no opinion about. `string` is itself a sequence, which is why the
+        // two arms above come first.
+        IEnumerable names => names.Cast<object?>().All(IsValid),
+
         _ => true
     };
 

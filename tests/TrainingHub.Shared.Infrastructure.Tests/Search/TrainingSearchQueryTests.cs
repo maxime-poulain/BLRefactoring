@@ -36,7 +36,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Domain Modeling");
         await IndexedAsync(trainer, "Driven To Distraction");
 
-        var page = await Query().SearchAsync("domain driven", null, CatalogOrder.Title, new PageRequest());
+        var page = await Query().SearchAsync("domain driven", [], CatalogOrder.Title, new PageRequest());
 
         page.Items.Should().ContainSingle().Which.Title.Should().Be("Domain Driven Design");
         page.TotalCount.Should().Be(1);
@@ -58,11 +58,11 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Refactoring Legacy Code");
         await IndexedAsync(trainer, "Craftsmanship");
 
-        var page = await Query().SearchAsync("refac", null, CatalogOrder.Title, new PageRequest());
+        var page = await Query().SearchAsync("refac", [], CatalogOrder.Title, new PageRequest());
 
         page.Items.Should().ContainSingle().Which.Title.Should().Be("Refactoring Legacy Code");
 
-        var inside = await Query().SearchAsync("actor", null, CatalogOrder.Title, new PageRequest());
+        var inside = await Query().SearchAsync("actor", [], CatalogOrder.Title, new PageRequest());
 
         inside.Items.Should().BeEmpty();
     }
@@ -84,7 +84,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
 
         await IndexedAsync(trainer, "Event Storming");
 
-        var page = await Query().SearchAsync(term, null, CatalogOrder.Title, new PageRequest());
+        var page = await Query().SearchAsync(term, [], CatalogOrder.Title, new PageRequest());
 
         page.Items.Should().ContainSingle().Which.Title.Should().Be("Event Storming");
     }
@@ -103,7 +103,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
 
         await IndexedAsync(trainer, "Kept Quiet", published: false);
 
-        var page = await Query().SearchAsync("kept", null, CatalogOrder.Title, new PageRequest());
+        var page = await Query().SearchAsync("kept", [], CatalogOrder.Title, new PageRequest());
 
         page.Items.Should().BeEmpty();
         page.TotalCount.Should().Be(0);
@@ -125,10 +125,10 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Sanctioned Course");
 
         await Indexer.HideTrainerCatalogAsync(trainer.Id.Value);
-        (await Query().SearchAsync("sanctioned", null, CatalogOrder.Title, new PageRequest())).Items.Should().BeEmpty();
+        (await Query().SearchAsync("sanctioned", [], CatalogOrder.Title, new PageRequest())).Items.Should().BeEmpty();
 
         await Indexer.ShowTrainerCatalogAsync(trainer.Id.Value);
-        (await Query().SearchAsync("sanctioned", null, CatalogOrder.Title, new PageRequest())).Items.Should().ContainSingle();
+        (await Query().SearchAsync("sanctioned", [], CatalogOrder.Title, new PageRequest())).Items.Should().ContainSingle();
     }
 
     /// <summary>
@@ -150,7 +150,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Alpha Course");
         await IndexedAsync(trainer, "Hidden Course", published: false);
 
-        var page = await Query().SearchAsync(term, null, CatalogOrder.Title, new PageRequest());
+        var page = await Query().SearchAsync(term, [], CatalogOrder.Title, new PageRequest());
 
         page.Items.Select(training => training.Title).Should().Equal("Alpha Course", "Beta Course");
     }
@@ -172,7 +172,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Course Beta");
         await IndexedAsync(trainer, "Course Gamma");
 
-        var page = await Query().SearchAsync("course", null, CatalogOrder.Title, new PageRequest { PageSize = 2 });
+        var page = await Query().SearchAsync("course", [], CatalogOrder.Title, new PageRequest { PageSize = 2 });
 
         page.Items.Should().HaveCount(2);
         page.TotalCount.Should().Be(3);
@@ -194,7 +194,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
 
         await IndexedAsync(trainer, "Anything At All");
 
-        var page = await Query().SearchAsync("--- !", null, CatalogOrder.Title, new PageRequest());
+        var page = await Query().SearchAsync("--- !", [], CatalogOrder.Title, new PageRequest());
 
         page.Items.Should().ContainSingle();
     }
@@ -214,7 +214,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Refactoring Legacy Code", topics: ["Programming"]);
         await IndexedAsync(trainer, "Design Sprints", topics: ["Design"]);
 
-        var page = await Query().SearchAsync(null, "Design", CatalogOrder.Title, new PageRequest());
+        var page = await Query().SearchAsync(null, ["Design"], CatalogOrder.Title, new PageRequest());
 
         page.Items.Should().ContainSingle().Which.Title.Should().Be("Design Sprints");
     }
@@ -231,7 +231,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Advanced Sketching", topics: ["Design"]);
         await IndexedAsync(trainer, "Basic Sketching", topics: ["Design"]);
 
-        var page = await Query().SearchAsync("advanced", "Design", CatalogOrder.Title, new PageRequest());
+        var page = await Query().SearchAsync("advanced", ["Design"], CatalogOrder.Title, new PageRequest());
 
         page.Items.Should().ContainSingle().Which.Title.Should().Be("Advanced Sketching");
     }
@@ -253,7 +253,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Middle Management");
         await IndexedAsync(trainer, "Alpha Testing");
 
-        var page = await Query().SearchAsync(null, null, CatalogOrder.Newest, new PageRequest());
+        var page = await Query().SearchAsync(null, [], CatalogOrder.Newest, new PageRequest());
 
         page.Items.Select(training => training.Title).Should().ContainInOrder(
             "Alpha Testing", "Middle Management", "Zebra Patterns");
@@ -280,7 +280,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await Context.Set<TrainingSearchEntry>()
             .ExecuteUpdateAsync(entry => entry.SetProperty(row => row.CreatedOnUtc, sameInstant));
 
-        var page = await Query().SearchAsync(null, null, CatalogOrder.Newest, new PageRequest());
+        var page = await Query().SearchAsync(null, [], CatalogOrder.Newest, new PageRequest());
 
         page.Items.Select(training => training.Id)
             .Should().BeInAscendingOrder("the identifier settles what the clock left tied");
@@ -305,7 +305,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Course Four", topics: ["Design"]);
 
         var page = await Query().SearchAsync(
-            "course", "Design", CatalogOrder.Newest, new PageRequest { PageSize = 2 });
+            "course", ["Design"], CatalogOrder.Newest, new PageRequest { PageSize = 2 });
 
         page.TotalCount.Should().Be(3, "the topic filter narrows the count the page describes");
         page.Items.Select(training => training.Title).Should().ContainInOrder(
@@ -330,10 +330,149 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Withdrawn", published: false, topics: ["Programming"]);
         await IndexedAsync(sanctioned, "Hidden Whole", topics: ["Programming"]);
 
-        var facets = await Query().FacetsAsync();
+        var facets = await Query().FacetsAsync(null);
 
         facets.Should().ContainSingle()
             .Which.Should().BeEquivalentTo(new { Topic = "Programming", OfferedCount = 1 });
+    }
+
+    /// <summary>
+    /// Search async, two shelves, answers their union rather than their intersection.
+    /// </summary>
+    /// <remarks>
+    /// <b>The fact ADR 0080 exists for.</b> A ticked shelf widens the answer, so a training filed
+    /// under either one appears and a training under neither does not. Written with three trainings
+    /// on purpose: the one under both is what tells a union from an intersection — under an
+    /// intersection it would be the only answer, and the count would be one rather than three.
+    /// </remarks>
+    [Fact]
+    public async Task SearchAsync_TwoShelves_AnswersTheirUnionRatherThanTheirIntersection()
+    {
+        var trainer = await GivenTrainerAsync();
+
+        await IndexedAsync(trainer, "Only Design", topics: ["Design"]);
+        await IndexedAsync(trainer, "Only Programming", topics: ["Programming"]);
+        await IndexedAsync(trainer, "Both Of Them", topics: ["Design", "Programming"]);
+        await IndexedAsync(trainer, "Neither Of Them", topics: ["Marketing"]);
+
+        var page = await Query().SearchAsync(
+            null, ["Design", "Programming"], CatalogOrder.Title, new PageRequest());
+
+        page.TotalCount.Should().Be(3, "a shelf a visitor ticks widens the answer rather than narrowing it");
+        page.Items.Select(training => training.Title).Should().BeEquivalentTo(
+            "Only Design", "Only Programming", "Both Of Them");
+    }
+
+    /// <summary>
+    /// Search async, a training on both shelves, is answered once.
+    /// </summary>
+    /// <remarks>
+    /// The union is over trainings, not over rows: the filter is one <c>EXISTS</c> rather than a
+    /// join, so a training carrying both names cannot come back twice. A page that repeated it
+    /// would also make the count disagree with the rows, which is the defect ADR 0055 names.
+    /// </remarks>
+    [Fact]
+    public async Task SearchAsync_ATrainingOnBothShelves_IsAnsweredOnce()
+    {
+        var trainer = await GivenTrainerAsync();
+
+        await IndexedAsync(trainer, "Both Of Them", topics: ["Design", "Programming"]);
+
+        var page = await Query().SearchAsync(
+            null, ["Design", "Programming"], CatalogOrder.Title, new PageRequest());
+
+        page.TotalCount.Should().Be(1);
+        page.Items.Should().ContainSingle();
+    }
+
+    /// <summary>
+    /// Search async, no shelf at all, answers the whole catalog.
+    /// </summary>
+    /// <remarks>
+    /// Empty is every topic rather than none — a visitor who has ticked nothing is asking for the
+    /// whole catalog, not for an empty one. The reading a collection makes easy to get backwards.
+    /// </remarks>
+    [Fact]
+    public async Task SearchAsync_NoShelfAtAll_AnswersTheWholeCatalog()
+    {
+        var trainer = await GivenTrainerAsync();
+
+        await IndexedAsync(trainer, "Only Design", topics: ["Design"]);
+        await IndexedAsync(trainer, "Only Marketing", topics: ["Marketing"]);
+
+        (await Query().SearchAsync(null, [], CatalogOrder.Title, new PageRequest()))
+            .TotalCount.Should().Be(2);
+    }
+
+    /// <summary>
+    /// Search async, two shelves and a term, narrows by the term across both.
+    /// </summary>
+    /// <remarks>
+    /// The two filters compose in opposite directions and this is where that shows: the shelves
+    /// widen, the term narrows, and what comes back is what any shelf carries <em>and</em> the term
+    /// matches.
+    /// </remarks>
+    [Fact]
+    public async Task SearchAsync_TwoShelvesAndATerm_NarrowsByTheTermAcrossBoth()
+    {
+        var trainer = await GivenTrainerAsync();
+
+        await IndexedAsync(trainer, "Advanced Design", topics: ["Design"]);
+        await IndexedAsync(trainer, "Advanced Programming", topics: ["Programming"]);
+        await IndexedAsync(trainer, "Beginner Design", topics: ["Design"]);
+
+        var page = await Query().SearchAsync(
+            "advanced", ["Design", "Programming"], CatalogOrder.Title, new PageRequest());
+
+        page.Items.Select(training => training.Title).Should().Equal(
+            "Advanced Design", "Advanced Programming");
+    }
+
+    /// <summary>
+    /// Facets async, a term, counts only what that term leaves standing.
+    /// </summary>
+    /// <remarks>
+    /// <b>The other half of ADR 0080.</b> A chip advertising twelve trainings when the visitor's
+    /// term reaches two of them is a number that answers a question nobody asked. Counted under the
+    /// term, each facet says what it would contribute to the search as typed.
+    /// </remarks>
+    [Fact]
+    public async Task FacetsAsync_ATerm_CountsOnlyWhatThatTermLeavesStanding()
+    {
+        var trainer = await GivenTrainerAsync();
+
+        await IndexedAsync(trainer, "Advanced Design", topics: ["Design"]);
+        await IndexedAsync(trainer, "Beginner Design", topics: ["Design"]);
+        await IndexedAsync(trainer, "Advanced Marketing", topics: ["Marketing"]);
+
+        var facets = await Query().FacetsAsync("advanced");
+
+        facets.Should().BeEquivalentTo(new[]
+        {
+            new { Topic = "Design", OfferedCount = 1 },
+            new { Topic = "Marketing", OfferedCount = 1 }
+        });
+    }
+
+    /// <summary>
+    /// Facets async, a shelf the term empties, is absent rather than zero.
+    /// </summary>
+    /// <remarks>
+    /// The promise ADR 0069 made about what is on offer, kept for the term as well: a chip is a way
+    /// in, and one leading nowhere should not be offered at all rather than offered at nought.
+    /// </remarks>
+    [Fact]
+    public async Task FacetsAsync_AShelfTheTermEmpties_IsAbsentRatherThanZero()
+    {
+        var trainer = await GivenTrainerAsync();
+
+        await IndexedAsync(trainer, "Advanced Design", topics: ["Design"]);
+        await IndexedAsync(trainer, "Beginner Marketing", topics: ["Marketing"]);
+
+        var facets = await Query().FacetsAsync("advanced");
+
+        facets.Should().ContainSingle()
+            .Which.Topic.Should().Be("Design");
     }
 
     /// <summary>
@@ -346,7 +485,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
 
         await IndexedAsync(trainer, "Withdrawn Shelf", published: false, topics: ["Marketing"]);
 
-        (await Query().FacetsAsync()).Should().BeEmpty(
+        (await Query().FacetsAsync(null)).Should().BeEmpty(
             "a facet is a way into the catalog, and an empty shelf leads nowhere (ADR 0069)");
     }
 
@@ -362,7 +501,7 @@ public sealed class TrainingSearchQueryTests : SearchIndexTest
         await IndexedAsync(trainer, "Leading Kindly", topics: ["Leadership"]);
         await IndexedAsync(trainer, "Sketching Fast", topics: ["Design", "Marketing"]);
 
-        var facets = await Query().FacetsAsync();
+        var facets = await Query().FacetsAsync(null);
 
         facets.Select(facet => facet.Topic)
             .Should().ContainInOrder("Design", "Leadership", "Marketing");

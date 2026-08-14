@@ -225,8 +225,9 @@ what a public catalog must *not* show, and ADR 0056 the ability to express it ab
 rather than about each of their trainings — which is what makes this context buildable rather than
 merely announced. ADR 0059 went one step further and built the index those facts maintain, so what
 is missing here is no longer a store: it is whatever else a discovery experience turns out to be.
-The facets arrived with ADR 0069 — each topic at least one offered training declares, counted
-from this index, browsable at `GET /Catalog/topics` — the trainer's public page with ADR 0070,
+The facets arrived with ADR 0069 — each topic at least one matching training declares, counted
+from this index, browsable at `GET /Catalog/topics`, several of them at a time and under the
+visitor's own search since ADR 0080 — the trainer's public page with ADR 0070,
 reachable from every training it offers, and the second order with ADR 0071, newest first over
 the training's own age; none of them needed a store of its own, which is itself evidence that a
 page over the same database is still the honest size of this context.

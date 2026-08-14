@@ -1,6 +1,6 @@
 # 0073 — Describe the catalog to the machines that read it
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0080](0080-let-a-visitor-browse-several-shelves-at-once.md): the canonical keeps the whole selection rather than one topic, sorted ordinally so one question has one spelling
 - **Date:** 2026-08-11
 
 ## Context
