@@ -13,7 +13,7 @@ namespace TrainingHub.DDDWithCqrs.Application.Features.Catalog.Search;
 /// question and project columns out of it; this one asks the search index, which is a read model
 /// maintained after the commit by nine consumers of the outbox (ADR 0025, ADR 0056).
 /// <para>
-/// Its sibling <c>GetAdministeredTrainingsQuery</c> carries a term too since ADR 0060, and the two
+/// Its sibling <c>GetTrainingsByStatusQuery</c> carries a term too since ADR 0060, and the two
 /// remain different questions: this one seeks along an inverted index and serves anybody, that one
 /// scans the write model for one authority and can find the states this index refuses to hold.
 /// </para>

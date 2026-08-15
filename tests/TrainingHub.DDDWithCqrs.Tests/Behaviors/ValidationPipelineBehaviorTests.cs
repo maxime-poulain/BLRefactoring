@@ -3,7 +3,7 @@ using TrainingHub.Shared.Common.Pagination;
 using TrainingHub.Shared.Application.Dtos.Trainer;
 using TrainingHub.Shared.Application.Dtos.Training;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Create;
-using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetMine;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetByCurrentTrainer;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetById;
 using TrainingHub.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors;
 using TrainingHub.Shared.Common.Errors;
@@ -216,13 +216,13 @@ public sealed class ValidationPipelineBehaviorTests
     [Fact]
     public async Task Handle_QueryWithoutValidator_DoesNotThrow()
     {
-        var behavior = new ValidationPipelineBehavior<GetMyTrainingsQuery, PagedResult<TrainingDto>>(
-            Enumerable.Empty<IValidator<GetMyTrainingsQuery>>());
+        var behavior = new ValidationPipelineBehavior<GetTrainingsByCurrentTrainerQuery, PagedResult<TrainingDto>>(
+            Enumerable.Empty<IValidator<GetTrainingsByCurrentTrainerQuery>>());
 
-        var query = new GetMyTrainingsQuery();
+        var query = new GetTrainingsByCurrentTrainerQuery();
         var expected = new PagedResult<TrainingDto>([], Page: 1, PageSize: 20, TotalCount: 0);
 
-        MessageHandlerDelegate<GetMyTrainingsQuery, PagedResult<TrainingDto>> next =
+        MessageHandlerDelegate<GetTrainingsByCurrentTrainerQuery, PagedResult<TrainingDto>> next =
             (_, _) => new ValueTask<PagedResult<TrainingDto>>(expected);
 
         var result = await behavior.Handle(query, next, CancellationToken.None);

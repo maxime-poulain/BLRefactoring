@@ -78,7 +78,7 @@ simpler from the outside.
 | [0045](0045-fail-readiness-while-a-migration-is-pending.md) | Fail readiness while a migration is pending | Accepted |
 | [0046](0046-refuse-the-empty-identifier-at-every-entry-point.md) | Refuse the empty identifier at every entry point | Accepted |
 | [0047](0047-verify-the-build-a-pull-request-delegates.md) | Verify the build a pull request delegates | Accepted |
-| [0048](0048-qualify-a-contract-before-naming-what-it-is.md) | Qualify a contract before naming what it is | Accepted |
+| [0048](0048-qualify-a-contract-before-naming-what-it-is.md) | Qualify a contract before naming what it is | Accepted — amended by [0081](0081-name-a-query-for-what-it-retrieves-and-what-scopes-it.md): the query half of the CQRS vocabulary gains a convention — a retrieval verb, what is retrieved, and the criterion as ByX |
 | [0049](0049-measure-duplication-where-repetition-is-a-defect.md) | Measure duplication where repetition is a defect | Accepted — amended by [0079](0079-build-the-development-catalog-with-the-domain.md): a written corpus joins the two hosts under the duplication exemption, named in a registry that carries its argument |
 | [0050](0050-retire-a-training-rather-than-delete-it.md) | Retire a training rather than delete it | Accepted — amended by [0056](0056-announce-the-sanction-and-let-the-index-compose-visibility.md): the suspension has a surface and consumers now, so it leaves the context as a fact, and the index composes a trainer's standing rather than forgetting their catalogue; amended by [0053](0053-a-suspended-trainer-reads-and-does-not-write.md): a suspended trainer loses every write, editing and unpublishing included |
 | [0051](0051-give-the-administrator-authority-not-a-context.md) | Give the administrator authority, not a context | Accepted |
@@ -108,3 +108,4 @@ simpler from the outside.
 | [0078](0078-land-the-administrator-in-the-administration.md) | Land the administrator in the administration | Accepted |
 | [0079](0079-build-the-development-catalog-with-the-domain.md) | Build the development catalog with the domain | Accepted |
 | [0080](0080-let-a-visitor-browse-several-shelves-at-once.md) | Let a visitor browse several shelves at once | Accepted |
+| [0081](0081-name-a-query-for-what-it-retrieves-and-what-scopes-it.md) | Name a query for what it retrieves and what scopes it | Accepted |

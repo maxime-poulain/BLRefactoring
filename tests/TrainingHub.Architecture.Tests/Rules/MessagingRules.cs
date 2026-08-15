@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using FluentValidation;
 using TrainingHub.Architecture.Tests.Framework;
 using TrainingHub.Shared.CQS;
+using TrainingHub.Shared.Common.Pagination;
 using TrainingHub.Shared.Common.Results;
 using Xunit;
 
@@ -146,6 +147,91 @@ public sealed partial class MessagingRules
             .Where(pair => !pair.answered.Name.EndsWith("Dto", StringComparison.Ordinal))
             .Select(pair => $"{pair.type.FullName} answers with {pair.answered.Name}, which is not a DTO")
             .ShouldHold();
+
+    /// <summary>
+    /// The verbs a query may begin with, written out so widening the set is a visible edit.
+    /// </summary>
+    /// <remarks>
+    /// <c>Search</c> earns its place rather than being tolerated: seeking along an inverted index is
+    /// a different act from fetching by identifier, and it is the word the Search Indexing context
+    /// publishes (ADR 0059). The other four are here to be available, not because each is used.
+    /// </remarks>
+    private static readonly string[] RetrievalVerbs = ["Get", "Search", "Retrieve", "List", "Find"];
+
+    /// <summary>
+    /// The verbs that name their own narrowing, and so are excused from naming a criterion.
+    /// </summary>
+    /// <remarks>
+    /// A query that fetches has a criterion; a query that searches <em>is</em> one. The catalog's
+    /// search narrows by a term, a set of shelves and an order, all optional and none of them the
+    /// question — <c>SearchCatalogByTermAndTopicsAndOrderQuery</c> is where naming them all leads.
+    /// This is a list rather than a special case for one class so that the exemption is a property
+    /// of the verb, checkable, and widening it is a visible edit.
+    /// </remarks>
+    private static readonly string[] VerbsThatNameTheirOwnNarrowing = ["Search"];
+
+    /// <summary>
+    /// Every query, is named for what it retrieves.
+    /// </summary>
+    /// <remarks>
+    /// The population is taken by reflection rather than off the source tree, so a query added under
+    /// a folder no glob covers is judged like any other. The third clause is the one this rule
+    /// exists for: <c>GetMyTrainingsQuery</c> named its audience and left its criterion unsaid, and
+    /// nothing in this suite could tell. The <c>PageRequest</c> is excluded because paging says how
+    /// much of an answer is wanted rather than which answer.
+    /// <para>
+    /// A read <em>port</em> is out of scope on purpose — <c>ICatalogDetailQuery</c> and its family
+    /// are named questions an outer layer asks an adapter (ADR 0028, ADR 0055), not messages — and
+    /// the population makes that structural: a port is an interface, and interfaces are excluded
+    /// from <c>CqrsTypes</c> before this rule sees them.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0081",
+        "a query starts with a retrieval verb, says what it retrieves, and ends with its criterion " +
+        "as ByX whenever it has one")]
+    public void EveryQuery_IsNamedForWhatItRetrieves()
+    {
+        var queries = CqrsTypes
+            .Where(type => typeof(IQuery).IsAssignableFrom(type))
+            .Selected("query");
+
+        queries
+            .Where(query => !RetrievalVerbs.Any(verb => query.Name.StartsWith(verb, StringComparison.Ordinal)))
+            .Select(query =>
+                $"{query.Name} does not begin with a retrieval verb. The commands beside it start " +
+                $"with the verb of what they do, and a query says how it reads: {string.Join(", ", RetrievalVerbs)}")
+            .ShouldHold();
+
+        queries
+            .Where(query => !query.Name.EndsWith("Query", StringComparison.Ordinal))
+            .Select(query =>
+                $"{query.Name} implements IQuery and is not named for it. Every rule that finds a " +
+                "message finds it structurally, so a query named anything at all would dispatch, " +
+                "validate, page and answer with no build noticing")
+            .ShouldHold();
+
+        queries
+            .Where(query => !VerbsThatNameTheirOwnNarrowing.Any(verb =>
+                query.Name.StartsWith(verb, StringComparison.Ordinal)))
+            .Where(query => Scoped(query) && !query.Name.Contains("By", StringComparison.Ordinal))
+            .Select(query =>
+                $"{query.Name} carries {string.Join(", ", Criteria(query))} and names no criterion. " +
+                "A query scoped by something says so as ByX, or its name describes an audience or a " +
+                "screen rather than the question it asks")
+            .ShouldHold();
+    }
+
+    /// <summary>Whether a query narrows its answer by anything other than the page asked for.</summary>
+    private static bool Scoped(Type query) => Criteria(query).Count > 0;
+
+    /// <summary>What a query narrows by: everything it declares that is not its paging.</summary>
+    private static IReadOnlyList<string> Criteria(Type query) =>
+    [
+        .. query.GetProperties()
+            .Where(property => property.PropertyType != typeof(PageRequest))
+            .Select(property => property.Name)
+    ];
 
     /// <summary>
     /// Every command, has exactly one validator.

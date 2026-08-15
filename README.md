@@ -426,6 +426,27 @@ The names say the layer, by convention and by rule: a layered service carries th
 reader can tell an application service from a domain, infrastructure or any other kind of service
 at the name alone (`TheLayeredApplication_NamesItsServicesInFull`).
 
+The CQRS names say the use case the same way, on both halves. A command opens with the verb of what
+it does — `TransferTrainingCommand`, `SuspendTrainerCommand` — and a query says how it reads, what
+it retrieves and what scopes it: a retrieval verb, the thing retrieved, then the criterion as `ByX`
+whenever there is one. `GetTrainerProfileByTrainerIdQuery`, `GetTrainingsByStatusQuery`,
+`GetTrainingsByCurrentTrainerQuery`.
+
+The measure is that a reader need not open the file, and that is what settles the awkward cases.
+`ById` is for the identifier of the thing the name has just retrieved — `GetTrainingByIdQuery` —
+and anything else is spelled: a profile has no identifier of its own, so the query that fetches one
+by its trainer's is `GetTrainerProfileByTrainerIdQuery`, the shape
+`GetTrainerPhotoByTrainerIdQuery` already had. The criterion is named even where the message does
+not carry it: `GetTrainingsByCurrentTrainerQuery` declares nothing but its paging, because the
+trainer is resolved in the handler through `ICurrentUserService` rather than passed — which makes
+the name the only place its scoping is written. Paging is not a criterion, so
+`GetPoisonedMessagesQuery` carries a page and no `By`; and a query that fetches has a criterion
+while a query that *searches* is one, which is why `SearchCatalogQuery` needs no `ByX` for the term,
+shelves and order it narrows by. A read *port* is out of scope — `ICatalogDetailQuery` and its
+family are named questions an outer layer asks an adapter, not messages
+([ADR 0081](docs/adr/0081-name-a-query-for-what-it-retrieves-and-what-scopes-it.md),
+`EveryQuery_IsNamedForWhatItRetrieves`).
+
 | Use case | `src/DDD` | `src/DDDWithCqrs` | Handler project |
 |---|---|---|---|
 | Create trainer | `TrainerApplicationService.CreateAsync` | `CreateTrainerCommand` | Application |
@@ -433,13 +454,13 @@ at the name alone (`TheLayeredApplication_NamesItsServicesInFull`).
 | Read own profile | `TrainerApplicationService.GetByIdAsync` | `GetTrainerByIdQuery` | Infrastructure |
 | Publish or replace a portrait | `TrainerApplicationService.SetPhotoAsync` | `SetTrainerPhotoCommand` | Application |
 | Remove a portrait | `TrainerApplicationService.RemovePhotoAsync` | `RemoveTrainerPhotoCommand` | Application |
-| View a trainer's portrait | `TrainerApplicationService.GetPhotoAsync` | `GetTrainerPhotoQuery` | Infrastructure |
+| View a trainer's portrait | `TrainerApplicationService.GetPhotoAsync` | `GetTrainerPhotoByTrainerIdQuery` | Infrastructure |
 | Create training | `TrainingApplicationService.CreateAsync` | `CreateTrainingCommand` | Application |
 | Edit training | `TrainingApplicationService.EditAsync` | `EditTrainingCommand` | Application |
 | Delete training | `TrainingApplicationService.DeleteAsync` | `DeleteTrainingCommand` | Application |
 | Transfer training | `TrainingApplicationService.TransferAsync` | `TransferTrainingCommand` | Application |
 | Read one own training | `TrainingApplicationService.GetByIdAsync` | `GetTrainingByIdQuery` | Infrastructure |
-| List own trainings | `TrainingApplicationService.GetMineAsync` | `GetMyTrainingsQuery` | Infrastructure |
+| List own trainings | `TrainingApplicationService.GetByCurrentTrainerAsync` | `GetTrainingsByCurrentTrainerQuery` | Infrastructure |
 
 The read paths differ by design: the layered stack loads aggregates through repositories and maps
 them, while the CQRS stack projects straight from `TrainingContext` into DTOs with

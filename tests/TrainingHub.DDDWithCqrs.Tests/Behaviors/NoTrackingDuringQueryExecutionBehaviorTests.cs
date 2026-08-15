@@ -2,7 +2,7 @@ using AwesomeAssertions;
 using TrainingHub.Shared.Common.Pagination;
 using TrainingHub.Shared.Application.Dtos.Training;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Create;
-using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetMine;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetByCurrentTrainer;
 using TrainingHub.DDDWithCqrs.Infrastructure.ThirdParty.Mediator.Behaviors;
 using TrainingHub.Shared.Common.Results;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
@@ -36,12 +36,12 @@ public sealed class NoTrackingDuringQueryExecutionBehaviorTests : IDisposable
     [Fact]
     public async Task Handle_Query_SetsNoTrackingDuringExecution()
     {
-        var behavior = new NoTrackingDuringQueryExecutionBehavior<GetMyTrainingsQuery, PagedResult<TrainingDto>>(_context);
-        var query = new GetMyTrainingsQuery();
+        var behavior = new NoTrackingDuringQueryExecutionBehavior<GetTrainingsByCurrentTrainerQuery, PagedResult<TrainingDto>>(_context);
+        var query = new GetTrainingsByCurrentTrainerQuery();
 
         QueryTrackingBehavior? trackingDuringExecution = null;
 
-        MessageHandlerDelegate<GetMyTrainingsQuery, PagedResult<TrainingDto>> next = (_, _) =>
+        MessageHandlerDelegate<GetTrainingsByCurrentTrainerQuery, PagedResult<TrainingDto>> next = (_, _) =>
         {
             trackingDuringExecution = _context.ChangeTracker.QueryTrackingBehavior;
             return new ValueTask<PagedResult<TrainingDto>>(new PagedResult<TrainingDto>([], Page: 1, PageSize: 20, TotalCount: 0));
@@ -60,10 +60,10 @@ public sealed class NoTrackingDuringQueryExecutionBehaviorTests : IDisposable
     {
         _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
 
-        var behavior = new NoTrackingDuringQueryExecutionBehavior<GetMyTrainingsQuery, PagedResult<TrainingDto>>(_context);
-        var query = new GetMyTrainingsQuery();
+        var behavior = new NoTrackingDuringQueryExecutionBehavior<GetTrainingsByCurrentTrainerQuery, PagedResult<TrainingDto>>(_context);
+        var query = new GetTrainingsByCurrentTrainerQuery();
 
-        MessageHandlerDelegate<GetMyTrainingsQuery, PagedResult<TrainingDto>> next =
+        MessageHandlerDelegate<GetTrainingsByCurrentTrainerQuery, PagedResult<TrainingDto>> next =
             (_, _) => new ValueTask<PagedResult<TrainingDto>>(new PagedResult<TrainingDto>([], Page: 1, PageSize: 20, TotalCount: 0));
 
         await behavior.Handle(query, next, CancellationToken.None);

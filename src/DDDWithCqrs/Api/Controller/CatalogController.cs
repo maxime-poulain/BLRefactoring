@@ -90,7 +90,7 @@ public sealed class CatalogController(IQueryDispatcher queryDispatcher) : Catalo
         CancellationToken cancellationToken = default)
     {
         var counted = await queryDispatcher.DispatchAsync(
-            facets.ToGetCatalogTopicsQuery(), cancellationToken);
+            facets.ToGetCatalogTopicsByTermQuery(), cancellationToken);
 
         return Ok(counted.ToHttp());
     }
@@ -123,7 +123,7 @@ public sealed class CatalogController(IQueryDispatcher queryDispatcher) : Catalo
         CancellationToken cancellationToken = default)
     {
         var offered = await queryDispatcher.DispatchAsync(
-            HttpToApplicationMappings.ToGetOfferedTrainingQuery(trainingId), cancellationToken);
+            HttpToApplicationMappings.ToGetOfferedTrainingByIdQuery(trainingId), cancellationToken);
 
         return offered is null ? NotFound() : Ok(offered.ToHttp());
     }
@@ -166,7 +166,7 @@ public sealed class CatalogController(IQueryDispatcher queryDispatcher) : Catalo
         CancellationToken cancellationToken = default)
     {
         var portrait = await queryDispatcher.DispatchAsync(
-            HttpToApplicationMappings.ToGetOfferedPortraitQuery(trainingId, photoId), cancellationToken);
+            HttpToApplicationMappings.ToGetOfferedPortraitByPhotoIdQuery(trainingId, photoId), cancellationToken);
 
         return portrait is null ? NotFound() : this.ImmutablePhotoFile(portrait);
     }
@@ -196,7 +196,7 @@ public sealed class CatalogController(IQueryDispatcher queryDispatcher) : Catalo
         CancellationToken cancellationToken = default)
     {
         var profile = await queryDispatcher.DispatchAsync(
-            HttpToApplicationMappings.ToGetTrainerProfileQuery(trainerId), cancellationToken);
+            HttpToApplicationMappings.ToGetTrainerProfileByTrainerIdQuery(trainerId), cancellationToken);
 
         return profile is null ? NotFound() : Ok(profile.ToHttp());
     }
@@ -239,7 +239,7 @@ public sealed class CatalogController(IQueryDispatcher queryDispatcher) : Catalo
         CancellationToken cancellationToken = default)
     {
         var portrait = await queryDispatcher.DispatchAsync(
-            HttpToApplicationMappings.ToGetTrainerPortraitQuery(trainerId, photoId), cancellationToken);
+            HttpToApplicationMappings.ToGetTrainerPortraitByPhotoIdQuery(trainerId, photoId), cancellationToken);
 
         return portrait is null ? NotFound() : this.ImmutablePhotoFile(portrait);
     }

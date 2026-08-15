@@ -209,7 +209,7 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
         [FromQuery] PaginationHttpRequest pagination,
         CancellationToken cancellationToken = default)
     {
-        var page = await trainingApplicationService.GetMineAsync(
+        var page = await trainingApplicationService.GetByCurrentTrainerAsync(
             pagination.ToPageRequest(), cancellationToken);
 
         return Ok(page.ToHttp(trainings => trainings.ToHttp()));
