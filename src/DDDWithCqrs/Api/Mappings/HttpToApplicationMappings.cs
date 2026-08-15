@@ -1,3 +1,4 @@
+using TrainingHub.DDDWithCqrs.Application.Features.Catalog.Contact;
 using TrainingHub.DDDWithCqrs.Application.Features.Catalog.GetOffered;
 using TrainingHub.DDDWithCqrs.Application.Features.Catalog.GetOfferedPortrait;
 using TrainingHub.DDDWithCqrs.Application.Features.Catalog.GetTopics;
@@ -222,6 +223,28 @@ public static class HttpToApplicationMappings
     /// </remarks>
     public static GetCatalogTopicsByTermQuery ToGetCatalogTopicsByTermQuery(
         this CatalogFacetsHttpRequest? facets) => new() { Term = facets?.Term };
+
+    /// <summary>Builds the command carrying a visitor's message to a trainer (ADR 0082).</summary>
+    /// <remarks>
+    /// The trainer comes from the route and everything else from the body, which is the whole of
+    /// the privacy argument in one signature: a caller names who they are writing to, never where
+    /// it goes.
+    /// </remarks>
+    public static ContactTrainerCommand ToCommand(this ContactTrainerHttpRequest request, Guid trainerId)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        return new ContactTrainerCommand
+        {
+            TrainerId = trainerId,
+            TrainingId = request.TrainingId,
+            SenderFirstname = request.SenderFirstname,
+            SenderLastname = request.SenderLastname,
+            SenderEmailAddress = request.SenderEmailAddress,
+            Message = request.Message,
+            LooksAutomated = request.LooksAutomated()
+        };
+    }
 
     /// <summary>Builds the query reading one offered training in full (ADR 0062).</summary>
     /// <remarks>

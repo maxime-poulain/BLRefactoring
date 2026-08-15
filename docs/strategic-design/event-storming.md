@@ -205,6 +205,14 @@ checks the same thing: a trainer may not list the same title twice. Creation is 
 an empty draft — which is why `Training.CreateAsync` is asynchronous while `Trainer.Create` is not.
 The trainer aggregate has no rule it cannot answer alone; the training aggregate has exactly one.
 
+**One fact behind no aggregate at all.** `TrainerContactedIntegrationEvent` is the exception this
+board could not have shown before ADR 0082: a visitor writing to a trainer changes nothing about
+either aggregate, so no domain event precedes it and no handler translates one. The command
+commits it directly, and the outbox row *is* the record that it happened — which is why it appears
+here as a fact without a preceding blue sticky, and why the consumer that reads it,
+`SendContactMessage`, resolves the trainer's published contact address at delivery rather than
+carrying it on the wire.
+
 **Nine events, nine facts, one real consumer.** `TrainingCreatedIntegrationEvent`,
 `TrainingEditedIntegrationEvent`, `TrainingTransferredIntegrationEvent`,
 `TrainingPublishedIntegrationEvent`, `TrainingUnpublishedIntegrationEvent`,

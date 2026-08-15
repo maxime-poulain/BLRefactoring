@@ -343,11 +343,39 @@ public abstract class ApiFactory<TEntryPoint>
         }
     }
 
+    /// <summary>SQL Server's error number for a transaction chosen as a deadlock victim.</summary>
+    private const int DeadlockVictim = 1205;
+
     /// <summary>
     /// Empties every table but the migration history, so a test starts from a known
     /// state instead of inheriting whatever its predecessors left behind.
     /// </summary>
-    public Task ResetDatabaseAsync() => _respawner.ResetAsync(_connection);
+    /// <remarks>
+    /// Retried when SQL Server picks it as a deadlock victim, and only then. The host's outbox
+    /// delivery worker is a real background loop (ADR 0025) leasing, delivering and sweeping rows
+    /// while this empties the tables, and once in a long while the two collide; the error's own
+    /// text says what to do — "Rerun the transaction" — and a moment later the sweep it collided
+    /// with has committed. Anything broader than 1205 is rethrown at once: a retry that swallowed
+    /// real failures would turn a broken fixture into a slow, green one.
+    /// </remarks>
+    public async Task ResetDatabaseAsync()
+    {
+        const int Attempts = 3;
+
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await _respawner.ResetAsync(_connection);
+                return;
+            }
+            catch (SqlException exception)
+                when (exception.Number == DeadlockVictim && attempt < Attempts)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(250));
+            }
+        }
+    }
 
     /// <inheritdoc />
     public IServiceScope CreateScope() => Services.CreateScope();

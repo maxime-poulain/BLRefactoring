@@ -34,16 +34,19 @@ public sealed class RecordingHandler : HttpMessageHandler
     /// <summary>
     /// Send async.
     /// </summary>
-    protected override Task<HttpResponseMessage> SendAsync(
+    protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
         _requests.Add(new RecordedRequest(
             request.Method,
             request.RequestUri,
-            request.Headers.Authorization?.ToString()));
+            request.Headers.Authorization?.ToString(),
+            request.Content is null
+                ? null
+                : await request.Content.ReadAsStringAsync(cancellationToken)));
 
-        return Task.FromResult(Respond(request));
+        return Respond(request);
     }
 
     /// <remarks>
@@ -62,7 +65,7 @@ public sealed class RecordingHandler : HttpMessageHandler
 }
 
 /// <summary>What the API saw, kept beyond the lifetime of the request message.</summary>
-public sealed record RecordedRequest(HttpMethod Method, Uri? Uri, string? Authorization);
+public sealed record RecordedRequest(HttpMethod Method, Uri? Uri, string? Authorization, string? Body = null);
 
 /// <summary>
 /// Hands YARP the stub instead of a real socket.

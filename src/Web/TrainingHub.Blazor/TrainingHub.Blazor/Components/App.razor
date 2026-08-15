@@ -68,6 +68,9 @@
 <Routes @rendermode="PageRenderMode"/>
 <script src="_framework/blazor.web.js"></script>
 <script src=@Assets["_content/MudBlazor/MudBlazor.min.js"]></script>
+@* Turnstile's loader, deferred: the widget itself is rendered explicitly, by the contact dialog,
+   because the dialog appears long after this script has scanned the page (ADR 0083). *@
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>
 </body>
 
 </html>

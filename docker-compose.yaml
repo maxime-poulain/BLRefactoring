@@ -212,6 +212,10 @@ services:
       # the machine's browser already trusts it and there is nothing to accept by hand.
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/traininghub.pfx
       - ASPNETCORE_Kestrel__Certificates__Default__Password=Password@
+      # No Turnstile pair, so the contact form runs without the challenge (ADR 0083) — the
+      # honeypot and both rate windows still stand. Supplying Turnstile__SiteKey and
+      # Turnstile__SecretKey together switches it on; verification is then a real HTTPS call to
+      # challenges.cloudflare.com, the one outbound need this container has.
     volumes:
       - ./docker/https:/https:ro
     healthcheck:

@@ -1,6 +1,6 @@
 # 0070 — Open a trainer's public page
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0082](0082-let-a-visitor-reach-a-trainer-without-learning-their-address.md): the platform becomes the channel it was called, and the rule withholding an address is narrowed to what the catalog answers
 - **Amends:** [0062](0062-let-the-proxy-forward-one-family-of-paths-without-a-token.md),
   [0063](0063-strip-the-metadata-before-the-bytes-are-stored.md)
 - **Date:** 2026-08-10

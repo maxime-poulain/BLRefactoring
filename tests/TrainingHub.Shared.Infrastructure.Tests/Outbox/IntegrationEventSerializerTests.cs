@@ -24,6 +24,8 @@ public sealed class IntegrationEventSerializerTests
         new TrainerContactEmailChangedIntegrationEvent(Guid.NewGuid(), "old@example.com", "new@example.com"),
         new TrainerSuspendedIntegrationEvent(Guid.NewGuid(), "Repeated breaches of the content policy."),
         new TrainerReinstatedIntegrationEvent(Guid.NewGuid()),
+        new TrainerContactedIntegrationEvent(
+            Guid.NewGuid(), Guid.NewGuid(), "Ada", "Lovelace", "ada@example.com", "Is this course running in June?"),
         new TrainingCreatedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
         new TrainingEditedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
         new TrainingTransferredIntegrationEvent(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()),

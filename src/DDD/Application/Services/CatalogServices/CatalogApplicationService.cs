@@ -1,19 +1,31 @@
+using TrainingHub.Shared;
 using TrainingHub.Shared.Application.Catalog;
 using TrainingHub.Shared.Application.Dtos.Trainer;
 using TrainingHub.Shared.Application.Dtos.Training;
+using TrainingHub.Shared.Application.IntegrationEvents;
 using TrainingHub.Shared.Application.Search;
+using TrainingHub.Shared.Common.Errors;
 using TrainingHub.Shared.Common.Pagination;
+using TrainingHub.Shared.Common.Results;
 
 namespace TrainingHub.DDD.Application.Services.CatalogServices;
 
 /// <summary>
-/// Application service interface for the public catalog: reads only, and no writes at all.
+/// Application service interface for the public catalog: five reads, and one write that changes
+/// nothing.
 /// </summary>
 /// <remarks>
 /// The layered stack's half of the query surface ADR 0059 opens on the Search Indexing context. It
-/// is the only application service here that drives no aggregate, and that is the point rather than
-/// an omission: a catalog search reads a read model, and the write model has nothing to say about
-/// it. It is also why this one has no <c>Result</c> anywhere — there is no rule to break.
+/// is still the only application service here that drives no aggregate, and that is the point
+/// rather than an omission: a catalog search reads a read model, and the write model has nothing to
+/// say about it.
+/// <para>
+/// <see cref="ContactAsync"/> is the one member that is not a read, and the exception is narrower
+/// than it looks: it changes no aggregate either. What it writes is one outbox row recording that a
+/// visitor wrote to a trainer — a fact with no aggregate behind it, which is the shape ADR 0082
+/// argues for. It answers a bare <c>Result</c> because it can be refused, where the reads cannot:
+/// a trainer the catalog will not show is a trainer nobody may write to.
+/// </para>
 /// </remarks>
 public interface ICatalogApplicationService
 {
@@ -39,6 +51,22 @@ public interface ICatalogApplicationService
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     Task<IReadOnlyList<TopicFacetDto>> GetFacetsAsync(
         string? term,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Carries a visitor's message to the trainer they wrote to (ADR 0082).
+    /// </summary>
+    /// <remarks>
+    /// It commits the fact and answers; the message leaves later, through the outbox, which is how
+    /// every other email in this application is sent (ADR 0002, ADR 0031). So a caller learns that
+    /// the message was accepted, never that it arrived — and that is the honest thing to tell them,
+    /// because an SMTP server that is down when a visitor is on the page is not a reason to lose
+    /// what they wrote.
+    /// </remarks>
+    /// <param name="request">The message, whole, and the trainer it is addressed to.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    Task<Result> ContactAsync(
+        TrainerContactRequest request,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -116,9 +144,56 @@ public interface ICatalogApplicationService
 /// </remarks>
 public sealed class CatalogApplicationService(
     ITrainingSearchQuery trainingSearch,
-    ICatalogDetailQuery catalogDetail)
+    ICatalogDetailQuery catalogDetail,
+    IIntegrationEventPublisher integrationEvents,
+    IUnitOfWork unitOfWork)
     : ICatalogApplicationService
 {
+    /// <inheritdoc />
+    public async Task<Result> ContactAsync(
+        TrainerContactRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        // A bot is answered exactly as a person is, minus the sending: telling it apart is what
+        // would teach it to try again with the field left blank (ADR 0082).
+        if (request.LooksAutomated)
+        {
+            return Result.Success();
+        }
+
+        // Offered or invisible, the same predicate the profile answers under: a trainer the catalog
+        // will not show a visitor is a trainer that visitor may not write to either. It is the
+        // index's composed visibility rather than a second one written here, which is what
+        // ADR 0062 asks of every public read — and this write reads before it writes.
+        var trainer = await catalogDetail.FindOfferedTrainerAsync(request.TrainerId, cancellationToken);
+
+        if (trainer is null)
+        {
+            return Result.Failure(
+                ErrorCodes.NotFound,
+                $"No offered trainer with id `{request.TrainerId}` could be found.");
+        }
+
+        await integrationEvents.PublishAsync(
+            new TrainerContactedIntegrationEvent(
+                request.TrainerId,
+                request.TrainingId,
+                request.SenderFirstname,
+                request.SenderLastname,
+                request.SenderEmailAddress,
+                request.Message),
+            cancellationToken);
+
+        // The outbox row is the whole write, and it needs a save of its own: nothing else in this
+        // request touched the unit of work, so there is no aggregate's commit to ride along with
+        // (ADR 0002, ADR 0082).
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Result.Success();
+    }
+
     /// <inheritdoc />
     public async Task<PagedResult<CatalogTrainingDto>> SearchAsync(
         CatalogSearchRequest request,

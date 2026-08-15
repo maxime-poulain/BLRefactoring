@@ -1582,6 +1582,15 @@ namespace TrainingHub.GeneratedClients
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<CatalogTrainerHttpResponse> GetTrainerProfileAsync(System.Guid trainerId, System.Threading.CancellationToken cancellationToken);
 
+        /// <returns>Accepted</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task ContactTrainerAsync(System.Guid trainerId, ContactTrainerHttpRequest body);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>Accepted</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task ContactTrainerAsync(System.Guid trainerId, ContactTrainerHttpRequest body, System.Threading.CancellationToken cancellationToken);
+
         /// <returns>OK</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<byte[]> GetTrainerPortraitAsync(System.Guid trainerId, System.Guid photoId);
@@ -2141,6 +2150,116 @@ namespace TrainingHub.GeneratedClients
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             throw new ApiException<ProblemDetails>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <returns>Accepted</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task ContactTrainerAsync(System.Guid trainerId, ContactTrainerHttpRequest body)
+        {
+            return ContactTrainerAsync(trainerId, body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>Accepted</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task ContactTrainerAsync(System.Guid trainerId, ContactTrainerHttpRequest body, System.Threading.CancellationToken cancellationToken)
+        {
+            if (trainerId == null)
+                throw new System.ArgumentNullException("trainerId");
+
+            if (body == null)
+                throw new System.ArgumentNullException("body");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.ByteArrayContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                
+                    // Operation Path: "Catalog/trainers/{trainerId}/contact"
+                    urlBuilder_.Append("Catalog/trainers/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(trainerId, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append("/contact");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 202)
+                        {
+                            return;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 429)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("Too Many Requests", status_, responseText_, headers_, null);
                         }
                         else
                         {
@@ -5185,6 +5304,70 @@ namespace TrainingHub.GeneratedClients
         [System.Text.Json.Serialization.JsonPropertyName("title")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Title { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// The body of `POST /Catalog/trainers/{trainerId}/contact`.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ContactTrainerHttpRequest
+    {
+
+        /// <summary>
+        /// The visitor's first name, as they gave it.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("senderFirstname")]
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.StringLength(100, MinimumLength = 1)]
+        public string SenderFirstname { get; set; } = default!;
+
+        /// <summary>
+        /// The visitor's last name, as they gave it.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("senderLastname")]
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.StringLength(100, MinimumLength = 1)]
+        public string SenderLastname { get; set; } = default!;
+
+        /// <summary>
+        /// The address the visitor asks to be answered at, which becomes the message's `Reply-To`.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("senderEmailAddress")]
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.StringLength(320, MinimumLength = 1)]
+        public string SenderEmailAddress { get; set; } = default!;
+
+        /// <summary>
+        /// What the visitor wants to say.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("message")]
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.StringLength(2000, MinimumLength = 10)]
+        public string Message { get; set; } = default!;
+
+        /// <summary>
+        /// The training the visitor was reading, or `null` when they wrote from the
+        /// <br/>trainer's own page.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("trainingId")]
+        public System.Guid? TrainingId { get; set; } = default!;
+
+        /// <summary>
+        /// Left empty by anyone who can see the form.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("website")]
+        [System.ComponentModel.DataAnnotations.StringLength(200)]
+        public string? Website { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

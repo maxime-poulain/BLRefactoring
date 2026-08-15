@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Yarp.ReverseProxy.Forwarder;
@@ -23,13 +24,33 @@ namespace TrainingHub.Blazor.Bff.Tests;
 /// the configuration for the same hermetic reason the API factory removes it (ADR 0035).
 /// </para>
 /// </remarks>
-public sealed class BffFactory : WebApplicationFactory<Program>
+/// <param name="turnstileSiteKey">The site key the host runs with — <see cref="TurnstileSiteKey"/>
+/// unless a fact says otherwise. <see langword="null"/> leaves the key unconfigured.</param>
+/// <param name="turnstileSecretKey">The secret's counterpart, with the same default and the same
+/// null meaning, so a fact can configure the whole pair, none of it, or — to prove the startup
+/// refusal — half of it.</param>
+public sealed class BffFactory(
+    string? turnstileSiteKey = BffFactory.TurnstileSiteKey,
+    string? turnstileSecretKey = BffFactory.TurnstileSecretKey) : WebApplicationFactory<Program>
 {
     /// <summary>The API as the BFF's own sign-in endpoint reaches it.</summary>
     public RecordingHandler LoginApi { get; } = new();
 
     /// <summary>The API as the proxy reaches it.</summary>
     public RecordingHandler ProxiedApi { get; } = new();
+
+    /// <summary>Cloudflare's siteverify endpoint, as the contact endpoint reaches it.</summary>
+    /// <remarks>
+    /// Its default answer is an empty document, which parses to a refusal: a fact that wants a
+    /// token admitted says so explicitly, and a fact that forgets cannot pass by accident.
+    /// </remarks>
+    public RecordingHandler TurnstileApi { get; } = new();
+
+    /// <summary>The site key the suite configures, for facts that assert it is served.</summary>
+    public const string TurnstileSiteKey = "test-site-key";
+
+    /// <summary>The secret the suite configures, for facts that assert where it travels.</summary>
+    public const string TurnstileSecretKey = "test-secret-key";
 
     /// <summary>
     /// Configure web host.
@@ -49,6 +70,16 @@ public sealed class BffFactory : WebApplicationFactory<Program>
             {
                 configuration.Sources.Remove(localSource);
             }
+
+            // The suite's own key pair, out-shouting the host's settings: what the facts assert
+            // on must come from this file rather than from whatever those say (ADR 0035). The
+            // pair is configured by default and a fact can withhold either half — none for the
+            // challenge-off state, one for the startup refusal (ADR 0083).
+            configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Turnstile:SiteKey"] = turnstileSiteKey,
+                ["Turnstile:SecretKey"] = turnstileSecretKey
+            });
         });
 
         builder.ConfigureServices(services =>
@@ -56,6 +87,10 @@ public sealed class BffFactory : WebApplicationFactory<Program>
             services
                 .AddHttpClient(BffEndpoints.ApiClientName)
                 .ConfigurePrimaryHttpMessageHandler(() => LoginApi);
+
+            services
+                .AddHttpClient(TurnstileVerifier.ClientName)
+                .ConfigurePrimaryHttpMessageHandler(() => TurnstileApi);
 
             services.AddSingleton<IForwarderHttpClientFactory>(
                 new StubForwarderHttpClientFactory(ProxiedApi));

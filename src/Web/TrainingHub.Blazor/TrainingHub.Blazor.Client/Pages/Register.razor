@@ -1,7 +1,6 @@
 ﻿@page "/register"
 @using System.ComponentModel.DataAnnotations
 @using System.Linq
-@using System.Text.Json
 @using TrainingHub.Blazor.Client.Infrastructure
 @using TrainingHub.GeneratedClients
 @inject IBffSessionClient SessionClient
@@ -173,7 +172,7 @@
             // failure this API publishes. The per-field messages are what the user needs
             // ("Email 'x' is already taken."), so they are read out of the map rather than
             // replaced by the generic title above it.
-            foreach (var message in ValidationMessages(problem))
+            foreach (var message in ProblemDetailsMessages.Read(problem, "The registration was rejected."))
             {
                 Snackbar.Add(message, Severity.Error);
             }
@@ -192,36 +191,5 @@
         {
             _isLoading = false;
         }
-    }
-
-    /// <summary>
-    /// The per-field messages of a validation problem document, or its summary when it carries none.
-    /// </summary>
-    /// <remarks>
-    /// <c>errors</c> is the member RFC 7807's <c>ValidationProblemDetails</c> uses for a map of
-    /// field name to messages; this API's own error codes travel separately, under
-    /// <c>domainErrors</c>. NSwag models neither, so both arrive in the extension data as
-    /// <see cref="JsonElement"/>.
-    /// </remarks>
-    private static IEnumerable<string> ValidationMessages(ProblemDetails problem)
-    {
-        if (problem.AdditionalProperties.TryGetValue("errors", out var raw)
-            && raw is JsonElement { ValueKind: JsonValueKind.Object } fields)
-        {
-            var messages = fields
-                .EnumerateObject()
-                .SelectMany(field => field.Value.EnumerateArray())
-                .Select(message => message.GetString())
-                .Where(message => !string.IsNullOrWhiteSpace(message))
-                .Select(message => message!)
-                .ToList();
-
-            if (messages.Count > 0)
-            {
-                return messages;
-            }
-        }
-
-        return [problem.Detail ?? problem.Title ?? "The registration was rejected."];
     }
 }
