@@ -415,13 +415,13 @@ public sealed class TrainingApplicationServiceTests
         result.ShouldBeFailure();
     }
 
-    // -- GetMineAsync --
+    // -- GetByCurrentTrainerAsync --
 
     /// <summary>
     /// Get mine async, returns the repository's page, items mapped and counts untouched.
     /// </summary>
     [Fact]
-    public async Task GetMineAsync_ReturnsThePage_ItemsMappedAndCountsUntouched()
+    public async Task GetByCurrentTrainerAsync_ReturnsThePage_ItemsMappedAndCountsUntouched()
     {
         SetupCurrentUser();
         var training = await new TrainingBuilder().WithTrainerId(_trainerId).BuildValidAsync();
@@ -431,7 +431,7 @@ public sealed class TrainingApplicationServiceTests
             .ReturnsAsync(new PagedResult<Training>([training], Page: 2, PageSize: 1, TotalCount: 5));
         var sut = _fixture.CreateSut();
 
-        var page = await sut.GetMineAsync(new PageRequest { Page = 2, PageSize = 1 });
+        var page = await sut.GetByCurrentTrainerAsync(new PageRequest { Page = 2, PageSize = 1 });
 
         // The repository decided what the page holds; this layer only reshapes each item. The
         // metadata crossing the mapping unchanged is what keeps the pager honest.
@@ -445,7 +445,7 @@ public sealed class TrainingApplicationServiceTests
     /// Get mine async, asks the repository for the callers own trainer id and the callers page.
     /// </summary>
     [Fact]
-    public async Task GetMineAsync_AsksTheRepositoryForTheCallersOwnTrainerId_AndTheCallersPage()
+    public async Task GetByCurrentTrainerAsync_AsksTheRepositoryForTheCallersOwnTrainerId_AndTheCallersPage()
     {
         SetupCurrentUser();
         _fixture.TrainingRepository
@@ -455,7 +455,7 @@ public sealed class TrainingApplicationServiceTests
         var sut = _fixture.CreateSut();
 
         var paging = new PageRequest { Page = 3, PageSize = 10 };
-        await sut.GetMineAsync(paging);
+        await sut.GetByCurrentTrainerAsync(paging);
 
         // The method takes no trainer, so the only thing that can make it read the wrong one is
         // resolving the caller wrongly. This is where that would show — and the paging must reach
@@ -470,7 +470,7 @@ public sealed class TrainingApplicationServiceTests
     /// Get mine async, no trainings, returns an empty page.
     /// </summary>
     [Fact]
-    public async Task GetMineAsync_NoTrainings_ReturnsAnEmptyPage()
+    public async Task GetByCurrentTrainerAsync_NoTrainings_ReturnsAnEmptyPage()
     {
         SetupCurrentUser();
         _fixture.TrainingRepository
@@ -479,7 +479,7 @@ public sealed class TrainingApplicationServiceTests
             .ReturnsAsync(new PagedResult<Training>([], Page: 1, PageSize: PageRequest.DefaultPageSize, TotalCount: 0));
         var sut = _fixture.CreateSut();
 
-        var page = await sut.GetMineAsync(new PageRequest());
+        var page = await sut.GetByCurrentTrainerAsync(new PageRequest());
 
         // Empty rather than a failure: a trainer who has created nothing is not an error, which
         // is why this method stopped answering with a Result it could never fail.

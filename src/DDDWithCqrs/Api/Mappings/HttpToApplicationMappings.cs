@@ -8,16 +8,16 @@ using TrainingHub.DDDWithCqrs.Application.Features.Outbox.GetPoisoned;
 using TrainingHub.DDDWithCqrs.Application.Features.Outbox.Requeue;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Create;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Edit;
-using TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetAdministered;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetByStatus;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.GetById;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Reinstate;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Suspend;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Create;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Delete;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Edit;
-using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetAdministered;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetByStatus;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetById;
-using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetMine;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetByCurrentTrainer;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Publish;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Release;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainings.Transfer;
@@ -181,7 +181,7 @@ public static class HttpToApplicationMappings
     /// criteria are this endpoint's own; joining them is the mapping's job, exactly as it is for a
     /// route identifier and a body.
     /// </remarks>
-    public static GetAdministeredTrainersQuery ToQuery(
+    public static GetTrainersByStatusQuery ToQuery(
         this AdministrationTrainerFilterHttpRequest? filter,
         PaginationHttpRequest? pagination) => new()
         {
@@ -191,7 +191,7 @@ public static class HttpToApplicationMappings
         };
 
     /// <summary>Builds the query reading one page of trainings for the administration (ADR 0055).</summary>
-    public static GetAdministeredTrainingsQuery ToQuery(
+    public static GetTrainingsByStatusQuery ToQuery(
         this AdministrationTrainingFilterHttpRequest? filter,
         PaginationHttpRequest? pagination) => new()
         {
@@ -220,7 +220,7 @@ public static class HttpToApplicationMappings
     /// It carries the term and not the shelves, because that is what the counts are read under:
     /// a facet answers what it would contribute to the search the visitor has typed.
     /// </remarks>
-    public static GetCatalogTopicsQuery ToGetCatalogTopicsQuery(
+    public static GetCatalogTopicsByTermQuery ToGetCatalogTopicsByTermQuery(
         this CatalogFacetsHttpRequest? facets) => new() { Term = facets?.Term };
 
     /// <summary>Builds the query reading one offered training in full (ADR 0062).</summary>
@@ -228,14 +228,14 @@ public static class HttpToApplicationMappings
     /// No bound object at all: the only thing this endpoint carries is the identifier the route
     /// names, and a visitor has nothing else to say.
     /// </remarks>
-    public static GetOfferedTrainingQuery ToGetOfferedTrainingQuery(Guid trainingId) => new(trainingId);
+    public static GetOfferedTrainingByIdQuery ToGetOfferedTrainingByIdQuery(Guid trainingId) => new(trainingId);
 
     /// <summary>Builds the query reading the portrait behind an offered training (ADR 0063).</summary>
     /// <remarks>
     /// Both identifiers come from the route and neither names a person: the training is what the
     /// visitor followed, and the photo is what makes the answer cacheable forever.
     /// </remarks>
-    public static GetOfferedPortraitQuery ToGetOfferedPortraitQuery(Guid trainingId, Guid photoId) =>
+    public static GetOfferedPortraitByPhotoIdQuery ToGetOfferedPortraitByPhotoIdQuery(Guid trainingId, Guid photoId) =>
         new(trainingId, photoId);
 
     /// <summary>Builds the query reading one offering trainer's public profile (ADR 0070).</summary>
@@ -243,14 +243,14 @@ public static class HttpToApplicationMappings
     /// No bound object at all: the only thing this endpoint carries is the identifier the route
     /// names, and a visitor has nothing else to say.
     /// </remarks>
-    public static GetTrainerProfileQuery ToGetTrainerProfileQuery(Guid trainerId) => new(trainerId);
+    public static GetTrainerProfileByTrainerIdQuery ToGetTrainerProfileByTrainerIdQuery(Guid trainerId) => new(trainerId);
 
     /// <summary>Builds the query reading an offering trainer's portrait (ADR 0070).</summary>
     /// <remarks>
     /// Both identifiers come from the route: the trainer names the page the visitor is on, and the
     /// photo is what makes the answer cacheable forever.
     /// </remarks>
-    public static GetTrainerPortraitQuery ToGetTrainerPortraitQuery(Guid trainerId, Guid photoId) =>
+    public static GetTrainerPortraitByPhotoIdQuery ToGetTrainerPortraitByPhotoIdQuery(Guid trainerId, Guid photoId) =>
         new(trainerId, photoId);
 
     /// <summary>Builds the query reading one page of the outbox's poison (ADR 0061).</summary>
@@ -279,6 +279,6 @@ public static class HttpToApplicationMappings
     /// and no way to carry the wrong one. The paging translation itself is the shared
     /// <c>ToPageRequest</c>, so this host and the layered one cannot disagree on a default.
     /// </remarks>
-    public static GetMyTrainingsQuery ToGetMyTrainingsQuery(this PaginationHttpRequest pagination)
+    public static GetTrainingsByCurrentTrainerQuery ToGetTrainingsByCurrentTrainerQuery(this PaginationHttpRequest pagination)
         => new() { Paging = pagination.ToPageRequest() };
 }

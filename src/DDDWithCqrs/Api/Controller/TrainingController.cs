@@ -116,7 +116,7 @@ public sealed class TrainingController(
         CancellationToken cancellationToken = default)
     {
         var page = await queryDispatcher.DispatchAsync(
-            pagination.ToGetMyTrainingsQuery(), cancellationToken);
+            pagination.ToGetTrainingsByCurrentTrainerQuery(), cancellationToken);
 
         return Ok(page.ToHttp(trainings => trainings.ToHttp()));
     }

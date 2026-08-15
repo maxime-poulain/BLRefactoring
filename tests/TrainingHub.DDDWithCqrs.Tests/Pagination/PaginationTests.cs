@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetMine;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainings.GetByCurrentTrainer;
 using TrainingHub.Shared.Common.Pagination;
 using Xunit;
 
@@ -26,7 +26,7 @@ public sealed class PaginationTests
         // is held rather than inherited since PagedQuery dissolved into the kernel's PageRequest,
         // and the default is what makes "held" safe: a query built in code with nothing named
         // asks for the default page, never for the whole table.
-        var query = new GetMyTrainingsQuery();
+        var query = new GetTrainingsByCurrentTrainerQuery();
 
         query.Paging.Page.Should().Be(1);
         query.Paging.PageSize.Should().Be(PageRequest.DefaultPageSize);
@@ -40,7 +40,7 @@ public sealed class PaginationTests
     {
         var paging = new PageRequest { Page = 4, PageSize = 10 };
 
-        var query = new GetMyTrainingsQuery { Paging = paging };
+        var query = new GetTrainingsByCurrentTrainerQuery { Paging = paging };
 
         query.Paging.Should().BeSameAs(paging);
     }

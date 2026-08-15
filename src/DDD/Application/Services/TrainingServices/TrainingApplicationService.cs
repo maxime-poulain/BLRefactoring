@@ -57,7 +57,7 @@ public interface ITrainingApplicationService
     /// with the data — and an asymmetry with the CQRS host that the harmonization removed.
     /// </para>
     /// </remarks>
-    Task<PagedResult<TrainingDto>> GetMineAsync(PageRequest paging, CancellationToken cancellationToken = default);
+    Task<PagedResult<TrainingDto>> GetByCurrentTrainerAsync(PageRequest paging, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a training by its unique identifier.
@@ -110,7 +110,7 @@ public interface ITrainingApplicationService
     /// first (ADR 0055).
     /// </summary>
     /// <remarks>
-    /// <see cref="GetMineAsync"/> takes no trainer because it resolves the caller, and this one
+    /// <see cref="GetByCurrentTrainerAsync"/> takes no trainer because it resolves the caller, and this one
     /// takes none because it is about nobody in particular. That is the whole difference between the
     /// read this API withdrew and the read it now has: not the columns, but who may ask.
     /// <para>
@@ -270,7 +270,7 @@ public sealed class TrainingApplicationService(
     }
 
     /// <inheritdoc />
-    public async Task<PagedResult<TrainingDto>> GetMineAsync(PageRequest paging, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<TrainingDto>> GetByCurrentTrainerAsync(PageRequest paging, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(paging);
 

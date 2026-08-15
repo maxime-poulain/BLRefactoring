@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 80 architecture decision records.
+2. `docs/adr/README.md` — the index of 81 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 202 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 203 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -94,6 +94,23 @@ repository a named question and maps the aggregates.
 - A command answers a **bare `Result`** — never `Result<T>`. What changed is read back with a query:
   a write that hands back what it wrote is a read in disguise (`EveryCommand_AnswersWithABareResult`).
 - A query never changes state, and answers a `*Dto` — never an aggregate, entity or value object.
+- **A query is named for what it retrieves and what scopes it**, the way a command is named for what
+  it does: a retrieval verb (`Get`, `Search`, `Retrieve`, `List`, `Find`), then what is retrieved,
+  then the criterion as `ByX` whenever there is one — `GetTrainerProfileByTrainerIdQuery`,
+  `GetTrainingsByStatusQuery`. **The measure is that a reader need not open the file**, and it is
+  what settles the rest: `ById` only where the `Id` is that of the thing just named
+  (`GetTrainingByIdQuery`, never `GetTrainerProfileByIdQuery` — a profile has no identifier, the
+  value is a `TrainerId`); the criterion named even when the message does not carry it
+  (`GetTrainingsByCurrentTrainerQuery` declares only its paging, the trainer coming from
+  `ICurrentUserService`, which is why the name is the *only* place its scoping is written); paging
+  is not a criterion; a query that fetches has a criterion while a query that *searches* is one, so
+  `SearchCatalogQuery` needs no `ByX`; and where two identifiers travel together `ByX` names the one
+  that identifies the answer, not the one that authorizes the read (ADR 0081,
+  `EveryQuery_IsNamedForWhatItRetrieves`).
+  **A read port is not a message and keeps its name** —
+  `ICatalogDetailQuery`, `ITrainerAccountQuery`, `ITrainingSearchQuery` are named questions an outer
+  layer asks an adapter (ADR 0028, ADR 0055), and renaming one renames a vocabulary this record
+  does not own.
 - Command handlers live in the application layer, query handlers in infrastructure.
 - One validator per command, beside it. One folder per use case.
 - **Every identifier a command or query carries is refused empty by its own validator**, even

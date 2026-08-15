@@ -1,6 +1,6 @@
 # 0048 — Qualify a contract before naming what it is
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0081](0081-name-a-query-for-what-it-retrieves-and-what-scopes-it.md): the query half of the CQRS vocabulary gains a convention — a retrieval verb, what is retrieved, and the criterion as ByX
 - **Amends:** [0042](0042-close-the-boundarys-vocabulary.md)
 - **Date:** 2026-08-07
 

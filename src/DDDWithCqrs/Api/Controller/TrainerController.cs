@@ -151,7 +151,7 @@ public sealed class TrainerController(
         CancellationToken cancellationToken = default)
     {
         var photo = await queryDispatcher.DispatchAsync(
-            new GetTrainerPhotoQuery(id), cancellationToken);
+            new GetTrainerPhotoByTrainerIdQuery(id), cancellationToken);
 
         return photo is null ? NotFound() : this.PhotoFile(photo);
     }
