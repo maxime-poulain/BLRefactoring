@@ -77,6 +77,27 @@ public static class BffExtensions
 
     private static readonly TimeSpan ContactWindow = TimeSpan.FromMinutes(1);
 
+    /// <summary>
+    /// The rate-limiter policy bounding how often one visitor can work the recovery flow
+    /// (ADR 0084).
+    /// </summary>
+    /// <remarks>
+    /// One shared window over both recovery endpoints, per visitor address for the reason the
+    /// contact window is: only this host sees the visitor. Asking for a link costs the platform
+    /// an email, so the window is what stands between one address and a mail bomb — and, because
+    /// every new link kills the previous one, between an attacker and a victim who can never
+    /// finish resetting. Redeeming shares the budget because a human completes the whole flow in
+    /// two or three requests, while guessing a 256-bit token is not a plan the window needs to
+    /// account for.
+    /// </remarks>
+    public const string RecoveryWindowPolicy = "account-recovery-per-visitor";
+
+    // Ten requests in fifteen minutes absorbs typos, a re-request and a policy-refused password
+    // with room to spare, and caps a single address at under a thousand emails a day.
+    private const int RecoveryPermitsPerWindow = 10;
+
+    private static readonly TimeSpan RecoveryWindow = TimeSpan.FromMinutes(15);
+
     // YARP's own AuthorizationConstants are internal, so the policies are named by their literals
     // here — as the authenticated route has always done. The comparison is case-insensitive.
     private const string DefaultPolicy = "default";
@@ -148,6 +169,16 @@ public static class BffExtensions
                     {
                         PermitLimit = ContactPermitsPerWindow,
                         Window = ContactWindow,
+                        QueueLimit = 0
+                    }));
+
+            options.AddPolicy(RecoveryWindowPolicy, context =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = RecoveryPermitsPerWindow,
+                        Window = RecoveryWindow,
                         QueueLimit = 0
                     }));
         });

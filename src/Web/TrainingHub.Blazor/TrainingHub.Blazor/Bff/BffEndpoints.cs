@@ -54,6 +54,16 @@ public static class BffEndpoints
 
         bff.MapPost("/register", RegisterAsync).AllowAnonymous();
 
+        // The recovery pair shares one per-visitor window: asking for a link costs the platform
+        // an email, and redeeming one is the other half of the same conversation (ADR 0084).
+        bff.MapPost("/forgot-password", ForgotPasswordAsync)
+            .AllowAnonymous()
+            .RequireRateLimiting(BffExtensions.RecoveryWindowPolicy);
+
+        bff.MapPost("/reset-password", ResetPasswordAsync)
+            .AllowAnonymous()
+            .RequireRateLimiting(BffExtensions.RecoveryWindowPolicy);
+
         // The cast is load-bearing. LogoutAsync takes one HttpContext and returns a Task, which is
         // RequestDelegate's shape exactly, and that overload wins over the route-handler one: the
         // returned IResult is discarded — hence a 200 where 204 was written — and, far worse, the
@@ -170,6 +180,60 @@ public static class BffEndpoints
         if (response.IsSuccessStatusCode)
         {
             return Results.StatusCode(StatusCodes.Status201Created);
+        }
+
+        var problem = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        return Results.Content(
+            problem,
+            response.Content.Headers.ContentType?.ToString(),
+            statusCode: (int)response.StatusCode);
+    }
+
+    /// <summary>
+    /// Passes a password-reset request on to the API, and its answer back — a status and nothing
+    /// more.
+    /// </summary>
+    /// <remarks>
+    /// Sign-in's passthrough shape rather than registration's, because there is nothing to read:
+    /// the API answers <c>202</c> with no body whether or not the address names an account
+    /// (ADR 0084), and the page's confirmation sentence is the same for everyone. Not forwarded
+    /// by the proxy for registration's own reason — the anonymous family stays exactly the
+    /// catalog's (ADR 0062).
+    /// </remarks>
+    private static async Task<IResult> ForgotPasswordAsync(
+        ForgotPasswordHttpRequest request,
+        IHttpClientFactory httpClientFactory,
+        CancellationToken cancellationToken)
+    {
+        var client = httpClientFactory.CreateClient(ApiClientName);
+
+        var response = await client.PostAsJsonAsync("/Auth/forgot-password", request, cancellationToken);
+
+        return Results.StatusCode((int)response.StatusCode);
+    }
+
+    /// <summary>
+    /// Passes a reset-link redemption on to the API, problem document and all.
+    /// </summary>
+    /// <remarks>
+    /// Registration's passthrough shape rather than sign-in's: the API's refusals describe the
+    /// very fields the browser submitted — the one generic sentence for a dead link, Identity's
+    /// own words for a refused password — and the form reads the per-field messages out of the
+    /// document (ADR 0084).
+    /// </remarks>
+    private static async Task<IResult> ResetPasswordAsync(
+        ResetPasswordHttpRequest request,
+        IHttpClientFactory httpClientFactory,
+        CancellationToken cancellationToken)
+    {
+        var client = httpClientFactory.CreateClient(ApiClientName);
+
+        var response = await client.PostAsJsonAsync("/Auth/reset-password", request, cancellationToken);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return Results.StatusCode(StatusCodes.Status204NoContent);
         }
 
         var problem = await response.Content.ReadAsStringAsync(cancellationToken);

@@ -1,3 +1,4 @@
+using TrainingHub.Shared.Application.Accounts;
 using TrainingHub.Shared.Application.Catalog;
 using TrainingHub.Shared.Application.IntegrationEventHandlers;
 using TrainingHub.Shared.Application.IntegrationEvents;
@@ -15,6 +16,7 @@ using TrainingHub.Shared.Infrastructure.Repositories;
 using TrainingHub.Shared.Infrastructure.Search;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore.Interceptors;
+using TrainingHub.Shared.Infrastructure.ThirdParty.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -57,6 +59,19 @@ public static class ServiceCollectionExtensions
                 $"'{OutboxOptions.SectionName}:{nameof(OutboxOptions.RetentionPeriod)}' must be positive.")
             .ValidateOnStart();
 
+        // The reset link's base address is required and checked whole at start-up, in the same
+        // mold: a host that cannot say where its web front door is would mail visitors a link
+        // into nowhere (ADR 0084).
+        services.AddOptions<PasswordResetOptions>()
+            .Bind(configuration.GetSection(PasswordResetOptions.SectionName))
+            .Validate(
+                reset => !string.IsNullOrWhiteSpace(reset.LinkBaseAddress),
+                $"Missing configuration value '{PasswordResetOptions.SectionName}:{nameof(PasswordResetOptions.LinkBaseAddress)}'.")
+            .Validate(
+                reset => Uri.TryCreate(reset.LinkBaseAddress, UriKind.Absolute, out _),
+                $"'{PasswordResetOptions.SectionName}:{nameof(PasswordResetOptions.LinkBaseAddress)}' must be an absolute URL.")
+            .ValidateOnStart();
+
         return services
             .AddScoped<IDomainEventDispatcher, MediatorDomainEventDispatcher>()
             .AddScoped<IUnitOfWork, UnitOfWork>()
@@ -91,14 +106,20 @@ public static class ServiceCollectionExtensions
             .AddScoped<ITrainerContactQuery, TrainerContactQuery>()
             .AddScoped<ITrainerNamesQuery, TrainerNamesQuery>()
             .AddScoped<ITrainerStandingQuery, TrainerStandingQuery>()
+            // The recovery credential's store (ADR 0084) — a writing port in the search indexer's
+            // mold rather than a seventh read port: the consumer that issues a reset link and the
+            // API flow that redeems one both write the Identity store, through this port's own
+            // save and never through the unit of work.
+            .AddScoped<IPasswordResetTokenStore, PasswordResetTokenStore>()
             // Scoped like the DbContext it stages rows into: the publisher must share the unit of
             // work of the save that is dispatching the domain events (ADR 0002).
             .AddScoped<IIntegrationEventPublisher, OutboxIntegrationEventPublisher>()
             // The outbox's read side (ADR 0025, hardened per ADR 0033): the worker each host
             // runs, the processor it scopes per batch, the dispatcher that routes a fact to its
-            // consumers, and the fifteen consumers themselves — the policies that used to run
+            // consumers, and the seventeen consumers themselves — the policies that used to run
             // inside the transaction, reattached after the commit, the six that answer a sanction
-            // (ADR 0056), and the one that carries a visitor's message to a trainer (ADR 0082).
+            // (ADR 0056), the one that carries a visitor's message to a trainer (ADR 0082), and
+            // the two that guard an account's recovery (ADR 0084).
             // The options bind above, validated.
             .AddScoped<OutboxProcessor>()
             .AddScoped<IntegrationEventDispatcher>()
@@ -132,6 +153,10 @@ public static class ServiceCollectionExtensions
                 RemoveTrainingFromIndexWhenTrainingWithheldIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<TrainingDeletedIntegrationEvent>,
                 RemoveTrainingFromIndexWhenTrainingDeletedIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<PasswordResetRequestedIntegrationEvent>,
+                SendPasswordResetLinkWhenPasswordResetRequestedIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<PasswordChangedIntegrationEvent>,
+                SendPasswordChangedNoticeWhenPasswordChangedIntegrationEventHandler>()
             .AddHostedService<OutboxDeliveryWorker>()
             .AddDbContext<TrainingContext>((serviceProvider, options) =>
             {

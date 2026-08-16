@@ -77,6 +77,72 @@ public sealed class BffSessionClient(IHttpClientFactory httpClientFactory) : IBf
     }
 
     /// <summary>
+    /// Asks for a reset link. The answer never says whether the address has an account.
+    /// </summary>
+    public async Task<bool> ForgotPasswordAsync(string emailAddress, CancellationToken cancellationToken = default)
+    {
+        var client = httpClientFactory.CreateClient(HttpClientNames.Bff);
+
+        var response = await client.PostAsJsonAsync(
+            "bff/forgot-password",
+            new ForgotPasswordHttpRequest { Email = emailAddress },
+            cancellationToken);
+
+        if (response.StatusCode is HttpStatusCode.TooManyRequests)
+        {
+            return false;
+        }
+
+        response.EnsureSuccessStatusCode();
+
+        return true;
+    }
+
+    /// <summary>
+    /// Redeems a reset link against a new password, through the BFF.
+    /// </summary>
+    /// <remarks>
+    /// Registration's shape, refusal and all, with one addition: the recovery window's 429
+    /// carries no document, so it is translated into one here rather than thrown — being told to
+    /// wait is a verdict the form should render, not an outage to report.
+    /// </remarks>
+    public async Task<ProblemDetails?> ResetPasswordAsync(
+        ResetPasswordHttpRequest reset,
+        CancellationToken cancellationToken = default)
+    {
+        var client = httpClientFactory.CreateClient(HttpClientNames.Bff);
+
+        var response = await client.PostAsJsonAsync("bff/reset-password", reset, cancellationToken);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        if (response.StatusCode is HttpStatusCode.TooManyRequests)
+        {
+            return new ProblemDetails
+            {
+                Detail = "Too many attempts. Wait a few minutes and try again."
+            };
+        }
+
+        if (response.Content.Headers.ContentType?.MediaType?.EndsWith("json", StringComparison.Ordinal) == true)
+        {
+            var problem = await response.Content
+                .ReadFromJsonAsync<ProblemDetails>(cancellationToken);
+
+            if (problem is not null)
+            {
+                return problem;
+            }
+        }
+
+        throw new HttpRequestException(
+            $"The password reset answered {(int)response.StatusCode} without a problem document.");
+    }
+
+    /// <summary>
     /// Ends the session.
     /// </summary>
     public async Task LogoutAsync(CancellationToken cancellationToken = default)
@@ -113,6 +179,24 @@ public interface IBffSessionClient
     /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     Task<ProblemDetails?> RegisterAsync(
         RegisterHttpRequest registration,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Asks for a reset link. <see langword="true"/> means the request was taken — which is all
+    /// anyone is told; <see langword="false"/> means the recovery window refused it for now.
+    /// </summary>
+    /// <param name="emailAddress">The address whose account wants its password reset.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    Task<bool> ForgotPasswordAsync(string emailAddress, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Redeems a reset link. <see langword="null"/> means the password was changed; a problem
+    /// document is the refusal, carrying the messages the form renders.
+    /// </summary>
+    /// <param name="reset">The address, the emailed token, and the new password twice.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    Task<ProblemDetails?> ResetPasswordAsync(
+        ResetPasswordHttpRequest reset,
         CancellationToken cancellationToken = default);
 
     /// <summary>

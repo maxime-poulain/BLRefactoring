@@ -119,8 +119,8 @@ public sealed partial class DocumentationRules
         // A policy commits exactly one fact — the publishing handlers are named after the domain
         // event they translate — so the facts feeding a port also count the policies that commit
         // them. Two sentences say it that way, and both went stale on the same merge.
-        (StrategicDesign + "context-map.md", @"committed to the outbox by (?<count>[\w-]+) policies in",
-            "policies feeding Notification", () => FactsFeeding(EmailPort).Count),
+        (StrategicDesign + "context-map.md", @"committed to the outbox by (?<count>[\w-]+) producers",
+            "producers feeding Notification", () => FactsFeeding(EmailPort).Count),
         (StrategicDesign + "context-map.md", @"committed to the outbox by (?<count>[\w-]+) policies \(ADR",
             "policies feeding Search Indexing", () => FactsFeeding(IndexerPort).Count),
         (StrategicDesign + "event-storming.md", @"\*\*(?<count>[\w-]+) events, [\w-]+ facts, one real consumer",

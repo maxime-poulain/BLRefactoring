@@ -17,8 +17,9 @@ public sealed class AuthController(
     UserManager<IdentityUser<Guid>> userManager,
     SignInManager<IdentityUser<Guid>> signInManager,
     ITokenService tokenService,
+    IPasswordRecoveryService passwordRecovery,
     ITrainerApplicationService trainerApplicationService)
-    : AuthControllerBase(userManager, signInManager, tokenService)
+    : AuthControllerBase(userManager, signInManager, tokenService, passwordRecovery)
 {
     /// <inheritdoc />
     /// <remarks>

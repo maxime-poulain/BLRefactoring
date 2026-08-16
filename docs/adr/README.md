@@ -111,3 +111,4 @@ simpler from the outside.
 | [0081](0081-name-a-query-for-what-it-retrieves-and-what-scopes-it.md) | Name a query for what it retrieves and what scopes it | Accepted |
 | [0082](0082-let-a-visitor-reach-a-trainer-without-learning-their-address.md) | Let a visitor reach a trainer without learning their address | Accepted — amended by [0083](0083-ask-the-visitor-for-proof-where-their-address-is-real.md): a Turnstile challenge stands in front of the contact endpoint, judged at the BFF where the visitor's connection ends |
 | [0083](0083-ask-the-visitor-for-proof-where-their-address-is-real.md) | Ask the visitor for proof where their address is real | Accepted |
+| [0084](0084-reset-a-forgotten-password-with-a-credential-the-database-cannot-leak.md) | Reset a forgotten password with a credential the database cannot leak | Accepted |

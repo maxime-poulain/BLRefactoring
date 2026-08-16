@@ -3,17 +3,20 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TrainingHub.Shared.Infrastructure.ThirdParty.Identity;
 
 #nullable disable
 
-namespace TrainingHub.Shared.Infrastructure.Migrations
+namespace TrainingHub.Shared.Infrastructure.ThirdParty.Identity.Migrations
 {
     [DbContext(typeof(TrainingIdentityDbContext))]
-    partial class TrainingIdentityDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260816013803_AddPasswordResetToken")]
+    partial class AddPasswordResetToken
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

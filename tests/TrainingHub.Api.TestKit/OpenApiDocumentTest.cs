@@ -228,6 +228,8 @@ public abstract class OpenApiDocumentTest<TFactory>(TFactory factory) : Integrat
     [InlineData("/Trainer/me", "get", "Trainer_GetCurrent")]
     [InlineData("/Trainer/me", "put", "Trainer_EditCurrent")]
     [InlineData("/Training/my-trainings", "get", "Training_GetMine")]
+    [InlineData("/Auth/forgot-password", "post", "Auth_ForgotPassword")]
+    [InlineData("/Auth/reset-password", "post", "Auth_ResetPassword")]
     public async Task Document_PublishesTheSameOperationId_OnBothHosts(
         string path, string verb, string operationId)
     {
