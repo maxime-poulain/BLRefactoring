@@ -221,6 +221,7 @@ Establish who is making a request. Nothing else.
 | **Account email** | Unique. Not the same concept as a trainer's contact address |
 | **Role** | Modeled by the framework. One is granted: `Administrator`, seeded in Development and granted by hand elsewhere (ADR 0051) |
 | **Token** | A JWT, issued at sign-in, carrying the account and the trainer it maps to |
+| **Reset credential** | 256 bits mailed as a link, stored only as a digest, one per account, alive for fifteen minutes or one use — whichever ends first (ADR 0084) |
 
 ### Aggregates
 
@@ -243,11 +244,11 @@ Together those three are an anti-corruption layer reduced to its minimum — two
 
 ### Actors
 
-Visitor (register, sign in) and Trainer (present a token).
+Visitor (register, sign in, recover a forgotten password) and Trainer (present a token).
 
 ### Business capabilities
 
-Registration, authentication, token issuance, lockout.
+Registration, authentication, token issuance, lockout, password recovery.
 
 ---
 
@@ -263,15 +264,18 @@ Registration, authentication, token issuance, lockout.
   ([ADR 0031](../adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md)). The
   protocol is the boundary: only the infrastructure names the mail client, and a rule holds that
   line.
-- **Fed by:** the transactional outbox, end to end. Registration, address changes and the
+- **Fed by:** the transactional outbox, end to end. Registration, recovery, address changes and the
   administration's decisions commit `TrainerCreatedIntegrationEvent`,
   `TrainerContactEmailChangedIntegrationEvent`, `TrainerSuspendedIntegrationEvent`,
-  `TrainerReinstatedIntegrationEvent`, `TrainingWithheldIntegrationEvent` and
-  `TrainerContactedIntegrationEvent` with the change
-  itself (ADR 0002, ADR 0024, ADR 0056, ADR 0082), and the delivery worker hands each fact to the consumer
+  `TrainerReinstatedIntegrationEvent`, `TrainingWithheldIntegrationEvent`,
+  `TrainerContactedIntegrationEvent`, `PasswordResetRequestedIntegrationEvent` and
+  `PasswordChangedIntegrationEvent` with the change
+  itself (ADR 0002, ADR 0024, ADR 0056, ADR 0082, ADR 0084), and the delivery worker hands each fact to the consumer
   that composes its `EmailMessage` — after the commit, at-least-once (ADR 0025). The three
   sanction notices go to the account's address rather than the published contact address, resolved
-  through `ITrainerAccountQuery` when the notice is sent.
+  through `ITrainerAccountQuery` when the notice is sent; the reset link does not exist until its
+  consumer mints it, which is what keeps the one secret in this list off the outbox row entirely
+  (ADR 0084).
 
 ---
 

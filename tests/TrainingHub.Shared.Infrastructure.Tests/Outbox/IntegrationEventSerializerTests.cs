@@ -33,6 +33,8 @@ public sealed class IntegrationEventSerializerTests
         new TrainingUnpublishedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
         new TrainingWithheldIntegrationEvent(Guid.NewGuid(), Guid.NewGuid(), "A withheld training", "Misleading claims."),
         new TrainingDeletedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
+        new PasswordResetRequestedIntegrationEvent("grace.hopper@example.org"),
+        new PasswordChangedIntegrationEvent(Guid.NewGuid(), "grace.hopper@example.org", "grace.hopper"),
     ];
 
     /// <summary>One instance of each registered integration event, as theory rows.</summary>

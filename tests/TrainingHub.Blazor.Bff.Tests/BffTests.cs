@@ -34,6 +34,10 @@ public sealed class BffTests : IDisposable
 {
     private const string LoginPath = "bff/login";
     private const string RegisterPath = "bff/register";
+
+    private const string ForgotPasswordPath = "bff/forgot-password";
+
+    private const string ResetPasswordPath = "bff/reset-password";
     private const string UserPath = "bff/user";
     private const string LogoutPath = "bff/logout";
     private const string ForwardedPath = "api/Trainer/me";
@@ -640,6 +644,127 @@ public sealed class BffTests : IDisposable
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         _factory.LoginApi.Requests.Should().BeEmpty();
+    }
+
+    // ---------------------------------------------------------------- recovering a password
+
+    /// <summary>
+    /// A forgotten password reaches the api from a visitor with no session, and answers a bare
+    /// status.
+    /// </summary>
+    /// <remarks>
+    /// Sign-in's passthrough rather than registration's: the API answers 202 with no body whether
+    /// or not the address names an account (ADR 0084), so there is no document for the browser to
+    /// read and none is invented.
+    /// </remarks>
+    [Fact]
+    public async Task A_forgotten_password_reaches_the_api_and_answers_a_bare_status()
+    {
+        _factory.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.Accepted);
+
+        var response = await ForgotPasswordAsync("grace.hopper@example.org");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        (await response.Content.ReadAsStringAsync()).Should().BeEmpty(
+            "the confirmation sentence is the page's own, the same for every address (ADR 0084)");
+
+        var forwarded = _factory.LoginApi.Requests.Should().ContainSingle().Subject;
+
+        forwarded.Uri!.AbsolutePath.Should().Be("/Auth/forgot-password");
+        forwarded.Authorization.Should().BeNull("a visitor who forgot their password has no credential to send");
+    }
+
+    /// <summary>
+    /// A reset that succeeds answers no content.
+    /// </summary>
+    [Fact]
+    public async Task A_reset_that_succeeds_answers_no_content()
+    {
+        _factory.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.NoContent);
+
+        var response = await ResetPasswordAsync();
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        _factory.LoginApi.Requests.Should().ContainSingle()
+            .Which.Uri!.AbsolutePath.Should().Be("/Auth/reset-password");
+    }
+
+    /// <summary>
+    /// A reset passes the apis problem document through.
+    /// </summary>
+    /// <remarks>
+    /// Registration's rule, for registration's reason: the refusals describe the fields the
+    /// browser submitted — the one generic sentence for a dead link, Identity's own words for a
+    /// refused password — and the form renders the per-field messages out of the document
+    /// (ADR 0084).
+    /// </remarks>
+    [Fact]
+    public async Task A_reset_passes_the_apis_problem_document_through()
+    {
+        const string Problem =
+            """{"title":"One or more validation errors occurred.","status":400,"errors":{"Token":["This password reset link is invalid or has expired. Request a new one and use the most recent email."]}}""";
+
+        _factory.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.BadRequest)
+        {
+            Content = new StringContent(Problem, System.Text.Encoding.UTF8, "application/problem+json")
+        };
+
+        var response = await ResetPasswordAsync();
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.Content.Headers.ContentType!.MediaType.Should().Be("application/problem+json");
+        (await response.Content.ReadAsStringAsync()).Should().Contain("invalid or has expired",
+            "the one generic sentence is what the form shows for every way a link can be dead");
+    }
+
+    /// <summary>
+    /// Recovery without the application header never reaches the api.
+    /// </summary>
+    [Fact]
+    public async Task Recovery_without_the_application_header_never_reaches_the_api()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, ForgotPasswordPath)
+        {
+            Content = JsonContent.Create(new { email = "grace.hopper@example.org" })
+        };
+
+        var response = await _browser.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        _factory.LoginApi.Requests.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// A visitors eleventh recovery request in a quarter hour is refused at this door.
+    /// </summary>
+    /// <remarks>
+    /// The contact window's shape over the recovery pair (ADR 0084): asking costs the platform an
+    /// email and — latest-only being the rule — costs the account's owner their pending link, so
+    /// the window is what stands between one address and both abuses. The two endpoints share the
+    /// budget, and the assertion that matters is the last one: the API was sent exactly the
+    /// admitted ten.
+    /// </remarks>
+    [Fact]
+    public async Task A_visitors_eleventh_recovery_request_in_a_quarter_hour_is_refused_at_this_door()
+    {
+        _factory.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.Accepted);
+
+        for (var sent = 0; sent < 10; sent++)
+        {
+            var admitted = await ForgotPasswordAsync("grace.hopper@example.org");
+
+            admitted.StatusCode.Should().Be(
+                HttpStatusCode.Accepted, "ten requests in fifteen minutes is a person recovering");
+        }
+
+        var refused = await ForgotPasswordAsync("grace.hopper@example.org");
+
+        refused.StatusCode.Should().Be(
+            HttpStatusCode.TooManyRequests,
+            "past the window the refusal is this host's own: the visitor's address is real here " +
+            "and gone one hop later (ADR 0084)");
+        _factory.LoginApi.Requests.Should().HaveCount(
+            10, "a request refused at the door must never reach the API, and never cost an email");
     }
 
     // ---------------------------------------------------------------- identity
@@ -1354,6 +1479,20 @@ public sealed class BffTests : IDisposable
 
     private Task<HttpResponseMessage> SignInAsync() =>
         SendAsync(HttpMethod.Post, LoginPath, Credentials());
+
+    /// <summary>Asks for a reset link the way the front end does.</summary>
+    private Task<HttpResponseMessage> ForgotPasswordAsync(string email) =>
+        SendAsync(HttpMethod.Post, ForgotPasswordPath, JsonContent.Create(new { email }));
+
+    /// <summary>Redeems a reset link the way the front end does.</summary>
+    private Task<HttpResponseMessage> ResetPasswordAsync() =>
+        SendAsync(HttpMethod.Post, ResetPasswordPath, JsonContent.Create(new
+        {
+            email = "grace.hopper@example.org",
+            token = "the-emailed-token",
+            password = "a-new-password",
+            confirmPassword = "a-new-password"
+        }));
 
     /// <summary>Sends what the front end sends: the marker header, always.</summary>
     private Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, HttpContent? content = null)

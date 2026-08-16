@@ -11,8 +11,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace TrainingHub.Shared.Api.Controllers;
 
 /// <summary>
-/// Shared implementation of the authentication endpoints (registration and login).
-/// The whole flow is identical in both stacks except for how the trainer itself is
+/// Shared implementation of the authentication endpoints (registration, login and password
+/// recovery). The whole flow is identical in both stacks except for how the trainer itself is
 /// created, which each host supplies through <see cref="CreateTrainerAsync"/>.
 /// </summary>
 [ApiController]
@@ -20,7 +20,8 @@ namespace TrainingHub.Shared.Api.Controllers;
 public abstract class AuthControllerBase(
     UserManager<IdentityUser<Guid>> userManager,
     SignInManager<IdentityUser<Guid>> signInManager,
-    ITokenService tokenService) : ControllerBase
+    ITokenService tokenService,
+    IPasswordRecoveryService passwordRecovery) : ControllerBase
 {
     /// <summary>
     /// Creates the trainer associated with the freshly registered identity user, and reports
@@ -261,6 +262,103 @@ public abstract class AuthControllerBase(
         var token = await tokenService.GenerateTokenAsync(user, roles, cancellationToken);
         return Ok(new LoginHttpResponse() { Token = token });
     }
+
+    /// <summary>
+    /// Takes a password-reset request for an address, and answers the same way whether or not an
+    /// account listens there.
+    /// </summary>
+    /// <param name="request">The request carrying the address to recover.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// A 202 Accepted response with no body, always: the request was recorded, and whatever
+    /// happens next happens by email.
+    /// A 400 Bad Request response only for a body the contract itself refuses.
+    /// </returns>
+    /// <remarks>
+    /// The <c>202</c> is literal — nothing is done yet. One outbox row is committed, and the
+    /// delivery worker later looks the address up, mints the credential and sends the link
+    /// (ADR 0084). Because the lookup is not on this path, a known and an unknown address cost
+    /// the same work and answer the same status in the same time: this endpoint holds the
+    /// discipline sign-in already holds, rather than joining registration on the other side of
+    /// it.
+    /// </remarks>
+    [AllowAnonymous]
+    [HttpPost("forgot-password")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ForgotPassword(
+        [FromBody] ForgotPasswordHttpRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        await passwordRecovery.RequestAsync(request.Email, cancellationToken);
+
+        return Accepted();
+    }
+
+    /// <summary>
+    /// Redeems an emailed reset link against a new password.
+    /// </summary>
+    /// <param name="request">The address, the token the link carried, and the new password twice.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// A 204 No Content response when the password was changed — the link is spent.
+    /// A 400 Bad Request response, keyed by field: one fixed sentence on <c>Token</c> for every
+    /// way a link can be dead, or Identity's own words on <c>Password</c> when the link was fine
+    /// and the password was not.
+    /// </returns>
+    /// <remarks>
+    /// The failures are deliberately unequal in detail. A dead link answers one sentence whatever
+    /// killed it — unknown address, wrong token, expired, spent, superseded, lost race — because
+    /// naming the difference would name which addresses have accounts (ADR 0084). A refused
+    /// password is explained in full, because only the caller holding a live link — the account's
+    /// owner — can ever reach that refusal, and their link survives it.
+    /// </remarks>
+    [AllowAnonymous]
+    [HttpPost("reset-password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResetPassword(
+        [FromBody] ResetPasswordHttpRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.Password != request.ConfirmPassword)
+        {
+            return ValidationFailure(
+                StatusCodes.Status400BadRequest,
+                new Dictionary<string, string[]>
+                {
+                    [nameof(ResetPasswordHttpRequest.ConfirmPassword)] =
+                        ["The password and confirmation password do not match."]
+                });
+        }
+
+        var outcome = await passwordRecovery.ResetAsync(
+            request.Email, request.Token, request.Password, cancellationToken);
+
+        return outcome switch
+        {
+            PasswordResetOutcome.Succeeded => NoContent(),
+            PasswordResetOutcome.PasswordRefused refused => IdentityRejection(refused.Errors),
+            _ => RefusedLink()
+        };
+    }
+
+    /// <summary>
+    /// The one answer a dead reset link gets, whatever killed it.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="InvalidCredentials"/>'s discipline, one flow over: a single method for every
+    /// call site, so an expired link, a spent one and one for an address that never had an
+    /// account cannot drift into distinguishable sentences.
+    /// </remarks>
+    private ActionResult RefusedLink() =>
+        ValidationFailure(
+            StatusCodes.Status400BadRequest,
+            new Dictionary<string, string[]>
+            {
+                [nameof(ResetPasswordHttpRequest.Token)] =
+                    ["This password reset link is invalid or has expired. Request a new one and use the most recent email."]
+            });
 
     /// <summary>
     /// The one answer sign-in gives to every way of failing.

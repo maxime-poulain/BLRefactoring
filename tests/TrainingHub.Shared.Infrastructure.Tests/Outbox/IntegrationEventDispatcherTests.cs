@@ -39,9 +39,12 @@ public sealed class IntegrationEventDispatcherTests
         new TrainingUnpublishedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
         new TrainingWithheldIntegrationEvent(Guid.NewGuid(), Guid.NewGuid(), "A withheld training", "Misleading claims."),
         new TrainingDeletedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
+        new PasswordResetRequestedIntegrationEvent("grace.hopper@example.org"),
+        new PasswordChangedIntegrationEvent(Guid.NewGuid(), "grace.hopper@example.org", "grace.hopper"),
     ];
 
-    private static IntegrationEventDispatcher CreateSutWithoutConsumers() => new([], [], [], [], [], [], [], [], [], [], [], []);
+    private static IntegrationEventDispatcher CreateSutWithoutConsumers() =>
+        new([], [], [], [], [], [], [], [], [], [], [], [], [], []);
 
     private static Mock<IIntegrationEventHandler<TrainerCreatedIntegrationEvent>> CreateConsumer(string name)
     {
@@ -83,7 +86,8 @@ public sealed class IntegrationEventDispatcherTests
     {
         var first = CreateConsumer("First");
         var second = CreateConsumer("Second");
-        var sut = new IntegrationEventDispatcher([first.Object, second.Object], [], [], [], [], [], [], [], [], [], [], []);
+        var sut = new IntegrationEventDispatcher(
+            [first.Object, second.Object], [], [], [], [], [], [], [], [], [], [], [], [], []);
 
         var fact = new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "Ada", "Lovelace", "ada@example.com");
         var outcome = await sut.DispatchAsync(fact, NothingDeliveredYet, CancellationToken.None);
@@ -105,7 +109,8 @@ public sealed class IntegrationEventDispatcherTests
         first.Setup(h => h.HandleAsync(It.IsAny<TrainerCreatedIntegrationEvent>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(thrown);
         var second = CreateConsumer("Second");
-        var sut = new IntegrationEventDispatcher([first.Object, second.Object], [], [], [], [], [], [], [], [], [], [], []);
+        var sut = new IntegrationEventDispatcher(
+            [first.Object, second.Object], [], [], [], [], [], [], [], [], [], [], [], [], []);
 
         var fact = new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "Ada", "Lovelace", "ada@example.com");
         var outcome = await sut.DispatchAsync(fact, NothingDeliveredYet, CancellationToken.None);
@@ -126,7 +131,8 @@ public sealed class IntegrationEventDispatcherTests
     {
         var first = CreateConsumer("First");
         var second = CreateConsumer("Second");
-        var sut = new IntegrationEventDispatcher([first.Object, second.Object], [], [], [], [], [], [], [], [], [], [], []);
+        var sut = new IntegrationEventDispatcher(
+            [first.Object, second.Object], [], [], [], [], [], [], [], [], [], [], [], [], []);
 
         var fact = new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "Ada", "Lovelace", "ada@example.com");
         var outcome = await sut.DispatchAsync(fact, new HashSet<string> { "First" }, CancellationToken.None);

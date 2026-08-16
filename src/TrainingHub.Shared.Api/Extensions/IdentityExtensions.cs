@@ -56,6 +56,9 @@ public static class IdentityExtensions
 
         return services
             .AddScoped<ITokenService, TokenService>()
-            .AddScoped<ICurrentUserService, CurrentUserService>();
+            .AddScoped<ICurrentUserService, CurrentUserService>()
+            // The recovery flow of ADR 0084 — a shared Identity service in TokenService's mold,
+            // so both hosts publish the same two endpoints from one implementation.
+            .AddScoped<IPasswordRecoveryService, PasswordRecoveryService>();
     }
 }

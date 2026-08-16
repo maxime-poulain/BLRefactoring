@@ -213,6 +213,14 @@ here as a fact without a preceding blue sticky, and why the consumer that reads 
 `SendContactMessage`, resolves the trainer's published contact address at delivery rather than
 carrying it on the wire.
 
+**Two more of the same shape, one context over.** `PasswordResetRequestedIntegrationEvent` and
+`PasswordChangedIntegrationEvent` belong to Identity & Access, whose model is the framework's, so
+no blue sticky could ever precede them either: the recovery endpoints commit them directly
+(ADR 0084). The first goes further than the contact fact went — its consumer,
+`SendPasswordResetLink`, does not merely resolve a detail at delivery, it *mints the secret* at
+delivery, so the reset token never touches the outbox row at all. The second is the owner's alarm
+bell, committed in the same transaction as the password it announces.
+
 **Nine events, nine facts, one real consumer.** `TrainingCreatedIntegrationEvent`,
 `TrainingEditedIntegrationEvent`, `TrainingTransferredIntegrationEvent`,
 `TrainingPublishedIntegrationEvent`, `TrainingUnpublishedIntegrationEvent`,

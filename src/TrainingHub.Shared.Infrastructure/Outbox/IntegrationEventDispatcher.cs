@@ -30,7 +30,9 @@ public sealed class IntegrationEventDispatcher(
     IEnumerable<IIntegrationEventHandler<TrainingPublishedIntegrationEvent>> trainingPublishedConsumers,
     IEnumerable<IIntegrationEventHandler<TrainingUnpublishedIntegrationEvent>> trainingUnpublishedConsumers,
     IEnumerable<IIntegrationEventHandler<TrainingWithheldIntegrationEvent>> trainingWithheldConsumers,
-    IEnumerable<IIntegrationEventHandler<TrainingDeletedIntegrationEvent>> trainingDeletedConsumers)
+    IEnumerable<IIntegrationEventHandler<TrainingDeletedIntegrationEvent>> trainingDeletedConsumers,
+    IEnumerable<IIntegrationEventHandler<PasswordResetRequestedIntegrationEvent>> passwordResetRequestedConsumers,
+    IEnumerable<IIntegrationEventHandler<PasswordChangedIntegrationEvent>> passwordChangedConsumers)
 {
     /// <summary>
     /// Hands the fact to each of its registered consumers, in registration order, skipping the
@@ -58,6 +60,8 @@ public sealed class IntegrationEventDispatcher(
             TrainingUnpublishedIntegrationEvent fact => HandleAllAsync(trainingUnpublishedConsumers, fact, alreadyDelivered, cancellationToken),
             TrainingWithheldIntegrationEvent fact => HandleAllAsync(trainingWithheldConsumers, fact, alreadyDelivered, cancellationToken),
             TrainingDeletedIntegrationEvent fact => HandleAllAsync(trainingDeletedConsumers, fact, alreadyDelivered, cancellationToken),
+            PasswordResetRequestedIntegrationEvent fact => HandleAllAsync(passwordResetRequestedConsumers, fact, alreadyDelivered, cancellationToken),
+            PasswordChangedIntegrationEvent fact => HandleAllAsync(passwordChangedConsumers, fact, alreadyDelivered, cancellationToken),
             _ => throw new InvalidOperationException(
                 $"{integrationEvent.GetType().Name} has no route in {nameof(IntegrationEventDispatcher)}. " +
                 "A new integration event is registered, serialized, consumed — and routed here."),
