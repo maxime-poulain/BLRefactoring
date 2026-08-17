@@ -63,10 +63,16 @@ public sealed class BffAuthenticationStateProvider(IHttpClientFactory httpClient
 
             return new AuthenticationState(new ClaimsPrincipal(identity));
         }
-        catch (HttpRequestException)
+        catch (Exception exception)
         {
-            // The BFF being unreachable is not an identity: treating it as anonymous shows the
-            // signed-out interface rather than leaving the application in a half-rendered state.
+            // A failed read is not an identity: treating it as anonymous shows the signed-out
+            // interface rather than leaving the application in a half-rendered state. Wider than
+            // HttpRequestException on purpose, because the reason covers more than unreachability:
+            // a gateway's HTML error page arrives as NotSupportedException or JsonException, a
+            // timeout as TaskCanceledException, and each used to escape into the renderer during
+            // the layout's authorization pass — the precise failure this catch exists to avoid.
+            Console.Error.WriteLine(exception);
+
             return Anonymous;
         }
     }

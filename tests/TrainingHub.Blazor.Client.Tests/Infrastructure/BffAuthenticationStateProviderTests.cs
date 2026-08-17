@@ -170,4 +170,46 @@ public sealed class BffAuthenticationStateProviderTests
         {
             Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json")
         };
+
+    /// <summary>
+    /// Get authentication state, the body was not JSON, is anonymous rather than throwing.
+    /// </summary>
+    /// <remarks>
+    /// A gateway's error page served where the identity should be: the parse failure is not an
+    /// identity either, and it must not escape into the renderer during the layout's
+    /// authorization pass.
+    /// </remarks>
+    [Fact]
+    public async Task GetAuthenticationState_TheBodyWasNotJson_IsAnonymousRatherThanThrowing()
+    {
+        // Arrange
+        var provider = Given(Json("<html>Bad Gateway</html>"));
+
+        // Act
+        Func<Task<AuthenticationState>> act = provider.GetAuthenticationStateAsync;
+
+        // Assert
+        var state = await act.Should().NotThrowAsync();
+        state.Subject.User.Identity!.IsAuthenticated.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Get authentication state, the content type was not JSON, is anonymous rather than throwing.
+    /// </summary>
+    [Fact]
+    public async Task GetAuthenticationState_TheContentTypeWasNotJson_IsAnonymousRatherThanThrowing()
+    {
+        // Arrange
+        var provider = Given(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("<html>Bad Gateway</html>", System.Text.Encoding.UTF8, "text/html")
+        });
+
+        // Act
+        Func<Task<AuthenticationState>> act = provider.GetAuthenticationStateAsync;
+
+        // Assert
+        var state = await act.Should().NotThrowAsync();
+        state.Subject.User.Identity!.IsAuthenticated.Should().BeFalse();
+    }
 }
