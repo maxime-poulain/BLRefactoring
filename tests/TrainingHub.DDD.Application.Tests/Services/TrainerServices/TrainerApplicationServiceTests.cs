@@ -307,13 +307,13 @@ public sealed class TrainerApplicationServiceTests
         errors.Should().Contain(e => e.ErrorCode == ErrorCodes.NotFound);
     }
 
-    // -- EraseAsync --
+    // -- EraseCurrentTrainerAsync --
 
     /// <summary>
     /// Erase async, marks the caller for deletion, stages the delete and commits once.
     /// </summary>
     [Fact]
-    public async Task EraseAsync_MarksTheCallerForDeletion_StagesTheDeleteAndCommitsOnce()
+    public async Task EraseCurrentTrainerAsync_MarksTheCallerForDeletion_StagesTheDeleteAndCommitsOnce()
     {
         var trainer = new TrainerBuilder().Build();
         _fixture.GivenCaller(trainer.Id.Value);
@@ -322,7 +322,7 @@ public sealed class TrainerApplicationServiceTests
             .ReturnsAsync(trainer);
         var sut = _fixture.CreateSut();
 
-        var result = await sut.EraseAsync();
+        var result = await sut.EraseCurrentTrainerAsync();
 
         result.ShouldBeSuccess();
         trainer.DomainEvents.Should().ContainSingle(domainEvent => domainEvent is TrainerDeletedDomainEvent,
@@ -337,14 +337,14 @@ public sealed class TrainerApplicationServiceTests
     /// Erase async, caller already gone, returns not found and deletes nothing.
     /// </summary>
     [Fact]
-    public async Task EraseAsync_CallerAlreadyGone_ReturnsNotFoundAndDeletesNothing()
+    public async Task EraseCurrentTrainerAsync_CallerAlreadyGone_ReturnsNotFoundAndDeletesNothing()
     {
         _fixture.TrainerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Trainer?)null);
         var sut = _fixture.CreateSut();
 
-        var result = await sut.EraseAsync();
+        var result = await sut.EraseCurrentTrainerAsync();
 
         var errors = result.ShouldBeFailure();
         errors.Should().Contain(e => e.ErrorCode == ErrorCodes.NotFound);

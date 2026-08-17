@@ -43,5 +43,5 @@ public sealed class AuthController(
 
     /// <inheritdoc />
     protected override Task<Result> EraseTrainerAsync(CancellationToken cancellationToken = default) =>
-        trainerApplicationService.EraseAsync(cancellationToken);
+        trainerApplicationService.EraseCurrentTrainerAsync(cancellationToken);
 }

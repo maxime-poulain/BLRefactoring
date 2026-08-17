@@ -467,7 +467,7 @@ its call sites rather than the message
 |---|---|---|---|
 | Create trainer | `TrainerApplicationService.CreateAsync` | `CreateTrainerCommand` | Application |
 | Edit own profile | `TrainerApplicationService.EditAsync` | `EditCurrentTrainerCommand` | Application |
-| Erase own account | `TrainerApplicationService.EraseAsync` | `EraseCurrentTrainerCommand` | Application |
+| Erase own account | `TrainerApplicationService.EraseCurrentTrainerAsync` | `EraseCurrentTrainerCommand` | Application |
 | Read own profile | `TrainerApplicationService.GetByIdAsync` | `GetTrainerByIdQuery` | Infrastructure |
 | Publish or replace a portrait | `TrainerApplicationService.SetPhotoAsync` | `SetCurrentTrainerPhotoCommand` | Application |
 | Remove a portrait | `TrainerApplicationService.RemovePhotoAsync` | `RemoveCurrentTrainerPhotoCommand` | Application |

@@ -79,7 +79,7 @@ public interface ITrainerApplicationService
     /// </remarks>
     /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     /// <returns>Success, or a not-found failure when the caller's trainer is already gone.</returns>
-    Task<Result> EraseAsync(CancellationToken cancellationToken = default);
+    Task<Result> EraseCurrentTrainerAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Reads a trainer's photo.
@@ -240,7 +240,7 @@ public sealed class TrainerApplicationService(
     }
 
     /// <inheritdoc />
-    public async Task<Result> EraseAsync(CancellationToken cancellationToken = default)
+    public async Task<Result> EraseCurrentTrainerAsync(CancellationToken cancellationToken = default)
     {
         var id = currentUserService.TrainerId;
 

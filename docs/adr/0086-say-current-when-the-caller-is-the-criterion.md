@@ -75,9 +75,11 @@ their handlers and validators — behavior, authorization and routing are untouc
   `Trainer_SetPhoto`, `Trainer_DeletePhoto` and `Auth_EraseAccount`; no route, schema or line of
   `Clients.Generated.cs` changes, so the regeneration is run and the empty diff is the proof
   (ADR 0008).
-- **The layered stack is untouched.** Its use cases are methods read with their receiver —
-  `trainerApplicationService.EraseAsync()` — and ADR 0081 already drew that line: a method is read
-  with its receiver, a message is read alone.
+- **The layered stack keeps reading with its receiver, with one exception the review carved
+  out.** Its use cases are methods read with their receiver — `trainerApplicationService.EditAsync()`
+  — and ADR 0081 already drew that line: a method is read with its receiver, a message is read
+  alone. The erasure is the carve-out: destructive and caller-scoped at once, it says its scope in
+  full as `EraseCurrentTrainerAsync`, the method mirror of the command beside it.
 - **`CLAUDE.md` gains the convention**, beside ADR 0081's, so a future session writes
   `Current` into the next caller-scoped message without reading this record first.
 - **Records merged before this one keep the names they were written with.** ADR 0021 and its
@@ -96,9 +98,12 @@ layer's vocabulary is the trainer's: `EditTrainerCommand`, `ICurrentUserService.
 Rejected.
 
 **Rename the layered service methods to match** — `EraseAsync` to `EraseCurrentAsync` and so on.
-Rejected for the reason ADR 0081 left `GetByIdAsync` alone: the receiver says the first half, and
-`ITrainerApplicationService` documents its own scoping. The two stacks still name one use case
-compatibly — the README's use-case table pairs them row by row.
+Rejected as a blanket rule, for the reason ADR 0081 left `GetByIdAsync` alone: the receiver says
+the first half, and `ITrainerApplicationService` documents its own scoping. The review kept one
+exception out of the rejection: the erasure method says its caller in full —
+`EraseCurrentTrainerAsync` — because the one irreversible use case should read unambiguously even
+without its receiver. The two stacks still name one use case compatibly — the README's use-case
+table pairs them row by row.
 
 **Say `Current` at the HTTP boundary too** — `Auth_EraseCurrentAccount`. The operation identifier
 is a published contract (ADR 0008); renaming it moves the generated client, the BFF and every

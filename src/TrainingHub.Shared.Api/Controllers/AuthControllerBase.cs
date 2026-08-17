@@ -58,6 +58,7 @@ public abstract class AuthControllerBase(
     /// erasure.
     /// </remarks>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
+    [NonAction]
     protected abstract Task<Result> EraseTrainerAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
