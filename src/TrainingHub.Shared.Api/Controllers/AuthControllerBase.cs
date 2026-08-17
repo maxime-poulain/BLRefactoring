@@ -41,6 +41,7 @@ public abstract class AuthControllerBase(
     /// <param name="request">The registration request carrying the trainer's data.</param>
     /// <param name="userId">The identifier of the identity user that was just created.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
+    [NonAction]
     protected abstract Task<Result<Guid>> CreateTrainerAsync(
         RegisterHttpRequest request,
         Guid userId,
