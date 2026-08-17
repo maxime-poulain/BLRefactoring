@@ -1,8 +1,13 @@
 using System.Text;
+using System.Text.Json;
 using AwesomeAssertions;
+using TrainingHub.Blazor.Client.Components;
+using TrainingHub.Blazor.Client.Infrastructure;
 using TrainingHub.Blazor.Client.Pages.Profile;
 using TrainingHub.GeneratedClients;
 using Bunit;
+using Bunit.TestDoubles;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -24,6 +29,9 @@ namespace TrainingHub.Blazor.Client.Tests.Pages;
 public sealed class ProfileTests : ComponentTest
 {
     private readonly Mock<ITrainerClient> _trainerClient = new();
+    private readonly Mock<IBffSessionClient> _session = new();
+    private readonly Mock<IDialogService> _dialogs = new();
+    private readonly Mock<IAuthenticationStateNotifier> _authentication = new();
 
     /// <summary>
     /// Profile tests.
@@ -31,6 +39,9 @@ public sealed class ProfileTests : ComponentTest
     public ProfileTests()
     {
         Services.AddSingleton(_trainerClient.Object);
+        Services.AddSingleton(_session.Object);
+        Services.AddSingleton(_dialogs.Object);
+        Services.AddSingleton(_authentication.Object);
 
         GivenProfile(ProfileWithoutPhoto());
     }
@@ -351,6 +362,164 @@ public sealed class ProfileTests : ComponentTest
         // Assert
         act.Should().NotThrow();
     }
+
+    /// <summary>
+    /// Renders, offers to erase the account.
+    /// </summary>
+    [Fact]
+    public void Renders_OffersToEraseTheAccount()
+    {
+        // Act
+        var page = Render<Profile>();
+
+        // Assert
+        page.Markup.Should().Contain("Erase account");
+        page.Markup.Should().Contain("for good",
+            "the finality is said beside the button, before any dialog opens");
+    }
+
+    /// <summary>
+    /// Erasing, the password the dialog collected, is what reaches the BFF.
+    /// </summary>
+    /// <remarks>
+    /// The seam that matters is between the dialog's answer and the call: a page that sent an
+    /// empty password — or its own invention — would be refused for the wrong reason, or worse,
+    /// not refused. What the dialog does with what is typed into it is pinned where it lives, in
+    /// <c>EraseAccountDialogTests</c>.
+    /// </remarks>
+    [Fact]
+    public void Erasing_ThePasswordTheDialogCollected_IsWhatReachesTheBff()
+    {
+        // Arrange
+        AnsweringErasure("Password1!");
+
+        _session
+            .Setup(client => client.EraseAccountAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ProblemDetails?)null);
+
+        var page = Render<Profile>();
+
+        // Act
+        EraseButton(page).Click();
+
+        // Assert
+        page.WaitForAssertion(() => _session.Verify(
+            client => client.EraseAccountAsync("Password1!", It.IsAny<CancellationToken>()), Times.Once));
+    }
+
+    /// <summary>
+    /// Erasing, the account gone, signs the interface out and leaves.
+    /// </summary>
+    /// <remarks>
+    /// The BFF has already dropped the cookie, so what remains is the interface's half: telling
+    /// every <c>AuthorizeView</c> the identity changed, and leaving a page that now describes an
+    /// account that does not exist. A page that stayed would show a profile nobody holds.
+    /// </remarks>
+    [Fact]
+    public void Erasing_TheAccountGone_SignsTheInterfaceOutAndLeaves()
+    {
+        // Arrange
+        AnsweringErasure("Password1!");
+
+        _session
+            .Setup(client => client.EraseAccountAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ProblemDetails?)null);
+
+        var navigation = (BunitNavigationManager)Services.GetRequiredService<NavigationManager>();
+        var page = Render<Profile>();
+
+        // Act
+        EraseButton(page).Click();
+
+        // Assert
+        page.WaitForAssertion(() =>
+        {
+            navigation.Uri.Should().Be("http://localhost/");
+            Shown().Should().ContainSingle()
+                .Which.Should().Match<Snackbar>(snackbar =>
+                    snackbar.Message == "Your account was erased."
+                    && snackbar.Severity == Severity.Success);
+        });
+
+        _authentication.Verify(notifier => notifier.NotifyAuthenticationChanged(), Times.Once);
+    }
+
+    /// <summary>
+    /// Erasing, the API refused, says the API's own sentence and stays signed in.
+    /// </summary>
+    [Fact]
+    public void Erasing_TheApiRefused_SaysTheApisOwnSentenceAndStaysSignedIn()
+    {
+        // Arrange
+        AnsweringErasure("wrong-password");
+
+        var problem = new ProblemDetails { Title = "One or more validation errors occurred.", Status = 400 };
+        problem.AdditionalProperties["errors"] = JsonSerializer.Deserialize<JsonElement>(
+            """{"Password":["The password is incorrect."]}""");
+
+        _session
+            .Setup(client => client.EraseAccountAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(problem);
+
+        var page = Render<Profile>();
+
+        // Act
+        EraseButton(page).Click();
+
+        // Assert
+        page.WaitForAssertion(() => Shown().Should().ContainSingle()
+            .Which.Should().Match<Snackbar>(snackbar =>
+                snackbar.Message == "The password is incorrect."
+                && snackbar.Severity == Severity.Error));
+
+        // A refused erasure erased nothing, so the identity must not be re-read as though it had.
+        _authentication.Verify(notifier => notifier.NotifyAuthenticationChanged(), Times.Never);
+    }
+
+    /// <summary>
+    /// Erasing, backed out of the dialog, sends nothing.
+    /// </summary>
+    [Fact]
+    public void Erasing_BackedOutOfTheDialog_SendsNothing()
+    {
+        // Arrange
+        AnsweringErasure(password: null);
+
+        var page = Render<Profile>();
+
+        // Act
+        EraseButton(page).Click();
+
+        // Assert
+        page.WaitForAssertion(() => _dialogs.Verify(
+            service => service.ShowAsync<EraseAccountDialog>(It.IsAny<string>(), It.IsAny<DialogOptions>()),
+            Times.Once));
+
+        _session.Verify(
+            client => client.EraseAccountAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    /// <summary>
+    /// Substitutes the dialog's answer, because the page under test renders no dialog provider.
+    /// </summary>
+    private void AnsweringErasure(string? password)
+    {
+        var reference = new Mock<IDialogReference>();
+
+        reference
+            .Setup(dialog => dialog.Result)
+            .ReturnsAsync(password is null ? DialogResult.Cancel() : DialogResult.Ok(password));
+
+        _dialogs
+            .Setup(service => service.ShowAsync<EraseAccountDialog>(
+                It.IsAny<string>(), It.IsAny<DialogOptions>()))
+            .ReturnsAsync(reference.Object);
+    }
+
+    private static AngleSharp.Dom.IElement EraseButton(IRenderedComponent<Profile> page) =>
+        page.FindAll("button").Single(button =>
+            button.TextContent.Contains("Erase account", StringComparison.Ordinal));
 
     private static readonly Guid TrainerId = Guid.NewGuid();
 

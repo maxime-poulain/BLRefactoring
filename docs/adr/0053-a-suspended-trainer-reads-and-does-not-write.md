@@ -1,6 +1,6 @@
 # 0053 — A suspended trainer reads, and does not write
 
-- **Status:** Accepted — amended by [0057](0057-the-trainers-own-surface-says-where-they-stand.md): the write controls a suspension forbids are shown disabled rather than removed
+- **Status:** Accepted — amended by [0057](0057-the-trainers-own-surface-says-where-they-stand.md): the write controls a suspension forbids are shown disabled rather than removed; amended by [0085](0085-let-the-account-erase-itself-trainings-and-all.md): erasing the account is the one write a suspension does not take away
 - **Amends:** [0050](0050-retire-a-training-rather-than-delete-it.md)
 - **Date:** 2026-08-07
 

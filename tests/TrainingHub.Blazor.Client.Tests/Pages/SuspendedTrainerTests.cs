@@ -38,6 +38,11 @@ public sealed class SuspendedTrainerTests : ComponentTest
         Services.AddSingleton(_trainerClient.Object);
         Services.AddSingleton(_trainingClient.Object);
 
+        // The profile page injects the erasure's collaborators (ADR 0085). Inert substitutes,
+        // because what this suite asserts is what the sanction disables — and what it does not.
+        Services.AddSingleton(Mock.Of<IBffSessionClient>());
+        Services.AddSingleton(Mock.Of<IAuthenticationStateNotifier>());
+
         _trainerClient
             .Setup(client => client.GetCurrentAsync())
             .ReturnsAsync(new SwaggerResponse<TrainerHttpResponse>(
@@ -113,6 +118,28 @@ public sealed class SuspendedTrainerTests : ComponentTest
         // Assert
         var save = page.WaitForElement("button:contains('Save Changes')");
         save.HasAttribute("disabled").Should().BeTrue();
+    }
+
+    /// <summary>
+    /// The profile, a suspension in force, leaves the erasure enabled.
+    /// </summary>
+    /// <remarks>
+    /// The one exception to the pattern this suite pins, and it is a decision rather than an
+    /// oversight: the sanction withholds the catalog, never the right to leave, so the erase
+    /// button ignores the standing every other write control obeys (ADR 0085 amends ADR 0053).
+    /// A sweep that disabled it along with the rest would read as tidiness and imprison the
+    /// account.
+    /// </remarks>
+    [Fact]
+    public void TheProfile_ASuspensionInForce_LeavesTheErasureEnabled()
+    {
+        // Act
+        var page = Render<Profile>();
+
+        // Assert
+        var erase = page.WaitForElement("button:contains('Erase account')");
+        erase.HasAttribute("disabled").Should().BeFalse(
+            "erasing the account is the one write a suspension does not take away");
     }
 
     /// <summary>

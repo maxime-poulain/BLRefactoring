@@ -1157,6 +1157,55 @@ namespace TrainingHub.GeneratedClients
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task ResetPasswordAsync(ResetPasswordHttpRequest body, System.Threading.CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Erases the calling trainer's account: the Identity account, the trainer, their trainings —
+        /// <br/>everything, in one transaction, against the caller's own password.
+        /// </summary>
+        /// <remarks>
+        /// Guarded by the trainer claim rather than the active standing, deliberately: a suspended
+        /// <br/>    trainer keeps this one write, because the right to leave outlives the sanction
+        /// <br/>    (ADR 0085, amending ADR 0053). An administrator's token carries no trainer claim and is
+        /// <br/>    refused here — that account was provisioned by hand and leaves by hand (ADR 0051).
+        /// <br/>    The password is checked before anything opens, because a session is not proof of intent:
+        /// <br/>an access token outlives an unlocked device by up to sixty minutes, and this is the one
+        /// <br/>action nobody can undo. Wrong answers are field-keyed rather than generic — the caller is
+        /// <br/>already authenticated as this account's holder, so there is nothing to enumerate.
+        /// <br/>    The transaction is registration's mirror (ADR 0040): the account fact is staged first —
+        /// <br/>carrying the address and username the farewell will need, because at delivery time this
+        /// <br/>row no longer exists — then the host-supplied trainer half stages, cascades and saves,
+        /// <br/>flushing the fact with it; then the account row goes, and the reset credential follows it
+        /// <br/>by foreign key (ADR 0084). Either everything is gone or nothing is.
+        /// </remarks>
+        /// <param name="body">A token to cancel the operation.</param>
+        /// <returns>No Content</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task EraseAccountAsync(EraseAccountHttpRequest body);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Erases the calling trainer's account: the Identity account, the trainer, their trainings —
+        /// <br/>everything, in one transaction, against the caller's own password.
+        /// </summary>
+        /// <remarks>
+        /// Guarded by the trainer claim rather than the active standing, deliberately: a suspended
+        /// <br/>    trainer keeps this one write, because the right to leave outlives the sanction
+        /// <br/>    (ADR 0085, amending ADR 0053). An administrator's token carries no trainer claim and is
+        /// <br/>    refused here — that account was provisioned by hand and leaves by hand (ADR 0051).
+        /// <br/>    The password is checked before anything opens, because a session is not proof of intent:
+        /// <br/>an access token outlives an unlocked device by up to sixty minutes, and this is the one
+        /// <br/>action nobody can undo. Wrong answers are field-keyed rather than generic — the caller is
+        /// <br/>already authenticated as this account's holder, so there is nothing to enumerate.
+        /// <br/>    The transaction is registration's mirror (ADR 0040): the account fact is staged first —
+        /// <br/>carrying the address and username the farewell will need, because at delivery time this
+        /// <br/>row no longer exists — then the host-supplied trainer half stages, cascades and saves,
+        /// <br/>flushing the fact with it; then the account row goes, and the reset credential follows it
+        /// <br/>by foreign key (ADR 0084). Either everything is gone or nothing is.
+        /// </remarks>
+        /// <param name="body">A token to cancel the operation.</param>
+        /// <returns>No Content</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task EraseAccountAsync(EraseAccountHttpRequest body, System.Threading.CancellationToken cancellationToken);
+
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -1660,6 +1709,145 @@ namespace TrainingHub.GeneratedClients
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Erases the calling trainer's account: the Identity account, the trainer, their trainings —
+        /// <br/>everything, in one transaction, against the caller's own password.
+        /// </summary>
+        /// <remarks>
+        /// Guarded by the trainer claim rather than the active standing, deliberately: a suspended
+        /// <br/>    trainer keeps this one write, because the right to leave outlives the sanction
+        /// <br/>    (ADR 0085, amending ADR 0053). An administrator's token carries no trainer claim and is
+        /// <br/>    refused here — that account was provisioned by hand and leaves by hand (ADR 0051).
+        /// <br/>    The password is checked before anything opens, because a session is not proof of intent:
+        /// <br/>an access token outlives an unlocked device by up to sixty minutes, and this is the one
+        /// <br/>action nobody can undo. Wrong answers are field-keyed rather than generic — the caller is
+        /// <br/>already authenticated as this account's holder, so there is nothing to enumerate.
+        /// <br/>    The transaction is registration's mirror (ADR 0040): the account fact is staged first —
+        /// <br/>carrying the address and username the farewell will need, because at delivery time this
+        /// <br/>row no longer exists — then the host-supplied trainer half stages, cascades and saves,
+        /// <br/>flushing the fact with it; then the account row goes, and the reset credential follows it
+        /// <br/>by foreign key (ADR 0084). Either everything is gone or nothing is.
+        /// </remarks>
+        /// <param name="body">A token to cancel the operation.</param>
+        /// <returns>No Content</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task EraseAccountAsync(EraseAccountHttpRequest body)
+        {
+            return EraseAccountAsync(body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Erases the calling trainer's account: the Identity account, the trainer, their trainings —
+        /// <br/>everything, in one transaction, against the caller's own password.
+        /// </summary>
+        /// <remarks>
+        /// Guarded by the trainer claim rather than the active standing, deliberately: a suspended
+        /// <br/>    trainer keeps this one write, because the right to leave outlives the sanction
+        /// <br/>    (ADR 0085, amending ADR 0053). An administrator's token carries no trainer claim and is
+        /// <br/>    refused here — that account was provisioned by hand and leaves by hand (ADR 0051).
+        /// <br/>    The password is checked before anything opens, because a session is not proof of intent:
+        /// <br/>an access token outlives an unlocked device by up to sixty minutes, and this is the one
+        /// <br/>action nobody can undo. Wrong answers are field-keyed rather than generic — the caller is
+        /// <br/>already authenticated as this account's holder, so there is nothing to enumerate.
+        /// <br/>    The transaction is registration's mirror (ADR 0040): the account fact is staged first —
+        /// <br/>carrying the address and username the farewell will need, because at delivery time this
+        /// <br/>row no longer exists — then the host-supplied trainer half stages, cascades and saves,
+        /// <br/>flushing the fact with it; then the account row goes, and the reset credential follows it
+        /// <br/>by foreign key (ADR 0084). Either everything is gone or nothing is.
+        /// </remarks>
+        /// <param name="body">A token to cancel the operation.</param>
+        /// <returns>No Content</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task EraseAccountAsync(EraseAccountHttpRequest body, System.Threading.CancellationToken cancellationToken)
+        {
+            if (body == null)
+                throw new System.ArgumentNullException("body");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.ByteArrayContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                
+                    // Operation Path: "Auth/erase-account"
+                    urlBuilder_.Append("Auth/erase-account");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 204)
+                        {
+                            return;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         {
@@ -5829,6 +6017,31 @@ namespace TrainingHub.GeneratedClients
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         [System.ComponentModel.DataAnnotations.StringLength(500)]
         public string AcquiredSkills { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// The body of `POST /Auth/erase-account`: the caller's own password, and nothing else.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class EraseAccountHttpRequest
+    {
+
+        /// <summary>
+        /// The account's current password — the proof that the person asking is the person leaving.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("password")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Password { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

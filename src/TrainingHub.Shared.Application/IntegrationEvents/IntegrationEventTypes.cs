@@ -34,8 +34,10 @@ public static class IntegrationEventTypes
             [typeof(TrainingUnpublishedIntegrationEvent)] = ("TrainingUnpublished", 1),
             [typeof(TrainingWithheldIntegrationEvent)] = ("TrainingWithheld", 1),
             [typeof(TrainingDeletedIntegrationEvent)] = ("TrainingDeleted", 1),
+            [typeof(TrainerDeletedIntegrationEvent)] = ("TrainerDeleted", 1),
             [typeof(PasswordResetRequestedIntegrationEvent)] = ("PasswordResetRequested", 1),
             [typeof(PasswordChangedIntegrationEvent)] = ("PasswordChanged", 1),
+            [typeof(AccountErasedIntegrationEvent)] = ("AccountErased", 1),
         };
 
     /// <summary>

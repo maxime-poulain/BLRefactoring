@@ -6,6 +6,9 @@
 @using TrainingHub.Blazor.Client.Infrastructure
 @inject ISnackbar Snackbar
 @inject ITrainerStandingSource StandingSource
+@inject IDialogService DialogService
+@inject IBffSessionClient SessionClient
+@inject IAuthenticationStateNotifier AuthenticationNotifier
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="my-4">
     <MudPaper Elevation="4" Class="pa-8">
@@ -142,6 +145,28 @@
                         }
                     </MudButton>
                 </MudStack>
+
+                <MudDivider Class="my-2" />
+
+                @* Deliberately not disabled by _standing.IsSuspended: a suspension takes the
+                   catalog away, never the right to leave. Erasing the account is the one write
+                   the sanction does not withhold (ADR 0085). *@
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.h6">Erase this account</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Removes your profile, your trainings and your portrait, immediately and
+                        for good. There is no way back.
+                    </MudText>
+                    <div>
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Error"
+                                   StartIcon="@Icons.Material.Filled.DeleteForever"
+                                   Disabled="_isErasing"
+                                   OnClick="HandleEraseAccount">
+                            Erase account
+                        </MudButton>
+                    </div>
+                </MudStack>
             </MudStack>
         }
     </MudPaper>
@@ -178,6 +203,7 @@
     private bool _isLoadingData;
     private bool _isSaving;
     private bool _isUploading;
+    private bool _isErasing;
 
     private Guid _trainerId;
     private string _firstname = string.Empty;
@@ -373,6 +399,48 @@
         finally
         {
             _isSaving = false;
+        }
+    }
+
+    private async Task HandleEraseAccount()
+    {
+        var password = await EraseAccountDialogs.AskAsync(DialogService);
+
+        if (password is null)
+        {
+            return;
+        }
+
+        _isErasing = true;
+        try
+        {
+            var problem = await SessionClient.EraseAccountAsync(password);
+
+            if (problem is not null)
+            {
+                // The wrong password arrives keyed to its field, and the sentence inside the
+                // document is the one the API wrote — shown as written, like every refusal here.
+                foreach (var message in ProblemDetailsMessages.Read(problem, "The account could not be erased."))
+                {
+                    Snackbar.Add(message, Severity.Error);
+                }
+
+                return;
+            }
+
+            // The BFF has already signed the session out; what is left is telling the interface.
+            Snackbar.Add("Your account was erased.", Severity.Success);
+            AuthenticationNotifier.NotifyAuthenticationChanged();
+            NavigationManager.NavigateTo("/");
+        }
+        catch (HttpRequestException exception)
+        {
+            Console.Error.WriteLine(exception);
+            Snackbar.Add("The account could not be erased. Try again in a moment.", Severity.Error);
+        }
+        finally
+        {
+            _isErasing = false;
         }
     }
 

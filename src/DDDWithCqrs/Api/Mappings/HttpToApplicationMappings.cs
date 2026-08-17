@@ -77,13 +77,13 @@ public static class HttpToApplicationMappings
     /// </summary>
     /// <param name="request">What the caller sent in the body.</param>
     /// <param name="expectedVersion">The version read from the <c>If-Match</c> header.</param>
-    public static EditTrainerCommand ToCommand(
+    public static EditCurrentTrainerCommand ToCommand(
         this EditTrainerHttpRequest request,
         byte[] expectedVersion)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        return new EditTrainerCommand
+        return new EditCurrentTrainerCommand
         {
             ExpectedVersion = expectedVersion,
             Firstname = request.Firstname,

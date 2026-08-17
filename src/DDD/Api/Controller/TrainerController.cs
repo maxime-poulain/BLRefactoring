@@ -17,8 +17,9 @@ namespace TrainingHub.DDD.Api.Controller;
 /// <summary>
 /// API controller for reading and editing trainer resources.
 /// Trainers are only created through the registration flow, which creates the identity user and
-/// its trainer atomically, and no endpoint deletes one: removing a trainer is an administrative
-/// decision, not something a trainer performs on themselves.
+/// its trainer atomically, and no endpoint here deletes one: a trainer leaves through
+/// <c>POST /Auth/erase-account</c>, which removes the account and the trainer together, the way
+/// registration created them (ADR 0085).
 /// </summary>
 /// <remarks>
 /// The action signatures speak only in API contracts. What the application service accepts and

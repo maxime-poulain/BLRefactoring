@@ -30,7 +30,7 @@ so in three places:
 2. **One references the other directly.** `Training.TrainerId` is a typed identifier of the *same*
    model, not an identifier copied across a boundary.
 3. **A change to one cascades inside the other's unit of work.**
-   `DeleteTrainingWhenTrainerDeletedEventHandler` deletes trainings while the trainer's transaction
+   `DeleteTrainingWhenTrainerDeletedDomainEventHandler` deletes trainings while the trainer's transaction
    is still open — the opposite of what crossing a boundary would allow.
 
 Two aggregates that commit together, reference each other by type and cascade synchronously are two
@@ -148,13 +148,14 @@ holds a `Trainer` instance.
 |---|---|---|
 | **Trainer** | Everything in this context, and only to their own data | Implemented — `ICurrentUserService.TrainerId` |
 | **Visitor** | Register, then sign in | Implemented |
-| **Administrator** | Suspend and reinstate a trainer; withhold and release a training; list either, filtered by state | Implemented — six endpoints under `/Administration`, behind the `Administrator` role (ADR 0051, ADR 0052, ADR 0055). Removing a trainer is not among them: `Trainer.MarkForDeletion` states the rule and no command reaches it |
+| **Administrator** | Suspend and reinstate a trainer; withhold and release a training; list either, filtered by state | Implemented — six endpoints under `/Administration`, behind the `Administrator` role (ADR 0051, ADR 0052, ADR 0055). Removing a trainer is still not among them, and now by decision rather than by delay: erasure is the account's own act, behind the account's own password (ADR 0085) |
 
 The third row has said three different things in three commits, and the sequence is the point. It
 began by saying the permission was absent — no role was ever granted, so the rules it named could
 only be reached from a unit test. ADR 0051 gave the actor a role, a policy and a token that needs no
 trainer, and the row said the authority existed while the use cases did not. Those use cases are the
-four endpoints now, and what is left unclaimed is one line rather than a paragraph. An administrator
+four endpoints now, and the one line that stayed unclaimed — removal — has since been claimed by a
+different actor at a different door, which is what the row always predicted. An administrator
 is an **account, not a trainer**, which is why their token carries no `trainer_id`, why the trainer
 surface refuses them rather than raising on the missing claim, and why the administrative endpoints
 sit on a controller base of their own.
@@ -172,6 +173,7 @@ on data it is not shown. That is the whole of what one trainer may learn about a
 - Author a training: create, edit, delete.
 - Hand a training to another trainer, when their catalog can take it.
 - Consult one's own catalog.
+- Erase the account — the trainer, their trainings and their portrait, in one act (ADR 0085).
 
 ### Use cases
 
@@ -183,6 +185,7 @@ Every one of them exists twice — once per application style. See the
 | Register as a trainer | Visitor | `Trainer` (and an Identity account) |
 | Read own profile | Trainer | `Trainer` |
 | Edit own profile | Trainer | `Trainer` |
+| Erase own account | Trainer | `Trainer` (and its Identity account) |
 | Publish or replace a portrait | Trainer | `Trainer` |
 | Remove a portrait | Trainer | `Trainer` |
 | View a trainer's portrait | Trainer | `Trainer` |
@@ -244,11 +247,12 @@ Together those three are an anti-corruption layer reduced to its minimum — two
 
 ### Actors
 
-Visitor (register, sign in, recover a forgotten password) and Trainer (present a token).
+Visitor (register, sign in, recover a forgotten password) and Trainer (present a token, and erase
+the account — the one write that removes rows from both contexts at once, ADR 0085).
 
 ### Business capabilities
 
-Registration, authentication, token issuance, lockout, password recovery.
+Registration, authentication, token issuance, lockout, password recovery, account erasure.
 
 ---
 
@@ -264,18 +268,20 @@ Registration, authentication, token issuance, lockout, password recovery.
   ([ADR 0031](../adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md)). The
   protocol is the boundary: only the infrastructure names the mail client, and a rule holds that
   line.
-- **Fed by:** the transactional outbox, end to end. Registration, recovery, address changes and the
+- **Fed by:** the transactional outbox, end to end. Registration, recovery, address changes, the
+  account's erasure and the
   administration's decisions commit `TrainerCreatedIntegrationEvent`,
   `TrainerContactEmailChangedIntegrationEvent`, `TrainerSuspendedIntegrationEvent`,
   `TrainerReinstatedIntegrationEvent`, `TrainingWithheldIntegrationEvent`,
-  `TrainerContactedIntegrationEvent`, `PasswordResetRequestedIntegrationEvent` and
-  `PasswordChangedIntegrationEvent` with the change
-  itself (ADR 0002, ADR 0024, ADR 0056, ADR 0082, ADR 0084), and the delivery worker hands each fact to the consumer
+  `TrainerContactedIntegrationEvent`, `PasswordResetRequestedIntegrationEvent`,
+  `PasswordChangedIntegrationEvent` and `AccountErasedIntegrationEvent` with the change
+  itself (ADR 0002, ADR 0024, ADR 0056, ADR 0082, ADR 0084, ADR 0085), and the delivery worker hands each fact to the consumer
   that composes its `EmailMessage` — after the commit, at-least-once (ADR 0025). The three
   sanction notices go to the account's address rather than the published contact address, resolved
   through `ITrainerAccountQuery` when the notice is sent; the reset link does not exist until its
   consumer mints it, which is what keeps the one secret in this list off the outbox row entirely
-  (ADR 0084).
+  (ADR 0084); and the farewell's address travels on its own fact, because by delivery time the
+  rows that could answer it are gone (ADR 0085).
 
 ---
 

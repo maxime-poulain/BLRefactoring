@@ -1,7 +1,9 @@
 using System.Transactions;
+using TrainingHub.Shared.Api.Authorization;
 using TrainingHub.Shared.Api.Contracts.Auth;
 using TrainingHub.Shared.Api.Http;
 using TrainingHub.Shared.Api.Identity;
+using TrainingHub.Shared.Application.IntegrationEvents;
 using TrainingHub.Shared.Common.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -11,9 +13,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace TrainingHub.Shared.Api.Controllers;
 
 /// <summary>
-/// Shared implementation of the authentication endpoints (registration, login and password
-/// recovery). The whole flow is identical in both stacks except for how the trainer itself is
-/// created, which each host supplies through <see cref="CreateTrainerAsync"/>.
+/// Shared implementation of the account endpoints (registration, login, password recovery and
+/// erasure). The whole flow is identical in both stacks except for how the trainer itself is
+/// created or erased, which each host supplies through <see cref="CreateTrainerAsync"/> and
+/// <see cref="EraseTrainerAsync"/>.
 /// </summary>
 [ApiController]
 [Route("[controller]")]
@@ -21,7 +24,8 @@ public abstract class AuthControllerBase(
     UserManager<IdentityUser<Guid>> userManager,
     SignInManager<IdentityUser<Guid>> signInManager,
     ITokenService tokenService,
-    IPasswordRecoveryService passwordRecovery) : ControllerBase
+    IPasswordRecoveryService passwordRecovery,
+    IIntegrationEventPublisher integrationEventPublisher) : ControllerBase
 {
     /// <summary>
     /// Creates the trainer associated with the freshly registered identity user, and reports
@@ -41,6 +45,20 @@ public abstract class AuthControllerBase(
         RegisterHttpRequest request,
         Guid userId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Erases the calling trainer — the aggregate, and through the cascade its trainings — and
+    /// saves. Runs inside the erasure transaction: the save also flushes the account fact the
+    /// base staged, and a failure result rolls everything back (ADR 0085).
+    /// </summary>
+    /// <remarks>
+    /// Registration's seam, mirrored: the base owns the transaction and the Identity half, each
+    /// host supplies the trainer half in its own style. Nothing is reported back — the CQRS
+    /// command answers a bare <c>Result</c>, and there is deliberately nothing to read after an
+    /// erasure.
+    /// </remarks>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    protected abstract Task<Result> EraseTrainerAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Registers a new user with the provided username, email, and password.
@@ -341,6 +359,97 @@ public abstract class AuthControllerBase(
             PasswordResetOutcome.PasswordRefused refused => IdentityRejection(refused.Errors),
             _ => RefusedLink()
         };
+    }
+
+    /// <summary>
+    /// Erases the calling trainer's account: the Identity account, the trainer, their trainings —
+    /// everything, in one transaction, against the caller's own password.
+    /// </summary>
+    /// <param name="request">The request carrying the caller's current password.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// A 204 No Content response when the account is gone — there is nothing left to address.
+    /// A 400 Bad Request response keyed on <c>Password</c> when the password is wrong, or
+    /// carrying the domain's own refusal when the trainer could not be erased.
+    /// A 401 Unauthorized response when the caller presents no live session, or one whose
+    /// account no longer exists.
+    /// </returns>
+    /// <remarks>
+    /// Guarded by the trainer claim rather than the active standing, deliberately: a suspended
+    /// trainer keeps this one write, because the right to leave outlives the sanction
+    /// (ADR 0085, amending ADR 0053). An administrator's token carries no trainer claim and is
+    /// refused here — that account was provisioned by hand and leaves by hand (ADR 0051).
+    /// <para>
+    /// The password is checked before anything opens, because a session is not proof of intent:
+    /// an access token outlives an unlocked device by up to sixty minutes, and this is the one
+    /// action nobody can undo. Wrong answers are field-keyed rather than generic — the caller is
+    /// already authenticated as this account's holder, so there is nothing to enumerate.
+    /// </para>
+    /// <para>
+    /// The transaction is registration's mirror (ADR 0040): the account fact is staged first —
+    /// carrying the address and username the farewell will need, because at delivery time this
+    /// row no longer exists — then the host-supplied trainer half stages, cascades and saves,
+    /// flushing the fact with it; then the account row goes, and the reset credential follows it
+    /// by foreign key (ADR 0084). Either everything is gone or nothing is.
+    /// </para>
+    /// </remarks>
+    [Authorize(Policy = TrainerPolicy.Name)]
+    [HttpPost("erase-account")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> EraseAccount(
+        [FromBody] EraseAccountHttpRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.GetUserAsync(User);
+
+        if (user is null)
+        {
+            // A live token over an account that no longer exists — erased from another session,
+            // most likely. The session is over, and a body would have nothing true to say.
+            return Unauthorized();
+        }
+
+        if (!await userManager.CheckPasswordAsync(user, request.Password))
+        {
+            return ValidationFailure(
+                StatusCodes.Status400BadRequest,
+                new Dictionary<string, string[]>
+                {
+                    [nameof(EraseAccountHttpRequest.Password)] = ["The password is incorrect."]
+                });
+        }
+
+        using var transactionScope = new TransactionScope(TransactionScopeOption.Required,
+            new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
+            TransactionScopeAsyncFlowOption.Enabled);
+
+        // Staged, not sent: the row rides the save the trainer half is about to make, and
+        // evaporates with the scope if anything below refuses (ADR 0002).
+        await integrationEventPublisher.PublishAsync(
+            new AccountErasedIntegrationEvent(user.Id, user.Email!, user.UserName!),
+            cancellationToken);
+
+        var erasure = await EraseTrainerAsync(cancellationToken);
+
+        return await erasure.MatchAsync<IActionResult>(
+            async () =>
+            {
+                var deletion = await userManager.DeleteAsync(user);
+
+                if (!deletion.Succeeded)
+                {
+                    // Disposing without Complete() puts the trainer, the trainings and the fact
+                    // back; the account that refused to go is exactly as it was.
+                    return IdentityRejection(deletion.Errors);
+                }
+
+                transactionScope.Complete();
+
+                return NoContent();
+            },
+            errors => ValueTask.FromResult<IActionResult>(this.Problem(StatusCodes.Status400BadRequest, errors)));
     }
 
     /// <summary>

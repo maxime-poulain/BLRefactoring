@@ -38,6 +38,7 @@ public sealed class BffTests : IDisposable
     private const string ForgotPasswordPath = "bff/forgot-password";
 
     private const string ResetPasswordPath = "bff/reset-password";
+    private const string EraseAccountPath = "bff/erase-account";
     private const string UserPath = "bff/user";
     private const string LogoutPath = "bff/logout";
     private const string ForwardedPath = "api/Trainer/me";
@@ -1113,6 +1114,139 @@ public sealed class BffTests : IDisposable
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
+    // ---------------------------------------------------------------- erasing the account
+
+    /// <summary>
+    /// Erasing the account calls the api as the sessions owner.
+    /// </summary>
+    /// <remarks>
+    /// The first of this host's own endpoints to call the API as somebody, so the wire is the
+    /// assertion: the call is not forwarded — the sign-out has to happen here, on the way back —
+    /// and the token has to be read from the cookie's ticket and attached by hand (ADR 0085).
+    /// Dropping that line would send the password to an endpoint that answers 401, and nothing
+    /// but this fact would say why.
+    /// </remarks>
+    [Fact]
+    public async Task Erasing_the_account_calls_the_api_as_the_sessions_owner()
+    {
+        await SignInAsync();
+        _factory.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.NoContent);
+
+        var response = await EraseAccountAsync();
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var forwarded = _factory.LoginApi.Requests
+            .Single(request => request.Uri!.AbsolutePath == "/Auth/erase-account");
+
+        forwarded.Authorization.Should().Be($"Bearer {_token}",
+            "the API decides who is erased from the token, and the token lives in the cookie's " +
+            "ticket — the browser never held it to send");
+        forwarded.Body.Should().Contain("Password1!",
+            "the password is the proof of intent, and it must reach the endpoint that checks it");
+    }
+
+    /// <summary>
+    /// An erased account leaves no session behind.
+    /// </summary>
+    /// <remarks>
+    /// Sign-out's pair of facts, folded into the flow that makes them mandatory: a cookie session
+    /// over an erased account would be a session about nothing, so the 204 must carry the
+    /// deletion header and the next forwarded call must meet a closed door (ADR 0085).
+    /// </remarks>
+    [Fact]
+    public async Task An_erased_account_leaves_no_session_behind()
+    {
+        await SignInAsync();
+        _factory.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.NoContent);
+
+        var erased = await EraseAccountAsync();
+
+        var cookie = erased.Headers.GetValues("Set-Cookie").Single();
+
+        cookie.Should().StartWith("__Host-bff=;", "the answer that erases the account empties the cookie");
+        cookie.Should().ContainEquivalentOf("expires=Thu, 01 Jan 1970",
+            "a deletion is an expiry in the past — anything else leaves a dead ticket in the jar");
+
+        var afterwards = await SendAsync(HttpMethod.Get, ForwardedPath);
+
+        afterwards.StatusCode.Should().Be(HttpStatusCode.Unauthorized,
+            "the account is gone, and the session that asked must be gone with it");
+    }
+
+    /// <summary>
+    /// An erasure the api refuses passes through and keeps the session.
+    /// </summary>
+    /// <remarks>
+    /// Registration's passthrough, for registration's reason: the refusal describes the very
+    /// field the browser submitted — the wrong password, keyed to <c>Password</c> — and the
+    /// dialog reads the message out of the document. And a refused erasure must change nothing:
+    /// the session survives, because nothing was erased (ADR 0085).
+    /// </remarks>
+    [Fact]
+    public async Task An_erasure_the_api_refuses_passes_through_and_keeps_the_session()
+    {
+        const string Problem =
+            """{"title":"One or more validation errors occurred.","status":400,"errors":{"Password":["The password is incorrect."]}}""";
+
+        await SignInAsync();
+        _factory.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.BadRequest)
+        {
+            Content = new StringContent(Problem, System.Text.Encoding.UTF8, "application/problem+json")
+        };
+
+        var refused = await EraseAccountAsync();
+
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        refused.Content.Headers.ContentType!.MediaType.Should().Be("application/problem+json");
+        (await refused.Content.ReadAsStringAsync()).Should().Contain("The password is incorrect.",
+            "the per-field message is what the dialog renders, and it exists nowhere but in this document");
+
+        var afterwards = await SendAsync(HttpMethod.Get, ForwardedPath);
+
+        afterwards.StatusCode.Should().Be(HttpStatusCode.OK,
+            "a refused erasure erased nothing, so the session it arrived on keeps working");
+    }
+
+    /// <summary>
+    /// Erasing without a session is refused before the api hears of it.
+    /// </summary>
+    [Fact]
+    public async Task Erasing_without_a_session_is_refused_before_the_api_hears_of_it()
+    {
+        var response = await EraseAccountAsync();
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized,
+            "there is no account to erase without a session naming one");
+        _factory.LoginApi.Requests.Should().BeEmpty(
+            "an anonymous erasure must never reach the API, password and all");
+    }
+
+    /// <summary>
+    /// Erasing without the application header is refused.
+    /// </summary>
+    /// <remarks>
+    /// The forgery case, on the one endpoint where it would cost the most: the browser attaches
+    /// the cookie to a request the application did not make, and the guard's header is what
+    /// refuses it — a cross-site POST must not be able to destroy an account.
+    /// </remarks>
+    [Fact]
+    public async Task Erasing_without_the_application_header_is_refused()
+    {
+        await SignInAsync();
+
+        var request = new HttpRequestMessage(HttpMethod.Post, EraseAccountPath)
+        {
+            Content = JsonContent.Create(new { password = "Password1!" })
+        };
+
+        var response = await _browser.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        _factory.LoginApi.Requests.Should().ContainSingle(
+            "sign-in's own call is the only one the API heard — the forged erasure never left this host");
+    }
+
     // ---------------------------------------------------------------- the host's own wiring
 
     /// <summary>
@@ -1479,6 +1613,10 @@ public sealed class BffTests : IDisposable
 
     private Task<HttpResponseMessage> SignInAsync() =>
         SendAsync(HttpMethod.Post, LoginPath, Credentials());
+
+    /// <summary>Erases the account the way the front end does: the session's own password.</summary>
+    private Task<HttpResponseMessage> EraseAccountAsync() =>
+        SendAsync(HttpMethod.Post, EraseAccountPath, JsonContent.Create(new { password = "Password1!" }));
 
     /// <summary>Asks for a reset link the way the front end does.</summary>
     private Task<HttpResponseMessage> ForgotPasswordAsync(string email) =>

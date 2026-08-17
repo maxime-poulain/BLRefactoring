@@ -54,6 +54,14 @@ flowchart LR
     C3 --> AG1
     C3 --> X2["Media Storage context"]
 
+    A2 --> C6["🔵 Erase the account"]
+    C6 --> AG1
+    AG1 --> E6["🟠 TrainerDeletedDomainEvent"]
+    E6 --> P8["🟣 Delete their trainings"]
+    E6 --> P9["🟣 Publish TrainerDeletedIntegrationEvent"]
+    P9 --> OB
+    OB -->|"delivery worker, post-commit"| X2
+
     A3(["👤 Administrator"]) --> C4["🔵 Suspend a trainer"]
     A3 --> C5["🔵 Reinstate a trainer"]
     C4 --> AG1
@@ -75,10 +83,10 @@ flowchart LR
     classDef actor fill:#fff3bf,stroke:#a16207,color:#000
     classDef external fill:#e5e7eb,stroke:#6b7280,color:#000
 
-    class E1,E2,E3,E4,E5 event
-    class C1,C2,C3,C4,C5 command
+    class E1,E2,E3,E4,E5,E6 event
+    class C1,C2,C3,C4,C5,C6 command
     class AG1 aggregate
-    class P1,P2,P3,P4,P5,P6,P7 policy
+    class P1,P2,P3,P4,P5,P6,P7,P8,P9 policy
     class A1,A2,A3 actor
     class X1,X2,X3,OB external
 ```
@@ -86,8 +94,17 @@ flowchart LR
 ### What the board is really saying
 
 **Registration crosses a boundary.** `Register` creates an Identity account *and* a `Trainer`,
-inside one `TransactionScope`. It is the only command in the system that writes to two contexts —
-see [context-map.md](context-map.md).
+inside one `TransactionScope`. For a long time it was the only command in the system that wrote to
+two contexts; erasure is now its mirror, in the same scope and the opposite direction — see
+[context-map.md](context-map.md).
+
+**Erasure is registration run backwards, and the fact carries what nothing can look up.** `Erase
+the account` marks the trainer for deletion — the cascade deletes the trainings in the same unit
+of work — deletes the Identity account, and commits two facts before the scope completes. The
+policy above commits `TrainerDeletedIntegrationEvent` with the portrait's identity on it, because
+its consumer, the collector that deletes the bytes, runs after the rows it could have asked are
+gone. The farewell's fact belongs to Identity & Access and is committed by the endpoint itself —
+see below with the recovery pair (ADR 0085).
 
 **Editing a profile raises one event per attribute that actually changed.** `Trainer.Edit` compares
 before assigning, so renaming yourself without touching your address raises one event, not two. The
@@ -110,12 +127,12 @@ cleanup stays in the use case, after the commit.
 
 ### 🔴 Hotspots
 
-- **Nothing removes a trainer.** `Trainer.MarkForDeletion` states the rule, the cascade that
-  answers it is tested, and no command reaches it. What used to sit here was larger — nothing
-  suspended a trainer either — and it closed in two halves: ADR 0051 gave the actor a role, a policy
-  and a token that needs no trainer, and the administrative endpoints gave that actor its commands.
-  Removal is the one that stayed, and it stayed on purpose: erasing a trainer is a right the account
-  holds, not a sanction the administration applies, and the two arrive by different doors.
+None left on this board. The one that stood here longest — *nothing removes a trainer* — closed in
+three parts, years of the board's life apart: ADR 0051 gave the administration its actor, the
+administrative endpoints gave that actor its commands, and ADR 0085 opened the last door at the
+account's own side. It closed the way the hotspot predicted it would: erasing a trainer is a right
+the account holds, not a sanction the administration applies, and the two arrived by different
+doors.
 
 ---
 
@@ -213,13 +230,15 @@ here as a fact without a preceding blue sticky, and why the consumer that reads 
 `SendContactMessage`, resolves the trainer's published contact address at delivery rather than
 carrying it on the wire.
 
-**Two more of the same shape, one context over.** `PasswordResetRequestedIntegrationEvent` and
-`PasswordChangedIntegrationEvent` belong to Identity & Access, whose model is the framework's, so
-no blue sticky could ever precede them either: the recovery endpoints commit them directly
-(ADR 0084). The first goes further than the contact fact went — its consumer,
-`SendPasswordResetLink`, does not merely resolve a detail at delivery, it *mints the secret* at
-delivery, so the reset token never touches the outbox row at all. The second is the owner's alarm
-bell, committed in the same transaction as the password it announces.
+**Three more of the same shape, one context over.** `PasswordResetRequestedIntegrationEvent`,
+`PasswordChangedIntegrationEvent` and `AccountErasedIntegrationEvent` belong to Identity & Access,
+whose model is the framework's, so no blue sticky could ever precede them either: the recovery and
+erasure endpoints commit them directly (ADR 0084, ADR 0085). The first goes further than the
+contact fact went — its consumer, `SendPasswordResetLink`, does not merely resolve a detail at
+delivery, it *mints the secret* at delivery, so the reset token never touches the outbox row at
+all. The other two are the owner's alarm bells, each committed in the same transaction as the
+change it announces — and the erasure's carries the address and the username on the wire, because
+by delivery time the rows that held them are gone.
 
 **Nine events, nine facts, one real consumer.** `TrainingCreatedIntegrationEvent`,
 `TrainingEditedIntegrationEvent`, `TrainingTransferredIntegrationEvent`,
@@ -270,39 +289,42 @@ and only it can reach the aggregate's internal reassignment (ADR 0036).
 
 | Command | Aggregate | Rule it must satisfy | Event raised | Policy | Handler |
 |---|---|---|---|---|---|
-| Register | `Trainer` | Username and account email unique *(Identity)* | `TrainerCreatedDomainEvent` | Commit `TrainerCreatedIntegrationEvent` to the outbox; the worker sends the welcome email after the commit | `PublishIntegrationEventWhenTrainerCreatedEventHandler` |
-| Edit own profile | `Trainer` | Name and address valid by construction | `TrainerNameChangedDomainEvent` | Record the change | `AuditWhenTrainerNameChangedEventHandler` |
-| Edit own profile | `Trainer` | — | `TrainerContactEmailChangedDomainEvent` | Commit `TrainerContactEmailChangedIntegrationEvent` to the outbox; the worker warns the old address after the commit | `PublishIntegrationEventWhenTrainerContactEmailChangedEventHandler` |
-| *(no command yet)* | `Trainer` | A trainer does not leave alone | `TrainerDeletedDomainEvent` | Delete their trainings | `DeleteTrainingWhenTrainerDeletedEventHandler` |
-| Create a training | `Training` | Title unique per trainer; the trainer publishes fewer than ten | `TrainingCreatedDomainEvent` | Commit `TrainingCreatedIntegrationEvent` to the outbox; the worker indexes after the commit | `PublishIntegrationEventWhenTrainingCreatedEventHandler` |
-| Edit a training | `Training` | Title unique per trainer | `TrainingEditedDomainEvent` | Commit `TrainingEditedIntegrationEvent` to the outbox; the worker reindexes after the commit | `PublishIntegrationEventWhenTrainingEditedEventHandler` |
-| Transfer a training | `Training`, decided by `TrainingTransferDomainService` | Recipient publishes fewer than ten; recipient free of the title | `TrainingTransferredDomainEvent` | Commit `TrainingTransferredIntegrationEvent` to the outbox; the worker reindexes under the new owner after the commit | `PublishIntegrationEventWhenTrainingTransferredEventHandler` |
+| Register | `Trainer` | Username and account email unique *(Identity)* | `TrainerCreatedDomainEvent` | Commit `TrainerCreatedIntegrationEvent` to the outbox; the worker sends the welcome email after the commit | `PublishIntegrationEventWhenTrainerCreatedDomainEventHandler` |
+| Edit own profile | `Trainer` | Name and address valid by construction | `TrainerNameChangedDomainEvent` | Record the change | `AuditWhenTrainerNameChangedDomainEventHandler` |
+| Edit own profile | `Trainer` | — | `TrainerContactEmailChangedDomainEvent` | Commit `TrainerContactEmailChangedIntegrationEvent` to the outbox; the worker warns the old address after the commit | `PublishIntegrationEventWhenTrainerContactEmailChangedDomainEventHandler` |
+| Erase the account | `Trainer` | The caller's own password is correct *(Identity)* | `TrainerDeletedDomainEvent` | Delete their trainings | `DeleteTrainingWhenTrainerDeletedDomainEventHandler` |
+| Erase the account | `Trainer` | — | `TrainerDeletedDomainEvent` | Commit `TrainerDeletedIntegrationEvent` to the outbox; the worker collects the portrait's bytes after the commit | `PublishIntegrationEventWhenTrainerDeletedDomainEventHandler` |
+| Create a training | `Training` | Title unique per trainer; the trainer publishes fewer than ten | `TrainingCreatedDomainEvent` | Commit `TrainingCreatedIntegrationEvent` to the outbox; the worker indexes after the commit | `PublishIntegrationEventWhenTrainingCreatedDomainEventHandler` |
+| Edit a training | `Training` | Title unique per trainer | `TrainingEditedDomainEvent` | Commit `TrainingEditedIntegrationEvent` to the outbox; the worker reindexes after the commit | `PublishIntegrationEventWhenTrainingEditedDomainEventHandler` |
+| Transfer a training | `Training`, decided by `TrainingTransferDomainService` | Recipient publishes fewer than ten; recipient free of the title | `TrainingTransferredDomainEvent` | Commit `TrainingTransferredIntegrationEvent` to the outbox; the worker reindexes under the new owner after the commit | `PublishIntegrationEventWhenTrainingTransferredDomainEventHandler` |
 | Publish a portrait | `Trainer` | ≤ 5 MiB, PNG/JPEG/WebP, content matches the declared type | *(none, deliberately)* | — | — |
 | Remove a portrait | `Trainer` | — | *(none, deliberately)* | — | — |
-| Delete a training | `Training` | Caller owns it | `TrainingDeletedDomainEvent` | Commit `TrainingDeletedIntegrationEvent` to the outbox; the worker removes it from the index after the commit | `PublishIntegrationEventWhenTrainingDeletedEventHandler` |
-| Unpublish a training | `Training` | It is not already withdrawn | `TrainingUnpublishedDomainEvent` | Commit `TrainingUnpublishedIntegrationEvent` to the outbox; the worker removes it from the index after the commit | `PublishIntegrationEventWhenTrainingUnpublishedEventHandler` |
-| Publish a training | `Training` | It is withdrawn; the owner is not suspended and publishes fewer than ten | `TrainingPublishedDomainEvent` | Commit `TrainingPublishedIntegrationEvent` to the outbox; the worker indexes it after the commit | `PublishIntegrationEventWhenTrainingPublishedEventHandler` |
-| Suspend a trainer | `Trainer` | The trainer is not already suspended | `TrainerSuspendedDomainEvent` | Record the sanction | `AuditWhenTrainerSuspendedEventHandler` |
-| Suspend a trainer | `Trainer` | — | `TrainerSuspendedDomainEvent` | Commit `TrainerSuspendedIntegrationEvent` to the outbox; the worker notifies the account and hides the catalog after the commit | `PublishIntegrationEventWhenTrainerSuspendedEventHandler` |
-| Reinstate a trainer | `Trainer` | The trainer is suspended | `TrainerReinstatedDomainEvent` | Record the lifting | `AuditWhenTrainerReinstatedEventHandler` |
-| Reinstate a trainer | `Trainer` | — | `TrainerReinstatedDomainEvent` | Commit `TrainerReinstatedIntegrationEvent` to the outbox; the worker notifies the account and shows the catalog again after the commit | `PublishIntegrationEventWhenTrainerReinstatedEventHandler` |
-| Withhold a training | `Training` | It is not already withheld | `TrainingWithheldDomainEvent` | Record the decision and its reason | `AuditWhenTrainingWithheldEventHandler` |
-| Withhold a training | `Training` | — | `TrainingWithheldDomainEvent` | Commit `TrainingWithheldIntegrationEvent` to the outbox; the worker notifies the owner and removes the entry after the commit | `PublishIntegrationEventWhenTrainingWithheldEventHandler` |
-| Release a training | `Training` | It is withheld | `TrainingReleasedDomainEvent` | Record the lifting | `AuditWhenTrainingReleasedEventHandler` |
+| Delete a training | `Training` | Caller owns it | `TrainingDeletedDomainEvent` | Commit `TrainingDeletedIntegrationEvent` to the outbox; the worker removes it from the index after the commit | `PublishIntegrationEventWhenTrainingDeletedDomainEventHandler` |
+| Unpublish a training | `Training` | It is not already withdrawn | `TrainingUnpublishedDomainEvent` | Commit `TrainingUnpublishedIntegrationEvent` to the outbox; the worker removes it from the index after the commit | `PublishIntegrationEventWhenTrainingUnpublishedDomainEventHandler` |
+| Publish a training | `Training` | It is withdrawn; the owner is not suspended and publishes fewer than ten | `TrainingPublishedDomainEvent` | Commit `TrainingPublishedIntegrationEvent` to the outbox; the worker indexes it after the commit | `PublishIntegrationEventWhenTrainingPublishedDomainEventHandler` |
+| Suspend a trainer | `Trainer` | The trainer is not already suspended | `TrainerSuspendedDomainEvent` | Record the sanction | `AuditWhenTrainerSuspendedDomainEventHandler` |
+| Suspend a trainer | `Trainer` | — | `TrainerSuspendedDomainEvent` | Commit `TrainerSuspendedIntegrationEvent` to the outbox; the worker notifies the account and hides the catalog after the commit | `PublishIntegrationEventWhenTrainerSuspendedDomainEventHandler` |
+| Reinstate a trainer | `Trainer` | The trainer is suspended | `TrainerReinstatedDomainEvent` | Record the lifting | `AuditWhenTrainerReinstatedDomainEventHandler` |
+| Reinstate a trainer | `Trainer` | — | `TrainerReinstatedDomainEvent` | Commit `TrainerReinstatedIntegrationEvent` to the outbox; the worker notifies the account and shows the catalog again after the commit | `PublishIntegrationEventWhenTrainerReinstatedDomainEventHandler` |
+| Withhold a training | `Training` | It is not already withheld | `TrainingWithheldDomainEvent` | Record the decision and its reason | `AuditWhenTrainingWithheldDomainEventHandler` |
+| Withhold a training | `Training` | — | `TrainingWithheldDomainEvent` | Commit `TrainingWithheldIntegrationEvent` to the outbox; the worker notifies the owner and removes the entry after the commit | `PublishIntegrationEventWhenTrainingWithheldDomainEventHandler` |
+| Release a training | `Training` | It is withheld | `TrainingReleasedDomainEvent` | Record the lifting | `AuditWhenTrainingReleasedDomainEventHandler` |
 
-Fourteen events, seventeen handlers, and two commands that raise nothing — both by decision.
+Fourteen events, eighteen handlers, and two commands that raise nothing — both by decision.
 Publishing and removing a portrait are as informative as the fourteen that do raise something: the
 bytes live in a store a rollback could not put back, so the aggregate says nothing and the caller
-cleans up after the commit. Of the seventeen reactions, six act inside the transaction — the
-cascade and five audit lines, ADR 0002's *domain* side — and eleven commit an integration event
+cleans up after the commit. Of the eighteen reactions, six act inside the transaction — the
+cascade and five audit lines, ADR 0002's *domain* side — and twelve commit an integration event
 into the outbox, to be acted on after the commit.
 
-One row still carries *(no command yet)*, and four stopped: suspending a trainer, reinstating one,
-withholding a training and releasing it are administrative decisions, and they are now issued by
-the four endpoints under `/Administration`. Three of the four have since earned an integration
-event as well (ADR 0056): the excuse ADR 0050 recorded — no surface raises the sanction, no context
-consumes it — was retired by those endpoints and by the consumers now waiting, the notice to the
-trainer and the index that has to stop offering what was taken down.
+No row carries *(no command yet)* any longer: the trainer-deletion row waited years for its
+command and got it at the account's own door rather than the administration's (ADR 0085). Four
+other commands changed hands along the way: suspending a trainer, reinstating one, withholding a
+training and releasing it are administrative decisions, and they are issued by the four endpoints
+under `/Administration`. Three of the four have since earned an integration event as well
+(ADR 0056): the excuse ADR 0050 recorded — no surface raises the sanction, no context consumes it
+— was retired by those endpoints and by the consumers now waiting, the notice to the trainer and
+the index that has to stop offering what was taken down.
 
 **One of the four will never earn one, and that is a decision rather than a delay.** Withholding has
 consumers waiting — the owner to notify, the index entry to drop. Releasing has none: the training

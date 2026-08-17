@@ -69,6 +69,19 @@ public interface ITrainerApplicationService
     Task<Result> RemovePhotoAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Erases the calling trainer: the profile, and — through the cascade the deletion announces —
+    /// every training they own (ADR 0085).
+    /// </summary>
+    /// <remarks>
+    /// The trainer's half of the account erasure. Who may ask, and the account row that goes with
+    /// it, are the boundary's business: this layer stages the aggregate's departure and commits,
+    /// inside whatever transaction the caller opened around both halves.
+    /// </remarks>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    /// <returns>Success, or a not-found failure when the caller's trainer is already gone.</returns>
+    Task<Result> EraseAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Reads a trainer's photo.
     /// </summary>
     /// <param name="id">The trainer whose photo is wanted.</param>
@@ -227,6 +240,26 @@ public sealed class TrainerApplicationService(
     }
 
     /// <inheritdoc />
+    public async Task<Result> EraseAsync(CancellationToken cancellationToken = default)
+    {
+        var id = currentUserService.TrainerId;
+
+        var trainer = await trainerRepository.GetByIdAsync(TrainerId.Create(id), cancellationToken);
+
+        if (trainer is null)
+        {
+            return Result.Failure(ErrorCodes.NotFound, $"Trainer with id `{id}` could not be found.");
+        }
+
+        trainer.MarkForDeletion();
+
+        trainerRepository.Delete(trainer);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Result.Success();
+    }
+
+    /// <inheritdoc />
     public async Task<Result<TrainerDto>> SetPhotoAsync(
         byte[] content,
         string? contentType,
@@ -300,7 +333,7 @@ public sealed class TrainerApplicationService(
         // …and only now what it displaced.
         if (replaced is not null)
         {
-            await photoStore.DeleteAsync(trainer.Id, replaced, cancellationToken);
+            await photoStore.DeleteAsync(trainer.Id, replaced.PhotoId, cancellationToken);
         }
 
         return Result<TrainerDto>.Success(trainer.ToDto());
@@ -338,7 +371,7 @@ public sealed class TrainerApplicationService(
             return Result.Failure(ErrorCodes.ConcurrencyConflict, PhotoConcurrencyMessage);
         }
 
-        await photoStore.DeleteAsync(trainer.Id, removed, cancellationToken);
+        await photoStore.DeleteAsync(trainer.Id, removed.PhotoId, cancellationToken);
 
         return Result.Success();
     }

@@ -143,6 +143,44 @@ public sealed class BffSessionClient(IHttpClientFactory httpClientFactory) : IBf
     }
 
     /// <summary>
+    /// Erases the account, and with it the session that asked.
+    /// </summary>
+    /// <remarks>
+    /// Registration's shape on the way back: a refusal passes through as the problem document
+    /// whose per-field messages the dialog renders — the wrong password keyed to its field first
+    /// of all. On success the BFF has already signed the session out, so there is nothing to end
+    /// here; the caller refreshes the authentication state and leaves.
+    /// </remarks>
+    public async Task<ProblemDetails?> EraseAccountAsync(string password, CancellationToken cancellationToken = default)
+    {
+        var client = httpClientFactory.CreateClient(HttpClientNames.Bff);
+
+        var response = await client.PostAsJsonAsync(
+            "bff/erase-account",
+            new EraseAccountHttpRequest { Password = password },
+            cancellationToken);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        if (response.Content.Headers.ContentType?.MediaType?.EndsWith("json", StringComparison.Ordinal) == true)
+        {
+            var problem = await response.Content
+                .ReadFromJsonAsync<ProblemDetails>(cancellationToken);
+
+            if (problem is not null)
+            {
+                return problem;
+            }
+        }
+
+        throw new HttpRequestException(
+            $"The account erasure answered {(int)response.StatusCode} without a problem document.");
+    }
+
+    /// <summary>
     /// Ends the session.
     /// </summary>
     public async Task LogoutAsync(CancellationToken cancellationToken = default)
@@ -198,6 +236,14 @@ public interface IBffSessionClient
     Task<ProblemDetails?> ResetPasswordAsync(
         ResetPasswordHttpRequest reset,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Erases the account. <see langword="null"/> means it is gone and the session with it; a
+    /// problem document is the refusal, the wrong password keyed to its field.
+    /// </summary>
+    /// <param name="password">The account's current password — the proof of intent.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    Task<ProblemDetails?> EraseAccountAsync(string password, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Ends the session.

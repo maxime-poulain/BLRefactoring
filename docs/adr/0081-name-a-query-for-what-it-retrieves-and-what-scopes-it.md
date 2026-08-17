@@ -1,6 +1,6 @@
 # 0081 — Name a query for what it retrieves and what scopes it
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0086](0086-say-current-when-the-caller-is-the-criterion.md): the command half gains the clause the caller-scoped commands were hiding — a message whose criterion is its caller says Current
 - **Amends:** [0048](0048-qualify-a-contract-before-naming-what-it-is.md)
 - **Date:** 2026-08-15
 

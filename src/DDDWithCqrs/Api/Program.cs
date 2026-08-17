@@ -52,7 +52,7 @@ builder.Services.AddMediator(configuration =>
         typeof(CreateTrainerCommand).Assembly,      // DDDWithCqrs.Application: commands + command handlers
         typeof(TrainerCreatedDomainEvent).Assembly, // Shared.Domain: domain events
         typeof(MediatorCommandDispatcher).Assembly, // DDDWithCqrs.Infrastructure: query handlers
-        typeof(PublishIntegrationEventWhenTrainerCreatedEventHandler).Assembly // Shared.Application: domain event handlers
+        typeof(PublishIntegrationEventWhenTrainerCreatedDomainEventHandler).Assembly // Shared.Application: domain event handlers
     ];
     configuration.PipelineBehaviors = [typeof(ValidationPipelineBehavior<,>), typeof(NoTrackingDuringQueryExecutionBehavior<,>)];
     configuration.ServiceLifetime = ServiceLifetime.Transient;

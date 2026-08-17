@@ -4,6 +4,7 @@ using TrainingHub.DDD.Application.Tests.Helpers;
 using TrainingHub.Shared.Application.Dtos.Trainer;
 using TrainingHub.Shared.Common.Errors;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
+using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
 using TrainingHub.Shared.Domain.Tests.Helpers;
 using Moq;
 using Xunit;
@@ -304,5 +305,49 @@ public sealed class TrainerApplicationServiceTests
 
         var errors = result.ShouldBeFailure();
         errors.Should().Contain(e => e.ErrorCode == ErrorCodes.NotFound);
+    }
+
+    // -- EraseAsync --
+
+    /// <summary>
+    /// Erase async, marks the caller for deletion, stages the delete and commits once.
+    /// </summary>
+    [Fact]
+    public async Task EraseAsync_MarksTheCallerForDeletion_StagesTheDeleteAndCommitsOnce()
+    {
+        var trainer = new TrainerBuilder().Build();
+        _fixture.GivenCaller(trainer.Id.Value);
+        _fixture.TrainerRepository
+            .Setup(r => r.GetByIdAsync(trainer.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(trainer);
+        var sut = _fixture.CreateSut();
+
+        var result = await sut.EraseAsync();
+
+        result.ShouldBeSuccess();
+        trainer.DomainEvents.Should().ContainSingle(domainEvent => domainEvent is TrainerDeletedDomainEvent,
+            "the cascade and the portrait's collector both hang off the announcement (ADR 0085)");
+        _fixture.TrainerRepository.Verify(r => r.Delete(trainer), Times.Once);
+        _fixture.UnitOfWork.Verify(
+            uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    /// Erase async, caller already gone, returns not found and deletes nothing.
+    /// </summary>
+    [Fact]
+    public async Task EraseAsync_CallerAlreadyGone_ReturnsNotFoundAndDeletesNothing()
+    {
+        _fixture.TrainerRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Trainer?)null);
+        var sut = _fixture.CreateSut();
+
+        var result = await sut.EraseAsync();
+
+        var errors = result.ShouldBeFailure();
+        errors.Should().Contain(e => e.ErrorCode == ErrorCodes.NotFound);
+        _fixture.TrainerRepository.Verify(r => r.Delete(It.IsAny<Trainer>()), Times.Never);
     }
 }

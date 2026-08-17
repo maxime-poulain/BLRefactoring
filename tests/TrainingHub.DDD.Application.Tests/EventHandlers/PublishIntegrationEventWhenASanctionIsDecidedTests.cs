@@ -36,7 +36,7 @@ public sealed class PublishIntegrationEventWhenASanctionIsDecidedTests
             trainerId,
             SuspensionReason.Create("Repeated breaches of the content policy.").ShouldBeSuccess());
 
-        var sut = new PublishIntegrationEventWhenTrainerSuspendedEventHandler(_publisher.Object);
+        var sut = new PublishIntegrationEventWhenTrainerSuspendedDomainEventHandler(_publisher.Object);
         await sut.Handle(domainEvent, CancellationToken.None);
 
         _publisher.Verify(publisher => publisher.PublishAsync(
@@ -59,7 +59,7 @@ public sealed class PublishIntegrationEventWhenASanctionIsDecidedTests
     {
         var trainerId = TrainerId.Generate();
 
-        var sut = new PublishIntegrationEventWhenTrainerReinstatedEventHandler(_publisher.Object);
+        var sut = new PublishIntegrationEventWhenTrainerReinstatedDomainEventHandler(_publisher.Object);
         await sut.Handle(new TrainerReinstatedDomainEvent(trainerId), CancellationToken.None);
 
         _publisher.Verify(publisher => publisher.PublishAsync(
@@ -87,7 +87,7 @@ public sealed class PublishIntegrationEventWhenASanctionIsDecidedTests
             TrainingTitle.Create("Advanced domain modeling").ShouldBeSuccess(),
             WithholdingReason.Create("Reported for misleading claims.").ShouldBeSuccess());
 
-        var sut = new PublishIntegrationEventWhenTrainingWithheldEventHandler(_publisher.Object);
+        var sut = new PublishIntegrationEventWhenTrainingWithheldDomainEventHandler(_publisher.Object);
         await sut.Handle(domainEvent, CancellationToken.None);
 
         _publisher.Verify(publisher => publisher.PublishAsync(

@@ -54,11 +54,18 @@ public interface ITrainerPhotoStore
     /// Deletes the bytes of a photo.
     /// </summary>
     /// <param name="trainerId">The trainer the photo belonged to.</param>
-    /// <param name="photo">The photo to delete.</param>
+    /// <param name="photoId">Which photo of theirs to delete.</param>
     /// <param name="cancellationToken">Cancels the delete.</param>
     /// <returns>A task that completes when the bytes are gone.</returns>
+    /// <remarks>
+    /// The same two fields as <see cref="FetchAsync"/>, for the reason that used to separate
+    /// them: a deleter was always something that had just taken the photo off an aggregate,
+    /// until the erasure's collector — which runs after the aggregate's rows are gone and knows
+    /// the photo only by the identity the fact carried (ADR 0085). A deleter, like a reader, may
+    /// have no aggregate at all.
+    /// </remarks>
     Task DeleteAsync(
         TrainerId trainerId,
-        TrainerPhoto photo,
+        PhotoId photoId,
         CancellationToken cancellationToken = default);
 }

@@ -158,7 +158,7 @@ Twenty-seven projects: sixteen under `src/`, eleven under `tests/`. Every one of
 |---|---|
 | `TrainingHub.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, `PageRequest`/`PagedResult`, and the cross-cutting ports `IUnitOfWork` and `ICurrentUserService`, plus the CQS marker interfaces |
 | `TrainingHub.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, and the fact ports `IUniquenessTitleChecker`, `ITrainingCounter`, `ITrainerStanding` and `ITrainerPhotoStore` |
-| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the search ports, the seventeen domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the seventeen post-commit consumers — all shared by both stacks |
+| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the search ports, the eighteen domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the nineteen post-commit consumers — all shared by both stacks |
 | `TrainingHub.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the paged-read extensions (`NewestFirst`, `ToPagedResultAsync`), the identity store, and the transactional outbox — publisher, delivery worker, dispatcher |
 | `TrainingHub.Shared.Api` | The HTTP boundary: the `*HttpRequest` and `*HttpResponse` contracts both hosts publish, their mappings to the application layer, the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, concurrency helpers |
 | `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService`, `CatalogApplicationService`, `OutboxApplicationService` |
@@ -369,7 +369,7 @@ Events carry value objects and typed identifiers, not primitives.
 | `TrainerCreatedDomainEvent` | `TrainerId`, `Name`, `Email` | A trainer is created |
 | `TrainerNameChangedDomainEvent` | `TrainerId`, old `Name`, new `Name` | Only if the name actually changed |
 | `TrainerContactEmailChangedDomainEvent` | `TrainerId`, old `Email`, new `Email` | Only if the contact email actually changed |
-| `TrainerDeletedDomainEvent` | `TrainerId` | A trainer is marked for deletion — no use case does so yet, see below |
+| `TrainerDeletedDomainEvent` | `TrainerId`, `PhotoId?` | A trainer is marked for deletion — the account erasing itself (ADR 0085). The photo's identity rides along because the post-commit collector runs after the rows are gone |
 | `TrainingCreatedDomainEvent` | `TrainingId`, `TrainerId` | A training is successfully created |
 | `TrainingEditedDomainEvent` | `TrainingId`, `TrainerId` | A training is successfully edited |
 | `TrainingTransferredDomainEvent` | `TrainingId`, former `TrainerId`, new `TrainerId` | A training changes hands — decided by the one recorded domain service (ADR 0036) |
@@ -378,25 +378,31 @@ Events carry the facts their consumers need rather than just an identifier, beca
 dispatched **before** persistence: a handler cannot reload an aggregate that is not saved yet.
 
 Their handlers live in `TrainingHub.Shared.Application/EventHandlers/` and are shared by both
-stacks:
+stacks. Each is named `{Reaction}When{Event}Handler` with the event's full type name embedded —
+so the `DomainEventHandler` suffix below is not decoration but the event's own name showing
+through, the same way every post-commit consumer ends in `IntegrationEventHandler`
+([ADR 0087](docs/adr/0087-name-a-handler-for-the-event-it-handles.md),
+`EveryHandler_IsNamedForTheEventItHandles`):
 
 | Handler | Reacts to | Effect |
 |---|---|---|
-| `PublishIntegrationEventWhenTrainerCreatedEventHandler` | `TrainerCreatedDomainEvent` | Commits `TrainerCreatedIntegrationEvent` to the outbox — the welcome email becomes the delivery worker's reaction |
-| `PublishIntegrationEventWhenTrainerContactEmailChangedEventHandler` | `TrainerContactEmailChangedDomainEvent` | Commits both addresses as `TrainerContactEmailChangedIntegrationEvent` — warning the **previous** address becomes the worker's reaction |
-| `AuditWhenTrainerNameChangedEventHandler` | `TrainerNameChangedDomainEvent` | Structured audit trail |
-| `DeleteTrainingWhenTrainerDeletedEventHandler` | `TrainerDeletedDomainEvent` | Deletes the trainer's trainings — cross-aggregate consistency without a database cascade |
-| `PublishIntegrationEventWhenTrainingCreatedEventHandler` | `TrainingCreatedDomainEvent` | Commits `TrainingCreatedIntegrationEvent` to the outbox — indexing becomes the worker's reaction |
-| `PublishIntegrationEventWhenTrainingEditedEventHandler` | `TrainingEditedDomainEvent` | Commits `TrainingEditedIntegrationEvent`, kept apart from the created fact so consumers can tell them apart |
-| `PublishIntegrationEventWhenTrainingTransferredEventHandler` | `TrainingTransferredDomainEvent` | Commits `TrainingTransferredIntegrationEvent`, both owners on it — re-indexing under the new owner becomes the worker's reaction |
+| `PublishIntegrationEventWhenTrainerCreatedDomainEventHandler` | `TrainerCreatedDomainEvent` | Commits `TrainerCreatedIntegrationEvent` to the outbox — the welcome email becomes the delivery worker's reaction |
+| `PublishIntegrationEventWhenTrainerContactEmailChangedDomainEventHandler` | `TrainerContactEmailChangedDomainEvent` | Commits both addresses as `TrainerContactEmailChangedIntegrationEvent` — warning the **previous** address becomes the worker's reaction |
+| `AuditWhenTrainerNameChangedDomainEventHandler` | `TrainerNameChangedDomainEvent` | Structured audit trail |
+| `DeleteTrainingWhenTrainerDeletedDomainEventHandler` | `TrainerDeletedDomainEvent` | Deletes the trainer's trainings — cross-aggregate consistency without a database cascade |
+| `PublishIntegrationEventWhenTrainerDeletedDomainEventHandler` | `TrainerDeletedDomainEvent` | Commits `TrainerDeletedIntegrationEvent`, the photo's identity on it — collecting the portrait's bytes becomes the worker's reaction (ADR 0085) |
+| `PublishIntegrationEventWhenTrainingCreatedDomainEventHandler` | `TrainingCreatedDomainEvent` | Commits `TrainingCreatedIntegrationEvent` to the outbox — indexing becomes the worker's reaction |
+| `PublishIntegrationEventWhenTrainingEditedDomainEventHandler` | `TrainingEditedDomainEvent` | Commits `TrainingEditedIntegrationEvent`, kept apart from the created fact so consumers can tell them apart |
+| `PublishIntegrationEventWhenTrainingTransferredDomainEventHandler` | `TrainingTransferredDomainEvent` | Commits `TrainingTransferredIntegrationEvent`, both owners on it — re-indexing under the new owner becomes the worker's reaction |
 
-`Trainer.MarkForDeletion` and the trainer-deletion handler above have no caller in production,
-deliberately: the API exposes no way to delete a trainer (see [Security](#security)). What the
-aggregate states is the rule — a trainer does not disappear without their trainings — and the rule
-holds whoever ends up triggering it. The behavior is covered by `DomainEventPipelineTests`, which
-drives it through the host's own services.
+`Trainer.MarkForDeletion` is reached by the account erasing itself, and by nothing else: the
+administration holds no such door, deliberately (see [Security](#security)). What the aggregate
+states is the rule — a trainer does not disappear without their trainings — and the rule holds
+whoever triggers it; erasure is its one caller ([ADR 0085](docs/adr/0085-let-the-account-erase-itself-trainings-and-all.md)).
+The cascade's behavior is covered by `DomainEventPipelineTests`, which drives it through the
+host's own services, and the whole erasure by `AccountErasureTests` on both hosts.
 
-Six of the seventeen handlers act inside the transaction — ADR 0002's *domain reactions* — and eleven
+Six of the eighteen handlers act inside the transaction — ADR 0002's *domain reactions* — and twelve
 translate the domain event into an integration event and commit it to the transactional outbox
 (see [ADR 0024](docs/adr/0024-publish-facts-not-intents-and-version-them-in-the-envelope.md) and
 [the outbox section](#domain-events-and-the-unit-of-work)). After the commit, the outbox delivery
@@ -447,13 +453,24 @@ family are named questions an outer layer asks an adapter, not messages
 ([ADR 0081](docs/adr/0081-name-a-query-for-what-it-retrieves-and-what-scopes-it.md),
 `EveryQuery_IsNamedForWhatItRetrieves`).
 
+One criterion is spelled on both halves even though no message ever carries it: the caller. A
+message whose handler resolves the trainer through `ICurrentUserService` and which declares no
+identifier of its own says `Current` — `EraseCurrentTrainerCommand`,
+`SetCurrentTrainerPhotoCommand`, `GetTrainingsByCurrentTrainerQuery` — because nothing but the
+name can say whom it acts on. A message carrying an explicit identifier never says it:
+`SuspendTrainerCommand` acts on whoever it names, and adding `Current` to it would describe one of
+its call sites rather than the message
+([ADR 0086](docs/adr/0086-say-current-when-the-caller-is-the-criterion.md),
+`EveryMessageActingForItsCaller_SaysCurrent`).
+
 | Use case | `src/DDD` | `src/DDDWithCqrs` | Handler project |
 |---|---|---|---|
 | Create trainer | `TrainerApplicationService.CreateAsync` | `CreateTrainerCommand` | Application |
-| Edit own profile | `TrainerApplicationService.EditAsync` | `EditTrainerCommand` | Application |
+| Edit own profile | `TrainerApplicationService.EditAsync` | `EditCurrentTrainerCommand` | Application |
+| Erase own account | `TrainerApplicationService.EraseAsync` | `EraseCurrentTrainerCommand` | Application |
 | Read own profile | `TrainerApplicationService.GetByIdAsync` | `GetTrainerByIdQuery` | Infrastructure |
-| Publish or replace a portrait | `TrainerApplicationService.SetPhotoAsync` | `SetTrainerPhotoCommand` | Application |
-| Remove a portrait | `TrainerApplicationService.RemovePhotoAsync` | `RemoveTrainerPhotoCommand` | Application |
+| Publish or replace a portrait | `TrainerApplicationService.SetPhotoAsync` | `SetCurrentTrainerPhotoCommand` | Application |
+| Remove a portrait | `TrainerApplicationService.RemovePhotoAsync` | `RemoveCurrentTrainerPhotoCommand` | Application |
 | View a trainer's portrait | `TrainerApplicationService.GetPhotoAsync` | `GetTrainerPhotoByTrainerIdQuery` | Infrastructure |
 | Create training | `TrainingApplicationService.CreateAsync` | `CreateTrainingCommand` | Application |
 | Edit training | `TrainingApplicationService.EditAsync` | `EditTrainingCommand` | Application |
@@ -466,6 +483,15 @@ The read paths differ by design: the layered stack loads aggregates through repo
 them, while the CQRS stack projects straight from `TrainingContext` into DTOs with
 `IQueryable` expressions, under a pipeline behavior that switches change tracking off for
 queries and restores it afterwards.
+
+A handler is also the last link of the execution it belongs to. A command handler executes the
+command it receives and never dispatches another, and a domain event handler — reacting inside the
+transaction, before the commit — never dispatches one either: sending a command is a decision made
+above the handler, by a controller today and perhaps by an integration event consumer or a
+scheduler tomorrow ([ADR 0046](docs/adr/0046-refuse-the-empty-identifier-at-every-entry-point.md)
+names them), which is why no handler holds `ICommandDispatcher` — nor `IMediator` or `ISender`,
+the library door only the dispatch adapters may open (`NoCommandHandler_TakesADispatcher`,
+`NoDomainEventHandler_TakesADispatcher`).
 
 The two reads where they do not differ are the public catalog's. `CatalogApplicationService`
 and `SearchCatalogQueryHandler` both call `ITrainingSearchQuery`, because what usually separates
@@ -876,6 +902,7 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 | `POST` | `/Auth/login` | `200` with a JWT, or `401` — the same answer for an unknown username, a wrong password and a locked-out account |
 | `POST` | `/Auth/forgot-password` | **Anonymous.** `202` always — known address and unknown alike, because the lookup happens later, in the outbox worker, where nobody can time it. The reset link goes out by email when there is an account to send it to, and to nobody's knowledge when there is not ([ADR 0084](docs/adr/0084-reset-a-forgotten-password-with-a-credential-the-database-cannot-leak.md)) |
 | `POST` | `/Auth/reset-password` | **Anonymous.** Redeems the emailed link against a new password. `204` on success; `400` keyed by field — one fixed sentence on `Token` for every way a link can be dead (unknown address, wrong token, expired, spent, superseded), Identity's own words on `Password` when the link was fine and the password was not, in which case the link deliberately survives |
+| `POST` | `/Auth/erase-account` | Erases the caller's account: the trainer, their trainings and the Identity account leave in one transaction, and the portrait's bytes follow through the outbox. The caller proves intent with their current password — a live session is not enough — and a suspension does not bar this one door. `204`; `400` keyed on `Password` when it is wrong; `401` ([ADR 0085](docs/adr/0085-let-the-account-erase-itself-trainings-and-all.md)) |
 | `GET` | `/Trainer/me` | The caller's own profile, with an `ETag`. `200`, `404` |
 | `PUT` | `/Trainer/me` | Requires `If-Match`. `200`, `400`, `404`, `412`, `428` |
 | `GET` | `/Trainer/{id}/photo` | The trainer's portrait, with a strong `ETag` and a year-long `max-age`. Not `immutable`: this address does not name the photo, so its bytes change when the owner replaces it and a stale cache has to revalidate (ADR 0063). `200`, `304`, `404` |
@@ -904,7 +931,7 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 | `GET` | `/Catalog/trainers/{trainerId:guid}` | **Anonymous.** One offering trainer's public page: first name, last name, bio, the sanitized portrait's identity, and the offered trainings as catalog rows, alphabetically. Answers if and only if the search index holds at least one entry for this trainer — offered or invisible, so a person nobody registered, a suspended one and one with nothing published are the same `404`. `200`, `400`, `404` ([ADR 0070](docs/adr/0070-open-a-trainers-public-page.md)) |
 | `GET` | `/Catalog/trainers/{trainerId:guid}/photo/{photoId:guid}` | **Anonymous.** The same sanitized portrait as the per-training address, at the profile's own: the trainer and the photo, which is what that page has in hand. The same four refusals in one `404` and the same forever-cache — the identity in the path is what makes `immutable` true (ADR 0063, ADR 0070). `200`, `304`, `400`, `404` |
 
-Thirty-two endpoints, and not one of them lets a trainer reach what another trainer owns. The eight
+Thirty-three endpoints, and not one of them lets a trainer reach what another trainer owns. The eight
 under `/Administration` act on something that is not the caller's by design and are the only eight
 that do — behind a role that is granted by hand and by no endpoint at all (ADR 0051). They are
 grouped by the authority they exercise rather than by the resource they act on, which is what that
@@ -954,11 +981,12 @@ and it was deleted rather than left to suggest a status the API cannot produce. 
 nothing is being edited against a version the caller read, so a lost race answers `409` rather than
 a `412` no precondition was asked for.
 
-Trainers are created only through registration — there is no `POST /Trainer` — and no endpoint
-deletes one. Removing a trainer is an administrative decision, and the role entitled to it now
-exists (ADR 0051) while the endpoint still does not: what the administration got is suspension,
-which is reversible, and a deletion is not. Nothing is exposed rather than something irreversible
-exposed early. The two endpoints acting
+Trainers are created only through registration — there is no `POST /Trainer` — and the one door
+out is the account's own: `POST /Auth/erase-account`, behind the caller's password
+([ADR 0085](docs/adr/0085-let-the-account-erase-itself-trainings-and-all.md)). The administration
+still deletes nobody, and that is the decision rather than a gap: what it holds is suspension,
+which is reversible, and erasing a trainer is a right the account holds, not a sanction the
+administration applies. The two endpoints acting
 on a trainer's own profile are addressed as `me` rather than by identifier, which is also where
 registration's `Location` now points: the address of what was created, from its creator's side.
 
@@ -972,7 +1000,7 @@ what made the first of them ambiguous.
 
 ### Health
 
-Beside the thirteen operations, every host answers for its own health at two anonymous endpoints —
+Beside the API's own operations, every host answers for its own health at two anonymous endpoints —
 anonymous because their consumers are orchestrators and probes that hold no token, and because the
 body carries nothing worth one:
 
@@ -1333,12 +1361,12 @@ The two filters are exact inverses, so between them every test runs exactly once
 | Project | Scope |
 |---|---|
 | `TrainingHub.Shared.Domain.Tests` | Aggregates, value objects, typed identifiers, `Result`, specifications, the page vocabulary's bounds and arithmetic |
-| `TrainingHub.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers — including the eleven that translate a domain event into an integration event — and the seventeen post-commit consumers |
+| `TrainingHub.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers — including the twelve that translate a domain event into an integration event — and the nineteen post-commit consumers |
 | `TrainingHub.DDDWithCqrs.Tests` | Command handlers, validators, pipeline behaviors |
 | `TrainingHub.Shared.Api.Tests` | Entity-tag encoding and parsing, the guard that keeps client generation away from a database, what the unhandled-exception handler is allowed to tell a caller, and the transformer that describes an uploaded file inline so a client generator recognizes it as one |
 | `TrainingHub.Shared.Infrastructure.Tests` | The auditable-entities interceptor — that it stamps, and reads the clock once per entity —, the outbox publisher observed through the change tracker, the serializer's round trip for every registered event, the dispatcher held to its routing table, the envelope's state transitions, the bucket bootstrapper, mostly for when it does nothing, and — over SQLite rather than a substitute — the names a page of trainings asks for by identifier, and the reset credential's store: only a digest at rest, one row per account, a delete that consumes exactly once and refuses past the lifetime (ADR 0084) |
-| `TrainingHub.Blazor.Bff.Tests` | The backend for frontend over HTTP: the cookie's flags and the expiry inside its ticket — unprotected and compared to the JWT's own —, the forgery guard on every method and origin attestation it distinguishes, the token attached to a forwarded call, the refusal to start without the API's address, a denial rewritten as a status code, what signing out revokes and deletes, and the recovery door: both endpoints forwarding to the API, the forgery header demanded though they are anonymous, the per-visitor window's refusal that never reaches the API, and the problem document passed through on a refused reset (ADR 0084) |
-| `TrainingHub.Blazor.Client.Tests` | The front end, rendered in-process with bUnit: the sign-in page's refusal to redirect anywhere but a path of its own origin, the deep link a redirect to sign-in preserves, the header that makes a cookie-authenticated call unusable as a forgery, an unreachable BFF read as anonymous rather than as an exception, the per-field messages read out of a problem document, the training form's bounds tied to the ones the generated contract publishes, and — on the profile page — the size ceiling that refuses a file before it is uploaded, the image address that defeats a year-long cache, and the server's refusal shown in its own words. The administrative pages are here too: the coordinates each listing owns and the criteria it forwards unchanged, the reason a dialog collected reaching the call that carries it, the lifting that asks for no reason at all, and the training row that names its owner rather than showing an identifier. And the suspended trainer's space: the banner carrying the administrator's words, and every write control kept on screen and disabled — asserted together, because a control that is gone teaches nothing (ADR 0057), plus the withheld training its owner reads the reason for and is offered no lifecycle button on. The user menu opens onto the doors its caller owns — the trainer's by claim, the administrator's by role — names the person the token's claims name, and falls back to initials when there is no photo to show (ADR 0074); the unpublish dialog is rendered for its own copy — the one ADR 0050 rewrote — rather than only substituted. And the administrator's own path: signing in lands them on the administration rather than on a trainer's dashboard they have no standing on, a trainer's route reached from inside the application sends them there too, the administration's home reads its three counts off lists the API already publishes and shows a dash for the one it could not read, and the standing source asks the API nothing at all for an account that is nobody's trainer — which is one refused call per session that no longer happens (ADR 0078). And the recovery pages: the forgot-password page held to one generic confirmation whatever the address, the reset page that renders an explanation rather than a form when its token is missing, the token bound from the address bar and the address typed into the form, and the refusal that keeps the visitor where the retry is (ADR 0084) |
+| `TrainingHub.Blazor.Bff.Tests` | The backend for frontend over HTTP: the cookie's flags and the expiry inside its ticket — unprotected and compared to the JWT's own —, the forgery guard on every method and origin attestation it distinguishes, the token attached to a forwarded call, the refusal to start without the API's address, a denial rewritten as a status code, what signing out revokes and deletes, and the recovery door: both endpoints forwarding to the API, the forgery header demanded though they are anonymous, the per-visitor window's refusal that never reaches the API, and the problem document passed through on a refused reset (ADR 0084). And the erasure door: the session's own token attached by hand to the one call this host makes as somebody, the cookie deleted with the account on the 204, the refusal passed through with the session kept, and the anonymous or forged erasure that never reaches the API (ADR 0085) |
+| `TrainingHub.Blazor.Client.Tests` | The front end, rendered in-process with bUnit: the sign-in page's refusal to redirect anywhere but a path of its own origin, the deep link a redirect to sign-in preserves, the header that makes a cookie-authenticated call unusable as a forgery, an unreachable BFF read as anonymous rather than as an exception, the per-field messages read out of a problem document, the training form's bounds tied to the ones the generated contract publishes, and — on the profile page — the size ceiling that refuses a file before it is uploaded, the image address that defeats a year-long cache, and the server's refusal shown in its own words. The administrative pages are here too: the coordinates each listing owns and the criteria it forwards unchanged, the reason a dialog collected reaching the call that carries it, the lifting that asks for no reason at all, and the training row that names its owner rather than showing an identifier. And the suspended trainer's space: the banner carrying the administrator's words, and every write control kept on screen and disabled — asserted together, because a control that is gone teaches nothing (ADR 0057), plus the withheld training its owner reads the reason for and is offered no lifecycle button on. The user menu opens onto the doors its caller owns — the trainer's by claim, the administrator's by role — names the person the token's claims name, and falls back to initials when there is no photo to show (ADR 0074); the unpublish dialog is rendered for its own copy — the one ADR 0050 rewrote — rather than only substituted. And the administrator's own path: signing in lands them on the administration rather than on a trainer's dashboard they have no standing on, a trainer's route reached from inside the application sends them there too, the administration's home reads its three counts off lists the API already publishes and shows a dash for the one it could not read, and the standing source asks the API nothing at all for an account that is nobody's trainer — which is one refused call per session that no longer happens (ADR 0078). And the recovery pages: the forgot-password page held to one generic confirmation whatever the address, the reset page that renders an explanation rather than a form when its token is missing, the token bound from the address bar and the address typed into the form, and the refusal that keeps the visitor where the retry is (ADR 0084). And the account's own exit: the danger zone a suspension does not disable, the dialog that collects the password and closes with it or with nothing, the password reaching the BFF as typed, the signed-out interface leaving for the catalog, and the wrong password said in the API's own words (ADR 0085) |
 | `TrainingHub.DDD.Api.IntegrationTests` | The layered host, HTTP end to end against a real SQL Server and a real object store |
 | `TrainingHub.DDDWithCqrs.Api.IntegrationTests` | The CQRS host, same treatment |
 | `TrainingHub.Architecture.Tests` | The decisions themselves: the dependency rule, the CQRS shape, the modeling conventions, and a rule that fails when a record is defended by nothing — see [ADR 0013](docs/adr/0013-make-every-record-answer-to-a-test.md) |

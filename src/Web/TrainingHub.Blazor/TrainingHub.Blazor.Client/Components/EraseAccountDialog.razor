@@ -1,0 +1,56 @@
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <MudText>
+            Erasing the account removes your profile, your trainings and your portrait,
+            <strong>immediately and for good</strong>. Your username and email address become free
+            for anyone to register with.
+        </MudText>
+        @* The password is the proof of intent, not decoration: a session outlives an unlocked
+           device by up to sixty minutes, and this is the one action nobody can undo afterwards.
+           The API checks it (ADR 0085); this field is only how it gets there. *@
+        <MudForm @ref="_form" @bind-IsValid="_isValid" Class="mt-4">
+            <MudTextField @bind-Value="_password"
+                          Label="Current password"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Required="true"
+                          RequiredError="Your password is required"
+                          Immediate="true"
+                          HelperText="Erasure is final, so it asks for more than an open tab." />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton Color="Color.Error"
+                   Variant="Variant.Filled"
+                   Disabled="@(!_isValid)"
+                   OnClick="Confirm">
+            Erase account
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudForm _form = null!;
+    private bool _isValid;
+    private string _password = string.Empty;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Confirm()
+    {
+        // Validated once more here and not only through the disabled button: the button's state
+        // follows the form's, and a form that has never been touched has never been validated.
+        await _form.ValidateAsync();
+
+        if (_isValid)
+        {
+            MudDialog.Close(DialogResult.Ok(_password));
+        }
+    }
+}

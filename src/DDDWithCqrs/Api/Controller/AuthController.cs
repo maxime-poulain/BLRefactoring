@@ -1,4 +1,6 @@
 using TrainingHub.DDDWithCqrs.Api.Mappings;
+using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Erase;
+using TrainingHub.Shared.Application.IntegrationEvents;
 using TrainingHub.Shared.Common.Results;
 using TrainingHub.Shared.CQS;
 using TrainingHub.Shared.Api.Contracts.Auth;
@@ -9,17 +11,18 @@ using Microsoft.AspNetCore.Identity;
 namespace TrainingHub.DDDWithCqrs.Api.Controller;
 
 /// <summary>
-/// Authentication endpoints of the CQRS stack. The registration and login flows
-/// live in <see cref="AuthControllerBase"/>; this controller only supplies how
-/// the trainer is created, through the command dispatcher.
+/// Account endpoints of the CQRS stack. The registration, login, recovery and erasure flows
+/// live in <see cref="AuthControllerBase"/>; this controller only supplies how the trainer is
+/// created and erased, through the command dispatcher.
 /// </summary>
 public sealed class AuthController(
     UserManager<IdentityUser<Guid>> userManager,
     SignInManager<IdentityUser<Guid>> signInManager,
     ITokenService tokenService,
     IPasswordRecoveryService passwordRecovery,
+    IIntegrationEventPublisher integrationEventPublisher,
     ICommandDispatcher commandDispatcher)
-    : AuthControllerBase(userManager, signInManager, tokenService, passwordRecovery)
+    : AuthControllerBase(userManager, signInManager, tokenService, passwordRecovery, integrationEventPublisher)
 {
     /// <inheritdoc />
     /// <remarks>
@@ -40,4 +43,8 @@ public sealed class AuthController(
             () => Result<Guid>.Success(command.TrainerId),
             Result<Guid>.Failure);
     }
+
+    /// <inheritdoc />
+    protected override async Task<Result> EraseTrainerAsync(CancellationToken cancellationToken = default) =>
+        await commandDispatcher.DispatchAsync(new EraseCurrentTrainerCommand(), cancellationToken);
 }

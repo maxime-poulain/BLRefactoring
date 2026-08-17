@@ -1,7 +1,10 @@
+using System.Reflection;
 using System.Text.RegularExpressions;
 using FluentValidation;
 using TrainingHub.Architecture.Tests.Framework;
+using TrainingHub.Shared;
 using TrainingHub.Shared.CQS;
+using TrainingHub.Shared.Common;
 using TrainingHub.Shared.Common.Pagination;
 using TrainingHub.Shared.Common.Results;
 using Xunit;
@@ -234,6 +237,69 @@ public sealed partial class MessagingRules
     ];
 
     /// <summary>
+    /// Every message acting for its caller, says Current.
+    /// </summary>
+    /// <remarks>
+    /// The population is semantic rather than a string match, and both halves of it are load-bearing.
+    /// A handler taking <c>ICurrentUserService</c> says the caller matters; the message declaring no
+    /// identifier says the caller is the <em>only</em> way to know whom the message acts on — no call
+    /// site supplies it, so no call site can supply it wrongly, and nothing but the name can say so.
+    /// One signal alone selects the wrong set: <c>SuspendTrainerCommand</c>'s handler knows the
+    /// caller and acts on the trainer it carries, and <c>CreateTrainingCommand</c> assigns the
+    /// caller as owner while carrying the identifier of what it creates — both are excluded by the
+    /// identifier they declare, and adding Current to either would move the claim from the message
+    /// to one of its call sites (ADR 0086).
+    /// <para>
+    /// The inverse clause keeps the word honest: a message may not borrow Current while carrying an
+    /// identifier a call site fills, or while its handler never asks who is calling.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0086",
+        "a message whose criterion is its caller says Current, and a message that carries an " +
+        "explicit identifier never does")]
+    public void EveryMessageActingForItsCaller_SaysCurrent()
+    {
+        var handlerByMessage = CqrsTypes
+            .Select(type => (Handler: type,
+                Contract: Closed(type, typeof(ICommandHandler<,>)) ?? Closed(type, typeof(IQueryHandler<,>))))
+            .Where(pair => pair.Contract is not null)
+            .ToDictionary(pair => pair.Contract!.GetGenericArguments()[0], pair => pair.Handler);
+
+        var messages = CqrsTypes
+            .Where(type => typeof(ICommandBase).IsAssignableFrom(type) || typeof(IQuery).IsAssignableFrom(type))
+            .Selected("command or query")
+            .Select(message => (
+                Message: message,
+                ActsForItsCaller: handlerByMessage.TryGetValue(message, out var handler)
+                    && handler.GetConstructors()
+                        .SelectMany(constructor => constructor.GetParameters())
+                        .Any(parameter => parameter.ParameterType == typeof(ICurrentUserService))
+                    && Array.TrueForAll(
+                        message.GetProperties(),
+                        property => property.PropertyType != typeof(Guid))))
+            .ToList();
+
+        messages
+            .Where(entry => entry.ActsForItsCaller
+                            && !entry.Message.Name.Contains("Current", StringComparison.Ordinal))
+            .Select(entry =>
+                $"{entry.Message.Name} carries no identifier and its handler resolves the caller " +
+                "through ICurrentUserService: the caller is its criterion, and nothing but the name " +
+                "can say so. Say Current — the way GetTrainingsByCurrentTrainerQuery does")
+            .ShouldHold();
+
+        messages
+            .Where(entry => !entry.ActsForItsCaller
+                            && entry.Message.Name.Contains("Current", StringComparison.Ordinal))
+            .Select(entry =>
+                $"{entry.Message.Name} says Current, but either it carries an identifier a call " +
+                "site fills or its handler never asks who is calling. The word claims the caller " +
+                "is the scope; here something else is")
+            .ShouldHold();
+    }
+
+    /// <summary>
     /// Every command, has exactly one validator.
     /// </summary>
     [Fact]
@@ -397,6 +463,97 @@ public sealed partial class MessagingRules
                 .Where(parameter => parameter.ParameterType.Name.EndsWith("Context", StringComparison.Ordinal))
                 .Select(parameter => $"{handler.FullName} takes {parameter.ParameterType.Name}"))
             .ShouldHold();
+
+    /// <summary>
+    /// Every way this codebase has of submitting a message to be handled, spelled as types.
+    /// </summary>
+    /// <remarks>
+    /// The repository's own door and the library's: <c>IMediator</c> and <c>ISender</c> can send
+    /// any command directly, which is why only the dispatch adapters hold them.
+    /// <c>IQueryDispatcher</c> is deliberately absent — it cannot submit a command, and the two
+    /// rules below forbid submitting, not reading.
+    /// </remarks>
+    private static readonly Type[] WaysToDispatch =
+        [typeof(ICommandDispatcher), typeof(Mediator.IMediator), typeof(Mediator.ISender)];
+
+    /// <summary>
+    /// No command handler, takes a dispatcher.
+    /// </summary>
+    /// <remarks>
+    /// A handler is the last link in a command's execution. A command sent from inside one
+    /// re-enters the whole pipeline — validation, a second unit of work — in the middle of the
+    /// first, and the workflow it starts is written nowhere a caller can see. Sending is the
+    /// caller's decision: a controller's today, perhaps an integration event consumer's or a
+    /// scheduler's tomorrow (ADR 0046) — never the handler's. Judged on real dependencies rather
+    /// than source text, so a rename or an alias changes nothing this rule reads.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("README#use-cases",
+        "a handler executes the command it receives and never dispatches another; sending is its " +
+        "caller's decision, made above it")]
+    public void NoCommandHandler_TakesADispatcher() =>
+        CqrsTypes
+            .Where(type => Implements(type, typeof(ICommandHandler<,>)))
+            .Selected("command handler")
+            .SelectMany(handler => Dependencies(handler)
+                .Where(WaysToDispatch.Contains)
+                .Select(dependency =>
+                    $"{handler.Name} takes {dependency.Name}. A handler is the last link in a " +
+                    "command's execution: it executes the command it receives, and sending " +
+                    "another is its caller's decision, made above it"))
+            .ShouldHold();
+
+    /// <summary>
+    /// No domain event handler, takes a dispatcher.
+    /// </summary>
+    /// <remarks>
+    /// Stricter than the command handlers' case, because of when it runs: a domain event handler
+    /// reacts inside the transaction, before the commit (ADR 0002), so a command dispatched from
+    /// one re-enters the pipeline in the middle of a unit of work that has not decided yet.
+    /// <para>
+    /// An integration event consumer is deliberately outside this rule. It runs after the commit,
+    /// and ADR 0046 already counts it among the dispatcher's possible callers — post-commit
+    /// orchestration by command is a future this repository has reserved, and closing it would be
+    /// a new decision rather than this one.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("README#use-cases",
+        "a domain event handler reacts inside the transaction and never dispatches a command; " +
+        "post-commit orchestration belongs to the callers ADR 0046 names")]
+    public void NoDomainEventHandler_TakesADispatcher() =>
+        Solution.Backend
+            .SelectMany(assembly => assembly.DeclaredTypes())
+            .Where(type => type is { IsInterface: false, IsAbstract: false })
+            .Where(type => Implements(type, typeof(IDomainEventHandler<>)))
+            .Selected("domain event handler")
+            .SelectMany(handler => Dependencies(handler)
+                .Where(WaysToDispatch.Contains)
+                .Select(dependency =>
+                    $"{handler.Name} takes {dependency.Name}. A domain event handler runs inside " +
+                    "the transaction: a command dispatched from it re-enters the pipeline " +
+                    "mid-commit, and the workflow it starts is visible to no caller"))
+            .ShouldHold();
+
+    /// <summary>
+    /// What a type depends on: constructor parameters, declared fields — primary-constructor
+    /// captures included — and declared properties, looking through one level of generics so a
+    /// dependency wrapped in <c>Lazy&lt;&gt;</c> or <c>Func&lt;&gt;</c> is still the dependency.
+    /// </summary>
+    private static IEnumerable<Type> Dependencies(Type handler) =>
+        handler.GetConstructors()
+            .SelectMany(constructor => constructor.GetParameters())
+            .Select(parameter => parameter.ParameterType)
+            .Concat(handler
+                .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                .Select(field => field.FieldType))
+            .Concat(handler
+                .GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                .Select(property => property.PropertyType))
+            .SelectMany(dependency => dependency.IsGenericType
+                ? dependency.GetGenericArguments().Prepend(dependency)
+                : new[] { dependency })
+            .Distinct();
 
     /// <summary>
     /// Every use case, has its own folder.

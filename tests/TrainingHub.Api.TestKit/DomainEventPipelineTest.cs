@@ -31,7 +31,7 @@ namespace TrainingHub.Api.TestKit;
 /// <para>
 /// The trainer-deletion cascade remains the sharpest available probe: no foreign key cascades
 /// <c>Trainer</c> to <c>Training</c>, deliberately, so a training that vanishes can only have been
-/// removed by <c>DeleteTrainingWhenTrainerDeletedEventHandler</c> — which means the event was
+/// removed by <c>DeleteTrainingWhenTrainerDeletedDomainEventHandler</c> — which means the event was
 /// collected from the aggregate, published, and its staged deletions swept into the same
 /// transaction.
 /// </para>

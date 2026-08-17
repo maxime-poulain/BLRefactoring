@@ -101,10 +101,11 @@ trainers because it is never shown one.
 `TrainerCreatedIntegrationEvent`, `TrainerContactEmailChangedIntegrationEvent`,
 `TrainerSuspendedIntegrationEvent`, `TrainerReinstatedIntegrationEvent`,
 `TrainingWithheldIntegrationEvent`, `TrainerContactedIntegrationEvent`,
-`PasswordResetRequestedIntegrationEvent` and `PasswordChangedIntegrationEvent`, committed to the
-outbox by eight producers — six policies in `Shared.Application/EventHandlers/`, and two flows
-whose endpoints commit their own fact, the contact message and the account recovery (ADR 0002,
-ADR 0024, ADR 0056, ADR 0082, ADR 0084).
+`PasswordResetRequestedIntegrationEvent`, `PasswordChangedIntegrationEvent` and
+`AccountErasedIntegrationEvent`, committed to the
+outbox by nine producers — six policies in `Shared.Application/EventHandlers/`, and three flows
+whose endpoints commit their own fact, the contact message, the account recovery and the account's
+erasure (ADR 0002, ADR 0024, ADR 0056, ADR 0082, ADR 0084, ADR 0085).
 A second port sits beside the sender for the three sanction notices, `ITrainerAccountQuery` —
 one of the three read ports in `Shared.Application/Queries/`, and the only one that opens two
 stores. Those notices are addressed to the account rather than to the published contact address,
@@ -199,6 +200,12 @@ overwrite, and would put that ordering out of reach of everyone who called it. S
 The key layout — `trainers/{trainerId}/{photoId}` — belongs to the third layer and to nothing above
 it. An architecture rule holds the claim that exactly one project in the solution has ever heard of
 the AWS SDK.
+
+The port's newest caller is the only post-commit one: the erasure's collector. Its fact,
+`TrainerDeletedIntegrationEvent`, carries the photo's identity precisely because the rows that
+could answer it are gone by delivery time, and the delivery worker deletes the bytes *after* the
+transaction that removed the trainer has committed — the outbox retries what a cleanup between
+commit and crash would orphan forever (ADR 0085).
 
 ---
 
