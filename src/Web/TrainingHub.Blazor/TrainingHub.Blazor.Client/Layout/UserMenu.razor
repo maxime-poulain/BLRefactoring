@@ -3,6 +3,7 @@
 @using TrainingHub.Blazor.Client.Infrastructure
 @inject ITrainerPortraitSource PortraitSource
 @inject IBffSessionClient SessionClient
+@inject ISnackbar Snackbar
 @inject IAuthenticationStateNotifier AuthenticationNotifier
 @inject NavigationManager NavigationManager
 
@@ -123,7 +124,20 @@
     {
         // Signing out is the BFF's business: it drops the cookie, and with it the only copy of the
         // token. There is nothing left in the browser to clear. See ADR 0009.
-        await SessionClient.LogoutAsync();
+        try
+        {
+            await SessionClient.LogoutAsync();
+        }
+        catch (Exception exception)
+        {
+            // A failed sign-out leaves the session alive, and pretending otherwise would strand a
+            // person who believes they left. Say so and stay; the exception is for the console.
+            // An expired session is not this case — LogoutAsync already counts its 401 a success.
+            Console.Error.WriteLine(exception);
+            Snackbar.Add("Sign-out failed. Try again in a moment.", Severity.Error);
+            return;
+        }
+
         AuthenticationNotifier.NotifyAuthenticationChanged();
         NavigationManager.NavigateTo("/login");
     }

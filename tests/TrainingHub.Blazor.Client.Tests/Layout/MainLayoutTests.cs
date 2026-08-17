@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Components;
 using AwesomeAssertions;
 using TrainingHub.Blazor.Client.Authorization;
 using Bunit;
@@ -304,4 +305,44 @@ public sealed class MainLayoutTests : ComponentTest
 
     private static IReadOnlyList<string?> Links(IRenderedComponent<MainLayout> layout) =>
         [.. layout.FindAll("a").Select(anchor => anchor.GetAttribute("href"))];
+
+    /// <summary>
+    /// Signing out from the menu, the BFF refused, says so and stays signed in.
+    /// </summary>
+    /// <remarks>
+    /// A failed sign-out leaves the session alive, and pretending otherwise would strand a person
+    /// who believes they left: nothing is announced, nobody is navigated, and the sentence on
+    /// screen is the page's own rather than the exception's.
+    /// </remarks>
+    [Fact]
+    public void SigningOutFromTheMenu_TheBffRefused_SaysSoAndStaysSignedIn()
+    {
+        // Arrange
+        var session = new Mock<IBffSessionClient>();
+        session
+            .Setup(client => client.LogoutAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("bff/logout answered 500"));
+        Services.AddSingleton(session.Object);
+
+        var notifier = new Mock<IAuthenticationStateNotifier>();
+        Services.AddSingleton(notifier.Object);
+
+        this.AddAuthorization().SetAuthorized("alice");
+
+        var layout = Render<MainLayout>();
+        layout.Find("button[aria-label='Account menu']").Click();
+
+        // Act
+        layout.WaitForAssertion(() => layout.FindAll(".mud-menu-item")
+            .Should().Contain(item => item.TextContent.Contains("Sign out", StringComparison.Ordinal)));
+        layout.FindAll(".mud-menu-item")
+            .Single(item => item.TextContent.Contains("Sign out", StringComparison.Ordinal))
+            .Click();
+
+        // Assert
+        layout.WaitForAssertion(() => Shown().Should().ContainSingle()
+            .Which.Message.Should().Be("Sign-out failed. Try again in a moment."));
+        notifier.Verify(n => n.NotifyAuthenticationChanged(), Times.Never);
+        Services.GetRequiredService<NavigationManager>().Uri.Should().NotEndWith("/login");
+    }
 }
