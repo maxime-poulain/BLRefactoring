@@ -77,11 +77,13 @@ public static class AdministrationFailures
         catch (ApiException<ProblemDetails> exception)
         {
             // A 409 lands here too — the state was already the one being asked for — and the
-            // server's own sentence says so better than anything this page could invent. So does
-            // the 400 a reason the domain refuses produces.
-            snackbar.Add(
-                exception.Result.Detail ?? exception.Result.Title ?? "The request was rejected.",
-                Severity.Error);
+            // server's own sentences say so better than anything this page could invent. So does
+            // the 400 a reason the domain refuses produces, whichever envelope carried it.
+            foreach (var message in ProblemDetailsMessages.Read(exception.Result, "The request was rejected."))
+            {
+                snackbar.Add(message, Severity.Error);
+            }
+
             return AdministrationOutcome.Refused;
         }
         catch (ApiException exception) when (exception.StatusCode == StatusForbidden)
@@ -123,9 +125,11 @@ public static class AdministrationFailures
         switch (exception)
         {
             case ApiException<ProblemDetails> refused:
-                snackbar.Add(
-                    refused.Result.Detail ?? refused.Result.Title ?? "The request was rejected.",
-                    Severity.Error);
+                foreach (var message in ProblemDetailsMessages.Read(refused.Result, "The request was rejected."))
+                {
+                    snackbar.Add(message, Severity.Error);
+                }
+
                 break;
 
             case ApiException:

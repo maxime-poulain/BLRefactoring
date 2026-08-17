@@ -1,8 +1,10 @@
 using AwesomeAssertions;
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
+using MudBlazor;
 using Moq;
 using TrainingHub.Blazor.Client.Pages.Trainings;
+using TrainingHub.Blazor.Client.Tests.Infrastructure;
 using TrainingHub.GeneratedClients;
 using Xunit;
 
@@ -40,7 +42,7 @@ public sealed class CreateTrainingTests : ComponentTest
         // Arrange
         _trainingClient
             .Setup(client => client.GetTrainingByIdAsync(It.IsAny<Guid>()))
-            .ThrowsAsync(Unreachable());
+            .ThrowsAsync(ApiExceptions.Unreachable());
 
         // Act
         Render<CreateTraining>(parameters => parameters.Add(page => page.Id, Guid.NewGuid()));
@@ -60,7 +62,7 @@ public sealed class CreateTrainingTests : ComponentTest
         _trainingClient
             .Setup(client => client.UpdateTrainingAsync(
                 It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<EditTrainingHttpRequest>()))
-            .ThrowsAsync(Unreachable());
+            .ThrowsAsync(ApiExceptions.Unreachable());
 
         var page = RenderPrefilled();
 
@@ -132,8 +134,72 @@ public sealed class CreateTrainingTests : ComponentTest
             .Single(button => button.TextContent.Contains("Save Changes", StringComparison.Ordinal))
             .Click();
 
-    /// <summary>The bare failure the generated client throws when no response ever arrived.</summary>
-    private static ApiException Unreachable() => new(
-        "The HTTP status code of the response was not expected (503).", 503, "",
-        new Dictionary<string, IEnumerable<string>>(), null);
+    /// <summary>
+    /// Loading, the training vanished, says so gently and returns to the list.
+    /// </summary>
+    [Fact]
+    public void Loading_TheTrainingVanished_SaysSoGentlyAndReturnsToTheList()
+    {
+        // Arrange
+        _trainingClient
+            .Setup(client => client.GetTrainingByIdAsync(It.IsAny<Guid>()))
+            .ThrowsAsync(ApiExceptions.Refused(404, "The training was not found."));
+
+        // Act
+        Render<CreateTraining>(parameters => parameters.Add(page => page.Id, Guid.NewGuid()));
+
+        // Assert
+        Shown().Should().ContainSingle()
+            .Which.Should().Match<Snackbar>(snackbar =>
+                snackbar.Message == "That training no longer exists."
+                && snackbar.Severity == Severity.Info);
+    }
+
+    /// <summary>
+    /// Submitting, somebody else edited first, warns without retrying.
+    /// </summary>
+    [Fact]
+    public void Submitting_SomebodyElseEditedFirst_WarnsWithoutRetrying()
+    {
+        // Arrange
+        _trainingClient
+            .Setup(client => client.UpdateTrainingAsync(
+                It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<EditTrainingHttpRequest>()))
+            .ThrowsAsync(ApiExceptions.Refused(412, "The If-Match header named a version that is not current."));
+
+        var page = RenderPrefilled();
+
+        // Act
+        Submit(page);
+
+        // Assert
+        page.WaitForAssertion(() => Shown().Should().ContainSingle()
+            .Which.Severity.Should().Be(Severity.Warning));
+    }
+
+    /// <summary>
+    /// Submitting, refused with two domain errors, shows both rather than the first alone.
+    /// </summary>
+    [Fact]
+    public void Submitting_RefusedWithTwoDomainErrors_ShowsBothRatherThanTheFirstAlone()
+    {
+        // Arrange
+        _trainingClient
+            .Setup(client => client.UpdateTrainingAsync(
+                It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<EditTrainingHttpRequest>()))
+            .ThrowsAsync(ApiExceptions.RefusedWithDomainErrors(
+                409,
+                "A training with the same title already exists for this trainer.",
+                "The catalog is full for this trainer."));
+
+        var page = RenderPrefilled();
+
+        // Act
+        Submit(page);
+
+        // Assert
+        page.WaitForAssertion(() => Shown().Select(snackbar => snackbar.Message).Should().Equal(
+            "A training with the same title already exists for this trainer.",
+            "The catalog is full for this trainer."));
+    }
 }

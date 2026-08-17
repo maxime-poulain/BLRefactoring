@@ -128,6 +128,7 @@
     private TrainerStanding _standing = TrainerStanding.Active;
 
     /// <summary>412, as the API answers an edit based on a version that is no longer current.</summary>
+    private const int StatusNotFound = 404;
     private const int StatusPreconditionFailed = 412;
 
     // The bounds the API publishes, and nothing tighter. They were 5 to 30 here while the contract,
@@ -189,12 +190,37 @@
             _acquiredSkills = training.AcquiredSkills;
             _selectedTopics = training.Topics.ToList();
         }
+        catch (ApiException<ProblemDetails> ex) when (ex.StatusCode == StatusNotFound)
+        {
+            // Deleted between the list and this page opening. Not an error the user caused, and
+            // the list this navigates back to is the truth.
+            Snackbar.Add("That training no longer exists.", Severity.Info);
+            NavigationManager.NavigateTo("/trainings");
+        }
+        catch (ApiException<ProblemDetails> ex)
+        {
+            // The declared 400: the address carried an identifier the contract refuses, and the
+            // document names the refusal (ADR 0004).
+            foreach (var message in ProblemDetailsMessages.Read(ex.Result, "The request was rejected."))
+            {
+                Snackbar.Add(message, Severity.Error);
+            }
+
+            NavigationManager.NavigateTo("/trainings");
+        }
         catch (ApiException ex)
         {
             // ex.Message here is the generator's own sentence — "The HTTP status code of the
             // response was not expected (503)." It belongs in the console, not on screen.
             Console.Error.WriteLine(ex);
             Snackbar.Add("The training could not be loaded. Try again in a moment.", Severity.Error);
+            NavigationManager.NavigateTo("/trainings");
+        }
+        catch (Exception ex)
+        {
+            // Whatever this is, it is ours. A NullReferenceException must not become UI copy.
+            Console.Error.WriteLine(ex);
+            Snackbar.Add("Something went wrong loading the training.", Severity.Error);
             NavigationManager.NavigateTo("/trainings");
         }
         finally
@@ -318,9 +344,12 @@
         }
         catch (ApiException<ProblemDetails> ex)
         {
-            // One RFC 7807 document rather than a bare array of errors: the detail carries the
-            // message, and the domain codes travel in the `domainErrors` extension. See ADR 0004.
-            Snackbar.Add(ex.Result.Detail ?? ex.Result.Title ?? "The request was rejected.", Severity.Error);
+            // One RFC 7807 document rather than a bare array of errors: the messages travel under
+            // `errors` or `domainErrors`, and the shared reader speaks both envelopes. See ADR 0004.
+            foreach (var message in ProblemDetailsMessages.Read(ex.Result, "The request was rejected."))
+            {
+                Snackbar.Add(message, Severity.Error);
+            }
         }
         catch (ApiException ex)
         {

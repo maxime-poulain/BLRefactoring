@@ -84,12 +84,15 @@ public sealed class TrainerStandingSource(
         {
             return (await trainerClient.GetCurrentAsync()).Result;
         }
-        catch (ApiException exception)
+        catch (Exception exception)
         {
             // The read failed, and a banner raised by a failed read would accuse somebody of a
             // sanction they may not be under. The generator's own sentence goes to the console,
             // never on screen. The caller's identity is checked above, so a 403 here means the
             // cookie and the token have drifted apart — which is a failure, not an administrator.
+            // Wider than ApiException on purpose: an unreachable BFF surfaces here as
+            // HttpRequestException, and every caller of this source is a page initializer that a
+            // throw would kill outright.
             Console.Error.WriteLine(exception);
 
             return null;

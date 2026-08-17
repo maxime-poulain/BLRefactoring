@@ -126,10 +126,11 @@
         {
             keep(total(await read()));
         }
-        catch (ApiException exception)
+        catch (Exception exception)
         {
-            // One unreadable count is not a broken page. The generator's own sentence goes to the
-            // console; the card says it does not know, which is what a dash means.
+            // One unreadable count is not a broken page, whatever made it unreadable. The
+            // exception goes to the console; the card says it does not know, which is what a
+            // dash means.
             Console.Error.WriteLine(exception);
         }
     }

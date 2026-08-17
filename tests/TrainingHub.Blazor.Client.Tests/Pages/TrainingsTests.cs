@@ -5,6 +5,7 @@ using Moq;
 using MudBlazor;
 using TrainingHub.Blazor.Client.Pages.Trainings;
 using TrainingHub.Blazor.Client.Infrastructure;
+using TrainingHub.Blazor.Client.Tests.Infrastructure;
 using TrainingHub.GeneratedClients;
 using Xunit;
 
@@ -520,4 +521,31 @@ public sealed class TrainingsTests : ComponentTest
             Topics = [.. topics],
             Status = status
         };
+
+    /// <summary>
+    /// Renders, refused field by field, shows every field message rather than the generic title.
+    /// </summary>
+    /// <remarks>
+    /// The other envelope: a model-binding refusal is <c>ValidationProblemDetails</c>, whose
+    /// <c>detail</c> is null and whose title says only that something failed. The field messages
+    /// under <c>errors</c> are what a person can act on.
+    /// </remarks>
+    [Fact]
+    public void Renders_RefusedFieldByField_ShowsEveryFieldMessage()
+    {
+        // Arrange
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ThrowsAsync(ApiExceptions.RefusedWithFieldErrors(
+                ("Page", new[] { "The page number must be positive." }),
+                ("Size", new[] { "The page size is capped at fifty." })));
+
+        // Act
+        var page = Render<Trainings>();
+
+        // Assert
+        page.WaitForAssertion(() => Shown().Select(snackbar => snackbar.Message).Should().Equal(
+            "The page number must be positive.",
+            "The page size is capped at fifty."));
+    }
 }

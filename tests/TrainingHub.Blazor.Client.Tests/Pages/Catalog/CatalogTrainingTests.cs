@@ -1,4 +1,3 @@
-using System.Net;
 using AwesomeAssertions;
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,6 +5,7 @@ using Moq;
 using MudBlazor;
 using TrainingHub.Blazor.Client.Components;
 using TrainingHub.Blazor.Client.Pages.Catalog;
+using TrainingHub.Blazor.Client.Tests.Infrastructure;
 using TrainingHub.GeneratedClients;
 using Xunit;
 
@@ -205,7 +205,7 @@ public sealed class CatalogTrainingTests : ComponentTest
     {
         _catalog
             .Setup(client => client.GetOfferedTrainingAsync(It.IsAny<Guid>()))
-            .ThrowsAsync(NotFound());
+            .ThrowsAsync(ApiExceptions.NotFound());
 
         var page = Render<CatalogTraining>(parameters => parameters
             .Add(detail => detail.TrainingId, Guid.CreateVersion7()));
@@ -318,14 +318,6 @@ public sealed class CatalogTrainingTests : ComponentTest
     private static AngleSharp.Dom.IElement Contact(IRenderedComponent<CatalogTraining> page) =>
         page.FindAll("button").Single(button => button.TextContent.Contains("Contact", StringComparison.Ordinal));
 
-    private static ApiException NotFound() =>
-        new(
-            "Not Found",
-            (int)HttpStatusCode.NotFound,
-            response: null,
-            headers: new Dictionary<string, IEnumerable<string>>(),
-            innerException: null);
-
     private static CatalogTrainingDetailHttpResponse Offered(
         Guid? trainerPhotoId = null, List<string>? topics = null) => new()
         {
@@ -339,4 +331,21 @@ public sealed class CatalogTrainingTests : ComponentTest
             AcquiredSkills = "Drawing a context map.",
             TrainerPhotoId = trainerPhotoId
         };
+
+    /// <summary>
+    /// Renders, the address was refused, shows the document's own words.
+    /// </summary>
+    [Fact]
+    public void Renders_TheAddressWasRefused_ShowsTheDocumentsOwnWords()
+    {
+        _catalog
+            .Setup(client => client.GetOfferedTrainingAsync(It.IsAny<Guid>()))
+            .ThrowsAsync(ApiExceptions.Refused(400, "The trainingId field must not be the empty identifier."));
+
+        var page = Render<CatalogTraining>(parameters => parameters
+            .Add(detail => detail.TrainingId, Guid.CreateVersion7()));
+
+        page.WaitForAssertion(() => Shown().Should().ContainSingle()
+            .Which.Message.Should().Be("The trainingId field must not be the empty identifier."));
+    }
 }

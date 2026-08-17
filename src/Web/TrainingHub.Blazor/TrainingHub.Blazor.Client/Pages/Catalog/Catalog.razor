@@ -1,5 +1,6 @@
 @page "/"
 @page "/catalog"
+@using TrainingHub.Blazor.Client.Infrastructure
 @using TrainingHub.GeneratedClients
 @implements IDisposable
 @inject ICatalogClient CatalogClient
@@ -414,10 +415,27 @@
                 _page = await CatalogClient.SearchTrainingsAsync(_term, Shelves, Sort, _currentPage, null);
             }
         }
-        catch (Exception)
+        catch (ApiException<ProblemDetails> exception)
         {
-            // The message is ours rather than the server's: what an exception carries is for a log,
-            // and a visitor who cannot reach the catalog learns nothing from a stack of it.
+            // The one declared refusal of this read is a 400 on the address's own parameters —
+            // term, shelves, sort, page all come from the URL — and the document says which one
+            // was refused better than any sentence of ours (ADR 0004).
+            foreach (var message in ProblemDetailsMessages.Read(exception.Result, "The request was rejected."))
+            {
+                Snackbar.Add(message, Severity.Error);
+            }
+        }
+        catch (ApiException exception)
+        {
+            // ApiException.Message is the generator's own sentence and the raw body with it; it
+            // belongs in the console, not on screen.
+            Console.Error.WriteLine(exception);
+            Snackbar.Add("The catalog could not be loaded. Try again in a moment.", Severity.Error);
+        }
+        catch (Exception exception)
+        {
+            // Whatever this is, it is ours; a visitor learns nothing from a stack of it.
+            Console.Error.WriteLine(exception);
             Snackbar.Add("The catalog could not be loaded.", Severity.Error);
         }
         finally

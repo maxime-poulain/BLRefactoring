@@ -282,4 +282,24 @@ public sealed class TrainerStandingSourceTests
                 SuspensionReason = reason,
                 PhotoId = photoId
             });
+
+    /// <summary>
+    /// Get async, the BFF was unreachable, answers active rather than throwing.
+    /// </summary>
+    /// <remarks>
+    /// The transport failure arrives as <see cref="HttpRequestException"/> rather than
+    /// <see cref="ApiException"/>, and every caller of this source is a page initializer that a
+    /// throw would kill outright.
+    /// </remarks>
+    [Fact]
+    public async Task GetAsync_TheBffWasUnreachable_AnswersActiveRatherThanThrowing()
+    {
+        _trainerClient
+            .Setup(client => client.GetCurrentAsync())
+            .ThrowsAsync(new HttpRequestException("no route to host"));
+
+        var standing = await Source().GetAsync();
+
+        standing.IsSuspended.Should().BeFalse();
+    }
 }

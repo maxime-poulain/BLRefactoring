@@ -4,6 +4,7 @@ using AwesomeAssertions;
 using TrainingHub.Blazor.Client.Components;
 using TrainingHub.Blazor.Client.Infrastructure;
 using TrainingHub.Blazor.Client.Pages.Profile;
+using TrainingHub.Blazor.Client.Tests.Infrastructure;
 using TrainingHub.GeneratedClients;
 using Bunit;
 using Bunit.TestDoubles;
@@ -187,9 +188,8 @@ public sealed class ProfileTests : ComponentTest
         // Arrange
         _trainerClient
             .Setup(client => client.SetPhotoAsync(It.IsAny<FileParameter>()))
-            .ThrowsAsync(new ApiException(
-                "Bad Request", 400, "the upload is declared as image/png but its content is image/jpeg",
-                new Dictionary<string, IEnumerable<string>>(), null));
+            .ThrowsAsync(ApiExceptions.RefusedWithDomainErrors(
+                400, "The upload is declared as image/png but its content is image/jpeg."));
 
         var page = Render<Profile>();
         var upload = page.FindComponent<MudFileUpload<IBrowserFile>>();
@@ -201,6 +201,7 @@ public sealed class ProfileTests : ComponentTest
 
         // Assert
         page.Markup.Should().Contain("its content is image/jpeg");
+        page.Markup.Should().NotContain("errorCode");
     }
 
     /// <summary>
@@ -254,9 +255,7 @@ public sealed class ProfileTests : ComponentTest
 
         _trainerClient
             .Setup(client => client.DeletePhotoAsync())
-            .ThrowsAsync(new ApiException(
-                "Not Found", 404, "this trainer has no photo",
-                new Dictionary<string, IEnumerable<string>>(), null));
+            .ThrowsAsync(ApiExceptions.Refused(404, "This trainer has no photo."));
 
         var page = Render<Profile>();
 
@@ -264,7 +263,7 @@ public sealed class ProfileTests : ComponentTest
         page.FindAll("button").Single(button => button.TextContent.Contains("Remove photo", StringComparison.Ordinal)).Click();
 
         // Assert
-        page.WaitForAssertion(() => page.Markup.Should().Contain("this trainer has no photo"));
+        page.WaitForAssertion(() => page.Markup.Should().Contain("This trainer has no photo."));
     }
 
     /// <summary>
@@ -563,5 +562,80 @@ public sealed class ProfileTests : ComponentTest
 
         public Stream OpenReadStream(long maxAllowedSize = 512000, CancellationToken cancellationToken = default) =>
             new MemoryStream(Encoding.UTF8.GetBytes("not really a portrait"));
+    }
+
+    /// <summary>
+    /// Saving, somebody else edited first, warns in the page's own words.
+    /// </summary>
+    /// <remarks>
+    /// The first test of either 412 handler: the document describes a version mismatch, and the
+    /// warning describes what happened to the person editing.
+    /// </remarks>
+    [Fact]
+    public void Saving_SomebodyElseEditedFirst_WarnsInThePagesOwnWords()
+    {
+        // Arrange
+        _trainerClient
+            .Setup(client => client.EditCurrentAsync(It.IsAny<string?>(), It.IsAny<EditTrainerHttpRequest>()))
+            .ThrowsAsync(ApiExceptions.Refused(412, "The If-Match header named a version that is not current."));
+
+        var page = Render<Profile>();
+
+        // Act
+        page.FindAll("button")
+            .Single(button => button.TextContent.Contains("Save Changes", StringComparison.Ordinal))
+            .Click();
+
+        // Assert
+        page.WaitForAssertion(() => Shown().Should().ContainSingle()
+            .Which.Should().Match<Snackbar>(snackbar =>
+                snackbar.Message == "Someone else changed this profile while you were editing it. Reload and try again."
+                && snackbar.Severity == Severity.Warning));
+    }
+
+    /// <summary>
+    /// Saving, refused with two domain errors, shows both rather than the first alone.
+    /// </summary>
+    [Fact]
+    public void Saving_RefusedWithTwoDomainErrors_ShowsBothRatherThanTheFirstAlone()
+    {
+        // Arrange
+        _trainerClient
+            .Setup(client => client.EditCurrentAsync(It.IsAny<string?>(), It.IsAny<EditTrainerHttpRequest>()))
+            .ThrowsAsync(ApiExceptions.RefusedWithDomainErrors(
+                400,
+                "The contact email's domain has no mail exchanger.",
+                "The bio exceeds what a profile may carry."));
+
+        var page = Render<Profile>();
+
+        // Act
+        page.FindAll("button")
+            .Single(button => button.TextContent.Contains("Save Changes", StringComparison.Ordinal))
+            .Click();
+
+        // Assert
+        page.WaitForAssertion(() => Shown().Select(snackbar => snackbar.Message).Should().Equal(
+            "The contact email's domain has no mail exchanger.",
+            "The bio exceeds what a profile may carry."));
+    }
+
+    /// <summary>
+    /// Renders, something else went wrong, does not turn the exception into interface copy.
+    /// </summary>
+    [Fact]
+    public void Renders_SomethingElseWentWrong_DoesNotTurnTheExceptionIntoInterfaceCopy()
+    {
+        // Arrange
+        _trainerClient
+            .Setup(client => client.GetCurrentAsync())
+            .ThrowsAsync(new InvalidOperationException("a stack detail nobody should read on screen"));
+
+        // Act
+        Render<Profile>();
+
+        // Assert
+        Shown().Should().ContainSingle()
+            .Which.Message.Should().Be("Something went wrong loading the profile.");
     }
 }
