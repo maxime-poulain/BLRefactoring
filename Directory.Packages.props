@@ -1,5 +1,4 @@
 <Project>
-
   <!--
     Central Package Management: every NuGet version of the solution lives here.
     Projects reference packages without a Version attribute; adding a package
@@ -10,7 +9,6 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
-
   <ItemGroup>
     <!--
       The health-checks dashboard the API hosts serve in Development, under Apache 2.0: the UI
@@ -191,10 +189,9 @@
       module of its own, so the builder is used by hand. Same version as the MsSql module on
       purpose — they share this assembly, and letting them drift resolves one of the two twice.
     -->
-    <PackageVersion Include="Testcontainers" Version="4.13.0" />
-    <PackageVersion Include="Testcontainers.MsSql" Version="4.13.0" />
+    <PackageVersion Include="Testcontainers" Version="4.14.0" />
+    <PackageVersion Include="Testcontainers.MsSql" Version="4.14.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>
-
 </Project>
