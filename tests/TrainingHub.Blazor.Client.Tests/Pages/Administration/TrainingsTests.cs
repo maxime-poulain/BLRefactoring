@@ -5,6 +5,7 @@ using Moq;
 using MudBlazor;
 using TrainingHub.Blazor.Client.Components;
 using TrainingHub.Blazor.Client.Pages.Administration;
+using TrainingHub.Blazor.Client.Tests.Infrastructure;
 using TrainingHub.GeneratedClients;
 using Xunit;
 
@@ -293,7 +294,7 @@ public sealed class TrainingsTests : ComponentTest
         _administration
             .Setup(client => client.GetTrainingsAsync(
                 It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
-            .ThrowsAsync(Unreachable());
+            .ThrowsAsync(ApiExceptions.Unreachable());
 
         // Act
         var page = Render<Trainings>();
@@ -322,7 +323,7 @@ public sealed class TrainingsTests : ComponentTest
         _administration
             .Setup(client => client.WithholdTrainingAsync(
                 It.IsAny<Guid>(), It.IsAny<WithholdTrainingHttpRequest>()))
-            .ThrowsAsync(Refused("This training is already withheld."));
+            .ThrowsAsync(ApiExceptions.Refused(409, "This training is already withheld."));
 
         Answering("Plagiarized material.");
 
@@ -388,21 +389,6 @@ public sealed class TrainingsTests : ComponentTest
         page.WaitForAssertion(() => _administration.Verify(
             client => client.GetTrainingsAsync(null, "design", 1, null), Times.Once));
     }
-
-    private static ApiException Unreachable() => new(
-        "The HTTP status code of the response was not expected (503).",
-        503,
-        "",
-        new Dictionary<string, IEnumerable<string>>(),
-        null);
-
-    private static ApiException<ProblemDetails> Refused(string detail) => new(
-        "refused",
-        409,
-        "",
-        new Dictionary<string, IEnumerable<string>>(),
-        new ProblemDetails { Detail = detail },
-        null);
 
     private static AdministrationTrainingHttpResponse Published(string title, string? trainerName)
     {

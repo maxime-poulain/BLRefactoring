@@ -83,7 +83,7 @@ simpler from the outside.
 | [0050](0050-retire-a-training-rather-than-delete-it.md) | Retire a training rather than delete it | Accepted — amended by [0056](0056-announce-the-sanction-and-let-the-index-compose-visibility.md): the suspension has a surface and consumers now, so it leaves the context as a fact, and the index composes a trainer's standing rather than forgetting their catalogue; amended by [0053](0053-a-suspended-trainer-reads-and-does-not-write.md): a suspended trainer loses every write, editing and unpublishing included |
 | [0051](0051-give-the-administrator-authority-not-a-context.md) | Give the administrator authority, not a context | Accepted |
 | [0052](0052-make-an-administrative-removal-a-state-of-its-own.md) | Make an administrative removal a state of its own | Accepted |
-| [0053](0053-a-suspended-trainer-reads-and-does-not-write.md) | A suspended trainer reads, and does not write | Accepted — amended by [0057](0057-the-trainers-own-surface-says-where-they-stand.md): the write controls a suspension forbids are shown disabled rather than removed |
+| [0053](0053-a-suspended-trainer-reads-and-does-not-write.md) | A suspended trainer reads, and does not write | Accepted — amended by [0057](0057-the-trainers-own-surface-says-where-they-stand.md): the write controls a suspension forbids are shown disabled rather than removed; amended by [0085](0085-let-the-account-erase-itself-trainings-and-all.md): erasing the account is the one write a suspension does not take away |
 | [0054](0054-give-the-administration-a-surface-of-its-own.md) | Give the administration a surface of its own | Accepted |
 | [0055](0055-let-the-administration-read-what-the-catalogue-may-not.md) | Let the administration read what the catalogue may not | Accepted — amended by [0059](0059-give-the-search-index-a-body-and-a-query-surface.md): the search index settles the public training search and not the administration's, which needs the states the index refuses to hold |
 | [0056](0056-announce-the-sanction-and-let-the-index-compose-visibility.md) | Announce the sanction, and let the index compose visibility | Accepted |
@@ -108,7 +108,10 @@ simpler from the outside.
 | [0078](0078-land-the-administrator-in-the-administration.md) | Land the administrator in the administration | Accepted |
 | [0079](0079-build-the-development-catalog-with-the-domain.md) | Build the development catalog with the domain | Accepted |
 | [0080](0080-let-a-visitor-browse-several-shelves-at-once.md) | Let a visitor browse several shelves at once | Accepted |
-| [0081](0081-name-a-query-for-what-it-retrieves-and-what-scopes-it.md) | Name a query for what it retrieves and what scopes it | Accepted |
+| [0081](0081-name-a-query-for-what-it-retrieves-and-what-scopes-it.md) | Name a query for what it retrieves and what scopes it | Accepted — amended by [0086](0086-say-current-when-the-caller-is-the-criterion.md): the command half gains the clause the caller-scoped commands were hiding — a message whose criterion is its caller says Current |
 | [0082](0082-let-a-visitor-reach-a-trainer-without-learning-their-address.md) | Let a visitor reach a trainer without learning their address | Accepted — amended by [0083](0083-ask-the-visitor-for-proof-where-their-address-is-real.md): a Turnstile challenge stands in front of the contact endpoint, judged at the BFF where the visitor's connection ends |
 | [0083](0083-ask-the-visitor-for-proof-where-their-address-is-real.md) | Ask the visitor for proof where their address is real | Accepted |
 | [0084](0084-reset-a-forgotten-password-with-a-credential-the-database-cannot-leak.md) | Reset a forgotten password with a credential the database cannot leak | Accepted |
+| [0085](0085-let-the-account-erase-itself-trainings-and-all.md) | Let the account erase itself, trainings and all | Accepted |
+| [0086](0086-say-current-when-the-caller-is-the-criterion.md) | Say Current when the caller is the criterion | Accepted |
+| [0087](0087-name-a-handler-for-the-event-it-handles.md) | Name a handler for the event it handles | Accepted |

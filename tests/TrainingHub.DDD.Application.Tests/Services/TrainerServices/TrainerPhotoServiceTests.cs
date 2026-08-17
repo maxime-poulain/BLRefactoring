@@ -93,7 +93,7 @@ public sealed class TrainerPhotoServiceTests
         _fixture.PhotoStore
             .Setup(store => store.DeleteAsync(
                 It.IsAny<TrainerId>(),
-                It.IsAny<TrainerPhoto>(),
+                It.IsAny<PhotoId>(),
                 It.IsAny<CancellationToken>()))
             .Callback(() => order.Add("delete"))
             .Returns(Task.CompletedTask);
@@ -125,7 +125,7 @@ public sealed class TrainerPhotoServiceTests
 
         // Assert
         _fixture.PhotoStore.Verify(
-            store => store.DeleteAsync(trainer.Id, previous, It.IsAny<CancellationToken>()),
+            store => store.DeleteAsync(trainer.Id, previous.PhotoId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -145,7 +145,7 @@ public sealed class TrainerPhotoServiceTests
         // Assert
         _fixture.PhotoStore.Verify(
             store => store.DeleteAsync(
-                It.IsAny<TrainerId>(), It.IsAny<TrainerPhoto>(), It.IsAny<CancellationToken>()),
+                It.IsAny<TrainerId>(), It.IsAny<PhotoId>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -217,7 +217,7 @@ public sealed class TrainerPhotoServiceTests
 
         _fixture.PhotoStore
             .Setup(store => store.DeleteAsync(
-                It.IsAny<TrainerId>(), It.IsAny<TrainerPhoto>(), It.IsAny<CancellationToken>()))
+                It.IsAny<TrainerId>(), It.IsAny<PhotoId>(), It.IsAny<CancellationToken>()))
             .Callback(() => order.Add("delete"))
             .Returns(Task.CompletedTask);
 

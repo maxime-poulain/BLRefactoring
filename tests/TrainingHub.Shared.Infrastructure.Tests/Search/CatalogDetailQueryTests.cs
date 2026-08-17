@@ -382,7 +382,7 @@ public sealed class CatalogDetailQueryTests : IAsyncLifetime
         var training = await GivenTrainingAsync(trainer, "Domain Driven Design");
         await GivenIndexEntryAsync(training, trainer, isPublished: true, isTrainerHidden: false);
 
-        await _photos.DeleteAsync(trainer.Id, photo);
+        await _photos.DeleteAsync(trainer.Id, photo.PhotoId);
 
         var portrait = await _detail.FindOfferedPortraitAsync(training.Id.Value, photo.PhotoId.Value);
 
@@ -663,7 +663,7 @@ public sealed class CatalogDetailQueryTests : IAsyncLifetime
         var training = await GivenTrainingAsync(trainer, "Domain Driven Design");
         await GivenIndexEntryAsync(training, trainer, isPublished: true, isTrainerHidden: false);
 
-        await _photos.DeleteAsync(trainer.Id, photo);
+        await _photos.DeleteAsync(trainer.Id, photo.PhotoId);
 
         var portrait = await _detail.FindTrainerPortraitAsync(trainer.Id.Value, photo.PhotoId.Value);
 

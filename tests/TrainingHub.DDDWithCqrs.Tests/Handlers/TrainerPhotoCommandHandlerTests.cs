@@ -80,7 +80,7 @@ public sealed class TrainerPhotoCommandHandlerTests
 
         _photoStore
             .Setup(store => store.DeleteAsync(
-                It.IsAny<TrainerId>(), It.IsAny<TrainerPhoto>(), It.IsAny<CancellationToken>()))
+                It.IsAny<TrainerId>(), It.IsAny<PhotoId>(), It.IsAny<CancellationToken>()))
             .Callback(() => _order.Add("delete"))
             .Returns(Task.CompletedTask);
     }
@@ -120,7 +120,7 @@ public sealed class TrainerPhotoCommandHandlerTests
         // Assert
         _order.Should().Equal("store", "commit", "delete");
         _photoStore.Verify(
-            store => store.DeleteAsync(trainer.Id, previous, It.IsAny<CancellationToken>()),
+            store => store.DeleteAsync(trainer.Id, previous.PhotoId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -213,7 +213,7 @@ public sealed class TrainerPhotoCommandHandlerTests
         trainer.AttachPhoto(SomePhoto());
 
         // Act
-        var result = await RemoveSut().Handle(new RemoveTrainerPhotoCommand(), CancellationToken.None);
+        var result = await RemoveSut().Handle(new RemoveCurrentTrainerPhotoCommand(), CancellationToken.None);
 
         // Assert
         result.ShouldBeSuccess();
@@ -231,14 +231,14 @@ public sealed class TrainerPhotoCommandHandlerTests
         GivenTrainerWithoutPhoto();
 
         // Act
-        var result = await RemoveSut().Handle(new RemoveTrainerPhotoCommand(), CancellationToken.None);
+        var result = await RemoveSut().Handle(new RemoveCurrentTrainerPhotoCommand(), CancellationToken.None);
 
         // Assert
         result.ShouldContainError(ErrorCodes.NotFound);
         _order.Should().BeEmpty();
     }
 
-    private SetTrainerPhotoCommandHandler SetSut() => new(
+    private SetCurrentTrainerPhotoCommandHandler SetSut() => new(
         _trainerRepository.Object,
         _photoStore.Object,
         _photoSanitizer.Object,
@@ -246,13 +246,13 @@ public sealed class TrainerPhotoCommandHandlerTests
         _clock,
         _unitOfWork.Object);
 
-    private RemoveTrainerPhotoCommandHandler RemoveSut() => new(
+    private RemoveCurrentTrainerPhotoCommandHandler RemoveSut() => new(
         _trainerRepository.Object,
         _photoStore.Object,
         _currentUserService.Object,
         _unitOfWork.Object);
 
-    private static SetTrainerPhotoCommand SetCommand(byte[]? content = null) => new()
+    private static SetCurrentTrainerPhotoCommand SetCommand(byte[]? content = null) => new()
     {
         Content = content ?? Png(),
         ContentType = TrainerPhoto.PngContentType

@@ -5,6 +5,7 @@ using Moq;
 using MudBlazor;
 using TrainingHub.Blazor.Client.Components;
 using TrainingHub.Blazor.Client.Pages.Administration;
+using TrainingHub.Blazor.Client.Tests.Infrastructure;
 using TrainingHub.GeneratedClients;
 using Xunit;
 
@@ -279,7 +280,7 @@ public sealed class TrainersTests : ComponentTest
         _administration
             .Setup(client => client.GetTrainersAsync(
                 It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>()))
-            .ThrowsAsync(Unreachable());
+            .ThrowsAsync(ApiExceptions.Unreachable());
 
         // Act
         var page = Render<Trainers>();
@@ -336,13 +337,6 @@ public sealed class TrainersTests : ComponentTest
                 It.IsAny<string>(), It.IsAny<DialogParameters<ReasonDialog>>(), It.IsAny<DialogOptions>()))
             .ReturnsAsync(reference.Object);
     }
-
-    private static ApiException Unreachable() => new(
-        "The HTTP status code of the response was not expected (503).",
-        503,
-        "",
-        new Dictionary<string, IEnumerable<string>>(),
-        null);
 
     private static AdministrationTrainerHttpResponse Active(string firstname, string lastname)
     {

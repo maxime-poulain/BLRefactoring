@@ -57,7 +57,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddMediator(options =>
 {
     options.ServiceLifetime = ServiceLifetime.Transient;
-    options.Assemblies = [typeof(TrainerDeletedDomainEvent).Assembly, typeof(DeleteTrainingWhenTrainerDeletedEventHandler).Assembly];
+    options.Assemblies = [typeof(TrainerDeletedDomainEvent).Assembly, typeof(DeleteTrainingWhenTrainerDeletedDomainEventHandler).Assembly];
 });
 
 // Identity, JWT validation and the three authorization policies are the same on both hosts, and

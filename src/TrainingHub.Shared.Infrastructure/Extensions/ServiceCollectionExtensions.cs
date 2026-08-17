@@ -116,10 +116,11 @@ public static class ServiceCollectionExtensions
             .AddScoped<IIntegrationEventPublisher, OutboxIntegrationEventPublisher>()
             // The outbox's read side (ADR 0025, hardened per ADR 0033): the worker each host
             // runs, the processor it scopes per batch, the dispatcher that routes a fact to its
-            // consumers, and the seventeen consumers themselves — the policies that used to run
+            // consumers, and the nineteen consumers themselves — the policies that used to run
             // inside the transaction, reattached after the commit, the six that answer a sanction
-            // (ADR 0056), the one that carries a visitor's message to a trainer (ADR 0082), and
-            // the two that guard an account's recovery (ADR 0084).
+            // (ADR 0056), the one that carries a visitor's message to a trainer (ADR 0082), the
+            // two that guard an account's recovery (ADR 0084), and the two that close an
+            // account's erasure — the farewell, and the portrait's collector (ADR 0085).
             // The options bind above, validated.
             .AddScoped<OutboxProcessor>()
             .AddScoped<IntegrationEventDispatcher>()
@@ -153,10 +154,14 @@ public static class ServiceCollectionExtensions
                 RemoveTrainingFromIndexWhenTrainingWithheldIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<TrainingDeletedIntegrationEvent>,
                 RemoveTrainingFromIndexWhenTrainingDeletedIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<TrainerDeletedIntegrationEvent>,
+                RemovePortraitWhenTrainerDeletedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<PasswordResetRequestedIntegrationEvent>,
                 SendPasswordResetLinkWhenPasswordResetRequestedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<PasswordChangedIntegrationEvent>,
                 SendPasswordChangedNoticeWhenPasswordChangedIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<AccountErasedIntegrationEvent>,
+                SendErasureNoticeWhenAccountErasedIntegrationEventHandler>()
             .AddHostedService<OutboxDeliveryWorker>()
             .AddDbContext<TrainingContext>((serviceProvider, options) =>
             {

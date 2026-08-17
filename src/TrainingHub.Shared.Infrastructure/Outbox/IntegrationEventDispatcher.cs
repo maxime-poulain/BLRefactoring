@@ -31,8 +31,10 @@ public sealed class IntegrationEventDispatcher(
     IEnumerable<IIntegrationEventHandler<TrainingUnpublishedIntegrationEvent>> trainingUnpublishedConsumers,
     IEnumerable<IIntegrationEventHandler<TrainingWithheldIntegrationEvent>> trainingWithheldConsumers,
     IEnumerable<IIntegrationEventHandler<TrainingDeletedIntegrationEvent>> trainingDeletedConsumers,
+    IEnumerable<IIntegrationEventHandler<TrainerDeletedIntegrationEvent>> trainerDeletedConsumers,
     IEnumerable<IIntegrationEventHandler<PasswordResetRequestedIntegrationEvent>> passwordResetRequestedConsumers,
-    IEnumerable<IIntegrationEventHandler<PasswordChangedIntegrationEvent>> passwordChangedConsumers)
+    IEnumerable<IIntegrationEventHandler<PasswordChangedIntegrationEvent>> passwordChangedConsumers,
+    IEnumerable<IIntegrationEventHandler<AccountErasedIntegrationEvent>> accountErasedConsumers)
 {
     /// <summary>
     /// Hands the fact to each of its registered consumers, in registration order, skipping the
@@ -60,8 +62,10 @@ public sealed class IntegrationEventDispatcher(
             TrainingUnpublishedIntegrationEvent fact => HandleAllAsync(trainingUnpublishedConsumers, fact, alreadyDelivered, cancellationToken),
             TrainingWithheldIntegrationEvent fact => HandleAllAsync(trainingWithheldConsumers, fact, alreadyDelivered, cancellationToken),
             TrainingDeletedIntegrationEvent fact => HandleAllAsync(trainingDeletedConsumers, fact, alreadyDelivered, cancellationToken),
+            TrainerDeletedIntegrationEvent fact => HandleAllAsync(trainerDeletedConsumers, fact, alreadyDelivered, cancellationToken),
             PasswordResetRequestedIntegrationEvent fact => HandleAllAsync(passwordResetRequestedConsumers, fact, alreadyDelivered, cancellationToken),
             PasswordChangedIntegrationEvent fact => HandleAllAsync(passwordChangedConsumers, fact, alreadyDelivered, cancellationToken),
+            AccountErasedIntegrationEvent fact => HandleAllAsync(accountErasedConsumers, fact, alreadyDelivered, cancellationToken),
             _ => throw new InvalidOperationException(
                 $"{integrationEvent.GetType().Name} has no route in {nameof(IntegrationEventDispatcher)}. " +
                 "A new integration event is registered, serialized, consumed — and routed here."),

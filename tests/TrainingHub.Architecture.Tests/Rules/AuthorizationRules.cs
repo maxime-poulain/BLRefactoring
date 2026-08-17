@@ -161,6 +161,13 @@ public sealed class AuthorizationRules
     /// The administrative surface is excluded because it is not the trainer's: an administrator is
     /// nobody's trainer, carries no standing, and suspending one is not a thing this product can do.
     /// </para>
+    /// <para>
+    /// One write is exempted by name, and the exemption is the amendment rather than a hole:
+    /// ADR 0085 amends ADR 0053 so that erasing the account is the one write a suspension does not
+    /// take away — the right to leave outlives the sanction, and the withheld trainings die with
+    /// the account. The action sits behind <c>TrainerPolicy</c> deliberately, and pinning it here
+    /// is what keeps the next reader from "fixing" it into the refusal the record argues against.
+    /// </para>
     /// </remarks>
     [Fact]
     [ArchitectureRule("0053",
@@ -175,6 +182,7 @@ public sealed class AuthorizationRules
                 .Select(action => (Controller: controller, Action: action, Verbs: Verbs(action)))
                 .Where(entry => entry.Verbs.Overlaps(WritingVerbs)))
             .Selected("writing action")
+            .Where(entry => entry.Action.Name != TheOneWriteASuspensionKeeps)
             .Select(entry => (entry.Controller, entry.Action, Policies: PoliciesInForce(entry.Controller, entry.Action)))
             .Where(entry => entry.Policies.Contains(TrainerPolicy.Name)
                             && !entry.Policies.Contains(ActiveTrainerPolicy.Name))
@@ -183,6 +191,12 @@ public sealed class AuthorizationRules
                 $"not behind {ActiveTrainerPolicy.Name}. A suspended trainer would reach it, and the " +
                 "refusal ADR 0053 puts at the boundary would exist for every other write but this one")
             .ShouldHold();
+
+    /// <summary>
+    /// The action ADR 0085 exempts from ADR 0053's table: erasing the account is the one write a
+    /// suspension does not take away.
+    /// </summary>
+    private const string TheOneWriteASuspensionKeeps = "EraseAccount";
 
     /// <summary>
     /// No read, and no administrative action, is behind the standing policy.

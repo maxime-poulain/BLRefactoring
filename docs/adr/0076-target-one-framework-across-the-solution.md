@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Amends:** [0037](0037-answer-for-the-hosts-health-at-two-endpoints.md),
-  [0019](0019-turn-the-ruleset-on-and-fail-the-build-on-it.md)
+  [0019](0019-enforce-the-ruleset-this-repository-already-declared.md)
 - **Date:** 2026-08-11
 
 ## Context

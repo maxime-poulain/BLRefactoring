@@ -3,6 +3,7 @@ using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using TrainingHub.Blazor.Client.Tests.Infrastructure;
 using TrainingHub.GeneratedClients;
 using Xunit;
 using CatalogPage = TrainingHub.Blazor.Client.Pages.Catalog.Catalog;
@@ -490,4 +491,29 @@ public sealed class CatalogTests : ComponentTest
             // screen renumber itself to page zero on load.
             TotalPages = 1
         };
+
+    /// <summary>
+    /// Renders, the search was refused, shows the document's own words.
+    /// </summary>
+    /// <remarks>
+    /// Every parameter of this read comes from the address bar, so the declared 400 is reachable
+    /// by typing; the document names the refused parameter, and the outage sentence would hide it.
+    /// </remarks>
+    [Fact]
+    public void Renders_TheSearchWasRefused_ShowsTheDocumentsOwnWords()
+    {
+        _catalog
+            .Setup(client => client.SearchTrainingsAsync(
+                It.IsAny<string?>(),
+                It.IsAny<IEnumerable<string>?>(),
+                It.IsAny<string?>(),
+                It.IsAny<int?>(),
+                It.IsAny<int?>()))
+            .ThrowsAsync(ApiExceptions.Refused(400, "The sort field must name a sort this API knows."));
+
+        Render<CatalogPage>();
+
+        Shown().Should().ContainSingle()
+            .Which.Message.Should().Be("The sort field must name a sort this API knows.");
+    }
 }

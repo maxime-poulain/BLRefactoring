@@ -188,18 +188,20 @@ public sealed class Trainer : AggregateRoot<TrainerId>
 
     /// <summary>
     /// Marks the trainer for deletion, announcing the fact so that what depends on the trainer —
-    /// their trainings, first of all — can be dealt with in the same unit of work.
+    /// their trainings first of all, and the portrait's bytes after the commit — can be dealt
+    /// with.
     /// </summary>
     /// <remarks>
-    /// No use case reaches this today, and that is deliberate rather than an oversight. Removing a
-    /// trainer is an administrative decision: a trainer never deletes themselves, and no endpoint
-    /// exposes the operation until there is a role entitled to it. What the aggregate states here
-    /// is the rule itself — a trainer does not disappear silently, their trainings go with them —
-    /// and that rule holds whoever ends up triggering it.
+    /// Reached by the account erasing itself, and by nothing else: erasure is a right the account
+    /// holds, not a sanction the administration applies, which is why removal is deliberately
+    /// absent from the administrative commands (ADR 0085). What the aggregate states here is the
+    /// rule itself — a trainer does not disappear silently, their trainings go with them — and
+    /// the event carries the portrait's identity because the policy that deletes the bytes runs
+    /// after every row that could have answered it is gone.
     /// </remarks>
     public void MarkForDeletion()
     {
-        AddDomainEvent(new TrainerDeletedDomainEvent(Id));
+        AddDomainEvent(new TrainerDeletedDomainEvent(Id, Photo?.PhotoId));
     }
 
     /// <summary>

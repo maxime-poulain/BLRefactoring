@@ -603,7 +603,7 @@ public sealed class DevelopmentSeedExtensionsTests
             Task.FromResult<StoredObject?>(null);
 
         public Task DeleteAsync(
-            TrainerId trainerId, TrainerPhoto photo, CancellationToken cancellationToken = default) =>
+            TrainerId trainerId, PhotoId photoId, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
     }
 }

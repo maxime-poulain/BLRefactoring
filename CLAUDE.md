@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 84 architecture decision records.
+2. `docs/adr/README.md` — the index of 87 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 208 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 215 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -111,6 +111,19 @@ repository a named question and maps the aggregates.
   `ICatalogDetailQuery`, `ITrainerAccountQuery`, `ITrainingSearchQuery` are named questions an outer
   layer asks an adapter (ADR 0028, ADR 0055), and renaming one renames a vocabulary this record
   does not own.
+- **A message whose criterion is its caller says `Current`** — its handler resolves the trainer
+  through `ICurrentUserService` and it carries no identifier of its own, so nothing but the name
+  can say whom it acts on: `EraseCurrentTrainerCommand`, `EditCurrentTrainerCommand`,
+  `GetTrainingsByCurrentTrainerQuery`. A message carrying an explicit identifier never says it —
+  `SuspendTrainerCommand` acts on whoever it names, `GetTrainerByIdQuery` on whoever it is given —
+  because the name must describe the message, not its most frequent caller (ADR 0086,
+  `EveryMessageActingForItsCaller_SaysCurrent`).
+- **An event handler is named `{Reaction}When{Event}Handler`, the event's full type name embedded**:
+  `DeleteTrainingWhenTrainerDeletedDomainEventHandler` for `TrainerDeletedDomainEvent`,
+  `SendErasureNoticeWhenAccountErasedIntegrationEventHandler` for `AccountErasedIntegrationEvent`.
+  The `DomainEventHandler` / `IntegrationEventHandler` suffix falls out of the embedding and says
+  which kind of event — the moment it runs and the rules it runs under — while the reaction phrase
+  is what lets one event keep two handlers (ADR 0087, `EveryHandler_IsNamedForTheEventItHandles`).
 - Command handlers live in the application layer, query handlers in infrastructure.
 - One validator per command, beside it. One folder per use case.
 - **Every identifier a command or query carries is refused empty by its own validator**, even

@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using TrainingHub.Blazor.Client.Infrastructure;
 using TrainingHub.GeneratedClients;
@@ -75,6 +76,12 @@ public static class BffEndpoints
         // and LoginAsync takes parameters RequestDelegate has no room for.
         bff.MapPost("/logout", (Delegate)LogoutAsync).RequireAuthorization();
 
+        // Beside sign-out for the same reason sign-in sits here: the erasure is an account
+        // conversation, it needs the token this host keeps, and the session over an erased
+        // account must die with it — one endpoint does the forward and the sign-out as one
+        // gesture (ADR 0085).
+        bff.MapPost("/erase-account", EraseAccountAsync).RequireAuthorization();
+
         bff.MapGet("/user", GetUser).AllowAnonymous();
 
         bff.MapGet("/turnstile", GetTurnstileSettings).AllowAnonymous();
@@ -106,6 +113,51 @@ public static class BffEndpoints
         }
 
         return await next(context);
+    }
+
+    /// <summary>
+    /// Forwards the caller's password to the erasure endpoint and, when the account is gone,
+    /// closes the session that asked.
+    /// </summary>
+    /// <remarks>
+    /// The first of this host's own endpoints to call the API as somebody: the proxy attaches
+    /// the token to forwarded traffic, but this call is not forwarded — the sign-out has to
+    /// happen here, on the way back — so the token is read from the cookie's ticket and
+    /// attached by hand. A refusal passes through verbatim, problem body and status alike, so
+    /// the form can key the wrong-password message to its field (ADR 0085).
+    /// </remarks>
+    private static async Task<IResult> EraseAccountAsync(
+        EraseAccountHttpRequest request,
+        IHttpClientFactory httpClientFactory,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        var client = httpClientFactory.CreateClient(ApiClientName);
+
+        var token = await httpContext.GetTokenAsync(BffExtensions.AccessTokenName);
+
+        using var forward = new HttpRequestMessage(HttpMethod.Post, "/Auth/erase-account")
+        {
+            Content = JsonContent.Create(request),
+        };
+        forward.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.SendAsync(forward, cancellationToken);
+
+        if (response.IsSuccessStatusCode)
+        {
+            // The account is gone; a cookie session over it would be a session about nothing.
+            await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            return Results.NoContent();
+        }
+
+        var problem = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        return Results.Content(
+            problem,
+            response.Content.Headers.ContentType?.ToString(),
+            statusCode: (int)response.StatusCode);
     }
 
     /// <summary>

@@ -6,6 +6,9 @@
 @using TrainingHub.Blazor.Client.Infrastructure
 @inject ISnackbar Snackbar
 @inject ITrainerStandingSource StandingSource
+@inject IDialogService DialogService
+@inject IBffSessionClient SessionClient
+@inject IAuthenticationStateNotifier AuthenticationNotifier
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="my-4">
     <MudPaper Elevation="4" Class="pa-8">
@@ -142,6 +145,28 @@
                         }
                     </MudButton>
                 </MudStack>
+
+                <MudDivider Class="my-2" />
+
+                @* Deliberately not disabled by _standing.IsSuspended: a suspension takes the
+                   catalog away, never the right to leave. Erasing the account is the one write
+                   the sanction does not withhold (ADR 0085). *@
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.h6">Erase this account</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Removes your profile, your trainings and your portrait, immediately and
+                        for good. There is no way back.
+                    </MudText>
+                    <div>
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Error"
+                                   StartIcon="@Icons.Material.Filled.DeleteForever"
+                                   Disabled="_isErasing"
+                                   OnClick="HandleEraseAccount">
+                            Erase account
+                        </MudButton>
+                    </div>
+                </MudStack>
             </MudStack>
         }
     </MudPaper>
@@ -178,6 +203,7 @@
     private bool _isLoadingData;
     private bool _isSaving;
     private bool _isUploading;
+    private bool _isErasing;
 
     private Guid _trainerId;
     private string _firstname = string.Empty;
@@ -220,12 +246,27 @@
 
             Apply(read.Result);
         }
+        catch (ApiException<ProblemDetails> exception)
+        {
+            // The declared 404: the trainer behind this session is gone. The document says so in
+            // the API's own words (ADR 0004).
+            foreach (var message in ProblemDetailsMessages.Read(exception.Result, "The request was rejected."))
+            {
+                Snackbar.Add(message, Severity.Error);
+            }
+        }
         catch (ApiException exception)
         {
             // exception.Message here is the generator's own sentence — "The HTTP status code of
             // the response was not expected (503)." It belongs in the console, not on screen.
             Console.Error.WriteLine(exception);
             Snackbar.Add("The profile could not be loaded. Try again in a moment.", Severity.Error);
+        }
+        catch (Exception exception)
+        {
+            // Whatever this is, it is ours. A NullReferenceException must not become UI copy.
+            Console.Error.WriteLine(exception);
+            Snackbar.Add("Something went wrong loading the profile.", Severity.Error);
         }
         finally
         {
@@ -292,11 +333,27 @@
 
             Snackbar.Add("Photo updated.", Severity.Success);
         }
-        catch (ApiException exception)
+        catch (ApiException<ProblemDetails> exception)
         {
             // The server is the authority on what an image is, so its refusal is shown as written
-            // rather than reworded into a guess about which rule was broken.
-            _photoError = Explain(exception, "Failed to upload the photo");
+            // rather than reworded into a guess about which rule was broken — read from the
+            // problem document, never from the raw response body.
+            _photoError = string.Join(
+                " ",
+                ProblemDetailsMessages.Read(exception.Result, "Failed to upload the photo."));
+        }
+        catch (ApiException exception)
+        {
+            // With no readable document, the generator's own sentence must not become interface
+            // copy: it goes to the console, and a sentence of ours goes on screen.
+            Console.Error.WriteLine(exception);
+            _photoError = "Failed to upload the photo. Try again in a moment.";
+        }
+        catch (Exception exception)
+        {
+            // Whatever this is, it is ours. A NullReferenceException must not become UI copy.
+            Console.Error.WriteLine(exception);
+            _photoError = "Something went wrong uploading the photo.";
         }
         finally
         {
@@ -319,9 +376,21 @@
 
             Snackbar.Add("Photo removed.", Severity.Success);
         }
+        catch (ApiException<ProblemDetails> exception)
+        {
+            _photoError = string.Join(
+                " ",
+                ProblemDetailsMessages.Read(exception.Result, "Failed to remove the photo."));
+        }
         catch (ApiException exception)
         {
-            _photoError = Explain(exception, "Failed to remove the photo");
+            Console.Error.WriteLine(exception);
+            _photoError = "Failed to remove the photo. Try again in a moment.";
+        }
+        catch (Exception exception)
+        {
+            Console.Error.WriteLine(exception);
+            _photoError = "Something went wrong removing the photo.";
         }
         finally
         {
@@ -360,15 +429,33 @@
 
             Snackbar.Add("Profile saved.", Severity.Success);
         }
-        catch (ApiException exception) when (exception.StatusCode == StatusPreconditionFailed)
+        catch (ApiException<ProblemDetails> exception) when (exception.StatusCode == StatusPreconditionFailed)
         {
+            // The declared 412: the sentence is ours because the document describes a version
+            // mismatch rather than what happened to the person editing.
             Snackbar.Add(
                 "Someone else changed this profile while you were editing it. Reload and try again.",
                 Severity.Warning);
         }
+        catch (ApiException<ProblemDetails> exception)
+        {
+            // The 400, the 404 and the 428 all arrive as problem documents, and the messages are
+            // the server's own — per field when the contract refused, per domain error when the
+            // aggregate did (ADR 0004).
+            foreach (var message in ProblemDetailsMessages.Read(exception.Result, "The request was rejected."))
+            {
+                Snackbar.Add(message, Severity.Error);
+            }
+        }
         catch (ApiException exception)
         {
-            Snackbar.Add(Explain(exception, "Failed to save the profile"), Severity.Error);
+            Console.Error.WriteLine(exception);
+            Snackbar.Add("Failed to save the profile. Try again in a moment.", Severity.Error);
+        }
+        catch (Exception exception)
+        {
+            Console.Error.WriteLine(exception);
+            Snackbar.Add("Something went wrong saving the profile.", Severity.Error);
         }
         finally
         {
@@ -376,17 +463,46 @@
         }
     }
 
-    private static string Explain(ApiException exception, string fallback)
+    private async Task HandleEraseAccount()
     {
-        // The server's refusal is shown as written — it is the authority on what an image is. With
-        // no body to show, the generator's own sentence must not become interface copy: it goes to
-        // the console, and the caller's fallback sentence goes on screen.
-        if (string.IsNullOrWhiteSpace(exception.Response))
+        var password = await EraseAccountDialogs.AskAsync(DialogService);
+
+        if (password is null)
         {
-            Console.Error.WriteLine(exception);
-            return $"{fallback}.";
+            return;
         }
 
-        return exception.Response;
+        _isErasing = true;
+        try
+        {
+            var problem = await SessionClient.EraseAccountAsync(password);
+
+            if (problem is not null)
+            {
+                // The wrong password arrives keyed to its field, and the sentence inside the
+                // document is the one the API wrote — shown as written, like every refusal here.
+                foreach (var message in ProblemDetailsMessages.Read(problem, "The account could not be erased."))
+                {
+                    Snackbar.Add(message, Severity.Error);
+                }
+
+                return;
+            }
+
+            // The BFF has already signed the session out; what is left is telling the interface.
+            Snackbar.Add("Your account was erased.", Severity.Success);
+            AuthenticationNotifier.NotifyAuthenticationChanged();
+            NavigationManager.NavigateTo("/");
+        }
+        catch (HttpRequestException exception)
+        {
+            Console.Error.WriteLine(exception);
+            Snackbar.Add("The account could not be erased. Try again in a moment.", Severity.Error);
+        }
+        finally
+        {
+            _isErasing = false;
+        }
     }
+
 }

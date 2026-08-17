@@ -196,7 +196,7 @@ public sealed class TrainerController(
         var content = await request.Photo.ReadAllBytesAsync(cancellationToken);
 
         var result = await commandDispatcher.DispatchAsync(
-            new SetTrainerPhotoCommand { Content = content, ContentType = request.Photo.ContentType },
+            new SetCurrentTrainerPhotoCommand { Content = content, ContentType = request.Photo.ContentType },
             cancellationToken);
 
         var trainerId = currentUserService.TrainerId;
@@ -225,7 +225,7 @@ public sealed class TrainerController(
     public async Task<ActionResult> DeletePhotoAsync(CancellationToken cancellationToken = default)
     {
         var result = await commandDispatcher.DispatchAsync(
-            new RemoveTrainerPhotoCommand(), cancellationToken);
+            new RemoveCurrentTrainerPhotoCommand(), cancellationToken);
 
         return result.Match<ActionResult>(
             onSuccess: NoContent,

@@ -40,13 +40,9 @@ public sealed class TrainerPhotoStore(IObjectStore objectStore) : ITrainerPhotoS
     /// <inheritdoc />
     public Task DeleteAsync(
         TrainerId trainerId,
-        TrainerPhoto photo,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(photo);
-
-        return objectStore.DeleteAsync(KeyFor(trainerId, photo.PhotoId), cancellationToken);
-    }
+        PhotoId photoId,
+        CancellationToken cancellationToken = default) =>
+        objectStore.DeleteAsync(KeyFor(trainerId, photoId), cancellationToken);
 
     private static ObjectKey KeyFor(TrainerId trainerId, PhotoId photoId)
     {

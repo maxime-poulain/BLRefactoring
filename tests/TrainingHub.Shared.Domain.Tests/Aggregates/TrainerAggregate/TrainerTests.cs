@@ -326,6 +326,32 @@ public sealed class TrainerTests
         // Assert
         var domainEvent = trainer.DomainEvents.OfType<TrainerDeletedDomainEvent>().Single();
         domainEvent.TrainerId.Should().Be(trainer.Id);
+        domainEvent.PhotoId.Should().BeNull("a trainer without a portrait leaves no bytes to collect");
+    }
+
+    /// <summary>
+    /// Mark for deletion, with a portrait, carries its identity on the event.
+    /// </summary>
+    /// <remarks>
+    /// The policy that collects the bytes runs after every row that could have answered the
+    /// question is gone, so the event carries what the aggregate still knows (ADR 0085) — the
+    /// old-address warning's shape, one attribute over.
+    /// </remarks>
+    [Fact]
+    public void MarkForDeletion_WithAPortrait_CarriesItsIdentityOnTheEvent()
+    {
+        // Arrange
+        var trainer = new TrainerBuilder().Build();
+        var photo = TrainerPortrait();
+        trainer.AttachPhoto(photo);
+        trainer.ClearDomainEvents();
+
+        // Act
+        trainer.MarkForDeletion();
+
+        // Assert
+        var domainEvent = trainer.DomainEvents.OfType<TrainerDeletedDomainEvent>().Single();
+        domainEvent.PhotoId.Should().Be(photo.PhotoId);
     }
 
     // --- AttachPhoto and RemovePhoto ---

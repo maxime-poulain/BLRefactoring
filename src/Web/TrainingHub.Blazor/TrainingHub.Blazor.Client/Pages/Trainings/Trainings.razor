@@ -245,9 +245,12 @@
         }
         catch (ApiException<ProblemDetails> ex)
         {
-            // One RFC 7807 document rather than a bare array of errors: the detail carries the
-            // message, and the domain codes travel in the `domainErrors` extension. See ADR 0004.
-            Snackbar.Add(ex.Result.Detail ?? ex.Result.Title ?? "The request was rejected.", Severity.Error);
+            // One RFC 7807 document rather than a bare array of errors: the messages travel under
+            // `errors` or `domainErrors`, and the shared reader speaks both envelopes. See ADR 0004.
+            foreach (var message in ProblemDetailsMessages.Read(ex.Result, "The request was rejected."))
+            {
+                Snackbar.Add(message, Severity.Error);
+            }
         }
         catch (ApiException ex)
         {
@@ -332,12 +335,16 @@
         }
         catch (ApiException<ProblemDetails> ex)
         {
-            // One RFC 7807 document rather than a bare array of errors: the detail carries the
-            // message, and the domain codes travel in the `domainErrors` extension. See ADR 0004.
+            // One RFC 7807 document rather than a bare array of errors: the messages travel under
+            // `errors` or `domainErrors`, and the shared reader speaks both envelopes. See ADR 0004.
             // A 409 lands here too: the training was already in the state being asked for, and the
-            // server's sentence says so better than anything this page could invent. Reloading
+            // server's sentences say so better than anything this page could invent. Reloading
             // afterwards is what makes the buttons agree with the truth again.
-            Snackbar.Add(ex.Result.Detail ?? ex.Result.Title ?? "The request was rejected.", Severity.Error);
+            foreach (var message in ProblemDetailsMessages.Read(ex.Result, "The request was rejected."))
+            {
+                Snackbar.Add(message, Severity.Error);
+            }
+
             await LoadTrainings();
         }
         catch (ApiException ex) when (ex.StatusCode == StatusForbidden)
