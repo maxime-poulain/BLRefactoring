@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AccountErased" xml:space="preserve">
+    <value>Votre compte a été effacé.</value>
+  </data>
+  <data name="AddAPhoto" xml:space="preserve">
+    <value>Ajouter une photo</value>
+  </data>
+  <data name="BioLabel" xml:space="preserve">
+    <value>Bio</value>
+  </data>
+  <data name="ChangePhoto" xml:space="preserve">
+    <value>Changer la photo</value>
+  </data>
+  <data name="ContactEmail" xml:space="preserve">
+    <value>E-mail de contact</value>
+  </data>
+  <data name="ContactEmailHelper" xml:space="preserve">
+    <value>Publié sur votre profil. Ce n'est pas l'adresse avec laquelle vous vous connectez.</value>
+  </data>
+  <data name="ContactEmailRequired" xml:space="preserve">
+    <value>Un e-mail de contact est requis</value>
+  </data>
+  <data name="CurrentPassword" xml:space="preserve">
+    <value>Mot de passe actuel</value>
+  </data>
+  <data name="EraseAccount" xml:space="preserve">
+    <value>Effacer le compte</value>
+  </data>
+  <data name="EraseExplanation" xml:space="preserve">
+    <value>Supprime votre profil, vos formations et votre portrait, immédiatement et pour de bon. Il n'y a pas de retour en arrière.</value>
+  </data>
+  <data name="EraseFailed" xml:space="preserve">
+    <value>Le compte n'a pas pu être effacé.</value>
+  </data>
+  <data name="EraseFailedRetry" xml:space="preserve">
+    <value>Le compte n'a pas pu être effacé. Réessayez dans un instant.</value>
+  </data>
+  <data name="EraseIntroEmphasis" xml:space="preserve">
+    <value>immédiatement et pour de bon</value>
+  </data>
+  <data name="EraseIntroEnd" xml:space="preserve">
+    <value>. Votre nom d'utilisateur et votre adresse e-mail deviennent libres pour quiconque veut s'inscrire.</value>
+  </data>
+  <data name="EraseIntroStart" xml:space="preserve">
+    <value>Effacer le compte supprime votre profil, vos formations et votre portrait,</value>
+  </data>
+  <data name="ErasePasswordHelper" xml:space="preserve">
+    <value>L'effacement est définitif, il demande donc plus qu'un onglet ouvert.</value>
+  </data>
+  <data name="EraseThisAccount" xml:space="preserve">
+    <value>Effacer ce compte</value>
+  </data>
+  <data name="EraseThisAccountTitle" xml:space="preserve">
+    <value>Effacer ce compte ?</value>
+  </data>
+  <data name="FirstNameRequired" xml:space="preserve">
+    <value>Le prénom est requis</value>
+  </data>
+  <data name="LastNameRequired" xml:space="preserve">
+    <value>Le nom est requis</value>
+  </data>
+  <data name="LoadingProfile" xml:space="preserve">
+    <value>Chargement du profil...</value>
+  </data>
+  <data name="MyProfile" xml:space="preserve">
+    <value>Mon profil</value>
+  </data>
+  <data name="PasswordRequired" xml:space="preserve">
+    <value>Votre mot de passe est requis</value>
+  </data>
+  <data name="PhotoFormats" xml:space="preserve">
+    <value>PNG, JPEG ou WebP, jusqu'à {0} Mio.</value>
+  </data>
+  <data name="PhotoRemoveFailed" xml:space="preserve">
+    <value>La photo n'a pas pu être supprimée.</value>
+  </data>
+  <data name="PhotoRemoveFailedRetry" xml:space="preserve">
+    <value>La photo n'a pas pu être supprimée. Réessayez dans un instant.</value>
+  </data>
+  <data name="PhotoRemoveFailedWrong" xml:space="preserve">
+    <value>Un problème est survenu à la suppression de la photo.</value>
+  </data>
+  <data name="PhotoRemoved" xml:space="preserve">
+    <value>Photo supprimée.</value>
+  </data>
+  <data name="PhotoTooLarge" xml:space="preserve">
+    <value>Cette photo fait {0} Mio. La limite est de {1} Mio.</value>
+  </data>
+  <data name="PhotoUpdated" xml:space="preserve">
+    <value>Photo mise à jour.</value>
+  </data>
+  <data name="PhotoUploadFailed" xml:space="preserve">
+    <value>La photo n'a pas pu être envoyée.</value>
+  </data>
+  <data name="PhotoUploadFailedRetry" xml:space="preserve">
+    <value>La photo n'a pas pu être envoyée. Réessayez dans un instant.</value>
+  </data>
+  <data name="PhotoUploadFailedWrong" xml:space="preserve">
+    <value>Un problème est survenu à l'envoi de la photo.</value>
+  </data>
+  <data name="ProfileEditConflict" xml:space="preserve">
+    <value>Quelqu'un d'autre a modifié ce profil pendant que vous l'éditiez. Rechargez et réessayez.</value>
+  </data>
+  <data name="ProfileLoadFailedRetry" xml:space="preserve">
+    <value>Le profil n'a pas pu être chargé. Réessayez dans un instant.</value>
+  </data>
+  <data name="ProfileLoadFailedWrong" xml:space="preserve">
+    <value>Un problème est survenu au chargement du profil.</value>
+  </data>
+  <data name="ProfilePhotoAlt" xml:space="preserve">
+    <value>Photo de profil</value>
+  </data>
+  <data name="ProfileSaveFailedRetry" xml:space="preserve">
+    <value>Le profil n'a pas pu être enregistré. Réessayez dans un instant.</value>
+  </data>
+  <data name="ProfileSaveFailedWrong" xml:space="preserve">
+    <value>Un problème est survenu à l'enregistrement du profil.</value>
+  </data>
+  <data name="ProfileSaved" xml:space="preserve">
+    <value>Profil enregistré.</value>
+  </data>
+  <data name="RemovePhoto" xml:space="preserve">
+    <value>Supprimer la photo</value>
+  </data>
+  <data name="SaveChanges" xml:space="preserve">
+    <value>Enregistrer les modifications</value>
+  </data>
+  <data name="Saving" xml:space="preserve">
+    <value>Enregistrement...</value>
+  </data>
+</root>

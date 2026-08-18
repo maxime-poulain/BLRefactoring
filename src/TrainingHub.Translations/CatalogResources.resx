@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AToZ" xml:space="preserve">
+    <value>A–Z</value>
+  </data>
+  <data name="About" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="AntiRobotFailed" xml:space="preserve">
+    <value>The anti-robot check did not pass. Please try sending again.</value>
+  </data>
+  <data name="BackToTheCatalog" xml:space="preserve">
+    <value>Back to the catalog</value>
+  </data>
+  <data name="CatalogIntro" xml:space="preserve">
+    <value>Every training a trainer currently publishes. No account needed to look.</value>
+  </data>
+  <data name="CatalogLoadFailed" xml:space="preserve">
+    <value>The catalog could not be loaded.</value>
+  </data>
+  <data name="CatalogLoadFailedRetry" xml:space="preserve">
+    <value>The catalog could not be loaded. Try again in a moment.</value>
+  </data>
+  <data name="CatalogMetaDescription" xml:space="preserve">
+    <value>Every training a trainer currently publishes on TrainingHub. Browse by topic, search by title — no account needed to look.</value>
+  </data>
+  <data name="CatalogPageTitle" xml:space="preserve">
+    <value>Catalog — TrainingHub</value>
+  </data>
+  <data name="CatalogUnreachable" xml:space="preserve">
+    <value>The catalog could not be reached</value>
+  </data>
+  <data name="ClearTopics" xml:space="preserve">
+    <value>Clear topics</value>
+  </data>
+  <data name="CompleteTheCheck" xml:space="preserve">
+    <value>Complete the check above to send your message.</value>
+  </data>
+  <data name="ContactName" xml:space="preserve">
+    <value>Contact {0}</value>
+  </data>
+  <data name="EmailHelper" xml:space="preserve">
+    <value>{0} answers you here; the address goes to nobody else.</value>
+  </data>
+  <data name="EmailRequired" xml:space="preserve">
+    <value>An email address is required</value>
+  </data>
+  <data name="EmailTooLong" xml:space="preserve">
+    <value>An email address cannot exceed {0} characters</value>
+  </data>
+  <data name="FirstNameRequired" xml:space="preserve">
+    <value>A first name is required</value>
+  </data>
+  <data name="LastNameRequired" xml:space="preserve">
+    <value>A last name is required</value>
+  </data>
+  <data name="MessageGoesTo" xml:space="preserve">
+    <value>Your message goes to</value>
+  </data>
+  <data name="MessageLabel" xml:space="preserve">
+    <value>Message</value>
+  </data>
+  <data name="MessageNotAccepted" xml:space="preserve">
+    <value>The message was not accepted.</value>
+  </data>
+  <data name="MessageOnItsWay" xml:space="preserve">
+    <value>Your message is on its way to {0}.</value>
+  </data>
+  <data name="MessageRequired" xml:space="preserve">
+    <value>A message is required</value>
+  </data>
+  <data name="MessageSendFailed" xml:space="preserve">
+    <value>The message could not be sent. Try again in a moment.</value>
+  </data>
+  <data name="MessageTooLong" xml:space="preserve">
+    <value>A message cannot exceed {0} characters</value>
+  </data>
+  <data name="MessageTooShort" xml:space="preserve">
+    <value>A message needs at least {0} characters</value>
+  </data>
+  <data name="NameTooLong" xml:space="preserve">
+    <value>A name cannot exceed {0} characters</value>
+  </data>
+  <data name="Newest" xml:space="preserve">
+    <value>Newest</value>
+  </data>
+  <data name="NoTrainingMatches" xml:space="preserve">
+    <value>No training matches</value>
+  </data>
+  <data name="OfferedBy" xml:space="preserve">
+    <value>Offered by</value>
+  </data>
+  <data name="Prerequisites" xml:space="preserve">
+    <value>Prerequisites</value>
+  </data>
+  <data name="ProfileLoadFailed" xml:space="preserve">
+    <value>The profile could not be loaded.</value>
+  </data>
+  <data name="ProfileLoadFailedRetry" xml:space="preserve">
+    <value>The profile could not be loaded. Try again in a moment.</value>
+  </data>
+  <data name="ProfileNotAvailable" xml:space="preserve">
+    <value>This profile is not available</value>
+  </data>
+  <data name="ProfileNotAvailableBody" xml:space="preserve">
+    <value>The trainer may not exist, or may have nothing on offer.</value>
+  </data>
+  <data name="SearchHelper" xml:space="preserve">
+    <value>Every word of a title, matched by prefix</value>
+  </data>
+  <data name="SearchTheShelf" xml:space="preserve">
+    <value>Search the shelf</value>
+  </data>
+  <data name="Send" xml:space="preserve">
+    <value>Send</value>
+  </data>
+  <data name="TheyCanAnswer" xml:space="preserve">
+    <value>They can answer you at the address you leave here.</value>
+  </data>
+  <data name="TrainerBusy" xml:space="preserve">
+    <value>{0} has received a lot of messages just now. Try again in a minute.</value>
+  </data>
+  <data name="TrainerFallbackTitle" xml:space="preserve">
+    <value>Trainer</value>
+  </data>
+  <data name="TrainerMetaFallback" xml:space="preserve">
+    <value>A trainer with trainings on offer in the TrainingHub catalog.</value>
+  </data>
+  <data name="TrainerNoLongerContactable" xml:space="preserve">
+    <value>This trainer can no longer be contacted.</value>
+  </data>
+  <data name="TrainingFallbackTitle" xml:space="preserve">
+    <value>Training</value>
+  </data>
+  <data name="TrainingLoadFailed" xml:space="preserve">
+    <value>The training could not be loaded.</value>
+  </data>
+  <data name="TrainingLoadFailedRetry" xml:space="preserve">
+    <value>The training could not be loaded. Try again in a moment.</value>
+  </data>
+  <data name="TrainingMetaFallback" xml:space="preserve">
+    <value>A training on offer in the TrainingHub catalog.</value>
+  </data>
+  <data name="TrainingNotOnOffer" xml:space="preserve">
+    <value>This training is not on offer</value>
+  </data>
+  <data name="TrainingNotOnOfferBody" xml:space="preserve">
+    <value>It may never have existed, or it may have been withdrawn.</value>
+  </data>
+  <data name="TrainingsOfferedMany" xml:space="preserve">
+    <value>{0} trainings offered by {1}.</value>
+  </data>
+  <data name="TrainingsOfferedOne" xml:space="preserve">
+    <value>1 training offered by {0}.</value>
+  </data>
+  <data name="TrainingsOnOffer" xml:space="preserve">
+    <value>Trainings on offer</value>
+  </data>
+  <data name="WhatYouLeaveWith" xml:space="preserve">
+    <value>What you leave with</value>
+  </data>
+</root>

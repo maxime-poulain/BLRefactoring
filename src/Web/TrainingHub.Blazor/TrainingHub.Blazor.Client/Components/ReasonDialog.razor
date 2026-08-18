@@ -1,4 +1,6 @@
 @using MudBlazor
+@inject IStringLocalizer<AdministrationResources> L
+@inject IStringLocalizer<CommonResources> Common
 
 <MudDialog>
     <DialogContent>
@@ -15,20 +17,20 @@
            explain. *@
         <MudForm @ref="_form" @bind-IsValid="_isValid" Class="mt-4">
             <MudTextField @bind-Value="_reason"
-                          Label="Reason"
+                          Label="@L["ReasonLabel"]"
                           Variant="Variant.Outlined"
                           Required="true"
-                          RequiredError="A reason is required"
+                          RequiredError="@L["ReasonRequired"]"
                           Validation="@(new Func<string, string?>(ValidateReason))"
                           Immediate="true"
                           Lines="3"
                           Counter="ReasonMaxLength"
                           MaxLength="ReasonMaxLength"
-                          HelperText="The trainer is told this, word for word." />
+                          HelperText="@L["ReasonHelper"]" />
         </MudForm>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="Cancel" Variant="Variant.Text">@Common["Cancel"]</MudButton>
         <MudButton Color="Color.Warning"
                    Variant="Variant.Filled"
                    Disabled="@(!_isValid)"
@@ -68,15 +70,15 @@
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
 
-    private static string? ValidateReason(string value)
+    private string? ValidateReason(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            return "A reason is required";
+            return L["ReasonRequired"];
         }
 
         return value.Length > ReasonMaxLength
-            ? $"A reason cannot exceed {ReasonMaxLength} characters"
+            ? L["ReasonTooLong", ReasonMaxLength].Value
             : null;
     }
 

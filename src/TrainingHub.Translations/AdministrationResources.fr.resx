@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ActiveFilter" xml:space="preserve">
+    <value>Actif</value>
+  </data>
+  <data name="AdministrationIntro" xml:space="preserve">
+    <value>Ce que ce catalogue contient, et ce qui vous attend.</value>
+  </data>
+  <data name="AlreadyDeliveredHeader" xml:space="preserve">
+    <value>Déjà livré à</value>
+  </data>
+  <data name="AttemptsHeader" xml:space="preserve">
+    <value>Tentatives</value>
+  </data>
+  <data name="ContactAddressHeader" xml:space="preserve">
+    <value>Adresse de contact</value>
+  </data>
+  <data name="EmptyPageLegitimate" xml:space="preserve">
+    <value>Une page vide est une réponse légitime ; un filtre mal saisi est refusé à la place.</value>
+  </data>
+  <data name="EventHeader" xml:space="preserve">
+    <value>Événement</value>
+  </data>
+  <data name="EverythingDelivered" xml:space="preserve">
+    <value>Chaque fait enregistré a été livré.</value>
+  </data>
+  <data name="InterdictionLifted" xml:space="preserve">
+    <value>Interdiction levée. Son propriétaire peut la publier à nouveau.</value>
+  </data>
+  <data name="LastFailure" xml:space="preserve">
+    <value>Dernier échec</value>
+  </data>
+  <data name="MessageGone" xml:space="preserve">
+    <value>Ce message n'existe plus.</value>
+  </data>
+  <data name="MessageNotRequeuedRetry" xml:space="preserve">
+    <value>Le message n'a pas pu être remis en file. Réessayez dans un instant.</value>
+  </data>
+  <data name="MessageNotRequeuedWrong" xml:space="preserve">
+    <value>Un problème est survenu ; le message n'a pas été remis en file.</value>
+  </data>
+  <data name="NameHeader" xml:space="preserve">
+    <value>Nom</value>
+  </data>
+  <data name="NoLongerATrainer" xml:space="preserve">
+    <value>N'est plus formateur</value>
+  </data>
+  <data name="NoTrainerMatches" xml:space="preserve">
+    <value>Aucun formateur ne correspond</value>
+  </data>
+  <data name="NoTrainingMatches" xml:space="preserve">
+    <value>Aucune formation ne correspond</value>
+  </data>
+  <data name="Nobody" xml:space="preserve">
+    <value>Personne</value>
+  </data>
+  <data name="NothingGivenUpOn" xml:space="preserve">
+    <value>Rien n'a été abandonné</value>
+  </data>
+  <data name="OpenTheOutbox" xml:space="preserve">
+    <value>Ouvrir la boîte d'envoi</value>
+  </data>
+  <data name="OutboxIntro" xml:space="preserve">
+    <value>Des faits que ce système a enregistrés puis n'a pas réussi à annoncer. Chacun a épuisé son budget de tentatives et ne sera pas réessayé tant que personne ne le demande. La remise en file n'exécute que les consommateurs encore dus.</value>
+  </data>
+  <data name="OutboxReadFailed" xml:space="preserve">
+    <value>La boîte d'envoi n'a pas pu être lue.</value>
+  </data>
+  <data name="OutboxReadFailedRetry" xml:space="preserve">
+    <value>La boîte d'envoi n'a pas pu être lue. Réessayez dans un instant.</value>
+  </data>
+  <data name="OwnerHeader" xml:space="preserve">
+    <value>Propriétaire</value>
+  </data>
+  <data name="PublishedFilter" xml:space="preserve">
+    <value>Publiée</value>
+  </data>
+  <data name="ReasonHeader" xml:space="preserve">
+    <value>Motif</value>
+  </data>
+  <data name="ReasonHelper" xml:space="preserve">
+    <value>Le formateur en est informé, mot pour mot.</value>
+  </data>
+  <data name="ReasonLabel" xml:space="preserve">
+    <value>Motif</value>
+  </data>
+  <data name="ReasonRequired" xml:space="preserve">
+    <value>Un motif est requis</value>
+  </data>
+  <data name="ReasonTooLong" xml:space="preserve">
+    <value>Un motif ne peut pas dépasser {0} caractères</value>
+  </data>
+  <data name="RecordedHeader" xml:space="preserve">
+    <value>Enregistré</value>
+  </data>
+  <data name="Reinstate" xml:space="preserve">
+    <value>Rétablir</value>
+  </data>
+  <data name="Release" xml:space="preserve">
+    <value>Libérer</value>
+  </data>
+  <data name="Requeue" xml:space="preserve">
+    <value>Remettre en file</value>
+  </data>
+  <data name="RequeuedOn" xml:space="preserve">
+    <value>Remis en file {0}</value>
+  </data>
+  <data name="RequeuedSuccess" xml:space="preserve">
+    <value>Remis en file. Le worker le retentera à son prochain passage.</value>
+  </data>
+  <data name="SearchLabel" xml:space="preserve">
+    <value>Recherche</value>
+  </data>
+  <data name="SearchTrainersHelper" xml:space="preserve">
+    <value>Nom ou adresse de contact</value>
+  </data>
+  <data name="SearchTrainingsHelper" xml:space="preserve">
+    <value>Titre</value>
+  </data>
+  <data name="Standing" xml:space="preserve">
+    <value>Statut</value>
+  </data>
+  <data name="State" xml:space="preserve">
+    <value>État</value>
+  </data>
+  <data name="Suspend" xml:space="preserve">
+    <value>Suspendre</value>
+  </data>
+  <data name="SuspendConsequence" xml:space="preserve">
+    <value>Il garde son compte et ses formations, et son catalogue quitte la vue publique jusqu'à la levée de la suspension. Il en est informé par e-mail, avec ce motif.</value>
+  </data>
+  <data name="SuspendTrainerTitle" xml:space="preserve">
+    <value>Suspendre le formateur</value>
+  </data>
+  <data name="SuspendedBadge" xml:space="preserve">
+    <value>Suspendu</value>
+  </data>
+  <data name="SuspendedFilter" xml:space="preserve">
+    <value>Suspendu</value>
+  </data>
+  <data name="TitleHeader" xml:space="preserve">
+    <value>Titre</value>
+  </data>
+  <data name="TrainerGone" xml:space="preserve">
+    <value>Ce formateur n'existe plus.</value>
+  </data>
+  <data name="TrainerNotReinstatedRetry" xml:space="preserve">
+    <value>Le formateur n'a pas pu être rétabli. Réessayez dans un instant.</value>
+  </data>
+  <data name="TrainerNotReinstatedWrong" xml:space="preserve">
+    <value>Un problème est survenu ; le formateur n'a pas été rétabli.</value>
+  </data>
+  <data name="TrainerNotSuspendedRetry" xml:space="preserve">
+    <value>Le formateur n'a pas pu être suspendu. Réessayez dans un instant.</value>
+  </data>
+  <data name="TrainerNotSuspendedWrong" xml:space="preserve">
+    <value>Un problème est survenu ; le formateur n'a pas été suspendu.</value>
+  </data>
+  <data name="TrainerReinstated" xml:space="preserve">
+    <value>Formateur rétabli. Son catalogue est à nouveau proposé.</value>
+  </data>
+  <data name="TrainerSuspended" xml:space="preserve">
+    <value>Formateur suspendu. Il en a été informé, avec le motif.</value>
+  </data>
+  <data name="Trainers" xml:space="preserve">
+    <value>Formateurs</value>
+  </data>
+  <data name="TrainersLoadFailed" xml:space="preserve">
+    <value>Les formateurs n'ont pas pu être chargés.</value>
+  </data>
+  <data name="TrainersLoadFailedRetry" xml:space="preserve">
+    <value>Les formateurs n'ont pas pu être chargés. Réessayez dans un instant.</value>
+  </data>
+  <data name="TrainingGone" xml:space="preserve">
+    <value>Cette formation n'existe plus.</value>
+  </data>
+  <data name="TrainingNotReleasedRetry" xml:space="preserve">
+    <value>La formation n'a pas pu être libérée. Réessayez dans un instant.</value>
+  </data>
+  <data name="TrainingNotReleasedWrong" xml:space="preserve">
+    <value>Un problème est survenu ; la formation n'a pas été libérée.</value>
+  </data>
+  <data name="TrainingNotWithheldRetry" xml:space="preserve">
+    <value>La formation n'a pas pu être retenue. Réessayez dans un instant.</value>
+  </data>
+  <data name="TrainingNotWithheldWrong" xml:space="preserve">
+    <value>Un problème est survenu ; la formation n'a pas été retenue.</value>
+  </data>
+  <data name="TrainingWithheld" xml:space="preserve">
+    <value>Formation retenue. Son propriétaire en a été informé, avec le motif.</value>
+  </data>
+  <data name="Trainings" xml:space="preserve">
+    <value>Formations</value>
+  </data>
+  <data name="TrainingsLoadFailed" xml:space="preserve">
+    <value>Les formations n'ont pas pu être chargées.</value>
+  </data>
+  <data name="TrainingsLoadFailedRetry" xml:space="preserve">
+    <value>Les formations n'ont pas pu être chargées. Réessayez dans un instant.</value>
+  </data>
+  <data name="UnderSuspension" xml:space="preserve">
+    <value>en suspension</value>
+  </data>
+  <data name="UnpublishedBadge" xml:space="preserve">
+    <value>Retirée</value>
+  </data>
+  <data name="UnpublishedFilter" xml:space="preserve">
+    <value>Retirée</value>
+  </data>
+  <data name="WaitingToBeRequeued" xml:space="preserve">
+    <value>en attente de remise en file</value>
+  </data>
+  <data name="WithheldBadge" xml:space="preserve">
+    <value>Retenue</value>
+  </data>
+  <data name="WithheldFilter" xml:space="preserve">
+    <value>Retenue</value>
+  </data>
+  <data name="WithheldFromTheCatalog" xml:space="preserve">
+    <value>retenues hors du catalogue</value>
+  </data>
+  <data name="Withhold" xml:space="preserve">
+    <value>Retenir</value>
+  </data>
+  <data name="WithholdConsequence" xml:space="preserve">
+    <value>Elle cesse d'être proposée publiquement et son propriétaire ne peut pas la publier à nouveau lui-même. Il en est informé par e-mail, avec ce motif.</value>
+  </data>
+  <data name="WithholdTrainingTitle" xml:space="preserve">
+    <value>Retenir la formation</value>
+  </data>
+</root>

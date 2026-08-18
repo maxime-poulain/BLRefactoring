@@ -135,6 +135,149 @@ public sealed class CreateTrainingTests : ComponentTest
             .Click();
 
     /// <summary>
+    /// Loading, the answer still on its way, says it is loading rather than showing an empty form.
+    /// </summary>
+    [Fact]
+    public void Loading_TheAnswerStillOnItsWay_SaysItIsLoadingRatherThanShowingAnEmptyForm()
+    {
+        _trainingClient
+            .Setup(client => client.GetTrainingByIdAsync(It.IsAny<Guid>()))
+            .Returns(new TaskCompletionSource<SwaggerResponse<TrainingHttpResponse>>().Task);
+
+        var page = Render<CreateTraining>(parameters => parameters.Add(p => p.Id, Guid.NewGuid()));
+
+        page.Markup.Should().Contain("Loading training",
+            "an empty form over a training still on its way would invite editing a blank");
+    }
+
+    /// <summary>
+    /// Loading, refused with the documents own words, shows them and returns to the list.
+    /// </summary>
+    [Fact]
+    public void Loading_RefusedWithTheDocumentsOwnWords_ShowsThemAndReturnsToTheList()
+    {
+        _trainingClient
+            .Setup(client => client.GetTrainingByIdAsync(It.IsAny<Guid>()))
+            .ThrowsAsync(ApiExceptions.Refused(400, "The id parameter is not a valid identifier."));
+
+        Render<CreateTraining>(parameters => parameters.Add(p => p.Id, Guid.NewGuid()));
+
+        Shown().Should().ContainSingle()
+            .Which.Message.Should().Be("The id parameter is not a valid identifier.",
+                "the declared 400 names its own refusal, and the document's words beat ours");
+    }
+
+    /// <summary>
+    /// Loading, something else went wrong, does not turn the exception into interface copy.
+    /// </summary>
+    [Fact]
+    public void Loading_SomethingElseWentWrong_DoesNotTurnTheExceptionIntoInterfaceCopy()
+    {
+        _trainingClient
+            .Setup(client => client.GetTrainingByIdAsync(It.IsAny<Guid>()))
+            .ThrowsAsync(new InvalidOperationException("a stack detail nobody should read on screen"));
+
+        Render<CreateTraining>(parameters => parameters.Add(p => p.Id, Guid.NewGuid()));
+
+        Shown().Should().ContainSingle()
+            .Which.Message.Should().Be("Something went wrong loading the training.");
+    }
+
+    /// <summary>
+    /// Submitting, the API accepted the edit, says so and returns to the list.
+    /// </summary>
+    [Fact]
+    public void Submitting_TheApiAcceptedTheEdit_SaysSoAndReturnsToTheList()
+    {
+        var page = RenderPrefilled();
+
+        Submit(page);
+
+        page.WaitForAssertion(() => Shown().Should().ContainSingle()
+            .Which.Should().Match<Snackbar>(snackbar =>
+                snackbar.Message == "Training updated successfully!"
+                && snackbar.Severity == Severity.Success));
+    }
+
+    /// <summary>
+    /// Submitting, the answer still on its way, says it is saving so the button reads as taken.
+    /// </summary>
+    [Fact]
+    public void Submitting_TheAnswerStillOnItsWay_SaysItIsSavingSoTheButtonReadsAsTaken()
+    {
+        _trainingClient
+            .Setup(client => client.UpdateTrainingAsync(
+                It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<EditTrainingHttpRequest>()))
+            .Returns(new TaskCompletionSource<TrainingHttpResponse>().Task);
+
+        var page = RenderPrefilled();
+
+        Submit(page);
+
+        page.WaitForAssertion(() => page.Markup.Should().Contain("Saving"));
+    }
+
+    /// <summary>
+    /// Typing, a field left empty, names each missing field at once.
+    /// </summary>
+    /// <remarks>
+    /// <c>Immediate</c> validation, so the sentences appear as the values change — no submit, and
+    /// none would come: the button is disabled the moment the form knows it is invalid.
+    /// </remarks>
+    [Fact]
+    public void Typing_AFieldLeftEmpty_NamesEachMissingFieldAtOnce()
+    {
+        var page = RenderPrefilled();
+
+        page.Find("input").Input("   ");
+        foreach (var textarea in page.FindAll("textarea"))
+        {
+            textarea.Input("   ");
+        }
+
+        page.WaitForAssertion(() => page.Markup.Should()
+            .Contain("Title is required")
+            .And.Contain("Description is required")
+            .And.Contain("Prerequisites is required")
+            .And.Contain("Acquired skills is required"));
+    }
+
+    /// <summary>
+    /// Typing, a value past its bound, answers the bound in the sentence.
+    /// </summary>
+    [Fact]
+    public void Typing_AValuePastItsBound_AnswersTheBoundInTheSentence()
+    {
+        var page = RenderPrefilled();
+
+        page.Find("input").Input(new string('x', 101));
+        foreach (var textarea in page.FindAll("textarea"))
+        {
+            textarea.Input(new string('x', 501));
+        }
+
+        page.WaitForAssertion(() => page.Markup.Should()
+            .Contain("Title cannot exceed 100 characters")
+            .And.Contain("Description cannot exceed 500 characters")
+            .And.Contain("Prerequisites cannot exceed 500 characters")
+            .And.Contain("Acquired skills cannot exceed 500 characters"));
+    }
+
+    /// <summary>
+    /// Typing, a title shorter than the floor, answers the floor in the sentence.
+    /// </summary>
+    [Fact]
+    public void Typing_ATitleShorterThanTheFloor_AnswersTheFloorInTheSentence()
+    {
+        var page = RenderPrefilled();
+
+        page.Find("input").Input("abc");
+
+        page.WaitForAssertion(() => page.Markup.Should()
+            .Contain("Title must be at least 5 characters"));
+    }
+
+    /// <summary>
     /// Loading, the training vanished, says so gently and returns to the list.
     /// </summary>
     [Fact]

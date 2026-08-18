@@ -5,14 +5,15 @@
 @using TrainingHub.GeneratedClients
 @inject IOutboxClient OutboxClient
 @inject ISnackbar Snackbar
+@inject IStringLocalizer<AdministrationResources> L
+@inject IStringLocalizer<CommonResources> Common
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="my-4">
-    <MudText Typo="Typo.h4" Class="mb-2">Outbox</MudText>
+    <MudText Typo="Typo.h4" Class="mb-2">@Common["Outbox"]</MudText>
     @* The screen says what a poison row is, because nothing else in this front end does and an
        operator arriving here for the first time is arriving because something broke (ADR 0061). *@
     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
-        Facts this system recorded and then failed to announce. Each one spent its retry budget and
-        will not be tried again until somebody asks. Requeueing runs only the consumers still owed.
+        @L["OutboxIntro"]
     </MudText>
 
     @if (_isLoading)
@@ -27,45 +28,45 @@
            this front end — so it is worded as reassurance rather than as an absence of matches. *@
         <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center">
             <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Style="font-size: 6rem;" Class="mb-4" />
-            <MudText Typo="Typo.h6">Nothing was given up on</MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">Every recorded fact has been delivered.</MudText>
+            <MudText Typo="Typo.h6">@L["NothingGivenUpOn"]</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@L["EverythingDelivered"]</MudText>
         </MudPaper>
     }
     else
     {
         <MudTable Items="@_page.Items" Hover="true" Elevation="1" T="PoisonedMessageHttpResponse">
             <HeaderContent>
-                <MudTh>Event</MudTh>
-                <MudTh>Recorded</MudTh>
-                <MudTh>Attempts</MudTh>
-                <MudTh>Already delivered to</MudTh>
+                <MudTh>@L["EventHeader"]</MudTh>
+                <MudTh>@L["RecordedHeader"]</MudTh>
+                <MudTh>@L["AttemptsHeader"]</MudTh>
+                <MudTh>@L["AlreadyDeliveredHeader"]</MudTh>
                 <MudTh />
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Event">
+                <MudTd DataLabel="@L["EventHeader"]">
                     <MudText Typo="Typo.body2">@context.Name</MudText>
                     <MudText Typo="Typo.caption" Color="Color.Secondary">v@(context.Version)</MudText>
                 </MudTd>
-                <MudTd DataLabel="Recorded">
+                <MudTd DataLabel="@L["RecordedHeader"]">
                     <MudText Typo="Typo.body2">@context.OccurredOnUtc.ToString("u", CultureInfo.InvariantCulture)</MudText>
                     @if (context.RequeuedOnUtc is not null)
                     {
                         <MudText Typo="Typo.caption" Color="Color.Secondary">
-                            Requeued @context.RequeuedOnUtc.Value.ToString("u", CultureInfo.InvariantCulture)
+                            @L["RequeuedOn", context.RequeuedOnUtc.Value.ToString("u", CultureInfo.InvariantCulture)]
                         </MudText>
                     }
                 </MudTd>
-                <MudTd DataLabel="Attempts">
+                <MudTd DataLabel="@L["AttemptsHeader"]">
                     <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">
                         @context.Attempts
                     </MudChip>
                 </MudTd>
-                <MudTd DataLabel="Already delivered to">
+                <MudTd DataLabel="@L["AlreadyDeliveredHeader"]">
                     @* What a requeue will not run again. Shown per row because it is the difference
                        between "retry this" and "send everything twice" (ADR 0034). *@
                     @if (context.DeliveredConsumers.Count == 0)
                     {
-                        <MudText Typo="Typo.body2" Color="Color.Secondary"><em>Nobody</em></MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary"><em>@L["Nobody"]</em></MudText>
                     }
                     else
                     {
@@ -82,7 +83,7 @@
                                Color="Color.Primary"
                                Variant="Variant.Text"
                                OnClick="@(() => RequeueAsync(context))">
-                        Requeue
+                        @L["Requeue"]
                     </MudButton>
                 </MudTd>
             </RowTemplate>
@@ -92,7 +93,7 @@
                     <MudTr>
                         <td colspan="5" class="pa-0">
                             <MudExpansionPanels Elevation="0">
-                                <MudExpansionPanel Text="Last failure">
+                                <MudExpansionPanel Text="@L["LastFailure"].Value">
                                     @* Pre-formatted and scrollable: this is an exception with its
                                        stack, and wrapping it would make it unreadable. *@
                                     <MudText Typo="Typo.caption">
@@ -151,7 +152,12 @@
         }
         catch (Exception exception)
         {
-            AdministrationFailures.Report(Snackbar, exception, "The outbox could not be read.");
+            AdministrationFailures.Report(
+                Snackbar,
+                exception,
+                Common["RequestRejected"],
+                L["OutboxReadFailedRetry"],
+                L["OutboxReadFailed"]);
         }
         finally
         {
@@ -167,9 +173,13 @@
         var outcome = await AdministrationFailures.RunAsync(
             Snackbar,
             () => OutboxClient.RequeueAsync(message.Id),
-            "Requeued. The worker will try it again on its next poll.",
-            "requeued",
-            "message");
+            new AdministrationCopy(
+                Success: L["RequeuedSuccess"],
+                Gone: L["MessageGone"],
+                Rejected: Common["RequestRejected"],
+                NoLongerAllowed: Common["NoLongerAllowed"],
+                CouldNot: L["MessageNotRequeuedRetry"],
+                WentWrong: L["MessageNotRequeuedWrong"]));
 
         if (outcome is not AdministrationOutcome.Unreachable)
         {

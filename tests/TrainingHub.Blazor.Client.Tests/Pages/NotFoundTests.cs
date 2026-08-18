@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Net;
 using AwesomeAssertions;
 using Bunit;
 using TrainingHub.Blazor.Client.Pages;
@@ -30,5 +32,35 @@ public sealed class NotFoundTests : ComponentTest
             .Should().Contain("/",
                 "the catalog is the one place a lost visitor can always go, and it is the front " +
                 "door itself now (ADR 0062, ADR 0074)");
+    }
+
+    /// <summary>
+    /// Renders, in the visitor's language, when the resolved culture is theirs.
+    /// </summary>
+    /// <remarks>
+    /// One rendered proof that a screen's words follow the culture all the way into markup — the
+    /// localizer, the satellite assembly, the component (ADR 0089). Every other surface goes
+    /// through the same injection, which <c>TranslationsTests</c> holds per language at the
+    /// lookup; this fact is the render the lookups cannot see. Decoded before asserting, because
+    /// the renderer entity-encodes text it did not read from static markup.
+    /// </remarks>
+    [Fact]
+    public void Renders_InTheVisitorsLanguage_WhenTheResolvedCultureIsTheirs()
+    {
+        var previous = CultureInfo.CurrentUICulture;
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("fr");
+
+        try
+        {
+            var page = Render<NotFound>();
+
+            WebUtility.HtmlDecode(page.Markup)
+                .Should().Contain("Il n'y a rien à cette adresse",
+                    "the words on screen are the resolved culture's, not the neutral file's");
+        }
+        finally
+        {
+            CultureInfo.CurrentUICulture = previous;
+        }
     }
 }

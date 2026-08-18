@@ -115,4 +115,5 @@ simpler from the outside.
 | [0085](0085-let-the-account-erase-itself-trainings-and-all.md) | Let the account erase itself, trainings and all | Accepted |
 | [0086](0086-say-current-when-the-caller-is-the-criterion.md) | Say Current when the caller is the criterion | Accepted |
 | [0087](0087-name-a-handler-for-the-event-it-handles.md) | Name a handler for the event it handles | Accepted |
-| [0088](0088-answer-in-the-visitors-language-and-resolve-it-at-the-door.md) | Answer in the visitor's language, and resolve it at the door | Accepted |
+| [0088](0088-answer-in-the-visitors-language-and-resolve-it-at-the-door.md) | Answer in the visitor's language, and resolve it at the door | Accepted — amended by [0089](0089-localize-every-surface-and-translate-the-refusal-at-its-funnel.md): the problem funnel now presents each cataloged refusal in the resolved culture, so `domainErrors[].errorMessage` is the domain's sentence only where the catalog has no entry |
+| [0089](0089-localize-every-surface-and-translate-the-refusal-at-its-funnel.md) | Localize every surface, and translate the refusal at its funnel | Accepted |

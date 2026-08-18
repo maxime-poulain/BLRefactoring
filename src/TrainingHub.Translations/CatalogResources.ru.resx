@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AToZ" xml:space="preserve">
+    <value>А–Я</value>
+  </data>
+  <data name="About" xml:space="preserve">
+    <value>Описание</value>
+  </data>
+  <data name="AntiRobotFailed" xml:space="preserve">
+    <value>Проверка на робота не пройдена. Пожалуйста, попробуйте отправить еще раз.</value>
+  </data>
+  <data name="BackToTheCatalog" xml:space="preserve">
+    <value>Назад в каталог</value>
+  </data>
+  <data name="CatalogIntro" xml:space="preserve">
+    <value>Все тренинги, которые тренеры публикуют сейчас. Аккаунт для просмотра не нужен.</value>
+  </data>
+  <data name="CatalogLoadFailed" xml:space="preserve">
+    <value>Не удалось загрузить каталог.</value>
+  </data>
+  <data name="CatalogLoadFailedRetry" xml:space="preserve">
+    <value>Не удалось загрузить каталог. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="CatalogMetaDescription" xml:space="preserve">
+    <value>Все тренинги, которые тренеры публикуют сейчас на TrainingHub. Просматривайте по темам, ищите по названию — аккаунт для просмотра не нужен.</value>
+  </data>
+  <data name="CatalogPageTitle" xml:space="preserve">
+    <value>Каталог — TrainingHub</value>
+  </data>
+  <data name="CatalogUnreachable" xml:space="preserve">
+    <value>Каталог недоступен</value>
+  </data>
+  <data name="ClearTopics" xml:space="preserve">
+    <value>Сбросить темы</value>
+  </data>
+  <data name="CompleteTheCheck" xml:space="preserve">
+    <value>Пройдите проверку выше, чтобы отправить сообщение.</value>
+  </data>
+  <data name="ContactName" xml:space="preserve">
+    <value>Написать {0}</value>
+  </data>
+  <data name="EmailHelper" xml:space="preserve">
+    <value>{0} ответит вам сюда; адрес больше никому не передается.</value>
+  </data>
+  <data name="EmailRequired" xml:space="preserve">
+    <value>Требуется адрес электронной почты</value>
+  </data>
+  <data name="EmailTooLong" xml:space="preserve">
+    <value>Адрес электронной почты не может превышать {0} символов</value>
+  </data>
+  <data name="FirstNameRequired" xml:space="preserve">
+    <value>Требуется имя</value>
+  </data>
+  <data name="LastNameRequired" xml:space="preserve">
+    <value>Требуется фамилия</value>
+  </data>
+  <data name="MessageGoesTo" xml:space="preserve">
+    <value>Ваше сообщение получит</value>
+  </data>
+  <data name="MessageLabel" xml:space="preserve">
+    <value>Сообщение</value>
+  </data>
+  <data name="MessageNotAccepted" xml:space="preserve">
+    <value>Сообщение не было принято.</value>
+  </data>
+  <data name="MessageOnItsWay" xml:space="preserve">
+    <value>Ваше сообщение в пути. {0} скоро его получит.</value>
+  </data>
+  <data name="MessageRequired" xml:space="preserve">
+    <value>Требуется сообщение</value>
+  </data>
+  <data name="MessageSendFailed" xml:space="preserve">
+    <value>Не удалось отправить сообщение. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="MessageTooLong" xml:space="preserve">
+    <value>Сообщение не может превышать {0} символов</value>
+  </data>
+  <data name="MessageTooShort" xml:space="preserve">
+    <value>Сообщение должно содержать не менее {0} символов</value>
+  </data>
+  <data name="NameTooLong" xml:space="preserve">
+    <value>Имя не может превышать {0} символов</value>
+  </data>
+  <data name="Newest" xml:space="preserve">
+    <value>Сначала новые</value>
+  </data>
+  <data name="NoTrainingMatches" xml:space="preserve">
+    <value>Ни один тренинг не подходит</value>
+  </data>
+  <data name="OfferedBy" xml:space="preserve">
+    <value>Проводит</value>
+  </data>
+  <data name="Prerequisites" xml:space="preserve">
+    <value>Предварительные требования</value>
+  </data>
+  <data name="ProfileLoadFailed" xml:space="preserve">
+    <value>Не удалось загрузить профиль.</value>
+  </data>
+  <data name="ProfileLoadFailedRetry" xml:space="preserve">
+    <value>Не удалось загрузить профиль. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="ProfileNotAvailable" xml:space="preserve">
+    <value>Этот профиль недоступен</value>
+  </data>
+  <data name="ProfileNotAvailableBody" xml:space="preserve">
+    <value>Возможно, тренера не существует или ему нечего предложить.</value>
+  </data>
+  <data name="SearchHelper" xml:space="preserve">
+    <value>Каждое слово названия, по началу слова</value>
+  </data>
+  <data name="SearchTheShelf" xml:space="preserve">
+    <value>Поиск по полке</value>
+  </data>
+  <data name="Send" xml:space="preserve">
+    <value>Отправить</value>
+  </data>
+  <data name="TheyCanAnswer" xml:space="preserve">
+    <value>Ответить вам смогут на адрес, который вы оставите здесь.</value>
+  </data>
+  <data name="TrainerBusy" xml:space="preserve">
+    <value>{0} только что получил очень много сообщений. Попробуйте через минуту.</value>
+  </data>
+  <data name="TrainerFallbackTitle" xml:space="preserve">
+    <value>Тренер</value>
+  </data>
+  <data name="TrainerMetaFallback" xml:space="preserve">
+    <value>Тренер с тренингами в каталоге TrainingHub.</value>
+  </data>
+  <data name="TrainerNoLongerContactable" xml:space="preserve">
+    <value>С этим тренером больше нельзя связаться.</value>
+  </data>
+  <data name="TrainingFallbackTitle" xml:space="preserve">
+    <value>Тренинг</value>
+  </data>
+  <data name="TrainingLoadFailed" xml:space="preserve">
+    <value>Не удалось загрузить тренинг.</value>
+  </data>
+  <data name="TrainingLoadFailedRetry" xml:space="preserve">
+    <value>Не удалось загрузить тренинг. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="TrainingMetaFallback" xml:space="preserve">
+    <value>Тренинг в каталоге TrainingHub.</value>
+  </data>
+  <data name="TrainingNotOnOffer" xml:space="preserve">
+    <value>Этот тренинг не предлагается</value>
+  </data>
+  <data name="TrainingNotOnOfferBody" xml:space="preserve">
+    <value>Возможно, его никогда не было, или он был снят с публикации.</value>
+  </data>
+  <data name="TrainingsOfferedMany" xml:space="preserve">
+    <value>Тренингов: {0}. Проводит {1}.</value>
+  </data>
+  <data name="TrainingsOfferedOne" xml:space="preserve">
+    <value>1 тренинг — проводит {0}.</value>
+  </data>
+  <data name="TrainingsOnOffer" xml:space="preserve">
+    <value>Предлагаемые тренинги</value>
+  </data>
+  <data name="WhatYouLeaveWith" xml:space="preserve">
+    <value>С чем вы уйдете</value>
+  </data>
+</root>

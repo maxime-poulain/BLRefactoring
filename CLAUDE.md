@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 88 architecture decision records.
+2. `docs/adr/README.md` — the index of 89 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 220 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 223 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -173,6 +173,23 @@ repository a named question and maps the aggregates.
 - Consumption is `IStringLocalizer<CommonResources>` and nothing custom. Neutral resx files are
   read by the spelling rule (English we write); `.fr.resx`/`.ru.resx` are declared unread — their
   keys are governed by the key-set rule instead.
+- **Every surface reads its words from its own family** — `CatalogResources`,
+  `TrainingResources`, `TrainerResources`, `AuthenticationResources`, `AdministrationResources`,
+  the shell and the shared sentences in `CommonResources` — in whole sentences, never fragments:
+  `{0}` templates where data joins, two entries where a plural changes shape, whole localized
+  sentences passed where grammar used to be composed (ADR 0089). A new screen ships its words in
+  the three languages from the first commit.
+- **The problem funnel translates per entry.** `ProblemResultExtensions.Problem` looks each
+  `domainErrors[].errorCode` up in `DomainErrorResources`; a hit answers the culture's sentence
+  with the code untouched, a miss passes the domain's authored sentence through. The catalog
+  holds only codes the domain raises with one non-interpolated sentence
+  (`EveryDomainErrorKey_IsACodeTheDomainRaises`); the neutral entry restates the domain verbatim,
+  so English never moves. The annotation templates resolve the same way — the English template is
+  the key (`AddApiValidationLocalization`, `BothApiHosts_LocalizeTheirAnnotations`).
+- **A key is a string, so the typo is a rule, not a review comment**: every literal key a source
+  file asks of a localizer must exist in its family's neutral file
+  (`EveryKeyAScreenAsks_ExistsInItsFamily`) — mistype `L["FirstName"]` and the build goes red
+  naming the file, the family and the key.
 
 ## C# style
 

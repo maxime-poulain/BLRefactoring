@@ -1,7 +1,5 @@
 @using System.Globalization
-@using Microsoft.Extensions.Localization
 @using TrainingHub.Blazor.Client.Infrastructure
-@using TrainingHub.Translations
 @inject IBffCultureClient CultureClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
@@ -63,7 +61,7 @@
             // Whatever failed — the BFF unreachable first of all — the page keeps its language,
             // and the person is told in it rather than left wondering why nothing happened.
             Console.Error.WriteLine(exception);
-            Snackbar.Add("The language could not be changed. Try again in a moment.", Severity.Error);
+            Snackbar.Add(L["LanguageChangeFailed"], Severity.Error);
             return;
         }
 

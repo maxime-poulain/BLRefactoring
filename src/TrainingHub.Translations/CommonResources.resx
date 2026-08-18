@@ -12,10 +12,97 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Account" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="AccountMenu" xml:space="preserve">
+    <value>Account menu</value>
+  </data>
+  <data name="AccountSuspended" xml:space="preserve">
+    <value>Your account is suspended</value>
+  </data>
+  <data name="AccountSuspendedBody" xml:space="preserve">
+    <value>You can still read everything of yours; you cannot change anything while this lasts. There is no appeal form — reply to the email we sent you if you believe this is a mistake.</value>
+  </data>
+  <data name="Administration" xml:space="preserve">
+    <value>Administration</value>
+  </data>
+  <data name="BackToYourOwnPages" xml:space="preserve">
+    <value>Back to your own pages</value>
+  </data>
+  <data name="BrowseTheCatalog" xml:space="preserve">
+    <value>Browse the catalog</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
   <data name="Catalog" xml:space="preserve">
     <value>Catalog</value>
   </data>
+  <data name="EmailAddress" xml:space="preserve">
+    <value>Email address</value>
+  </data>
+  <data name="FirstName" xml:space="preserve">
+    <value>First name</value>
+  </data>
   <data name="Language" xml:space="preserve">
     <value>Language</value>
+  </data>
+  <data name="LanguageChangeFailed" xml:space="preserve">
+    <value>The language could not be changed. Try again in a moment.</value>
+  </data>
+  <data name="LastName" xml:space="preserve">
+    <value>Last name</value>
+  </data>
+  <data name="ManageTrainers" xml:space="preserve">
+    <value>Manage trainers</value>
+  </data>
+  <data name="ModerateTrainings" xml:space="preserve">
+    <value>Moderate trainings</value>
+  </data>
+  <data name="MyTrainings" xml:space="preserve">
+    <value>My trainings</value>
+  </data>
+  <data name="NoLongerAllowed" xml:space="preserve">
+    <value>You are no longer allowed to do that. Sign in again to see where you stand.</value>
+  </data>
+  <data name="NothingAtThisAddress" xml:space="preserve">
+    <value>There is nothing at this address</value>
+  </data>
+  <data name="NothingHereBody" xml:space="preserve">
+    <value>The page may have moved, or the address may have been mistyped. The catalog is the best place to start looking.</value>
+  </data>
+  <data name="NothingHerePageTitle" xml:space="preserve">
+    <value>Nothing here — TrainingHub</value>
+  </data>
+  <data name="NotYoursToOpen" xml:space="preserve">
+    <value>This page is not yours to open</value>
+  </data>
+  <data name="NotYoursToOpenBody" xml:space="preserve">
+    <value>You are signed in, but this page needs an authority your account does not carry. Signing in again will not change that.</value>
+  </data>
+  <data name="Outbox" xml:space="preserve">
+    <value>Outbox</value>
+  </data>
+  <data name="Profile" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="RequestRejected" xml:space="preserve">
+    <value>The request was rejected.</value>
+  </data>
+  <data name="SignIn" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="SignOut" xml:space="preserve">
+    <value>Sign out</value>
+  </data>
+  <data name="SignOutFailed" xml:space="preserve">
+    <value>Sign-out failed. Try again in a moment.</value>
+  </data>
+  <data name="SuspendedCannotChange" xml:space="preserve">
+    <value>Suspended accounts cannot make changes.</value>
+  </data>
+  <data name="ToggleTheme" xml:space="preserve">
+    <value>Toggle theme</value>
   </data>
 </root>

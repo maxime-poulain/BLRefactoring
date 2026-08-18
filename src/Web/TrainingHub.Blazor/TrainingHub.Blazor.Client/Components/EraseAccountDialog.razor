@@ -1,33 +1,35 @@
 @using MudBlazor
+@inject IStringLocalizer<TrainerResources> L
+@inject IStringLocalizer<CommonResources> Common
 
 <MudDialog>
     <DialogContent>
+        @* Split around the emphasis rather than templated, because the emphasis is markup. *@
         <MudText>
-            Erasing the account removes your profile, your trainings and your portrait,
-            <strong>immediately and for good</strong>. Your username and email address become free
-            for anyone to register with.
+            @L["EraseIntroStart"]
+            <strong>@L["EraseIntroEmphasis"]</strong>@L["EraseIntroEnd"]
         </MudText>
         @* The password is the proof of intent, not decoration: a session outlives an unlocked
            device by up to sixty minutes, and this is the one action nobody can undo afterwards.
            The API checks it (ADR 0085); this field is only how it gets there. *@
         <MudForm @ref="_form" @bind-IsValid="_isValid" Class="mt-4">
             <MudTextField @bind-Value="_password"
-                          Label="Current password"
+                          Label="@L["CurrentPassword"]"
                           Variant="Variant.Outlined"
                           InputType="InputType.Password"
                           Required="true"
-                          RequiredError="Your password is required"
+                          RequiredError="@L["PasswordRequired"]"
                           Immediate="true"
-                          HelperText="Erasure is final, so it asks for more than an open tab." />
+                          HelperText="@L["ErasePasswordHelper"]" />
         </MudForm>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="Cancel" Variant="Variant.Text">@Common["Cancel"]</MudButton>
         <MudButton Color="Color.Error"
                    Variant="Variant.Filled"
                    Disabled="@(!_isValid)"
                    OnClick="Confirm">
-            Erase account
+            @L["EraseAccount"]
         </MudButton>
     </DialogActions>
 </MudDialog>

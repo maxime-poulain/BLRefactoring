@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AcquiredSkillsLabel" xml:space="preserve">
+    <value>Приобретаемые навыки</value>
+  </data>
+  <data name="AcquiredSkillsRequired" xml:space="preserve">
+    <value>Требуются приобретаемые навыки</value>
+  </data>
+  <data name="AcquiredSkillsTooLong" xml:space="preserve">
+    <value>Приобретаемые навыки не могут превышать {0} символов</value>
+  </data>
+  <data name="BetweenCharacters" xml:space="preserve">
+    <value>От {0} до {1} символов</value>
+  </data>
+  <data name="CreateTraining" xml:space="preserve">
+    <value>Создать тренинг</value>
+  </data>
+  <data name="Creating" xml:space="preserve">
+    <value>Создание...</value>
+  </data>
+  <data name="DescriptionLabel" xml:space="preserve">
+    <value>Описание</value>
+  </data>
+  <data name="DescriptionRequired" xml:space="preserve">
+    <value>Требуется описание</value>
+  </data>
+  <data name="DescriptionTooLong" xml:space="preserve">
+    <value>Описание не может превышать {0} символов</value>
+  </data>
+  <data name="EditConflict" xml:space="preserve">
+    <value>Кто-то изменил этот тренинг с момента, как вы его открыли. Ваши изменения не сохранены — скопируйте их, затем перезагрузите страницу, чтобы увидеть текущую версию.</value>
+  </data>
+  <data name="EditTraining" xml:space="preserve">
+    <value>Редактировать тренинг</value>
+  </data>
+  <data name="LoadingTraining" xml:space="preserve">
+    <value>Загрузка тренинга...</value>
+  </data>
+  <data name="LoadingTrainings" xml:space="preserve">
+    <value>Загрузка тренингов...</value>
+  </data>
+  <data name="NoTrainingsYet" xml:space="preserve">
+    <value>Тренингов пока нет</value>
+  </data>
+  <data name="NoTrainingsYetBody" xml:space="preserve">
+    <value>Начните с создания первого тренинга</value>
+  </data>
+  <data name="PrerequisitesLabel" xml:space="preserve">
+    <value>Предварительные требования</value>
+  </data>
+  <data name="PrerequisitesRequired" xml:space="preserve">
+    <value>Укажите предварительные требования</value>
+  </data>
+  <data name="PrerequisitesTooLong" xml:space="preserve">
+    <value>Предварительные требования не могут превышать {0} символов</value>
+  </data>
+  <data name="SaveChanges" xml:space="preserve">
+    <value>Сохранить изменения</value>
+  </data>
+  <data name="Saving" xml:space="preserve">
+    <value>Сохранение...</value>
+  </data>
+  <data name="SelectATopic" xml:space="preserve">
+    <value>Пожалуйста, выберите хотя бы одну тему</value>
+  </data>
+  <data name="TakenOutOfYourHands" xml:space="preserve">
+    <value>Изъят из ваших рук администрацией.</value>
+  </data>
+  <data name="TitleLabel" xml:space="preserve">
+    <value>Название</value>
+  </data>
+  <data name="TitleRequired" xml:space="preserve">
+    <value>Требуется название</value>
+  </data>
+  <data name="TitleTooLong" xml:space="preserve">
+    <value>Название не может превышать {0} символов</value>
+  </data>
+  <data name="TitleTooShort" xml:space="preserve">
+    <value>Название должно содержать не менее {0} символов</value>
+  </data>
+  <data name="Topics" xml:space="preserve">
+    <value>Темы</value>
+  </data>
+  <data name="TrainingBelongsToAnother" xml:space="preserve">
+    <value>Этот тренинг принадлежит другому тренеру.</value>
+  </data>
+  <data name="TrainingCreated" xml:space="preserve">
+    <value>Тренинг создан!</value>
+  </data>
+  <data name="TrainingGone" xml:space="preserve">
+    <value>Этого тренинга больше не существует.</value>
+  </data>
+  <data name="TrainingLoadFailedRetry" xml:space="preserve">
+    <value>Не удалось загрузить тренинг. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="TrainingLoadFailedWrong" xml:space="preserve">
+    <value>Что-то пошло не так при загрузке тренинга.</value>
+  </data>
+  <data name="TrainingNotCreatedRetry" xml:space="preserve">
+    <value>Не удалось создать тренинг. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="TrainingNotPublishedRetry" xml:space="preserve">
+    <value>Не удалось опубликовать тренинг. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="TrainingNotPublishedWrong" xml:space="preserve">
+    <value>Что-то пошло не так; тренинг не был опубликован.</value>
+  </data>
+  <data name="TrainingNotUnpublishedRetry" xml:space="preserve">
+    <value>Не удалось снять тренинг с публикации. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="TrainingNotUnpublishedWrong" xml:space="preserve">
+    <value>Что-то пошло не так; тренинг не был снят с публикации.</value>
+  </data>
+  <data name="TrainingNotUpdatedRetry" xml:space="preserve">
+    <value>Не удалось обновить тренинг. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="TrainingPublished" xml:space="preserve">
+    <value>Тренинг опубликован.</value>
+  </data>
+  <data name="TrainingSaveFailedWrong" xml:space="preserve">
+    <value>Что-то пошло не так при сохранении тренинга.</value>
+  </data>
+  <data name="TrainingUnpublished" xml:space="preserve">
+    <value>Тренинг снят с публикации. Он остается в вашем списке и может быть опубликован снова.</value>
+  </data>
+  <data name="TrainingUpdated" xml:space="preserve">
+    <value>Тренинг обновлен!</value>
+  </data>
+  <data name="Trainings" xml:space="preserve">
+    <value>Тренинги</value>
+  </data>
+  <data name="TrainingsLoadFailed" xml:space="preserve">
+    <value>Что-то пошло не так при загрузке тренингов.</value>
+  </data>
+  <data name="TrainingsLoadFailedRetry" xml:space="preserve">
+    <value>Не удалось загрузить тренинги. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="Unpublish" xml:space="preserve">
+    <value>Снять с публикации</value>
+  </data>
+  <data name="UnpublishTrainingTitle" xml:space="preserve">
+    <value>Снять тренинг с публикации</value>
+  </data>
+  <data name="UnpublishedBadge" xml:space="preserve">
+    <value>Не опубликован</value>
+  </data>
+  <data name="WithdrawExplanation" xml:space="preserve">
+    <value>Он остается в вашем собственном списке, сохраняет название, и вы можете опубликовать его снова в любой момент.</value>
+  </data>
+  <data name="WithdrawTitleEnd" xml:space="preserve">
+    <value>» с публичного показа?</value>
+  </data>
+  <data name="WithdrawTitleStart" xml:space="preserve">
+    <value>Снять «</value>
+  </data>
+  <data name="WithheldBadge" xml:space="preserve">
+    <value>Изъят</value>
+  </data>
+  <data name="WithheldExplanation" xml:space="preserve">
+    <value>Вы не можете снова предложить этот тренинг самостоятельно. Ответьте на письмо, которое мы вам отправили, если считаете, что это ошибка.</value>
+  </data>
+</root>

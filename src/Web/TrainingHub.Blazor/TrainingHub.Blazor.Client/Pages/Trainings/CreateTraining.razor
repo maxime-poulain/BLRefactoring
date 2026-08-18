@@ -8,6 +8,8 @@
 @using TrainingHub.Blazor.Client.Infrastructure
 @inject ISnackbar Snackbar
 @inject ITrainerStandingSource StandingSource
+@inject IStringLocalizer<TrainingResources> L
+@inject IStringLocalizer<CommonResources> Common
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="my-4">
     <MudPaper Elevation="4" Class="pa-8">
@@ -15,28 +17,28 @@
         {
             <MudStack AlignItems="AlignItems.Center" Class="my-8">
                 <MudProgressCircular Indeterminate="true" Size="Size.Large" />
-                <MudText Typo="Typo.body1" Class="mt-4">Loading training...</MudText>
+                <MudText Typo="Typo.body1" Class="mt-4">@L["LoadingTraining"]</MudText>
             </MudStack>
         }
         else
         {
             <MudStack Spacing="4">
-                <MudText Typo="Typo.h4">@(IsEditMode ? "Edit Training" : "Create Training")</MudText>
+                <MudText Typo="Typo.h4">@(IsEditMode ? L["EditTraining"] : L["CreateTraining"])</MudText>
 
                 <MudForm @ref="_form" @bind-IsValid="_isValid">
                     <MudTextField @bind-Value="_title"
-                                  Label="Title"
+                                  Label="@L["TitleLabel"]"
                                   Variant="Variant.Outlined"
                                   Required="true"
-                                  RequiredError="Title is required"
+                                  RequiredError="@L["TitleRequired"]"
                                   Validation="@(new Func<string, string?>(ValidateTitle))"
                                   Immediate="true"
                                   Counter="TitleMaxLength"
                                   MaxLength="TitleMaxLength"
                                   Disabled="_isLoading"
-                                  HelperText="@($"Between {TitleMinLength} and {TitleMaxLength} characters")" />
+                                  HelperText="@L["BetweenCharacters", TitleMinLength, TitleMaxLength]" />
 
-                    <MudText Typo="Typo.subtitle1" Class="mt-6 mb-2">Topics</MudText>
+                    <MudText Typo="Typo.subtitle1" Class="mt-6 mb-2">@L["Topics"]</MudText>
                     <MudChipSet T="string"
                                 SelectionMode="SelectionMode.MultiSelection"
                                 @bind-SelectedValues="_selectedTopics"
@@ -56,10 +58,10 @@
                     }
 
                     <MudTextField @bind-Value="_description"
-                                  Label="Description"
+                                  Label="@L["DescriptionLabel"]"
                                   Variant="Variant.Outlined"
                                   Required="true"
-                                  RequiredError="Description is required"
+                                  RequiredError="@L["DescriptionRequired"]"
                                   Validation="@(new Func<string, string?>(ValidateDescription))"
                                   Immediate="true"
                                   Lines="4"
@@ -69,10 +71,10 @@
                                   Class="mt-4" />
 
                     <MudTextField @bind-Value="_prerequisites"
-                                  Label="Prerequisites"
+                                  Label="@L["PrerequisitesLabel"]"
                                   Variant="Variant.Outlined"
                                   Required="true"
-                                  RequiredError="Prerequisites is required"
+                                  RequiredError="@L["PrerequisitesRequired"]"
                                   Validation="@(new Func<string, string?>(ValidatePrerequisites))"
                                   Immediate="true"
                                   Lines="4"
@@ -82,10 +84,10 @@
                                   Class="mt-4" />
 
                     <MudTextField @bind-Value="_acquiredSkills"
-                                  Label="Acquired Skills"
+                                  Label="@L["AcquiredSkillsLabel"]"
                                   Variant="Variant.Outlined"
                                   Required="true"
-                                  RequiredError="Acquired skills is required"
+                                  RequiredError="@L["AcquiredSkillsRequired"]"
                                   Validation="@(new Func<string, string?>(ValidateAcquiredSkills))"
                                   Immediate="true"
                                   Lines="4"
@@ -100,7 +102,7 @@
                                Color="Color.Default"
                                Href="/trainings"
                                Disabled="_isLoading">
-                        Cancel
+                        @Common["Cancel"]
                     </MudButton>
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
@@ -109,11 +111,11 @@
                         @if (_isLoading)
                         {
                             <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                            <span>@(IsEditMode ? "Saving..." : "Creating...")</span>
+                            <span>@(IsEditMode ? L["Saving"] : L["Creating"])</span>
                         }
                         else
                         {
-                            <span>@(IsEditMode ? "Save Changes" : "Create Training")</span>
+                            <span>@(IsEditMode ? L["SaveChanges"] : L["CreateTraining"])</span>
                         }
                     </MudButton>
                 </MudStack>
@@ -194,14 +196,14 @@
         {
             // Deleted between the list and this page opening. Not an error the user caused, and
             // the list this navigates back to is the truth.
-            Snackbar.Add("That training no longer exists.", Severity.Info);
+            Snackbar.Add(L["TrainingGone"], Severity.Info);
             NavigationManager.NavigateTo("/trainings");
         }
         catch (ApiException<ProblemDetails> ex)
         {
             // The declared 400: the address carried an identifier the contract refuses, and the
             // document names the refusal (ADR 0004).
-            foreach (var message in ProblemDetailsMessages.Read(ex.Result, "The request was rejected."))
+            foreach (var message in ProblemDetailsMessages.Read(ex.Result, Common["RequestRejected"]))
             {
                 Snackbar.Add(message, Severity.Error);
             }
@@ -213,14 +215,14 @@
             // ex.Message here is the generator's own sentence — "The HTTP status code of the
             // response was not expected (503)." It belongs in the console, not on screen.
             Console.Error.WriteLine(ex);
-            Snackbar.Add("The training could not be loaded. Try again in a moment.", Severity.Error);
+            Snackbar.Add(L["TrainingLoadFailedRetry"], Severity.Error);
             NavigationManager.NavigateTo("/trainings");
         }
         catch (Exception ex)
         {
             // Whatever this is, it is ours. A NullReferenceException must not become UI copy.
             Console.Error.WriteLine(ex);
-            Snackbar.Add("Something went wrong loading the training.", Severity.Error);
+            Snackbar.Add(L["TrainingLoadFailedWrong"], Severity.Error);
             NavigationManager.NavigateTo("/trainings");
         }
         finally
@@ -232,14 +234,14 @@
     private string? ValidateTitle(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return "Title is required";
+            return L["TitleRequired"];
 
         var trimmed = value.Trim();
         if (trimmed.Length < TitleMinLength)
-            return $"Title must be at least {TitleMinLength} characters";
+            return L["TitleTooShort", TitleMinLength];
 
         if (trimmed.Length > TitleMaxLength)
-            return $"Title cannot exceed {TitleMaxLength} characters";
+            return L["TitleTooLong", TitleMaxLength];
 
         return null;
     }
@@ -247,10 +249,10 @@
     private string? ValidateDescription(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return "Description is required";
+            return L["DescriptionRequired"];
 
         if (value.Length > DescriptionMaxLength)
-            return $"Description cannot exceed {DescriptionMaxLength} characters";
+            return L["DescriptionTooLong", DescriptionMaxLength];
 
         return null;
     }
@@ -258,10 +260,10 @@
     private string? ValidatePrerequisites(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return "Prerequisites is required";
+            return L["PrerequisitesRequired"];
 
         if (value.Length > PrerequisitesMaxLength)
-            return $"Prerequisites cannot exceed {PrerequisitesMaxLength} characters";
+            return L["PrerequisitesTooLong", PrerequisitesMaxLength];
 
         return null;
     }
@@ -269,17 +271,17 @@
     private string? ValidateAcquiredSkills(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return "Acquired skills is required";
+            return L["AcquiredSkillsRequired"];
 
         if (value.Length > AcquiredSkillsMaxLength)
-            return $"Acquired skills cannot exceed {AcquiredSkillsMaxLength} characters";
+            return L["AcquiredSkillsTooLong", AcquiredSkillsMaxLength];
 
         return null;
     }
 
     private void ValidateTopics()
     {
-        _topicsError = _selectedTopics.Count == 0 ? "Please select at least one topic" : null;
+        _topicsError = _selectedTopics.Count == 0 ? L["SelectATopic"].Value : null;
     }
 
     private async Task HandleSubmit()
@@ -308,7 +310,7 @@
                 // The version read when the page loaded. The API refuses an edit that does not
                 // state which version it replaces — see ADR 0010.
                 await TrainingClient.UpdateTrainingAsync(Id, _version, request);
-                Snackbar.Add("Training updated successfully!", Severity.Success);
+                Snackbar.Add(L["TrainingUpdated"], Severity.Success);
             }
             else
             {
@@ -322,7 +324,7 @@
                 };
 
                 await TrainingClient.CreateTrainingAsync(request);
-                Snackbar.Add("Training created successfully!", Severity.Success);
+                Snackbar.Add(L["TrainingCreated"], Severity.Success);
             }
 
             NavigationManager.NavigateTo("/trainings");
@@ -337,16 +339,13 @@
             // sending the same body would overwrite the other edit without anyone seeing it, which
             // is the precise thing this refusal is protecting. The text stays on screen so it can
             // be copied out; reloading the page is the way back to a current version.
-            Snackbar.Add(
-                "Someone else changed this training since you opened it. Your changes were not "
-                + "saved — copy them, then reload the page to see the current version.",
-                Severity.Warning);
+            Snackbar.Add(L["EditConflict"], Severity.Warning);
         }
         catch (ApiException<ProblemDetails> ex)
         {
             // One RFC 7807 document rather than a bare array of errors: the messages travel under
             // `errors` or `domainErrors`, and the shared reader speaks both envelopes. See ADR 0004.
-            foreach (var message in ProblemDetailsMessages.Read(ex.Result, "The request was rejected."))
+            foreach (var message in ProblemDetailsMessages.Read(ex.Result, Common["RequestRejected"]))
             {
                 Snackbar.Add(message, Severity.Error);
             }
@@ -357,14 +356,14 @@
             // response was not expected (503)." It belongs in the console, not on screen.
             Console.Error.WriteLine(ex);
             Snackbar.Add(
-                $"The training could not be {(IsEditMode ? "updated" : "created")}. Try again in a moment.",
+                IsEditMode ? L["TrainingNotUpdatedRetry"] : L["TrainingNotCreatedRetry"],
                 Severity.Error);
         }
         catch (Exception ex)
         {
             // Whatever this is, it is ours. A NullReferenceException must not become UI copy.
             Console.Error.WriteLine(ex);
-            Snackbar.Add("Something went wrong saving the training.", Severity.Error);
+            Snackbar.Add(L["TrainingSaveFailedWrong"], Severity.Error);
         }
         finally
         {

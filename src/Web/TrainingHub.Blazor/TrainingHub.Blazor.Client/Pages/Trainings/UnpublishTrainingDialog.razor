@@ -1,21 +1,26 @@
 @using MudBlazor
+@inject IStringLocalizer<TrainingResources> L
+@inject IStringLocalizer<CommonResources> Common
 
 <MudDialog>
     <DialogContent>
+        @* The question is split around the emphasized title rather than templated, because the
+           title is markup; the halves carry their own quotation marks so each language quotes the
+           way it quotes. *@
         <MudText>
-            Withdraw "<strong>@TrainingTitle</strong>" from public view?
+            @L["WithdrawTitleStart"]<strong>@TrainingTitle</strong>@L["WithdrawTitleEnd"]
         </MudText>
         @* The copy replaced "this action cannot be undone", which was true of the deletion this
            dialog used to confirm and is the opposite of what withdrawing means. Saying so is the
            point: a trainer who hesitated over an irreversible button should not hesitate over
            this one. See ADR 0050. *@
         <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">
-            It stays in your own list, keeps its title, and you can publish it again at any time.
+            @L["WithdrawExplanation"]
         </MudText>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
-        <MudButton Color="Color.Warning" Variant="Variant.Filled" OnClick="Confirm">Unpublish</MudButton>
+        <MudButton OnClick="Cancel" Variant="Variant.Text">@Common["Cancel"]</MudButton>
+        <MudButton Color="Color.Warning" Variant="Variant.Filled" OnClick="Confirm">@L["Unpublish"]</MudButton>
     </DialogActions>
 </MudDialog>
 

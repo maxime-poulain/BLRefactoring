@@ -6,6 +6,7 @@
 @inject ISnackbar Snackbar
 @inject IAuthenticationStateNotifier AuthenticationNotifier
 @inject NavigationManager NavigationManager
+@inject IStringLocalizer<CommonResources> L
 
 @* The top-right corner of every page: who is signed in, and their doors. A visitor gets the one
    action that changes that; a signed-in caller gets a compact identity — the face when there is
@@ -22,7 +23,7 @@
                 @* A custom activator opens the menu itself: the context is the menu's own handle,
                    and a button that never calls it is a button that opens nothing. *@
                 <MudButton Color="Color.Inherit"
-                           aria-label="Account menu"
+                           aria-label="@L["AccountMenu"]"
                            OnClick="@(args => context.ToggleAsync(args))">
                     <MudAvatar Size="Size.Small" Class="mr-2 th-avatar">
                         @if (_portrait is not null)
@@ -43,26 +44,26 @@
                    claim: an account that is nobody's trainer has no profile to edit and no
                    trainings to list, and offering it either is offering a refusal (ADR 0078). *@
                 <AuthorizeView Policy="@SessionPolicies.Trainer" Context="trainer">
-                    <MudMenuItem Href="/profile">Profile</MudMenuItem>
-                    <MudMenuItem Href="/trainings">My trainings</MudMenuItem>
+                    <MudMenuItem Href="/profile">@L["Profile"]</MudMenuItem>
+                    <MudMenuItem Href="/trainings">@L["MyTrainings"]</MudMenuItem>
                     <MudDivider/>
                 </AuthorizeView>
                 @* Courtesy, not security, as when these doors sat in the bar: the API refuses the
                    calls behind AdministratorPolicy whatever the browser renders (ADR 0051,
                    ADR 0054). Context is named because the outer AuthorizeView owns `context`. *@
                 <AuthorizeView Roles="@SessionRoles.Administrator" Context="administrator">
-                    <MudMenuItem Href="/administration">Administration</MudMenuItem>
-                    <MudMenuItem Href="/administration/trainers">Manage trainers</MudMenuItem>
-                    <MudMenuItem Href="/administration/trainings">Moderate trainings</MudMenuItem>
-                    <MudMenuItem Href="/administration/outbox">Outbox</MudMenuItem>
+                    <MudMenuItem Href="/administration">@L["Administration"]</MudMenuItem>
+                    <MudMenuItem Href="/administration/trainers">@L["ManageTrainers"]</MudMenuItem>
+                    <MudMenuItem Href="/administration/trainings">@L["ModerateTrainings"]</MudMenuItem>
+                    <MudMenuItem Href="/administration/outbox">@L["Outbox"]</MudMenuItem>
                 </AuthorizeView>
                 <MudDivider/>
-                <MudMenuItem OnClick="HandleLogoutAsync">Sign out</MudMenuItem>
+                <MudMenuItem OnClick="HandleLogoutAsync">@L["SignOut"]</MudMenuItem>
             </ChildContent>
         </MudMenu>
     </Authorized>
     <NotAuthorized>
-        <MudButton Variant="Variant.Text" Color="Color.Inherit" Href="/login">Sign in</MudButton>
+        <MudButton Variant="Variant.Text" Color="Color.Inherit" Href="/login">@L["SignIn"]</MudButton>
     </NotAuthorized>
 </AuthorizeView>
 
@@ -99,7 +100,7 @@
         _portrait = await PortraitSource.FindOwnPortraitAsync();
     }
 
-    private static string DisplayName(ClaimsPrincipal user)
+    private string DisplayName(ClaimsPrincipal user)
     {
         var firstname = user.FindFirst(SessionClaims.Firstname)?.Value;
         var lastname = user.FindFirst(SessionClaims.Lastname)?.Value;
@@ -107,11 +108,11 @@
         // An administrator's token names no person, so the account's own name is the honest
         // fallback rather than a blank.
         return firstname is null || lastname is null
-            ? user.Identity?.Name ?? "Account"
+            ? user.Identity?.Name ?? L["Account"]
             : $"{firstname} {lastname}";
     }
 
-    private static string Initials(ClaimsPrincipal user)
+    private string Initials(ClaimsPrincipal user)
     {
         var parts = DisplayName(user).Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
@@ -134,7 +135,7 @@
             // person who believes they left. Say so and stay; the exception is for the console.
             // An expired session is not this case — LogoutAsync already counts its 401 a success.
             Console.Error.WriteLine(exception);
-            Snackbar.Add("Sign-out failed. Try again in a moment.", Severity.Error);
+            Snackbar.Add(L["SignOutFailed"], Severity.Error);
             return;
         }
 

@@ -3,6 +3,8 @@
 @using TrainingHub.GeneratedClients
 @inject IAdministrationClient AdministrationClient
 @inject IOutboxClient OutboxClient
+@inject IStringLocalizer<AdministrationResources> L
+@inject IStringLocalizer<CommonResources> Common
 
 @* Where an administrator lands. It exists because the alternative was landing them on the
    trainer's space, which is a surface their account has no standing on at all (ADR 0078).
@@ -13,9 +15,9 @@
    list the administration already publishes, asked for one row so the total can be read off it. *@
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="my-4">
-    <MudText Typo="Typo.h4" Class="mb-2">Administration</MudText>
+    <MudText Typo="Typo.h4" Class="mb-2">@Common["Administration"]</MudText>
     <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-6">
-        What this catalog holds, and what is waiting on you.
+        @L["AdministrationIntro"]
     </MudText>
 
     <MudGrid>
@@ -84,14 +86,14 @@
 
     private IEnumerable<Card> Cards =>
     [
-        new("Trainers", _trainers, _suspendedTrainers, "under suspension",
-            "/administration/trainers", "Manage trainers",
+        new(L["Trainers"], _trainers, _suspendedTrainers, L["UnderSuspension"],
+            "/administration/trainers", Common["ManageTrainers"],
             "var(--th-spine-leadership)"),
-        new("Trainings", _trainings, _withheldTrainings, "withheld from the catalog",
-            "/administration/trainings", "Moderate trainings",
+        new(L["Trainings"], _trainings, _withheldTrainings, L["WithheldFromTheCatalog"],
+            "/administration/trainings", Common["ModerateTrainings"],
             "var(--th-spine-programming)"),
-        new("Outbox", _poisoned, _poisoned, "waiting to be requeued",
-            "/administration/outbox", "Open the outbox",
+        new(Common["Outbox"], _poisoned, _poisoned, L["WaitingToBeRequeued"],
+            "/administration/outbox", L["OpenTheOutbox"],
             "var(--th-spine-design)")
     ];
 

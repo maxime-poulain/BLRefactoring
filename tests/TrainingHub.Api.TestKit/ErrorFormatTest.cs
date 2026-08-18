@@ -69,6 +69,41 @@ public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationT
     }
 
     /// <summary>
+    /// French request, reads the same code, with the refusal translated.
+    /// </summary>
+    /// <remarks>
+    /// The whole chain, on the real pipeline: <c>Accept-Language: fr</c> resolved by the
+    /// localization middleware (ADR 0088), the refusal translated per entry at the problem funnel
+    /// (ADR 0089), and the code untouched — a client branching on <c>errorCode</c> notices
+    /// nothing. The funnel's own behavior is unit-tested beside it; this fact is the proof that
+    /// the header actually reaches it through the middleware an architecture rule can only see
+    /// called.
+    /// </remarks>
+    [Fact]
+    public async Task FrenchRequest_ReadsTheSameCode_WithTheRefusalTranslated()
+    {
+        var client = await AuthHelper.RegisterAndGetAuthenticatedClientAsync(Factory);
+        var creation = await client.PostAsJsonAsync("/Training", TrainingRequests.Valid("A title published at birth"));
+        creation.EnsureSuccessStatusCode();
+        var trainingId = await creation.Content.ReadFromJsonAsync<Guid>();
+
+        // A new training is born published, so publishing it again is the shortest road to a
+        // cataloged refusal whose sentence interpolates nothing.
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/Training/{trainingId}/publish");
+        request.Headers.AcceptLanguage.ParseAdd("fr");
+        var response = await client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        var body = await BodyAsync(response);
+        var refusal = body.GetProperty("domainErrors").EnumerateArray().Single();
+        refusal.GetProperty("errorCode").GetString()
+            .Should().Be("Training.AlreadyPublished", "the code is the stable contract; only the sentence moves");
+        refusal.GetProperty("errorMessage").GetString().Should().Be("Cette formation est déjà publiée.");
+        body.GetProperty("detail").GetString().Should().Be("Cette formation est déjà publiée.");
+    }
+
+    /// <summary>
     /// Malformed email, is refused by the domain, with the same code on both hosts.
     /// </summary>
     /// <remarks>

@@ -6,6 +6,7 @@
 @inject IBffSessionClient SessionClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject IStringLocalizer<AuthenticationResources> L
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center" Style="min-height: 80vh;">
     <MudPaper Elevation="4" Class="pa-8 w-100 my-4 th-sheet th-auth">
@@ -15,56 +16,56 @@
         </span>
 
         <MudStack Spacing="4">
-            <MudText Typo="Typo.h4">Create an account</MudText>
+            <MudText Typo="Typo.h4">@L["CreateAnAccount"]</MudText>
 
             <MudForm @ref="_form" @bind-IsValid="_isValid">
                 <MudGrid>
                     <MudItem xs="12" sm="6">
                         <MudTextField @bind-Value="_firstname"
-                                      Label="First Name"
+                                      Label="@L["FirstNameLabel"]"
                                       Variant="Variant.Outlined"
                                       Required="true"
-                                      RequiredError="First name is required"
+                                      RequiredError="@L["FirstNameRequired"]"
                                       Immediate="true"
                                       Disabled="_isLoading" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudTextField @bind-Value="_lastname"
-                                      Label="Last Name"
+                                      Label="@L["LastNameLabel"]"
                                       Variant="Variant.Outlined"
                                       Required="true"
-                                      RequiredError="Last name is required"
+                                      RequiredError="@L["LastNameRequired"]"
                                       Immediate="true"
                                       Disabled="_isLoading" />
                     </MudItem>
                 </MudGrid>
 
                 <MudTextField @bind-Value="_username"
-                              Label="Username"
+                              Label="@L["UsernameLabel"]"
                               Variant="Variant.Outlined"
                               Required="true"
-                              RequiredError="Username is required"
+                              RequiredError="@L["UsernameRequired"]"
                               Immediate="true"
                               Disabled="_isLoading"
                               Class="mt-4" />
 
                 <MudTextField @bind-Value="_email"
-                              Label="Email"
+                              Label="@L["EmailLabel"]"
                               Variant="Variant.Outlined"
                               Required="true"
-                              RequiredError="Email is required"
-                              Validation="@(new EmailAddressAttribute() { ErrorMessage = "Invalid email address" })"
+                              RequiredError="@L["EmailRequired"]"
+                              Validation="@(new EmailAddressAttribute { ErrorMessage = L["InvalidEmail"].Value })"
                               Immediate="true"
                               Disabled="_isLoading"
                               InputType="InputType.Email"
                               Class="mt-4" />
 
                 <MudTextField @bind-Value="_password"
-                              Label="Password"
+                              Label="@L["PasswordLabel"]"
                               Variant="Variant.Outlined"
                               InputType="@_passwordInputType"
                               Required="true"
-                              RequiredError="Password is required"
+                              RequiredError="@L["PasswordRequired"]"
                               Immediate="true"
                               Disabled="_isLoading"
                               Adornment="Adornment.End"
@@ -73,11 +74,11 @@
                               Class="mt-4" />
 
                 <MudTextField @bind-Value="_confirmPassword"
-                              Label="Confirm Password"
+                              Label="@L["ConfirmPasswordLabel"]"
                               Variant="Variant.Outlined"
                               InputType="@_passwordInputType"
                               Required="true"
-                              RequiredError="Password confirmation is required"
+                              RequiredError="@L["ConfirmPasswordRequired"]"
                               Validation="@(new Func<string, string?>(ValidatePasswordMatch))"
                               Immediate="true"
                               Disabled="_isLoading"
@@ -94,17 +95,17 @@
                 @if (_isLoading)
                 {
                     <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                    <span>Creating account...</span>
+                    <span>@L["CreatingAccount"]</span>
                 }
                 else
                 {
-                    <span>Register</span>
+                    <span>@L["Register"]</span>
                 }
             </MudButton>
 
             <MudText Typo="Typo.body2" Align="Align.Center" Class="mt-4">
-                Already have an account?
-                <MudLink Href="/login" Typo="Typo.body2">Sign in here</MudLink>
+                @L["AlreadyHaveAccount"]
+                <MudLink Href="/login" Typo="Typo.body2">@L["SignInHere"]</MudLink>
             </MudText>
         </MudStack>
     </MudPaper>
@@ -134,7 +135,7 @@
     private string? ValidatePasswordMatch(string confirmPassword)
     {
         if (confirmPassword != _password)
-            return "Passwords do not match";
+            return L["PasswordsDoNotMatch"];
         return null;
     }
 
@@ -163,7 +164,7 @@
 
             if (problem is null)
             {
-                Snackbar.Add("Account created successfully! Please sign in.", Severity.Success);
+                Snackbar.Add(L["AccountCreated"], Severity.Success);
                 NavigationManager.NavigateTo("/login");
                 return;
             }
@@ -172,7 +173,7 @@
             // failure this API publishes. The per-field messages are what the user needs
             // ("Email 'x' is already taken."), so they are read out of the map rather than
             // replaced by the generic title above it.
-            foreach (var message in ProblemDetailsMessages.Read(problem, "The registration was rejected."))
+            foreach (var message in ProblemDetailsMessages.Read(problem, L["RegistrationRejected"]))
             {
                 Snackbar.Add(message, Severity.Error);
             }
@@ -180,12 +181,12 @@
         catch (HttpRequestException ex)
         {
             Console.Error.WriteLine(ex);
-            Snackbar.Add("Registration is unavailable right now. Try again in a moment.", Severity.Error);
+            Snackbar.Add(L["RegistrationUnavailable"], Severity.Error);
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine(ex);
-            Snackbar.Add("Something went wrong creating the account.", Severity.Error);
+            Snackbar.Add(L["RegistrationWrong"], Severity.Error);
         }
         finally
         {

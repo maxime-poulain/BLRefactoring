@@ -1,19 +1,19 @@
 @page "/not-found"
+@inject IStringLocalizer<CommonResources> L
 
 @* The page an unknown address lands on. Routable on purpose: the router's NotFoundPage needs a
    page to send the visitor to, and a page with an address can be linked, tested and read like
    any other. It renders for a lost visitor, so everything it offers is anonymous ground —
    the catalog and the way home (ADR 0062). *@
 
-<PageTitle>Nothing here — TrainingHub</PageTitle>
+<PageTitle>@L["NothingHerePageTitle"]</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="my-16">
     <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center">
         <MudIcon Icon="@Icons.Material.Filled.ExploreOff" Style="font-size: 6rem;" Class="mb-4" />
-        <MudText Typo="Typo.h5" GutterBottom="true">There is nothing at this address</MudText>
+        <MudText Typo="Typo.h5" GutterBottom="true">@L["NothingAtThisAddress"]</MudText>
         <MudText Typo="Typo.body1" Align="Align.Center" Class="mb-6">
-            The page may have moved, or the address may have been mistyped. The catalog is the
-            best place to start looking.
+            @L["NothingHereBody"]
         </MudText>
         @* One door where there used to be two: home and the catalog are the same page now
            (ADR 0074), and offering both would be two buttons to one place. *@
@@ -21,7 +21,7 @@
                    Color="Color.Primary"
                    Href="/"
                    StartIcon="@Icons.Material.Filled.Storefront">
-            Browse the catalog
+            @L["BrowseTheCatalog"]
         </MudButton>
     </MudPaper>
 </MudContainer>

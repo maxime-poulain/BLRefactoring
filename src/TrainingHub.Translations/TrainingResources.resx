@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AcquiredSkillsLabel" xml:space="preserve">
+    <value>Acquired Skills</value>
+  </data>
+  <data name="AcquiredSkillsRequired" xml:space="preserve">
+    <value>Acquired skills is required</value>
+  </data>
+  <data name="AcquiredSkillsTooLong" xml:space="preserve">
+    <value>Acquired skills cannot exceed {0} characters</value>
+  </data>
+  <data name="BetweenCharacters" xml:space="preserve">
+    <value>Between {0} and {1} characters</value>
+  </data>
+  <data name="CreateTraining" xml:space="preserve">
+    <value>Create Training</value>
+  </data>
+  <data name="Creating" xml:space="preserve">
+    <value>Creating...</value>
+  </data>
+  <data name="DescriptionLabel" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="DescriptionRequired" xml:space="preserve">
+    <value>Description is required</value>
+  </data>
+  <data name="DescriptionTooLong" xml:space="preserve">
+    <value>Description cannot exceed {0} characters</value>
+  </data>
+  <data name="EditConflict" xml:space="preserve">
+    <value>Someone else changed this training since you opened it. Your changes were not saved — copy them, then reload the page to see the current version.</value>
+  </data>
+  <data name="EditTraining" xml:space="preserve">
+    <value>Edit Training</value>
+  </data>
+  <data name="LoadingTraining" xml:space="preserve">
+    <value>Loading training...</value>
+  </data>
+  <data name="LoadingTrainings" xml:space="preserve">
+    <value>Loading trainings...</value>
+  </data>
+  <data name="NoTrainingsYet" xml:space="preserve">
+    <value>No trainings yet</value>
+  </data>
+  <data name="NoTrainingsYetBody" xml:space="preserve">
+    <value>Get started by creating your first training</value>
+  </data>
+  <data name="PrerequisitesLabel" xml:space="preserve">
+    <value>Prerequisites</value>
+  </data>
+  <data name="PrerequisitesRequired" xml:space="preserve">
+    <value>Prerequisites is required</value>
+  </data>
+  <data name="PrerequisitesTooLong" xml:space="preserve">
+    <value>Prerequisites cannot exceed {0} characters</value>
+  </data>
+  <data name="SaveChanges" xml:space="preserve">
+    <value>Save Changes</value>
+  </data>
+  <data name="Saving" xml:space="preserve">
+    <value>Saving...</value>
+  </data>
+  <data name="SelectATopic" xml:space="preserve">
+    <value>Please select at least one topic</value>
+  </data>
+  <data name="TakenOutOfYourHands" xml:space="preserve">
+    <value>Taken out of your hands by the administration.</value>
+  </data>
+  <data name="TitleLabel" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="TitleRequired" xml:space="preserve">
+    <value>Title is required</value>
+  </data>
+  <data name="TitleTooLong" xml:space="preserve">
+    <value>Title cannot exceed {0} characters</value>
+  </data>
+  <data name="TitleTooShort" xml:space="preserve">
+    <value>Title must be at least {0} characters</value>
+  </data>
+  <data name="Topics" xml:space="preserve">
+    <value>Topics</value>
+  </data>
+  <data name="TrainingBelongsToAnother" xml:space="preserve">
+    <value>That training belongs to another trainer.</value>
+  </data>
+  <data name="TrainingCreated" xml:space="preserve">
+    <value>Training created successfully!</value>
+  </data>
+  <data name="TrainingGone" xml:space="preserve">
+    <value>That training no longer exists.</value>
+  </data>
+  <data name="TrainingLoadFailedRetry" xml:space="preserve">
+    <value>The training could not be loaded. Try again in a moment.</value>
+  </data>
+  <data name="TrainingLoadFailedWrong" xml:space="preserve">
+    <value>Something went wrong loading the training.</value>
+  </data>
+  <data name="TrainingNotCreatedRetry" xml:space="preserve">
+    <value>The training could not be created. Try again in a moment.</value>
+  </data>
+  <data name="TrainingNotPublishedRetry" xml:space="preserve">
+    <value>The training could not be published. Try again in a moment.</value>
+  </data>
+  <data name="TrainingNotPublishedWrong" xml:space="preserve">
+    <value>Something went wrong; the training was not published.</value>
+  </data>
+  <data name="TrainingNotUnpublishedRetry" xml:space="preserve">
+    <value>The training could not be unpublished. Try again in a moment.</value>
+  </data>
+  <data name="TrainingNotUnpublishedWrong" xml:space="preserve">
+    <value>Something went wrong; the training was not unpublished.</value>
+  </data>
+  <data name="TrainingNotUpdatedRetry" xml:space="preserve">
+    <value>The training could not be updated. Try again in a moment.</value>
+  </data>
+  <data name="TrainingPublished" xml:space="preserve">
+    <value>Training published.</value>
+  </data>
+  <data name="TrainingSaveFailedWrong" xml:space="preserve">
+    <value>Something went wrong saving the training.</value>
+  </data>
+  <data name="TrainingUnpublished" xml:space="preserve">
+    <value>Training unpublished. It stays in your list and can be published again.</value>
+  </data>
+  <data name="TrainingUpdated" xml:space="preserve">
+    <value>Training updated successfully!</value>
+  </data>
+  <data name="Trainings" xml:space="preserve">
+    <value>Trainings</value>
+  </data>
+  <data name="TrainingsLoadFailed" xml:space="preserve">
+    <value>Something went wrong loading the trainings.</value>
+  </data>
+  <data name="TrainingsLoadFailedRetry" xml:space="preserve">
+    <value>The trainings could not be loaded. Try again in a moment.</value>
+  </data>
+  <data name="Unpublish" xml:space="preserve">
+    <value>Unpublish</value>
+  </data>
+  <data name="UnpublishTrainingTitle" xml:space="preserve">
+    <value>Unpublish Training</value>
+  </data>
+  <data name="UnpublishedBadge" xml:space="preserve">
+    <value>Unpublished</value>
+  </data>
+  <data name="WithdrawExplanation" xml:space="preserve">
+    <value>It stays in your own list, keeps its title, and you can publish it again at any time.</value>
+  </data>
+  <data name="WithdrawTitleEnd" xml:space="preserve">
+    <value>" from public view?</value>
+  </data>
+  <data name="WithdrawTitleStart" xml:space="preserve">
+    <value>Withdraw "</value>
+  </data>
+  <data name="WithheldBadge" xml:space="preserve">
+    <value>Withheld</value>
+  </data>
+  <data name="WithheldExplanation" xml:space="preserve">
+    <value>You cannot offer this training again yourself. Reply to the email we sent you if you believe this is a mistake.</value>
+  </data>
+</root>

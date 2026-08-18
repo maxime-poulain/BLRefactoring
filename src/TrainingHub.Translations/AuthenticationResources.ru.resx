@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AccountCreated" xml:space="preserve">
+    <value>Аккаунт создан! Теперь войдите.</value>
+  </data>
+  <data name="AlreadyHaveAccount" xml:space="preserve">
+    <value>Уже есть аккаунт?</value>
+  </data>
+  <data name="BackToSignIn" xml:space="preserve">
+    <value>Назад ко входу</value>
+  </data>
+  <data name="ChangeThePassword" xml:space="preserve">
+    <value>Изменить пароль</value>
+  </data>
+  <data name="ChangingThePassword" xml:space="preserve">
+    <value>Изменение пароля...</value>
+  </data>
+  <data name="ChooseANewPassword" xml:space="preserve">
+    <value>Выберите новый пароль</value>
+  </data>
+  <data name="ConfirmNewPasswordLabel" xml:space="preserve">
+    <value>Подтвердите новый пароль</value>
+  </data>
+  <data name="ConfirmPasswordLabel" xml:space="preserve">
+    <value>Подтверждение пароля</value>
+  </data>
+  <data name="ConfirmPasswordRequired" xml:space="preserve">
+    <value>Требуется подтверждение пароля</value>
+  </data>
+  <data name="CreateAnAccount" xml:space="preserve">
+    <value>Создать аккаунт</value>
+  </data>
+  <data name="CreatingAccount" xml:space="preserve">
+    <value>Создание аккаунта...</value>
+  </data>
+  <data name="DontHaveAccount" xml:space="preserve">
+    <value>Нет аккаунта?</value>
+  </data>
+  <data name="EmailLabel" xml:space="preserve">
+    <value>Электронная почта</value>
+  </data>
+  <data name="EmailRequired" xml:space="preserve">
+    <value>Требуется адрес электронной почты</value>
+  </data>
+  <data name="FirstNameLabel" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="FirstNameRequired" xml:space="preserve">
+    <value>Требуется имя</value>
+  </data>
+  <data name="ForgotIntro" xml:space="preserve">
+    <value>Введите адрес электронной почты вашего аккаунта, и мы отправим вам ссылку для выбора нового пароля.</value>
+  </data>
+  <data name="ForgotPasswordPageTitle" xml:space="preserve">
+    <value>Забыли пароль — TrainingHub</value>
+  </data>
+  <data name="ForgotYourPassword" xml:space="preserve">
+    <value>Забыли пароль?</value>
+  </data>
+  <data name="InvalidCredentials" xml:space="preserve">
+    <value>Неверное имя пользователя или пароль.</value>
+  </data>
+  <data name="InvalidEmail" xml:space="preserve">
+    <value>Недействительный адрес электронной почты</value>
+  </data>
+  <data name="LastNameLabel" xml:space="preserve">
+    <value>Фамилия</value>
+  </data>
+  <data name="LastNameRequired" xml:space="preserve">
+    <value>Требуется фамилия</value>
+  </data>
+  <data name="LinkExpired" xml:space="preserve">
+    <value>Ссылка истекла?</value>
+  </data>
+  <data name="MissingToken" xml:space="preserve">
+    <value>В этом адресе нет токена сброса, поэтому использовать нечего. Откройте ссылку из письма ровно в том виде, в котором она была отправлена, — или запросите новую.</value>
+  </data>
+  <data name="NewPasswordLabel" xml:space="preserve">
+    <value>Новый пароль</value>
+  </data>
+  <data name="PasswordChanged" xml:space="preserve">
+    <value>Ваш пароль изменен. Войдите с ним прямо сейчас.</value>
+  </data>
+  <data name="PasswordLabel" xml:space="preserve">
+    <value>Пароль</value>
+  </data>
+  <data name="PasswordRequired" xml:space="preserve">
+    <value>Требуется пароль</value>
+  </data>
+  <data name="PasswordsDoNotMatch" xml:space="preserve">
+    <value>Пароли не совпадают</value>
+  </data>
+  <data name="RecoveryUnavailable" xml:space="preserve">
+    <value>Восстановление пароля сейчас недоступно. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="Register" xml:space="preserve">
+    <value>Зарегистрироваться</value>
+  </data>
+  <data name="RegisterHere" xml:space="preserve">
+    <value>Зарегистрируйтесь здесь</value>
+  </data>
+  <data name="RegistrationRejected" xml:space="preserve">
+    <value>Регистрация была отклонена.</value>
+  </data>
+  <data name="RegistrationUnavailable" xml:space="preserve">
+    <value>Регистрация сейчас недоступна. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="RegistrationWrong" xml:space="preserve">
+    <value>Что-то пошло не так при создании аккаунта.</value>
+  </data>
+  <data name="RememberedAfterAll" xml:space="preserve">
+    <value>Все-таки вспомнили?</value>
+  </data>
+  <data name="RequestANewOne" xml:space="preserve">
+    <value>Запросите новую</value>
+  </data>
+  <data name="RequestAResetLink" xml:space="preserve">
+    <value>Запросить ссылку для сброса</value>
+  </data>
+  <data name="ResetIntro" xml:space="preserve">
+    <value>Подтвердите адрес, на который пришла ссылка, и выберите новый пароль.</value>
+  </data>
+  <data name="ResetLinkSent" xml:space="preserve">
+    <value>Если для этого адреса существует аккаунт, письмо со ссылкой для сброса уже в пути. Ссылка действует 15 минут — а если вы запросите снова, действительна только самая новая.</value>
+  </data>
+  <data name="ResetPasswordPageTitle" xml:space="preserve">
+    <value>Сброс пароля — TrainingHub</value>
+  </data>
+  <data name="ResetRejected" xml:space="preserve">
+    <value>Сброс пароля был отклонен.</value>
+  </data>
+  <data name="SendTheResetLink" xml:space="preserve">
+    <value>Отправить ссылку для сброса</value>
+  </data>
+  <data name="Sending" xml:space="preserve">
+    <value>Отправка...</value>
+  </data>
+  <data name="SignInHere" xml:space="preserve">
+    <value>Войдите здесь</value>
+  </data>
+  <data name="SignInUnavailable" xml:space="preserve">
+    <value>Вход сейчас недоступен. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="SignedIn" xml:space="preserve">
+    <value>Вы вошли.</value>
+  </data>
+  <data name="SigningIn" xml:space="preserve">
+    <value>Вход...</value>
+  </data>
+  <data name="SomethingWentWrongRetry" xml:space="preserve">
+    <value>Что-то пошло не так. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="TooManyRequests" xml:space="preserve">
+    <value>Слишком много запросов. Подождите несколько минут и попробуйте снова.</value>
+  </data>
+  <data name="UsernameLabel" xml:space="preserve">
+    <value>Имя пользователя</value>
+  </data>
+  <data name="UsernameRequired" xml:space="preserve">
+    <value>Требуется имя пользователя</value>
+  </data>
+</root>

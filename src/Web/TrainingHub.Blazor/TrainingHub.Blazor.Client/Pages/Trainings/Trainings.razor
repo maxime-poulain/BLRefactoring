@@ -7,16 +7,18 @@
 @using TrainingHub.Blazor.Client.Infrastructure
 @inject ISnackbar Snackbar
 @inject ITrainerStandingSource StandingSource
+@inject IStringLocalizer<TrainingResources> L
+@inject IStringLocalizer<CommonResources> Common
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="my-4">
     <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
-        <MudText Typo="Typo.h4">Trainings</MudText>
+        <MudText Typo="Typo.h4">@L["Trainings"]</MudText>
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    StartIcon="@Icons.Material.Filled.Add"
                    Href="/trainings/create"
                    Disabled="@_standing.IsSuspended">
-            Create Training
+            @L["CreateTraining"]
         </MudButton>
     </MudStack>
 
@@ -24,7 +26,7 @@
     {
         <MudStack AlignItems="AlignItems.Center" Class="my-8">
             <MudProgressCircular Indeterminate="true" Size="Size.Large" />
-            <MudText Typo="Typo.body1" Class="mt-4">Loading trainings...</MudText>
+            <MudText Typo="Typo.body1" Class="mt-4">@L["LoadingTrainings"]</MudText>
         </MudStack>
     }
     else if (_page is null || _page.Items.Count == 0)
@@ -34,16 +36,16 @@
                      Style="font-size: 8rem;"
                      Color="Color.Default"
                      Class="mb-4" />
-            <MudText Typo="Typo.h5" Color="Color.Default" Class="mb-2">No trainings yet</MudText>
+            <MudText Typo="Typo.h5" Color="Color.Default" Class="mb-2">@L["NoTrainingsYet"]</MudText>
             <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
-                Get started by creating your first training
+                @L["NoTrainingsYetBody"]
             </MudText>
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.Add"
                        Href="/trainings/create"
                    Disabled="@_standing.IsSuspended">
-                Create Training
+                @L["CreateTraining"]
             </MudButton>
         </MudPaper>
     }
@@ -72,7 +74,7 @@
                                              Size="Size.Small"
                                              Color="Color.Error"
                                              Variant="Variant.Filled">
-                                        Withheld
+                                        @L["WithheldBadge"]
                                     </MudChip>
                                 }
                                 else if (!IsPublished(training))
@@ -81,7 +83,7 @@
                                              Size="Size.Small"
                                              Color="Color.Warning"
                                              Variant="Variant.Filled">
-                                        Unpublished
+                                        @L["UnpublishedBadge"]
                                     </MudChip>
                                 }
                             </MudStack>
@@ -93,8 +95,7 @@
                                 <MudAlert Severity="Severity.Error" Dense="true" Class="mb-3">
                                     <MudText Typo="Typo.body2">@training.WithholdingReason</MudText>
                                     <MudText Typo="Typo.caption">
-                                        You cannot offer this training again yourself. Reply to the
-                                        email we sent you if you believe this is a mistake.
+                                        @L["WithheldExplanation"]
                                     </MudText>
                                 </MudAlert>
                             }
@@ -133,7 +134,7 @@
                             @if (IsWithheld(training))
                             {
                                 <MudText Typo="Typo.caption" Color="Color.Secondary" Class="pa-2">
-                                    Taken out of your hands by the administration.
+                                    @L["TakenOutOfYourHands"]
                                 </MudText>
                             }
                             else if (IsPublished(training))
@@ -247,7 +248,7 @@
         {
             // One RFC 7807 document rather than a bare array of errors: the messages travel under
             // `errors` or `domainErrors`, and the shared reader speaks both envelopes. See ADR 0004.
-            foreach (var message in ProblemDetailsMessages.Read(ex.Result, "The request was rejected."))
+            foreach (var message in ProblemDetailsMessages.Read(ex.Result, Common["RequestRejected"]))
             {
                 Snackbar.Add(message, Severity.Error);
             }
@@ -257,13 +258,13 @@
             // ex.Message here is the generator's own sentence — "The HTTP status code of the
             // response was not expected (503)." It belongs in the console, not on screen.
             Console.Error.WriteLine(ex);
-            Snackbar.Add("The trainings could not be loaded. Try again in a moment.", Severity.Error);
+            Snackbar.Add(L["TrainingsLoadFailedRetry"], Severity.Error);
         }
         catch (Exception ex)
         {
             // Whatever this is, it is ours. A NullReferenceException must not become UI copy.
             Console.Error.WriteLine(ex);
-            Snackbar.Add("Something went wrong loading the trainings.", Severity.Error);
+            Snackbar.Add(L["TrainingsLoadFailed"], Severity.Error);
         }
         finally
         {
@@ -286,7 +287,7 @@
         };
 
         var dialog = await DialogService.ShowAsync<UnpublishTrainingDialog>(
-            "Unpublish Training", parameters, options);
+            L["UnpublishTrainingTitle"], parameters, options);
         var result = await dialog.Result;
 
         if (result is { Canceled: false })
@@ -302,23 +303,26 @@
         // it back takes nothing away from anybody.
         await RunTransition(
             () => TrainingClient.UnpublishTrainingAsync(trainingId),
-            "Training unpublished. It stays in your list and can be published again.",
-            "unpublished");
+            L["TrainingUnpublished"],
+            L["TrainingNotUnpublishedRetry"],
+            L["TrainingNotUnpublishedWrong"]);
     }
 
     private async Task PublishTraining(Guid trainingId)
         => await RunTransition(
             () => TrainingClient.PublishTrainingAsync(trainingId),
-            "Training published.",
-            "published");
+            L["TrainingPublished"],
+            L["TrainingNotPublishedRetry"],
+            L["TrainingNotPublishedWrong"]);
 
     /// <remarks>
     /// One error-handling body for both transitions. They fail the same ways and would otherwise
     /// be two copies of the same six catch blocks — with the two that matter, the 404 and the 403,
-    /// free to drift apart. The verb is a parameter because the last sentence is the only thing
-    /// that genuinely differs.
+    /// free to drift apart. The closing sentences are parameters because they are the only thing
+    /// that genuinely differs, and each caller hands them over as whole localized sentences —
+    /// a verb slot spliced into a template survives no language but this one.
     /// </remarks>
-    private async Task RunTransition(Func<Task> transition, string success, string verb)
+    private async Task RunTransition(Func<Task> transition, string success, string couldNot, string wentWrong)
     {
         try
         {
@@ -330,7 +334,7 @@
         {
             // Someone deleted it between this page being read and the button being pressed.
             // Not an error the user caused, and the list is simply stale.
-            Snackbar.Add("That training no longer exists.", Severity.Info);
+            Snackbar.Add(L["TrainingGone"], Severity.Info);
             await LoadTrainings();
         }
         catch (ApiException<ProblemDetails> ex)
@@ -340,7 +344,7 @@
             // A 409 lands here too: the training was already in the state being asked for, and the
             // server's sentences say so better than anything this page could invent. Reloading
             // afterwards is what makes the buttons agree with the truth again.
-            foreach (var message in ProblemDetailsMessages.Read(ex.Result, "The request was rejected."))
+            foreach (var message in ProblemDetailsMessages.Read(ex.Result, Common["RequestRejected"]))
             {
                 Snackbar.Add(message, Severity.Error);
             }
@@ -359,8 +363,8 @@
 
             Snackbar.Add(
                 standing.IsSuspended
-                    ? TrainerStanding.WhyDisabled
-                    : "That training belongs to another trainer.",
+                    ? Common["SuspendedCannotChange"].Value
+                    : L["TrainingBelongsToAnother"].Value,
                 Severity.Error);
 
             await LoadTrainings();
@@ -368,12 +372,12 @@
         catch (ApiException ex)
         {
             Console.Error.WriteLine(ex);
-            Snackbar.Add($"The training could not be {verb}. Try again in a moment.", Severity.Error);
+            Snackbar.Add(couldNot, Severity.Error);
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine(ex);
-            Snackbar.Add($"Something went wrong; the training was not {verb}.", Severity.Error);
+            Snackbar.Add(wentWrong, Severity.Error);
         }
     }
 }

@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AccountCreated" xml:space="preserve">
+    <value>Compte créé ! Connectez-vous maintenant.</value>
+  </data>
+  <data name="AlreadyHaveAccount" xml:space="preserve">
+    <value>Vous avez déjà un compte ?</value>
+  </data>
+  <data name="BackToSignIn" xml:space="preserve">
+    <value>Retour à la connexion</value>
+  </data>
+  <data name="ChangeThePassword" xml:space="preserve">
+    <value>Changer le mot de passe</value>
+  </data>
+  <data name="ChangingThePassword" xml:space="preserve">
+    <value>Changement du mot de passe...</value>
+  </data>
+  <data name="ChooseANewPassword" xml:space="preserve">
+    <value>Choisissez un nouveau mot de passe</value>
+  </data>
+  <data name="ConfirmNewPasswordLabel" xml:space="preserve">
+    <value>Confirmez le nouveau mot de passe</value>
+  </data>
+  <data name="ConfirmPasswordLabel" xml:space="preserve">
+    <value>Confirmation du mot de passe</value>
+  </data>
+  <data name="ConfirmPasswordRequired" xml:space="preserve">
+    <value>La confirmation du mot de passe est requise</value>
+  </data>
+  <data name="CreateAnAccount" xml:space="preserve">
+    <value>Créer un compte</value>
+  </data>
+  <data name="CreatingAccount" xml:space="preserve">
+    <value>Création du compte...</value>
+  </data>
+  <data name="DontHaveAccount" xml:space="preserve">
+    <value>Pas encore de compte ?</value>
+  </data>
+  <data name="EmailLabel" xml:space="preserve">
+    <value>E-mail</value>
+  </data>
+  <data name="EmailRequired" xml:space="preserve">
+    <value>Un e-mail est requis</value>
+  </data>
+  <data name="FirstNameLabel" xml:space="preserve">
+    <value>Prénom</value>
+  </data>
+  <data name="FirstNameRequired" xml:space="preserve">
+    <value>Le prénom est requis</value>
+  </data>
+  <data name="ForgotIntro" xml:space="preserve">
+    <value>Saisissez l'e-mail de votre compte et nous vous enverrons un lien pour choisir un nouveau mot de passe.</value>
+  </data>
+  <data name="ForgotPasswordPageTitle" xml:space="preserve">
+    <value>Mot de passe oublié — TrainingHub</value>
+  </data>
+  <data name="ForgotYourPassword" xml:space="preserve">
+    <value>Mot de passe oublié ?</value>
+  </data>
+  <data name="InvalidCredentials" xml:space="preserve">
+    <value>Nom d'utilisateur ou mot de passe invalide.</value>
+  </data>
+  <data name="InvalidEmail" xml:space="preserve">
+    <value>Adresse e-mail invalide</value>
+  </data>
+  <data name="LastNameLabel" xml:space="preserve">
+    <value>Nom</value>
+  </data>
+  <data name="LastNameRequired" xml:space="preserve">
+    <value>Le nom est requis</value>
+  </data>
+  <data name="LinkExpired" xml:space="preserve">
+    <value>Lien expiré ?</value>
+  </data>
+  <data name="MissingToken" xml:space="preserve">
+    <value>Cette adresse ne contient pas son jeton de réinitialisation, il n'y a donc rien à utiliser. Ouvrez le lien de l'e-mail exactement tel qu'il a été envoyé — ou demandez-en un nouveau.</value>
+  </data>
+  <data name="NewPasswordLabel" xml:space="preserve">
+    <value>Nouveau mot de passe</value>
+  </data>
+  <data name="PasswordChanged" xml:space="preserve">
+    <value>Votre mot de passe a été changé. Connectez-vous avec dès maintenant.</value>
+  </data>
+  <data name="PasswordLabel" xml:space="preserve">
+    <value>Mot de passe</value>
+  </data>
+  <data name="PasswordRequired" xml:space="preserve">
+    <value>Le mot de passe est requis</value>
+  </data>
+  <data name="PasswordsDoNotMatch" xml:space="preserve">
+    <value>Les mots de passe ne correspondent pas</value>
+  </data>
+  <data name="RecoveryUnavailable" xml:space="preserve">
+    <value>La récupération de mot de passe est indisponible pour le moment. Réessayez dans un instant.</value>
+  </data>
+  <data name="Register" xml:space="preserve">
+    <value>S'inscrire</value>
+  </data>
+  <data name="RegisterHere" xml:space="preserve">
+    <value>Inscrivez-vous ici</value>
+  </data>
+  <data name="RegistrationRejected" xml:space="preserve">
+    <value>L'inscription a été rejetée.</value>
+  </data>
+  <data name="RegistrationUnavailable" xml:space="preserve">
+    <value>L'inscription est indisponible pour le moment. Réessayez dans un instant.</value>
+  </data>
+  <data name="RegistrationWrong" xml:space="preserve">
+    <value>Un problème est survenu à la création du compte.</value>
+  </data>
+  <data name="RememberedAfterAll" xml:space="preserve">
+    <value>Vous vous en souvenez finalement ?</value>
+  </data>
+  <data name="RequestANewOne" xml:space="preserve">
+    <value>Demandez-en un nouveau</value>
+  </data>
+  <data name="RequestAResetLink" xml:space="preserve">
+    <value>Demander un lien de réinitialisation</value>
+  </data>
+  <data name="ResetIntro" xml:space="preserve">
+    <value>Confirmez l'e-mail auquel le lien a été envoyé, et choisissez le nouveau mot de passe.</value>
+  </data>
+  <data name="ResetLinkSent" xml:space="preserve">
+    <value>Si un compte existe pour cette adresse, un message avec un lien de réinitialisation est en route. Le lien fonctionne pendant 15 minutes — et si vous redemandez, seul l'e-mail le plus récent compte.</value>
+  </data>
+  <data name="ResetPasswordPageTitle" xml:space="preserve">
+    <value>Réinitialisation du mot de passe — TrainingHub</value>
+  </data>
+  <data name="ResetRejected" xml:space="preserve">
+    <value>La réinitialisation du mot de passe a été rejetée.</value>
+  </data>
+  <data name="SendTheResetLink" xml:space="preserve">
+    <value>Envoyer le lien de réinitialisation</value>
+  </data>
+  <data name="Sending" xml:space="preserve">
+    <value>Envoi...</value>
+  </data>
+  <data name="SignInHere" xml:space="preserve">
+    <value>Connectez-vous ici</value>
+  </data>
+  <data name="SignInUnavailable" xml:space="preserve">
+    <value>La connexion est indisponible pour le moment. Réessayez dans un instant.</value>
+  </data>
+  <data name="SignedIn" xml:space="preserve">
+    <value>Connecté.</value>
+  </data>
+  <data name="SigningIn" xml:space="preserve">
+    <value>Connexion...</value>
+  </data>
+  <data name="SomethingWentWrongRetry" xml:space="preserve">
+    <value>Un problème est survenu. Réessayez dans un instant.</value>
+  </data>
+  <data name="TooManyRequests" xml:space="preserve">
+    <value>Trop de demandes. Attendez quelques minutes et réessayez.</value>
+  </data>
+  <data name="UsernameLabel" xml:space="preserve">
+    <value>Nom d'utilisateur</value>
+  </data>
+  <data name="UsernameRequired" xml:space="preserve">
+    <value>Le nom d'utilisateur est requis</value>
+  </data>
+</root>

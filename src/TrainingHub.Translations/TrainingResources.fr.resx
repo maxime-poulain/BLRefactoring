@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AcquiredSkillsLabel" xml:space="preserve">
+    <value>Compétences acquises</value>
+  </data>
+  <data name="AcquiredSkillsRequired" xml:space="preserve">
+    <value>Les compétences acquises sont requises</value>
+  </data>
+  <data name="AcquiredSkillsTooLong" xml:space="preserve">
+    <value>Les compétences acquises ne peuvent pas dépasser {0} caractères</value>
+  </data>
+  <data name="BetweenCharacters" xml:space="preserve">
+    <value>Entre {0} et {1} caractères</value>
+  </data>
+  <data name="CreateTraining" xml:space="preserve">
+    <value>Créer une formation</value>
+  </data>
+  <data name="Creating" xml:space="preserve">
+    <value>Création...</value>
+  </data>
+  <data name="DescriptionLabel" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="DescriptionRequired" xml:space="preserve">
+    <value>Une description est requise</value>
+  </data>
+  <data name="DescriptionTooLong" xml:space="preserve">
+    <value>La description ne peut pas dépasser {0} caractères</value>
+  </data>
+  <data name="EditConflict" xml:space="preserve">
+    <value>Quelqu'un d'autre a modifié cette formation depuis que vous l'avez ouverte. Vos changements n'ont pas été enregistrés — copiez-les, puis rechargez la page pour voir la version actuelle.</value>
+  </data>
+  <data name="EditTraining" xml:space="preserve">
+    <value>Modifier la formation</value>
+  </data>
+  <data name="LoadingTraining" xml:space="preserve">
+    <value>Chargement de la formation...</value>
+  </data>
+  <data name="LoadingTrainings" xml:space="preserve">
+    <value>Chargement des formations...</value>
+  </data>
+  <data name="NoTrainingsYet" xml:space="preserve">
+    <value>Pas encore de formation</value>
+  </data>
+  <data name="NoTrainingsYetBody" xml:space="preserve">
+    <value>Commencez par créer votre première formation</value>
+  </data>
+  <data name="PrerequisitesLabel" xml:space="preserve">
+    <value>Prérequis</value>
+  </data>
+  <data name="PrerequisitesRequired" xml:space="preserve">
+    <value>Les prérequis sont requis</value>
+  </data>
+  <data name="PrerequisitesTooLong" xml:space="preserve">
+    <value>Les prérequis ne peuvent pas dépasser {0} caractères</value>
+  </data>
+  <data name="SaveChanges" xml:space="preserve">
+    <value>Enregistrer les modifications</value>
+  </data>
+  <data name="Saving" xml:space="preserve">
+    <value>Enregistrement...</value>
+  </data>
+  <data name="SelectATopic" xml:space="preserve">
+    <value>Veuillez sélectionner au moins un sujet</value>
+  </data>
+  <data name="TakenOutOfYourHands" xml:space="preserve">
+    <value>Retirée de vos mains par l'administration.</value>
+  </data>
+  <data name="TitleLabel" xml:space="preserve">
+    <value>Titre</value>
+  </data>
+  <data name="TitleRequired" xml:space="preserve">
+    <value>Un titre est requis</value>
+  </data>
+  <data name="TitleTooLong" xml:space="preserve">
+    <value>Le titre ne peut pas dépasser {0} caractères</value>
+  </data>
+  <data name="TitleTooShort" xml:space="preserve">
+    <value>Le titre doit compter au moins {0} caractères</value>
+  </data>
+  <data name="Topics" xml:space="preserve">
+    <value>Sujets</value>
+  </data>
+  <data name="TrainingBelongsToAnother" xml:space="preserve">
+    <value>Cette formation appartient à un autre formateur.</value>
+  </data>
+  <data name="TrainingCreated" xml:space="preserve">
+    <value>Formation créée !</value>
+  </data>
+  <data name="TrainingGone" xml:space="preserve">
+    <value>Cette formation n'existe plus.</value>
+  </data>
+  <data name="TrainingLoadFailedRetry" xml:space="preserve">
+    <value>La formation n'a pas pu être chargée. Réessayez dans un instant.</value>
+  </data>
+  <data name="TrainingLoadFailedWrong" xml:space="preserve">
+    <value>Un problème est survenu au chargement de la formation.</value>
+  </data>
+  <data name="TrainingNotCreatedRetry" xml:space="preserve">
+    <value>La formation n'a pas pu être créée. Réessayez dans un instant.</value>
+  </data>
+  <data name="TrainingNotPublishedRetry" xml:space="preserve">
+    <value>La formation n'a pas pu être publiée. Réessayez dans un instant.</value>
+  </data>
+  <data name="TrainingNotPublishedWrong" xml:space="preserve">
+    <value>Un problème est survenu ; la formation n'a pas été publiée.</value>
+  </data>
+  <data name="TrainingNotUnpublishedRetry" xml:space="preserve">
+    <value>La formation n'a pas pu être retirée. Réessayez dans un instant.</value>
+  </data>
+  <data name="TrainingNotUnpublishedWrong" xml:space="preserve">
+    <value>Un problème est survenu ; la formation n'a pas été retirée.</value>
+  </data>
+  <data name="TrainingNotUpdatedRetry" xml:space="preserve">
+    <value>La formation n'a pas pu être mise à jour. Réessayez dans un instant.</value>
+  </data>
+  <data name="TrainingPublished" xml:space="preserve">
+    <value>Formation publiée.</value>
+  </data>
+  <data name="TrainingSaveFailedWrong" xml:space="preserve">
+    <value>Un problème est survenu à l'enregistrement de la formation.</value>
+  </data>
+  <data name="TrainingUnpublished" xml:space="preserve">
+    <value>Formation retirée de la publication. Elle reste dans votre liste et peut être publiée à nouveau.</value>
+  </data>
+  <data name="TrainingUpdated" xml:space="preserve">
+    <value>Formation mise à jour !</value>
+  </data>
+  <data name="Trainings" xml:space="preserve">
+    <value>Formations</value>
+  </data>
+  <data name="TrainingsLoadFailed" xml:space="preserve">
+    <value>Un problème est survenu au chargement des formations.</value>
+  </data>
+  <data name="TrainingsLoadFailedRetry" xml:space="preserve">
+    <value>Les formations n'ont pas pu être chargées. Réessayez dans un instant.</value>
+  </data>
+  <data name="Unpublish" xml:space="preserve">
+    <value>Retirer</value>
+  </data>
+  <data name="UnpublishTrainingTitle" xml:space="preserve">
+    <value>Retirer la formation</value>
+  </data>
+  <data name="UnpublishedBadge" xml:space="preserve">
+    <value>Retirée</value>
+  </data>
+  <data name="WithdrawExplanation" xml:space="preserve">
+    <value>Elle reste dans votre propre liste, garde son titre, et vous pouvez la publier à nouveau à tout moment.</value>
+  </data>
+  <data name="WithdrawTitleEnd" xml:space="preserve">
+    <value> » de la vue publique ?</value>
+  </data>
+  <data name="WithdrawTitleStart" xml:space="preserve">
+    <value>Retirer « </value>
+  </data>
+  <data name="WithheldBadge" xml:space="preserve">
+    <value>Retenue</value>
+  </data>
+  <data name="WithheldExplanation" xml:space="preserve">
+    <value>Vous ne pouvez pas proposer cette formation à nouveau vous-même. Répondez à l'e-mail que nous vous avons envoyé si vous pensez qu'il s'agit d'une erreur.</value>
+  </data>
+</root>

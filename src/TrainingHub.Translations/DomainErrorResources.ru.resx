@@ -15,10 +15,40 @@
   <data name="Trainer.AlreadySuspended" xml:space="preserve">
     <value>Этот тренер уже приостановлен.</value>
   </data>
+  <data name="Trainer.BioEmpty" xml:space="preserve">
+    <value>Биография не может быть пустой.</value>
+  </data>
+  <data name="Trainer.BioExceeds500Characters" xml:space="preserve">
+    <value>Биография не может превышать 500 символов.</value>
+  </data>
   <data name="Trainer.NotSuspended" xml:space="preserve">
     <value>Этот тренер не приостановлен.</value>
   </data>
-  <data name="Training.DuplicateTitle" xml:space="preserve">
-    <value>Тренинг с таким же названием уже существует у этого тренера.</value>
+  <data name="Trainer.PhotoEmpty" xml:space="preserve">
+    <value>Фотография не может быть пустой.</value>
+  </data>
+  <data name="Trainer.SuspensionReasonEmpty" xml:space="preserve">
+    <value>Приостановка должна указывать причину.</value>
+  </data>
+  <data name="Training.AlreadyPublished" xml:space="preserve">
+    <value>Этот тренинг уже опубликован.</value>
+  </data>
+  <data name="Training.AlreadyUnpublished" xml:space="preserve">
+    <value>Этот тренинг уже снят с публикации.</value>
+  </data>
+  <data name="Training.AlreadyWithheld" xml:space="preserve">
+    <value>Этот тренинг уже изъят.</value>
+  </data>
+  <data name="Training.NotWithheld" xml:space="preserve">
+    <value>Этот тренинг не изъят, поэтому освобождать нечего.</value>
+  </data>
+  <data name="Training.RecipientSuspended" xml:space="preserve">
+    <value>Получатель приостановлен и не может получить тренинг.</value>
+  </data>
+  <data name="Training.TransferToSelf" xml:space="preserve">
+    <value>Тренинг нельзя передать тренеру, которому он уже принадлежит.</value>
+  </data>
+  <data name="Training.WithholdingReasonEmpty" xml:space="preserve">
+    <value>Изъятие тренинга должно указывать причину.</value>
   </data>
 </root>

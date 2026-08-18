@@ -3,6 +3,7 @@ using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using TrainingHub.Blazor.Client.Pages.Administration;
+using TrainingHub.Blazor.Client.Tests.Infrastructure;
 using TrainingHub.GeneratedClients;
 using Xunit;
 
@@ -90,6 +91,46 @@ public sealed class OutboxTests : ComponentTest
         page.FindAll("button").Single(button => button.TextContent.Contains("Requeue", StringComparison.Ordinal)).Click();
 
         _outbox.Verify(client => client.RequeueAsync(message.Id), Times.Once);
+    }
+
+    /// <summary>
+    /// Renders, a requeued message, says when it was sent back.
+    /// </summary>
+    /// <remarks>
+    /// The one timestamp that separates "given up on" from "given another chance": without it, a
+    /// message an operator already requeued looks identical to one still waiting for the decision.
+    /// </remarks>
+    [Fact]
+    public void Renders_ARequeuedMessage_SaysWhenItWasSentBack()
+    {
+        var requeued = Poisoned(deliveredTo: []);
+        requeued.RequeuedOnUtc = new DateTime(2026, 8, 10, 9, 30, 0, DateTimeKind.Utc);
+
+        _outbox
+            .Setup(client => client.GetPoisonAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(totalCount: 1, requeued));
+
+        var page = Render<Outbox>();
+
+        page.Markup.Should().Contain("Requeued 2026-08-10 09:30:00Z");
+    }
+
+    /// <summary>
+    /// Renders, the read was refused, shows the documents own words.
+    /// </summary>
+    [Fact]
+    public void Renders_TheReadWasRefused_ShowsTheDocumentsOwnWords()
+    {
+        _outbox
+            .Setup(client => client.GetPoisonAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ThrowsAsync(ApiExceptions.Refused(400, "The page parameter must be positive."));
+
+        Render<Outbox>();
+
+        Shown().Should().ContainSingle()
+            .Which.Message.Should().Be("The page parameter must be positive.",
+                "the server is the authority on its own refusal, and a failed read has nothing " +
+                "to report but itself");
     }
 
     private static PoisonedMessageHttpResponse Poisoned(List<string> deliveredTo) => new()

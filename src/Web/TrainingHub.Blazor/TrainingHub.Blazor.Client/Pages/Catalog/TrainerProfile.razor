@@ -8,11 +8,13 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @inject PersistentComponentState ApplicationState
+@inject IStringLocalizer<CatalogResources> L
+@inject IStringLocalizer<CommonResources> Common
 
 @* No [Authorize] either, for the same reason as the pages it is reached from: a person with
    something on offer is part of the catalog, and the catalog answers anybody (ADR 0070). *@
 
-<PageTitle>@(_trainer is null ? "Trainer" : $"{_trainer.Firstname} {_trainer.Lastname}") — TrainingHub</PageTitle>
+<PageTitle>@(_trainer is null ? L["TrainerFallbackTitle"] : $"{_trainer.Firstname} {_trainer.Lastname}") — TrainingHub</PageTitle>
 
 <HeadContent>
     @* What this page says about itself to the machines that read it (ADR 0073). The full head is
@@ -47,7 +49,7 @@
                Href="/catalog"
                StartIcon="@Icons.Material.Filled.ArrowBack"
                Class="mb-4 th-back">
-        Back to the catalog
+        @L["BackToTheCatalog"]
     </MudButton>
 
     @if (_isLoading)
@@ -63,7 +65,7 @@
            person who left. *@
         <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center">
             <MudIcon Icon="@Icons.Material.Filled.CloudOff" Style="font-size: 6rem;" Class="mb-4" />
-            <MudText Typo="Typo.h6">The catalog could not be reached</MudText>
+            <MudText Typo="Typo.h6">@L["CatalogUnreachable"]</MudText>
         </MudPaper>
     }
     else if (_trainer is null)
@@ -73,8 +75,8 @@
            than that (ADR 0070). *@
         <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center">
             <MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size: 6rem;" Class="mb-4" />
-            <MudText Typo="Typo.h6" GutterBottom="true">This profile is not available</MudText>
-            <MudText Typo="Typo.body2">The trainer may not exist, or may have nothing on offer.</MudText>
+            <MudText Typo="Typo.h6" GutterBottom="true">@L["ProfileNotAvailable"]</MudText>
+            <MudText Typo="Typo.body2">@L["ProfileNotAvailableBody"]</MudText>
         </MudPaper>
     }
     else
@@ -108,17 +110,17 @@
                            Disabled="@(!_isInteractive)"
                            OnClick="ContactAsync"
                            Class="th-contact">
-                    Contact @_trainer.Firstname
+                    @L["ContactName", _trainer.Firstname]
                 </MudButton>
             </MudStack>
 
             @if (!string.IsNullOrEmpty(_trainer.Bio))
             {
-                <MudText Typo="Typo.h6" Class="th-cue-label" GutterBottom="true">About</MudText>
+                <MudText Typo="Typo.h6" Class="th-cue-label" GutterBottom="true">@L["About"]</MudText>
                 <MudText Typo="Typo.body1" Class="mb-6">@_trainer.Bio</MudText>
             }
 
-            <MudText Typo="Typo.h6" Class="th-cue-label" GutterBottom="true">Trainings on offer</MudText>
+            <MudText Typo="Typo.h6" Class="th-cue-label" GutterBottom="true">@L["TrainingsOnOffer"]</MudText>
 
             @* Never empty: a profile with nothing on offer is a profile the API answered 404 for,
                so this shelf always holds at least one row. Rows of the shelf's own shape, leading
@@ -214,7 +216,7 @@
             _trainer = null;
             _isUnreachable = true;
 
-            foreach (var message in ProblemDetailsMessages.Read(exception.Result, "The request was rejected."))
+            foreach (var message in ProblemDetailsMessages.Read(exception.Result, Common["RequestRejected"]))
             {
                 Snackbar.Add(message, Severity.Error);
             }
@@ -226,7 +228,7 @@
             Console.Error.WriteLine(exception);
             _trainer = null;
             _isUnreachable = true;
-            Snackbar.Add("The profile could not be loaded. Try again in a moment.", Severity.Error);
+            Snackbar.Add(L["ProfileLoadFailedRetry"], Severity.Error);
         }
         catch (Exception exception)
         {
@@ -234,7 +236,7 @@
             Console.Error.WriteLine(exception);
             _trainer = null;
             _isUnreachable = true;
-            Snackbar.Add("The profile could not be loaded.", Severity.Error);
+            Snackbar.Add(L["ProfileLoadFailed"], Severity.Error);
         }
         finally
         {
@@ -254,14 +256,18 @@
         $"api/Catalog/trainers/{trainer.Id}/photo/{trainer.PhotoId}";
 
     // What the not-yet-loaded and not-available renders say — nothing about a person nobody can see.
-    private const string FallbackDescription = "A trainer with trainings on offer in the TrainingHub catalog.";
+    private string FallbackDescription => L["TrainerMetaFallback"];
 
     // The bio when there is one, and an honest count when there is not. The count is never zero:
-    // a profile with nothing on offer is a profile the API answered 404 for.
-    private static string Description(CatalogTrainerHttpResponse trainer) =>
+    // a profile with nothing on offer is a profile the API answered 404 for. Two keys rather than
+    // a template with a plural in it, because three languages pluralize three ways and a resource
+    // entry holds one sentence.
+    private string Description(CatalogTrainerHttpResponse trainer) =>
         CatalogPageHead.Summarize(
             trainer.Bio,
-            $"{trainer.Trainings.Count} training{(trainer.Trainings.Count == 1 ? "" : "s")} offered by {trainer.Firstname} {trainer.Lastname}.");
+            trainer.Trainings.Count == 1
+                ? L["TrainingsOfferedOne", $"{trainer.Firstname} {trainer.Lastname}"]
+                : L["TrainingsOfferedMany", trainer.Trainings.Count, $"{trainer.Firstname} {trainer.Lastname}"]);
 
     // The address this page answers for: the bare route, whatever address it was reached by.
     private string CanonicalUrl =>
@@ -297,7 +303,7 @@
         }
 
         var name = $"{_trainer.Firstname} {_trainer.Lastname}";
-        var draft = await ContactTrainerDialogs.AskAsync(DialogService, name);
+        var draft = await ContactTrainerDialogs.AskAsync(DialogService, name, L["ContactName", name]);
 
         if (draft is null)
         {
@@ -320,11 +326,11 @@
                 Website = draft.Website
             });
 
-            Snackbar.Add($"Your message is on its way to {name}.", Severity.Success);
+            Snackbar.Add(L["MessageOnItsWay", name], Severity.Success);
         }
         catch (ApiException<ProblemDetails> exception) when (exception.StatusCode == StatusBadRequest)
         {
-            foreach (var message in ProblemDetailsMessages.Read(exception.Result, "The message was not accepted."))
+            foreach (var message in ProblemDetailsMessages.Read(exception.Result, L["MessageNotAccepted"]))
             {
                 Snackbar.Add(message, Severity.Error);
             }
@@ -333,22 +339,22 @@
         {
             // The BFF's refusal, not the API's: the anti-robot token did not hold up — expired
             // between solving and sending, most likely — and a fresh dialog mints a fresh one.
-            Snackbar.Add("The anti-robot check did not pass. Please try sending again.", Severity.Warning);
+            Snackbar.Add(L["AntiRobotFailed"], Severity.Warning);
         }
         catch (ApiException exception) when (exception.StatusCode == StatusTooManyRequests)
         {
             // The window is the trainer's, not the visitor's: what ran out is how much mail one
             // person can be made to receive (ADR 0082), so waiting is the honest advice.
-            Snackbar.Add($"{name} has received a lot of messages just now. Try again in a minute.", Severity.Warning);
+            Snackbar.Add(L["TrainerBusy", name], Severity.Warning);
         }
         catch (ApiException exception) when (exception.StatusCode == StatusNotFound)
         {
-            Snackbar.Add("This trainer can no longer be contacted.", Severity.Error);
+            Snackbar.Add(L["TrainerNoLongerContactable"], Severity.Error);
         }
         catch (Exception)
         {
             // The message is ours rather than the server's, for the reason the loads above give.
-            Snackbar.Add("The message could not be sent. Try again in a moment.", Severity.Error);
+            Snackbar.Add(L["MessageSendFailed"], Severity.Error);
         }
     }
 

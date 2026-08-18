@@ -9,6 +9,8 @@
 @inject IDialogService DialogService
 @inject IBffSessionClient SessionClient
 @inject IAuthenticationStateNotifier AuthenticationNotifier
+@inject IStringLocalizer<TrainerResources> L
+@inject IStringLocalizer<CommonResources> Common
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="my-4">
     <MudPaper Elevation="4" Class="pa-8">
@@ -16,19 +18,19 @@
         {
             <MudStack AlignItems="AlignItems.Center" Class="my-8">
                 <MudProgressCircular Indeterminate="true" Size="Size.Large" />
-                <MudText Typo="Typo.body1" Class="mt-4">Loading profile...</MudText>
+                <MudText Typo="Typo.body1" Class="mt-4">@L["LoadingProfile"]</MudText>
             </MudStack>
         }
         else
         {
             <MudStack Spacing="4">
-                <MudText Typo="Typo.h4">My Profile</MudText>
+                <MudText Typo="Typo.h4">@L["MyProfile"]</MudText>
 
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="6" Class="mt-2">
                     <MudAvatar Style="height: 128px; width: 128px;" Color="Color.Primary">
                         @if (_photoUrl is not null)
                         {
-                            <MudImage Src="@_photoUrl" Alt="Profile photo" ObjectFit="ObjectFit.Cover"
+                            <MudImage Src="@_photoUrl" Alt="@L["ProfilePhotoAlt"]" ObjectFit="ObjectFit.Cover"
                                       Height="128" Width="128" />
                         }
                         else
@@ -49,7 +51,7 @@
                                            StartIcon="@Icons.Material.Filled.PhotoCamera"
                                            Disabled="@(_isUploading || _standing.IsSuspended)"
                                            OnClick="@(() => upload.OpenFilePickerAsync())">
-                                    @(_hasPhoto ? "Change photo" : "Add a photo")
+                                    @(_hasPhoto ? L["ChangePhoto"] : L["AddAPhoto"])
                                 </MudButton>
                             </CustomContent>
                         </MudFileUpload>
@@ -61,12 +63,12 @@
                                        StartIcon="@Icons.Material.Filled.Delete"
                                        Disabled="@(_isUploading || _standing.IsSuspended)"
                                        OnClick="HandlePhotoRemoved">
-                                Remove photo
+                                @L["RemovePhoto"]
                             </MudButton>
                         }
 
                         <MudText Typo="Typo.caption">
-                            PNG, JPEG or WebP, up to @MaxSizeInMebibytes MiB.
+                            @L["PhotoFormats", MaxSizeInMebibytes]
                         </MudText>
                     </MudStack>
                 </MudStack>
@@ -85,36 +87,36 @@
 
                 <MudForm @ref="_form" @bind-IsValid="_isValid">
                     <MudTextField @bind-Value="_firstname"
-                                  Label="First name"
+                                  Label="@Common["FirstName"]"
                                   Variant="Variant.Outlined"
                                   Required="true"
-                                  RequiredError="First name is required"
+                                  RequiredError="@L["FirstNameRequired"]"
                                   Immediate="true"
                                   MaxLength="NameMaxLength"
                                   Disabled="_isSaving" />
 
                     <MudTextField @bind-Value="_lastname"
-                                  Label="Last name"
+                                  Label="@Common["LastName"]"
                                   Variant="Variant.Outlined"
                                   Required="true"
-                                  RequiredError="Last name is required"
+                                  RequiredError="@L["LastNameRequired"]"
                                   Immediate="true"
                                   MaxLength="NameMaxLength"
                                   Disabled="_isSaving"
                                   Class="mt-4" />
 
                     <MudTextField @bind-Value="_contactEmail"
-                                  Label="Contact email"
+                                  Label="@L["ContactEmail"]"
                                   Variant="Variant.Outlined"
                                   Required="true"
-                                  RequiredError="Contact email is required"
+                                  RequiredError="@L["ContactEmailRequired"]"
                                   Immediate="true"
                                   Disabled="_isSaving"
-                                  HelperText="Published on your profile. Not the address you sign in with."
+                                  HelperText="@L["ContactEmailHelper"]"
                                   Class="mt-4" />
 
                     <MudTextField @bind-Value="_bio"
-                                  Label="Bio"
+                                  Label="@L["BioLabel"]"
                                   Variant="Variant.Outlined"
                                   Immediate="true"
                                   Lines="4"
@@ -128,7 +130,7 @@
                     <MudButton Variant="Variant.Text"
                                Disabled="_isSaving"
                                OnClick="@(() => NavigationManager.NavigateTo("/trainings"))">
-                        Cancel
+                        @Common["Cancel"]
                     </MudButton>
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
@@ -137,11 +139,11 @@
                         @if (_isSaving)
                         {
                             <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                            <span>Saving...</span>
+                            <span>@L["Saving"]</span>
                         }
                         else
                         {
-                            <span>Save Changes</span>
+                            <span>@L["SaveChanges"]</span>
                         }
                     </MudButton>
                 </MudStack>
@@ -152,10 +154,9 @@
                    catalog away, never the right to leave. Erasing the account is the one write
                    the sanction does not withhold (ADR 0085). *@
                 <MudStack Spacing="2">
-                    <MudText Typo="Typo.h6">Erase this account</MudText>
+                    <MudText Typo="Typo.h6">@L["EraseThisAccount"]</MudText>
                     <MudText Typo="Typo.body2" Color="Color.Secondary">
-                        Removes your profile, your trainings and your portrait, immediately and
-                        for good. There is no way back.
+                        @L["EraseExplanation"]
                     </MudText>
                     <div>
                         <MudButton Variant="Variant.Outlined"
@@ -163,7 +164,7 @@
                                    StartIcon="@Icons.Material.Filled.DeleteForever"
                                    Disabled="_isErasing"
                                    OnClick="HandleEraseAccount">
-                            Erase account
+                            @L["EraseAccount"]
                         </MudButton>
                     </div>
                 </MudStack>
@@ -250,7 +251,7 @@
         {
             // The declared 404: the trainer behind this session is gone. The document says so in
             // the API's own words (ADR 0004).
-            foreach (var message in ProblemDetailsMessages.Read(exception.Result, "The request was rejected."))
+            foreach (var message in ProblemDetailsMessages.Read(exception.Result, Common["RequestRejected"]))
             {
                 Snackbar.Add(message, Severity.Error);
             }
@@ -260,13 +261,13 @@
             // exception.Message here is the generator's own sentence — "The HTTP status code of
             // the response was not expected (503)." It belongs in the console, not on screen.
             Console.Error.WriteLine(exception);
-            Snackbar.Add("The profile could not be loaded. Try again in a moment.", Severity.Error);
+            Snackbar.Add(L["ProfileLoadFailedRetry"], Severity.Error);
         }
         catch (Exception exception)
         {
             // Whatever this is, it is ours. A NullReferenceException must not become UI copy.
             Console.Error.WriteLine(exception);
-            Snackbar.Add("Something went wrong loading the profile.", Severity.Error);
+            Snackbar.Add(L["ProfileLoadFailedWrong"], Severity.Error);
         }
         finally
         {
@@ -305,7 +306,7 @@
 
         if (file.Size > MaxSizeInBytes)
         {
-            _photoError = $"That photo is {file.Size / 1024 / 1024} MiB. The limit is {MaxSizeInMebibytes} MiB.";
+            _photoError = L["PhotoTooLarge", file.Size / 1024 / 1024, MaxSizeInMebibytes];
             return;
         }
 
@@ -331,7 +332,7 @@
             // 412 with nobody else involved.
             await LoadAsync();
 
-            Snackbar.Add("Photo updated.", Severity.Success);
+            Snackbar.Add(L["PhotoUpdated"], Severity.Success);
         }
         catch (ApiException<ProblemDetails> exception)
         {
@@ -340,20 +341,20 @@
             // problem document, never from the raw response body.
             _photoError = string.Join(
                 " ",
-                ProblemDetailsMessages.Read(exception.Result, "Failed to upload the photo."));
+                ProblemDetailsMessages.Read(exception.Result, L["PhotoUploadFailed"]));
         }
         catch (ApiException exception)
         {
             // With no readable document, the generator's own sentence must not become interface
             // copy: it goes to the console, and a sentence of ours goes on screen.
             Console.Error.WriteLine(exception);
-            _photoError = "Failed to upload the photo. Try again in a moment.";
+            _photoError = L["PhotoUploadFailedRetry"];
         }
         catch (Exception exception)
         {
             // Whatever this is, it is ours. A NullReferenceException must not become UI copy.
             Console.Error.WriteLine(exception);
-            _photoError = "Something went wrong uploading the photo.";
+            _photoError = L["PhotoUploadFailedWrong"];
         }
         finally
         {
@@ -374,23 +375,23 @@
             // removal minted — the same staleness the upload path explains above.
             await LoadAsync();
 
-            Snackbar.Add("Photo removed.", Severity.Success);
+            Snackbar.Add(L["PhotoRemoved"], Severity.Success);
         }
         catch (ApiException<ProblemDetails> exception)
         {
             _photoError = string.Join(
                 " ",
-                ProblemDetailsMessages.Read(exception.Result, "Failed to remove the photo."));
+                ProblemDetailsMessages.Read(exception.Result, L["PhotoRemoveFailed"]));
         }
         catch (ApiException exception)
         {
             Console.Error.WriteLine(exception);
-            _photoError = "Failed to remove the photo. Try again in a moment.";
+            _photoError = L["PhotoRemoveFailedRetry"];
         }
         catch (Exception exception)
         {
             Console.Error.WriteLine(exception);
-            _photoError = "Something went wrong removing the photo.";
+            _photoError = L["PhotoRemoveFailedWrong"];
         }
         finally
         {
@@ -427,22 +428,20 @@
             // the next edit a version the server will accept.
             await LoadAsync();
 
-            Snackbar.Add("Profile saved.", Severity.Success);
+            Snackbar.Add(L["ProfileSaved"], Severity.Success);
         }
         catch (ApiException<ProblemDetails> exception) when (exception.StatusCode == StatusPreconditionFailed)
         {
             // The declared 412: the sentence is ours because the document describes a version
             // mismatch rather than what happened to the person editing.
-            Snackbar.Add(
-                "Someone else changed this profile while you were editing it. Reload and try again.",
-                Severity.Warning);
+            Snackbar.Add(L["ProfileEditConflict"], Severity.Warning);
         }
         catch (ApiException<ProblemDetails> exception)
         {
             // The 400, the 404 and the 428 all arrive as problem documents, and the messages are
             // the server's own — per field when the contract refused, per domain error when the
             // aggregate did (ADR 0004).
-            foreach (var message in ProblemDetailsMessages.Read(exception.Result, "The request was rejected."))
+            foreach (var message in ProblemDetailsMessages.Read(exception.Result, Common["RequestRejected"]))
             {
                 Snackbar.Add(message, Severity.Error);
             }
@@ -450,12 +449,12 @@
         catch (ApiException exception)
         {
             Console.Error.WriteLine(exception);
-            Snackbar.Add("Failed to save the profile. Try again in a moment.", Severity.Error);
+            Snackbar.Add(L["ProfileSaveFailedRetry"], Severity.Error);
         }
         catch (Exception exception)
         {
             Console.Error.WriteLine(exception);
-            Snackbar.Add("Something went wrong saving the profile.", Severity.Error);
+            Snackbar.Add(L["ProfileSaveFailedWrong"], Severity.Error);
         }
         finally
         {
@@ -465,7 +464,7 @@
 
     private async Task HandleEraseAccount()
     {
-        var password = await EraseAccountDialogs.AskAsync(DialogService);
+        var password = await EraseAccountDialogs.AskAsync(DialogService, L["EraseThisAccountTitle"]);
 
         if (password is null)
         {
@@ -481,7 +480,7 @@
             {
                 // The wrong password arrives keyed to its field, and the sentence inside the
                 // document is the one the API wrote — shown as written, like every refusal here.
-                foreach (var message in ProblemDetailsMessages.Read(problem, "The account could not be erased."))
+                foreach (var message in ProblemDetailsMessages.Read(problem, L["EraseFailed"]))
                 {
                     Snackbar.Add(message, Severity.Error);
                 }
@@ -490,14 +489,14 @@
             }
 
             // The BFF has already signed the session out; what is left is telling the interface.
-            Snackbar.Add("Your account was erased.", Severity.Success);
+            Snackbar.Add(L["AccountErased"], Severity.Success);
             AuthenticationNotifier.NotifyAuthenticationChanged();
             NavigationManager.NavigateTo("/");
         }
         catch (HttpRequestException exception)
         {
             Console.Error.WriteLine(exception);
-            Snackbar.Add("The account could not be erased. Try again in a moment.", Severity.Error);
+            Snackbar.Add(L["EraseFailedRetry"], Severity.Error);
         }
         finally
         {

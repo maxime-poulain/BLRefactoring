@@ -4,49 +4,52 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject IHttpClientFactory HttpClientFactory
+@inject IStringLocalizer<CatalogResources> L
+@inject IStringLocalizer<CommonResources> Common
 
 <MudDialog>
     <DialogContent>
         @* Who receives this is said before anything is asked. The form exists so a visitor can
            reach the trainer without being shown an address (ADR 0082), and the counterpart of
            withholding the address is naming the person: a message composed toward nobody in
-           particular is the one thing this dialog must never collect. *@
+           particular is the one thing this dialog must never collect. The sentence is split
+           around the emphasized name rather than templated, because the name is markup — and the
+           two halves read whole in every supported language as long as the name ends the first. *@
         <MudText>
-            Your message goes to <strong>@TrainerName</strong>. They can answer you at the
-            address you leave here.
+            @L["MessageGoesTo"] <strong>@TrainerName</strong>. @L["TheyCanAnswer"]
         </MudText>
         <MudForm @ref="_form" @bind-IsValid="_isValid" Class="mt-4">
             <MudTextField @bind-Value="_firstname"
-                          Label="First name"
+                          Label="@Common["FirstName"]"
                           Variant="Variant.Outlined"
                           Required="true"
-                          RequiredError="A first name is required"
+                          RequiredError="@L["FirstNameRequired"]"
                           Validation="@(new Func<string, string?>(ValidateFirstname))"
                           Immediate="true"
                           MaxLength="NameMaxLength" />
             <MudTextField @bind-Value="_lastname"
-                          Label="Last name"
+                          Label="@Common["LastName"]"
                           Variant="Variant.Outlined"
                           Required="true"
-                          RequiredError="A last name is required"
+                          RequiredError="@L["LastNameRequired"]"
                           Validation="@(new Func<string, string?>(ValidateLastname))"
                           Immediate="true"
                           MaxLength="NameMaxLength" />
             <MudTextField @bind-Value="_email"
-                          Label="Email address"
+                          Label="@Common["EmailAddress"]"
                           Variant="Variant.Outlined"
                           InputType="InputType.Email"
                           Required="true"
-                          RequiredError="An email address is required"
+                          RequiredError="@L["EmailRequired"]"
                           Validation="@(new Func<string, string?>(ValidateEmail))"
                           Immediate="true"
                           MaxLength="EmailMaxLength"
-                          HelperText="@($"{TrainerName} answers you here; the address goes to nobody else.")" />
+                          HelperText="@L["EmailHelper", TrainerName]" />
             <MudTextField @bind-Value="_message"
-                          Label="Message"
+                          Label="@L["MessageLabel"]"
                           Variant="Variant.Outlined"
                           Required="true"
-                          RequiredError="A message is required"
+                          RequiredError="@L["MessageRequired"]"
                           Validation="@(new Func<string, string?>(ValidateMessage))"
                           Immediate="true"
                           Lines="5"
@@ -71,17 +74,17 @@
         @if (_turnstileMissing)
         {
             <MudText Color="Color.Error" Typo="Typo.caption">
-                Complete the check above to send your message.
+                @L["CompleteTheCheck"]
             </MudText>
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="Cancel" Variant="Variant.Text">@Common["Cancel"]</MudButton>
         <MudButton Color="Color.Primary"
                    Variant="Variant.Filled"
                    Disabled="@(!_isValid)"
                    OnClick="Confirm">
-            Send
+            @L["Send"]
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -115,13 +118,13 @@
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
 
-    private static string? ValidateFirstname(string value) =>
-        ValidateName(value, "A first name is required");
+    private string? ValidateFirstname(string value) =>
+        ValidateName(value, L["FirstNameRequired"]);
 
-    private static string? ValidateLastname(string value) =>
-        ValidateName(value, "A last name is required");
+    private string? ValidateLastname(string value) =>
+        ValidateName(value, L["LastNameRequired"]);
 
-    private static string? ValidateName(string value, string absent)
+    private string? ValidateName(string value, string absent)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
@@ -129,19 +132,19 @@
         }
 
         return value.Trim().Length > NameMaxLength
-            ? $"A name cannot exceed {NameMaxLength} characters"
+            ? L["NameTooLong", NameMaxLength].Value
             : null;
     }
 
-    private static string? ValidateEmail(string value)
+    private string? ValidateEmail(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            return "An email address is required";
+            return L["EmailRequired"];
         }
 
         return value.Trim().Length > EmailMaxLength
-            ? $"An email address cannot exceed {EmailMaxLength} characters"
+            ? L["EmailTooLong", EmailMaxLength].Value
             : null;
     }
 
@@ -150,22 +153,22 @@
     /// spaces satisfy the raw bound and would still arrive as an empty message, which is a click
     /// rather than a contact.
     /// </remarks>
-    private static string? ValidateMessage(string value)
+    private string? ValidateMessage(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            return "A message is required";
+            return L["MessageRequired"];
         }
 
         var written = value.Trim();
 
         if (written.Length < MessageMinLength)
         {
-            return $"A message needs at least {MessageMinLength} characters";
+            return L["MessageTooShort", MessageMinLength];
         }
 
         return written.Length > MessageMaxLength
-            ? $"A message cannot exceed {MessageMaxLength} characters"
+            ? L["MessageTooLong", MessageMaxLength].Value
             : null;
     }
 

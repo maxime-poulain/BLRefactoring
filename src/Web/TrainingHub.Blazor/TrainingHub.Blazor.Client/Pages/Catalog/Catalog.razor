@@ -7,12 +7,14 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @inject PersistentComponentState ApplicationState
+@inject IStringLocalizer<CatalogResources> L
+@inject IStringLocalizer<CommonResources> Common
 
 @* No [Authorize], and it is the only routed page here without one. ADR 0059 built the index and
    gave it an anonymous endpoint; ADR 0062 gave the endpoint a face and taught the proxy to forward
    this one family of paths without a token. A visitor arrives with no session and stays that way. *@
 
-<PageTitle>Catalog — TrainingHub</PageTitle>
+<PageTitle>@L["CatalogPageTitle"]</PageTitle>
 
 <HeadContent>
     @* What this page says about itself to the machines that read it — search engines and the
@@ -23,16 +25,16 @@
        parameter a visitor arrived with cannot ride into it. *@
     <meta name="description" content="@CatalogDescription"/>
     <link rel="canonical" href="@CanonicalUrl"/>
-    <meta property="og:title" content="Catalog — TrainingHub"/>
+    <meta property="og:title" content="@L["CatalogPageTitle"]"/>
     <meta property="og:description" content="@CatalogDescription"/>
     <meta property="og:type" content="website"/>
     <meta property="og:url" content="@CanonicalUrl"/>
 </HeadContent>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="my-4">
-    <MudText Typo="Typo.h4" Class="mb-2">Trainings on offer</MudText>
+    <MudText Typo="Typo.h4" Class="mb-2">@L["TrainingsOnOffer"]</MudText>
     <MudText Typo="Typo.body1" Class="mb-4">
-        Every training a trainer currently publishes. No account needed to look.
+        @L["CatalogIntro"]
     </MudText>
 
     <MudPaper Elevation="0" Class="pa-4 mb-4">
@@ -41,7 +43,7 @@
            the search to one shelf (ADR 0069). *@
         <MudTextField T="string"
                       Class="th-hero-search"
-                      Label="Search the shelf"
+                      Label="@L["SearchTheShelf"]"
                       Value="@_term"
                       ValueChanged="OnTermChangedAsync"
                       DebounceInterval="400"
@@ -50,7 +52,7 @@
                       MaxLength="TermMaxLength"
                       Adornment="Adornment.Start"
                       AdornmentIcon="@Icons.Material.Filled.Search"
-                      HelperText="Every word of a title, matched by prefix" />
+                      HelperText="@L["SearchHelper"]" />
 
         @* The catalog's facets, from GET /Catalog/topics: only topics with something on offer,
            each with its count under the term being searched, so a chip never leads to an empty
@@ -87,7 +89,7 @@
                              Variant="Variant.Text"
                              Icon="@Icons.Material.Filled.Close"
                              OnClick="@(() => OnTopicsClearedAsync())">
-                        Clear topics
+                        @L["ClearTopics"]
                     </MudChip>
                 }
             </MudStack>
@@ -104,14 +106,14 @@
                      Color="@(_newestFirst ? Color.Primary : Color.Default)"
                      Variant="@(_newestFirst ? Variant.Filled : Variant.Outlined)"
                      OnClick="@(() => OnOrderChangedAsync(newestFirst: true))">
-                Newest
+                @L["Newest"]
             </MudChip>
             <MudChip T="string"
                      Size="Size.Small"
                      Color="@(_newestFirst ? Color.Default : Color.Primary)"
                      Variant="@(_newestFirst ? Variant.Outlined : Variant.Filled)"
                      OnClick="@(() => OnOrderChangedAsync(newestFirst: false))">
-                A–Z
+                @L["AToZ"]
             </MudChip>
         </MudStack>
     </MudPaper>
@@ -126,7 +128,7 @@
     {
         <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center">
             <MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size: 6rem;" Class="mb-4" />
-            <MudText Typo="Typo.h6">No training matches</MudText>
+            <MudText Typo="Typo.h6">@L["NoTrainingMatches"]</MudText>
         </MudPaper>
     }
     else
@@ -168,8 +170,7 @@
     private const int TermMaxLength = 100;
 
     // One sentence for the description meta tag: what a search result quotes under the title.
-    private const string CatalogDescription =
-        "Every training a trainer currently publishes on TrainingHub. Browse by topic, search by title — no account needed to look.";
+    private string CatalogDescription => L["CatalogMetaDescription"];
 
     // The hue the shelf's spines wear: the browsed topic's own, or the neutral tone when no
     // shelf is chosen — a search row carries no topics, and a color would be a guess.
@@ -420,7 +421,7 @@
             // The one declared refusal of this read is a 400 on the address's own parameters —
             // term, shelves, sort, page all come from the URL — and the document says which one
             // was refused better than any sentence of ours (ADR 0004).
-            foreach (var message in ProblemDetailsMessages.Read(exception.Result, "The request was rejected."))
+            foreach (var message in ProblemDetailsMessages.Read(exception.Result, Common["RequestRejected"]))
             {
                 Snackbar.Add(message, Severity.Error);
             }
@@ -430,13 +431,13 @@
             // ApiException.Message is the generator's own sentence and the raw body with it; it
             // belongs in the console, not on screen.
             Console.Error.WriteLine(exception);
-            Snackbar.Add("The catalog could not be loaded. Try again in a moment.", Severity.Error);
+            Snackbar.Add(L["CatalogLoadFailedRetry"], Severity.Error);
         }
         catch (Exception exception)
         {
             // Whatever this is, it is ours; a visitor learns nothing from a stack of it.
             Console.Error.WriteLine(exception);
-            Snackbar.Add("The catalog could not be loaded.", Severity.Error);
+            Snackbar.Add(L["CatalogLoadFailed"], Severity.Error);
         }
         finally
         {

@@ -8,10 +8,12 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @inject PersistentComponentState ApplicationState
+@inject IStringLocalizer<CatalogResources> L
+@inject IStringLocalizer<CommonResources> Common
 
 @* No [Authorize] either, for the same reason as the listing it is reached from (ADR 0062). *@
 
-<PageTitle>@(_training?.Title ?? "Training") — TrainingHub</PageTitle>
+<PageTitle>@(_training?.Title ?? L["TrainingFallbackTitle"]) — TrainingHub</PageTitle>
 
 <HeadContent>
     @* What this page says about itself to the machines that read it (ADR 0073). The full head is
@@ -47,7 +49,7 @@
                Href="/catalog"
                StartIcon="@Icons.Material.Filled.ArrowBack"
                Class="mb-4 th-back">
-        Back to the catalog
+        @L["BackToTheCatalog"]
     </MudButton>
 
     @if (_isLoading)
@@ -63,7 +65,7 @@
            withdrawn training. *@
         <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center">
             <MudIcon Icon="@Icons.Material.Filled.CloudOff" Style="font-size: 6rem;" Class="mb-4" />
-            <MudText Typo="Typo.h6">The catalog could not be reached</MudText>
+            <MudText Typo="Typo.h6">@L["CatalogUnreachable"]</MudText>
         </MudPaper>
     }
     else if (_training is null)
@@ -73,8 +75,8 @@
            has been taken down is the administration's read (ADR 0055). *@
         <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center">
             <MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size: 6rem;" Class="mb-4" />
-            <MudText Typo="Typo.h6" GutterBottom="true">This training is not on offer</MudText>
-            <MudText Typo="Typo.body2">It may never have existed, or it may have been withdrawn.</MudText>
+            <MudText Typo="Typo.h6" GutterBottom="true">@L["TrainingNotOnOffer"]</MudText>
+            <MudText Typo="Typo.body2">@L["TrainingNotOnOfferBody"]</MudText>
         </MudPaper>
     }
     else
@@ -108,7 +110,7 @@
                     </MudAvatar>
                 }
                 <MudText Typo="Typo.subtitle1">
-                    Offered by
+                    @L["OfferedBy"]
                     <MudLink Href="@($"/catalog/trainers/{_training.TrainerId}")"
                              Typo="Typo.subtitle1">
                         @_training.TrainerName
@@ -124,7 +126,7 @@
                            Disabled="@(!_isInteractive)"
                            OnClick="ContactAsync"
                            Class="th-contact">
-                    Contact @_training.TrainerName
+                    @L["ContactName", _training.TrainerName]
                 </MudButton>
             </MudStack>
 
@@ -146,13 +148,13 @@
                 </MudStack>
             }
 
-            <MudText Typo="Typo.h6" Class="th-cue-label" GutterBottom="true">About</MudText>
+            <MudText Typo="Typo.h6" Class="th-cue-label" GutterBottom="true">@L["About"]</MudText>
             <MudText Typo="Typo.body1" Class="mb-6">@_training.Description</MudText>
 
-            <MudText Typo="Typo.h6" Class="th-cue-label" GutterBottom="true">Prerequisites</MudText>
+            <MudText Typo="Typo.h6" Class="th-cue-label" GutterBottom="true">@L["Prerequisites"]</MudText>
             <MudText Typo="Typo.body1" Class="mb-6">@_training.Prerequisites</MudText>
 
-            <MudText Typo="Typo.h6" Class="th-cue-label" GutterBottom="true">What you leave with</MudText>
+            <MudText Typo="Typo.h6" Class="th-cue-label" GutterBottom="true">@L["WhatYouLeaveWith"]</MudText>
             <MudText Typo="Typo.body1">@_training.AcquiredSkills</MudText>
         </MudPaper>
     }
@@ -230,7 +232,7 @@
             _training = null;
             _isUnreachable = true;
 
-            foreach (var message in ProblemDetailsMessages.Read(exception.Result, "The request was rejected."))
+            foreach (var message in ProblemDetailsMessages.Read(exception.Result, Common["RequestRejected"]))
             {
                 Snackbar.Add(message, Severity.Error);
             }
@@ -242,7 +244,7 @@
             Console.Error.WriteLine(exception);
             _training = null;
             _isUnreachable = true;
-            Snackbar.Add("The training could not be loaded. Try again in a moment.", Severity.Error);
+            Snackbar.Add(L["TrainingLoadFailedRetry"], Severity.Error);
         }
         catch (Exception exception)
         {
@@ -250,7 +252,7 @@
             Console.Error.WriteLine(exception);
             _training = null;
             _isUnreachable = true;
-            Snackbar.Add("The training could not be loaded.", Severity.Error);
+            Snackbar.Add(L["TrainingLoadFailed"], Severity.Error);
         }
         finally
         {
@@ -271,7 +273,7 @@
 
     // What a search result quotes under the title. The fallback is what the not-yet-loaded and
     // not-found renders say — nothing about a training nobody can see.
-    private const string FallbackDescription = "A training on offer in the TrainingHub catalog.";
+    private string FallbackDescription => L["TrainingMetaFallback"];
 
     private string Description =>
         CatalogPageHead.Summarize(_training?.Description, FallbackDescription);
@@ -318,7 +320,8 @@
             return;
         }
 
-        var draft = await ContactTrainerDialogs.AskAsync(DialogService, _training.TrainerName);
+        var draft = await ContactTrainerDialogs.AskAsync(
+            DialogService, _training.TrainerName, L["ContactName", _training.TrainerName]);
 
         if (draft is null)
         {
@@ -342,11 +345,11 @@
                 Website = draft.Website
             });
 
-            Snackbar.Add($"Your message is on its way to {_training.TrainerName}.", Severity.Success);
+            Snackbar.Add(L["MessageOnItsWay", _training.TrainerName], Severity.Success);
         }
         catch (ApiException<ProblemDetails> exception) when (exception.StatusCode == StatusBadRequest)
         {
-            foreach (var message in ProblemDetailsMessages.Read(exception.Result, "The message was not accepted."))
+            foreach (var message in ProblemDetailsMessages.Read(exception.Result, L["MessageNotAccepted"]))
             {
                 Snackbar.Add(message, Severity.Error);
             }
@@ -355,22 +358,22 @@
         {
             // The BFF's refusal, not the API's: the anti-robot token did not hold up — expired
             // between solving and sending, most likely — and a fresh dialog mints a fresh one.
-            Snackbar.Add("The anti-robot check did not pass. Please try sending again.", Severity.Warning);
+            Snackbar.Add(L["AntiRobotFailed"], Severity.Warning);
         }
         catch (ApiException exception) when (exception.StatusCode == StatusTooManyRequests)
         {
             // The window is the trainer's, not the visitor's: what ran out is how much mail one
             // person can be made to receive (ADR 0082), so waiting is the honest advice.
-            Snackbar.Add($"{_training.TrainerName} has received a lot of messages just now. Try again in a minute.", Severity.Warning);
+            Snackbar.Add(L["TrainerBusy", _training.TrainerName], Severity.Warning);
         }
         catch (ApiException exception) when (exception.StatusCode == StatusNotFound)
         {
-            Snackbar.Add("This trainer can no longer be contacted.", Severity.Error);
+            Snackbar.Add(L["TrainerNoLongerContactable"], Severity.Error);
         }
         catch (Exception)
         {
             // The message is ours rather than the server's, for the reason the loads above give.
-            Snackbar.Add("The message could not be sent. Try again in a moment.", Severity.Error);
+            Snackbar.Add(L["MessageSendFailed"], Severity.Error);
         }
     }
 

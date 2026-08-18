@@ -20,9 +20,4 @@ public sealed record TrainerStanding(bool IsSuspended, string? Reason)
     /// direction costs a <c>403</c> the API answers anyway.
     /// </remarks>
     public static readonly TrainerStanding Active = new(IsSuspended: false, Reason: null);
-
-    /// <summary>
-    /// The one sentence every disabled control shows, written once because it is the same sentence.
-    /// </summary>
-    public const string WhyDisabled = "Suspended accounts cannot make changes.";
 }

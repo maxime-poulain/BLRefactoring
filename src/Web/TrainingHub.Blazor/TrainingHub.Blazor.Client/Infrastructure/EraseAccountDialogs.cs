@@ -17,7 +17,8 @@ public static class EraseAccountDialogs
     /// Asks for the caller's password, and answers <see langword="null"/> when they back out.
     /// </summary>
     /// <param name="dialogService">The dialog service the page injects.</param>
-    public static async Task<string?> AskAsync(IDialogService dialogService)
+    /// <param name="title">The dialog's title, worded — and localized — by the page that opens it.</param>
+    public static async Task<string?> AskAsync(IDialogService dialogService, string title)
     {
         ArgumentNullException.ThrowIfNull(dialogService);
 
@@ -28,7 +29,7 @@ public static class EraseAccountDialogs
             FullWidth = true
         };
 
-        var dialog = await dialogService.ShowAsync<EraseAccountDialog>("Erase this account?", options);
+        var dialog = await dialogService.ShowAsync<EraseAccountDialog>(title, options);
         var result = await dialog.Result;
 
         return result is { Canceled: false, Data: string password } ? password : null;
