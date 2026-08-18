@@ -379,6 +379,127 @@ public sealed class TrainingsTests : ComponentTest
             .Which.Message.Should().Be("Something went wrong loading the trainings."));
     }
 
+    /// <summary>
+    /// Renders, the list still on its way, says it is loading rather than that nothing exists.
+    /// </summary>
+    [Fact]
+    public void Renders_TheListStillOnItsWay_SaysItIsLoadingRatherThanThatNothingExists()
+    {
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .Returns(new TaskCompletionSource<PagedHttpResponseOfTrainingHttpResponse>().Task);
+
+        var page = Render<Trainings>();
+
+        page.Markup.Should().Contain("Loading trainings",
+            "an answer still on its way must not read as an empty catalog");
+    }
+
+    /// <summary>
+    /// Publishing, the training vanished, says so gently and reloads the list.
+    /// </summary>
+    [Fact]
+    public void Publishing_TheTrainingVanished_SaysSoGentlyAndReloadsTheList()
+    {
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 1,
+                WithdrawnTraining("Public speaking", "Leadership")));
+
+        _trainings
+            .Setup(client => client.PublishTrainingAsync(It.IsAny<Guid>()))
+            .ThrowsAsync(ApiExceptions.Refused(404, "The training was not found."));
+
+        var page = Render<Trainings>();
+
+        ClickPublish(page);
+
+        page.WaitForAssertion(() => Shown().Should().ContainSingle()
+            .Which.Should().Match<Snackbar>(snackbar =>
+                snackbar.Message == "That training no longer exists."
+                && snackbar.Severity == Severity.Info));
+        _trainings.Verify(
+            client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()),
+            Times.AtLeast(2));
+    }
+
+    /// <summary>
+    /// Publishing, refused with the documents own words, shows them rather than a sentence of ours.
+    /// </summary>
+    [Fact]
+    public void Publishing_RefusedWithTheDocumentsOwnWords_ShowsThemRatherThanASentenceOfOurs()
+    {
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 1,
+                WithdrawnTraining("Public speaking", "Leadership")));
+
+        _trainings
+            .Setup(client => client.PublishTrainingAsync(It.IsAny<Guid>()))
+            .ThrowsAsync(ApiExceptions.RefusedWithDomainErrors(
+                409, "The training is already published."));
+
+        var page = Render<Trainings>();
+
+        ClickPublish(page);
+
+        page.WaitForAssertion(() => Shown().Should().ContainSingle()
+            .Which.Message.Should().Be("The training is already published."));
+    }
+
+    /// <summary>
+    /// Publishing, the API was unreachable, advises a retry with the sentence the caller handed over.
+    /// </summary>
+    [Fact]
+    public void Publishing_TheApiWasUnreachable_AdvisesARetryWithTheSentenceTheCallerHandedOver()
+    {
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 1,
+                WithdrawnTraining("Public speaking", "Leadership")));
+
+        _trainings
+            .Setup(client => client.PublishTrainingAsync(It.IsAny<Guid>()))
+            .ThrowsAsync(ApiExceptions.Unreachable());
+
+        var page = Render<Trainings>();
+
+        ClickPublish(page);
+
+        page.WaitForAssertion(() => Shown().Should().ContainSingle()
+            .Which.Message.Should().Be("The training could not be published. Try again in a moment."));
+    }
+
+    /// <summary>
+    /// Publishing, something else went wrong, does not turn the exception into interface copy.
+    /// </summary>
+    [Fact]
+    public void Publishing_SomethingElseWentWrong_DoesNotTurnTheExceptionIntoInterfaceCopy()
+    {
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 1,
+                WithdrawnTraining("Public speaking", "Leadership")));
+
+        _trainings
+            .Setup(client => client.PublishTrainingAsync(It.IsAny<Guid>()))
+            .ThrowsAsync(new InvalidOperationException("a stack detail nobody should read on screen"));
+
+        var page = Render<Trainings>();
+
+        ClickPublish(page);
+
+        page.WaitForAssertion(() => Shown().Should().ContainSingle()
+            .Which.Message.Should().Be("Something went wrong; the training was not published."));
+    }
+
+    /// <summary>The publish button — the last on a withdrawn training's card.</summary>
+    private static void ClickPublish(IRenderedComponent<Trainings> page)
+    {
+        var buttons = page.FindAll("button");
+        buttons[buttons.Count - 1].Click();
+    }
+
     private static PagedHttpResponseOfTrainingHttpResponse Page(
         int page,
         int totalPages,
@@ -431,7 +552,7 @@ public sealed class TrainingsTests : ComponentTest
 
         // Assert
         page.WaitForAssertion(() => Shown().Should().ContainSingle()
-            .Which.Message.Should().Be(TrainerStanding.WhyDisabled));
+            .Which.Message.Should().Be("Suspended accounts cannot make changes."));
     }
 
     /// <summary>

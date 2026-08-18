@@ -5,9 +5,11 @@
 @inject IAdministrationClient AdministrationClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject IStringLocalizer<AdministrationResources> L
+@inject IStringLocalizer<CommonResources> Common
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="my-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Trainings</MudText>
+    <MudText Typo="Typo.h4" Class="mb-4">@L["Trainings"]</MudText>
 
     <MudPaper Elevation="0" Class="pa-4 mb-4">
         <MudStack Row="true" Spacing="4" AlignItems="AlignItems.Center">
@@ -15,20 +17,20 @@
                title stopped being a value-converted column EF Core could not look inside
                (ADR 0060). *@
             <MudSelect T="string"
-                       Label="State"
+                       Label="@L["State"]"
                        Value="@_status"
                        ValueChanged="OnStatusChangedAsync"
                        Clearable="true"
                        Variant="Variant.Outlined"
                        Dense="true"
                        Style="max-width: 16rem;">
-                <MudSelectItem T="string" Value="@PublishedStatus">Published</MudSelectItem>
-                <MudSelectItem T="string" Value="@UnpublishedStatus">Unpublished</MudSelectItem>
-                <MudSelectItem T="string" Value="@WithheldStatus">Withheld</MudSelectItem>
+                <MudSelectItem T="string" Value="@PublishedStatus">@L["PublishedFilter"]</MudSelectItem>
+                <MudSelectItem T="string" Value="@UnpublishedStatus">@L["UnpublishedFilter"]</MudSelectItem>
+                <MudSelectItem T="string" Value="@WithheldStatus">@L["WithheldFilter"]</MudSelectItem>
             </MudSelect>
 
             <MudTextField T="string"
-                          Label="Search"
+                          Label="@L["SearchLabel"]"
                           Value="@_search"
                           ValueChanged="OnSearchChangedAsync"
                           DebounceInterval="400"
@@ -38,7 +40,7 @@
                           MaxLength="SearchMaxLength"
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
-                          HelperText="Title" />
+                          HelperText="@L["SearchTrainingsHelper"]" />
         </MudStack>
     </MudPaper>
 
@@ -52,29 +54,29 @@
     {
         <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center">
             <MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size: 6rem;" Class="mb-4" />
-            <MudText Typo="Typo.h6">No training matches</MudText>
+            <MudText Typo="Typo.h6">@L["NoTrainingMatches"]</MudText>
         </MudPaper>
     }
     else
     {
         <MudTable Items="@_page.Items" Hover="true" Elevation="1" T="AdministrationTrainingHttpResponse">
             <HeaderContent>
-                <MudTh>Title</MudTh>
-                <MudTh>Owner</MudTh>
-                <MudTh>State</MudTh>
-                <MudTh>Reason</MudTh>
+                <MudTh>@L["TitleHeader"]</MudTh>
+                <MudTh>@L["OwnerHeader"]</MudTh>
+                <MudTh>@L["State"]</MudTh>
+                <MudTh>@L["ReasonHeader"]</MudTh>
                 <MudTh />
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Title">@context.Title</MudTd>
-                <MudTd DataLabel="Owner">
+                <MudTd DataLabel="@L["TitleHeader"]">@context.Title</MudTd>
+                <MudTd DataLabel="@L["OwnerHeader"]">
                     @* The name, not the identifier. An owner whose account is gone leaves this
                        blank rather than dropping the row: a moderator has to see a training whose
                        owner has since left, and what is missing is the name, not the training. *@
                     @if (string.IsNullOrWhiteSpace(context.TrainerName))
                     {
                         <MudText Typo="Typo.body2" Color="Color.Secondary">
-                            <em>No longer a trainer</em>
+                            <em>@L["NoLongerATrainer"]</em>
                         </MudText>
                     }
                     else
@@ -82,11 +84,11 @@
                         @context.TrainerName
                     }
                 </MudTd>
-                <MudTd DataLabel="State">
+                <MudTd DataLabel="@L["State"]">
                     @if (IsWithheld(context))
                     {
                         <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">
-                            Withheld
+                            @L["WithheldBadge"]
                         </MudChip>
                     }
                     else if (!IsPublished(context))
@@ -95,11 +97,11 @@
                            (ADR 0052) — so it is shown differently rather than merged into one
                            "not on offer" badge. *@
                         <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled">
-                            Unpublished
+                            @L["UnpublishedBadge"]
                         </MudChip>
                     }
                 </MudTd>
-                <MudTd DataLabel="Reason">
+                <MudTd DataLabel="@L["ReasonHeader"]">
                     <MudText Typo="Typo.body2" Color="Color.Secondary">@context.WithholdingReason</MudText>
                 </MudTd>
                 <MudTd>
@@ -109,7 +111,7 @@
                                    Color="Color.Success"
                                    Variant="Variant.Text"
                                    OnClick="@(() => Release(context))">
-                            Release
+                            @L["Release"]
                         </MudButton>
                     }
                     else
@@ -118,7 +120,7 @@
                                    Color="Color.Error"
                                    Variant="Variant.Text"
                                    OnClick="@(() => Withhold(context))">
-                            Withhold
+                            @L["Withhold"]
                         </MudButton>
                     }
                 </MudTd>
@@ -199,7 +201,12 @@
         }
         catch (Exception exception)
         {
-            AdministrationFailures.Report(Snackbar, exception, "The trainings could not be loaded.");
+            AdministrationFailures.Report(
+                Snackbar,
+                exception,
+                Common["RequestRejected"],
+                L["TrainingsLoadFailedRetry"],
+                L["TrainingsLoadFailed"]);
         }
         finally
         {
@@ -211,12 +218,11 @@
     {
         var reason = await ReasonDialogs.AskAsync(
             DialogService,
-            title: "Withhold training",
-            prompt: "Withhold",
+            title: L["WithholdTrainingTitle"],
+            prompt: L["Withhold"],
             subject: training.Title,
-            consequence: "It stops being offered publicly and its owner cannot publish it again "
-                         + "themselves. They are told by email, with this reason.",
-            verb: "Withhold");
+            consequence: L["WithholdConsequence"],
+            verb: L["Withhold"]);
 
         if (reason is null)
         {
@@ -226,8 +232,9 @@
         await RunAsync(
             () => AdministrationClient.WithholdTrainingAsync(
                 training.Id, new WithholdTrainingHttpRequest { Reason = reason }),
-            "Training withheld. Its owner has been told, with the reason.",
-            "withheld");
+            success: L["TrainingWithheld"],
+            couldNot: L["TrainingNotWithheldRetry"],
+            wentWrong: L["TrainingNotWithheldWrong"]);
     }
 
     private async Task Release(AdministrationTrainingHttpResponse training) =>
@@ -236,12 +243,19 @@
         // call, not the administration's (ADR 0052).
         await RunAsync(
             () => AdministrationClient.ReleaseTrainingAsync(training.Id),
-            "Interdiction lifted. Its owner may publish it again.",
-            "released");
+            success: L["InterdictionLifted"],
+            couldNot: L["TrainingNotReleasedRetry"],
+            wentWrong: L["TrainingNotReleasedWrong"]);
 
-    private async Task RunAsync(Func<Task> action, string success, string verb)
+    private async Task RunAsync(Func<Task> action, string success, string couldNot, string wentWrong)
     {
-        var outcome = await AdministrationFailures.RunAsync(Snackbar, action, success, verb, "training");
+        var outcome = await AdministrationFailures.RunAsync(Snackbar, action, new AdministrationCopy(
+            success,
+            Gone: L["TrainingGone"],
+            Rejected: Common["RequestRejected"],
+            NoLongerAllowed: Common["NoLongerAllowed"],
+            couldNot,
+            wentWrong));
 
         if (outcome is not AdministrationOutcome.Unreachable)
         {

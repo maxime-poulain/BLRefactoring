@@ -19,6 +19,28 @@ public enum AdministrationOutcome
 }
 
 /// <summary>
+/// The sentences one administrative action can answer with, written whole by the page.
+/// </summary>
+/// <remarks>
+/// Whole sentences rather than a verb and a subject spliced into templates: a slot that is
+/// grammatical in English survives no other language, so each page hands over localized copy and
+/// <see cref="AdministrationFailures"/> only decides which sentence a failure earns (ADR 0089).
+/// </remarks>
+/// <param name="Success">What to say when the API accepted it.</param>
+/// <param name="Gone">What to say when the row disappeared under the list.</param>
+/// <param name="Rejected">The fallback when a problem document carries no readable sentence.</param>
+/// <param name="NoLongerAllowed">What to say when the caller's authority has lapsed.</param>
+/// <param name="CouldNot">What to say when nothing was reached, with the advice to retry.</param>
+/// <param name="WentWrong">What to say when the failure is this application's own.</param>
+public sealed record AdministrationCopy(
+    string Success,
+    string Gone,
+    string Rejected,
+    string NoLongerAllowed,
+    string CouldNot,
+    string WentWrong);
+
+/// <summary>
 /// The one error-handling body the two administration pages share.
 /// </summary>
 /// <remarks>
@@ -48,30 +70,27 @@ public static class AdministrationFailures
     /// </summary>
     /// <param name="snackbar">Where the outcome is told.</param>
     /// <param name="action">The call to make.</param>
-    /// <param name="success">What to say when it worked.</param>
-    /// <param name="verb">The past participle for the failure sentences — "suspended", "withheld".</param>
-    /// <param name="subject">What was acted on — "trainer", "training".</param>
+    /// <param name="copy">The sentences to tell it with, localized by the page.</param>
     public static async Task<AdministrationOutcome> RunAsync(
         ISnackbar snackbar,
         Func<Task> action,
-        string success,
-        string verb,
-        string subject)
+        AdministrationCopy copy)
     {
         ArgumentNullException.ThrowIfNull(snackbar);
         ArgumentNullException.ThrowIfNull(action);
+        ArgumentNullException.ThrowIfNull(copy);
 
         try
         {
             await action();
-            snackbar.Add(success, Severity.Success);
+            snackbar.Add(copy.Success, Severity.Success);
             return AdministrationOutcome.Done;
         }
         catch (ApiException<ProblemDetails> exception) when (exception.StatusCode == StatusNotFound)
         {
             // Gone between this list being read and the button being pressed. Not an error the
             // administrator caused, and the list is simply stale.
-            snackbar.Add($"That {subject} no longer exists.", Severity.Info);
+            snackbar.Add(copy.Gone, Severity.Info);
             return AdministrationOutcome.Refused;
         }
         catch (ApiException<ProblemDetails> exception)
@@ -79,7 +98,7 @@ public static class AdministrationFailures
             // A 409 lands here too — the state was already the one being asked for — and the
             // server's own sentences say so better than anything this page could invent. So does
             // the 400 a reason the domain refuses produces, whichever envelope carried it.
-            foreach (var message in ProblemDetailsMessages.Read(exception.Result, "The request was rejected."))
+            foreach (var message in ProblemDetailsMessages.Read(exception.Result, copy.Rejected))
             {
                 snackbar.Add(message, Severity.Error);
             }
@@ -92,22 +111,20 @@ public static class AdministrationFailures
             // can have been taken away since. A 403 carries no body, so there is nothing to read
             // out of it.
             Console.Error.WriteLine(exception);
-            snackbar.Add(
-                "You are no longer allowed to do that. Sign in again to see where you stand.",
-                Severity.Error);
+            snackbar.Add(copy.NoLongerAllowed, Severity.Error);
             return AdministrationOutcome.Refused;
         }
         catch (ApiException exception)
         {
             Console.Error.WriteLine(exception);
-            snackbar.Add($"The {subject} could not be {verb}. Try again in a moment.", Severity.Error);
+            snackbar.Add(copy.CouldNot, Severity.Error);
             return AdministrationOutcome.Unreachable;
         }
         catch (Exception exception)
         {
             // Whatever this is, it is ours. A NullReferenceException must not become interface copy.
             Console.Error.WriteLine(exception);
-            snackbar.Add($"Something went wrong; the {subject} was not {verb}.", Severity.Error);
+            snackbar.Add(copy.WentWrong, Severity.Error);
             return AdministrationOutcome.Unreachable;
         }
     }
@@ -117,15 +134,23 @@ public static class AdministrationFailures
     /// </summary>
     /// <param name="snackbar">Where the outcome is told.</param>
     /// <param name="exception">What went wrong.</param>
-    /// <param name="fallback">What to say when the server said nothing readable.</param>
-    public static void Report(ISnackbar snackbar, Exception exception, string fallback)
+    /// <param name="rejected">The fallback when a problem document carries no readable sentence.</param>
+    /// <param name="couldNotRetry">What to say when nothing was reached, retry advice included —
+    /// one sentence rather than a suffix appended here, for the reason the record above gives.</param>
+    /// <param name="wentWrong">What to say when the failure is this application's own.</param>
+    public static void Report(
+        ISnackbar snackbar,
+        Exception exception,
+        string rejected,
+        string couldNotRetry,
+        string wentWrong)
     {
         ArgumentNullException.ThrowIfNull(snackbar);
 
         switch (exception)
         {
             case ApiException<ProblemDetails> refused:
-                foreach (var message in ProblemDetailsMessages.Read(refused.Result, "The request was rejected."))
+                foreach (var message in ProblemDetailsMessages.Read(refused.Result, rejected))
                 {
                     snackbar.Add(message, Severity.Error);
                 }
@@ -134,12 +159,12 @@ public static class AdministrationFailures
 
             case ApiException:
                 Console.Error.WriteLine(exception);
-                snackbar.Add($"{fallback} Try again in a moment.", Severity.Error);
+                snackbar.Add(couldNotRetry, Severity.Error);
                 break;
 
             default:
                 Console.Error.WriteLine(exception);
-                snackbar.Add(fallback, Severity.Error);
+                snackbar.Add(wentWrong, Severity.Error);
                 break;
         }
     }

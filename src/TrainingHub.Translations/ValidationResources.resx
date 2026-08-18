@@ -12,7 +12,16 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Required" xml:space="preserve">
-    <value>The {0} field is required.</value>
+  <data name="The {0} field must name a status this API knows." xml:space="preserve">
+    <value>The {0} field must name a status this API knows.</value>
+  </data>
+  <data name="The {0} field must name a topic this catalog knows." xml:space="preserve">
+    <value>The {0} field must name a topic this catalog knows.</value>
+  </data>
+  <data name="The {0} field must name an identifier, and the empty one names none." xml:space="preserve">
+    <value>The {0} field must name an identifier, and the empty one names none.</value>
+  </data>
+  <data name="The {0} field must name an order this catalog publishes." xml:space="preserve">
+    <value>The {0} field must name an order this catalog publishes.</value>
   </data>
 </root>

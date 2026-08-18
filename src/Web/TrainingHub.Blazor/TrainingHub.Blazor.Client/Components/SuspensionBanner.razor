@@ -1,17 +1,19 @@
 @using TrainingHub.Blazor.Client.Infrastructure
 @implements IDisposable
 @inject ITrainerStandingSource StandingSource
+@inject IStringLocalizer<CommonResources> L
 
 @if (_standing.IsSuspended)
 {
     <MudAlert Severity="Severity.Warning" Class="mb-4" NoIcon="false">
-        <MudText Typo="Typo.subtitle2">Your account is suspended</MudText>
-        @* The administrator's words, shown as written. Two texts describing one sanction is how a
-           product ends up arguing with itself (ADR 0057). *@
+        <MudText Typo="Typo.subtitle2">@L["AccountSuspended"]</MudText>
+        @* The administrator's words, shown as written — and in the language they were written in.
+           Two texts describing one sanction is how a product ends up arguing with itself
+           (ADR 0057), and a translated sanction would be this product paraphrasing an
+           administrator. *@
         <MudText Typo="Typo.body2" Class="mt-1">@_standing.Reason</MudText>
         <MudText Typo="Typo.body2" Class="mt-2">
-            You can still read everything of yours; you cannot change anything while this lasts.
-            There is no appeal form — reply to the email we sent you if you believe this is a mistake.
+            @L["AccountSuspendedBody"]
         </MudText>
     </MudAlert>
 }

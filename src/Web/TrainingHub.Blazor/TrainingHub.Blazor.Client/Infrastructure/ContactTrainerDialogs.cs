@@ -19,7 +19,9 @@ public static class ContactTrainerDialogs
     /// </summary>
     /// <param name="dialogService">The dialog service the page injects.</param>
     /// <param name="trainerName">The person the message goes to, shown before anything is asked.</param>
-    public static async Task<ContactDraft?> AskAsync(IDialogService dialogService, string trainerName)
+    /// <param name="title">The dialog's title, worded — and localized — by the page that opens it.</param>
+    public static async Task<ContactDraft?> AskAsync(
+        IDialogService dialogService, string trainerName, string title)
     {
         ArgumentNullException.ThrowIfNull(dialogService);
 
@@ -35,8 +37,7 @@ public static class ContactTrainerDialogs
             FullWidth = true
         };
 
-        var dialog = await dialogService.ShowAsync<ContactTrainerDialog>(
-            $"Contact {trainerName}", parameters, options);
+        var dialog = await dialogService.ShowAsync<ContactTrainerDialog>(title, parameters, options);
         var result = await dialog.Result;
 
         return result is { Canceled: false, Data: ContactDraft draft } ? draft : null;

@@ -5,6 +5,8 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject IStringLocalizer<AuthenticationResources> L
+@inject IStringLocalizer<CommonResources> Common
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center" Style="height: 80vh;">
     <MudPaper Elevation="4" Class="pa-8 w-100 th-sheet th-auth">
@@ -14,23 +16,23 @@
         </span>
 
         <MudStack Spacing="4">
-            <MudText Typo="Typo.h4">Sign in</MudText>
+            <MudText Typo="Typo.h4">@Common["SignIn"]</MudText>
 
             <MudForm @ref="_form" @bind-IsValid="_isValid">
                 <MudTextField @bind-Value="_username"
-                              Label="Username"
+                              Label="@L["UsernameLabel"]"
                               Variant="Variant.Outlined"
                               Required="true"
-                              RequiredError="Username is required"
+                              RequiredError="@L["UsernameRequired"]"
                               Immediate="true"
                               Disabled="_isLoading" />
 
                 <MudTextField @bind-Value="_password"
-                              Label="Password"
+                              Label="@L["PasswordLabel"]"
                               Variant="Variant.Outlined"
                               InputType="@_passwordInputType"
                               Required="true"
-                              RequiredError="Password is required"
+                              RequiredError="@L["PasswordRequired"]"
                               Immediate="true"
                               Disabled="_isLoading"
                               Adornment="Adornment.End"
@@ -49,21 +51,21 @@
                 @if (_isLoading)
                 {
                     <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                    <span>Signing in...</span>
+                    <span>@L["SigningIn"]</span>
                 }
                 else
                 {
-                    <span>Sign in</span>
+                    <span>@Common["SignIn"]</span>
                 }
             </MudButton>
 
             <MudText Typo="Typo.body2" Align="Align.Center" Class="mt-4">
-                <MudLink Href="/forgot-password" Typo="Typo.body2">Forgot your password?</MudLink>
+                <MudLink Href="/forgot-password" Typo="Typo.body2">@L["ForgotYourPassword"]</MudLink>
             </MudText>
 
             <MudText Typo="Typo.body2" Align="Align.Center">
-                Don't have an account?
-                <MudLink Href="/register" Typo="Typo.body2">Register here</MudLink>
+                @L["DontHaveAccount"]
+                <MudLink Href="/register" Typo="Typo.body2">@L["RegisterHere"]</MudLink>
             </MudText>
         </MudStack>
     </MudPaper>
@@ -151,13 +153,13 @@
 
             if (!signedIn)
             {
-                Snackbar.Add("Invalid username or password.", Severity.Error);
+                Snackbar.Add(L["InvalidCredentials"], Severity.Error);
                 return;
             }
 
             AuthenticationNotifier.NotifyAuthenticationChanged();
 
-            Snackbar.Add("Signed in.", Severity.Success);
+            Snackbar.Add(L["SignedIn"], Severity.Success);
             NavigationManager.NavigateTo(ReturnUrl ?? await LandingAsync());
         }
         catch (Exception ex)
@@ -166,7 +168,7 @@
             // detail on a sign-in page, and a NullReferenceException rendered as UI copy tells
             // an attacker more than it tells anyone else.
             Console.Error.WriteLine(ex);
-            Snackbar.Add("Sign-in is unavailable right now. Try again in a moment.", Severity.Error);
+            Snackbar.Add(L["SignInUnavailable"], Severity.Error);
         }
         finally
         {

@@ -1,6 +1,8 @@
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using TrainingHub.Architecture.Tests.Framework;
+using TrainingHub.Shared.Common.Errors;
 using Xunit;
 
 namespace TrainingHub.Architecture.Tests.Rules;
@@ -166,6 +168,46 @@ public sealed partial class LocalizationRules
     }
 
     /// <summary>
+    /// Every domain error key, is a code the domain raises.
+    /// </summary>
+    /// <remarks>
+    /// The funnel looks a refusal's sentence up by its code, so the catalog's keys are claims
+    /// about the domain's vocabulary — and a key nothing raises is a translation of nothing,
+    /// invisible until somebody wonders why a renamed code stopped answering French. The declared
+    /// set is read the way the documentation rules read it: off the <c>*ErrorCodes</c> holders
+    /// themselves, so a code that moves takes its key along or goes red here.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0089",
+        "the error catalog is keyed by the codes the holders declare: a key nothing raises is a " +
+        "translation of nothing, kept green only by never being read")]
+    public void EveryDomainErrorKey_IsACodeTheDomainRaises()
+    {
+        var declared = DeclaredCodes();
+
+        Keys(Path.Combine(
+                SourceTree.RepositoryRoot, "src", "TrainingHub.Translations", "DomainErrorResources.resx"))
+            .Selected("domain error key")
+            .Where(key => !declared.Contains(key))
+            .OrderBy(key => key, StringComparer.Ordinal)
+            .Select(key =>
+                $"DomainErrorResources.resx carries '{key}', which no *ErrorCodes holder declares. " +
+                "The catalog translates the domain's vocabulary, not a guess at it (ADR 0089)")
+            .ShouldHold();
+    }
+
+    /// <summary>Every code value the solution's holders declare, read off the holders themselves.</summary>
+    private static IReadOnlySet<string> DeclaredCodes() =>
+        Solution.All
+            .SelectMany(assembly => assembly.DeclaredTypes())
+            .Where(type => type.Name.EndsWith("ErrorCodes", StringComparison.Ordinal))
+            .SelectMany(holder => holder
+                .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)
+                .Where(field => field.FieldType == typeof(ErrorCode))
+                .Select(field => ((ErrorCode)field.GetValue(null)!).Value))
+            .ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>
     /// Both api hosts, resolve the same culture.
     /// </summary>
     /// <remarks>
@@ -198,6 +240,122 @@ public sealed partial class LocalizationRules
             })
             .ShouldHold();
 
+    /// <summary>
+    /// Both API hosts, localize their annotations.
+    /// </summary>
+    /// <remarks>
+    /// The presence half of the annotations bridge, in the mold of the culture rule above: the
+    /// wiring lives once in <c>Shared.Api</c>, and this holds each host to calling it. Which
+    /// family it wires to — and that a template's English is the key itself — is behavior, held
+    /// by <c>LocalizationExtensionsTests</c> where behavior is held.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule(
+        "0089",
+        "the contract's own refusals answer in the resolved culture: every template a house " +
+        "attribute declares is a key in the validation family, and both hosts wire the provider")]
+    public void BothApiHosts_LocalizeTheirAnnotations() =>
+        ApiHostPrograms
+            .Selected("API host Program.cs")
+            .Where(program => !SourceTree.ReadText(Path.Combine(SourceTree.RepositoryRoot, program))
+                .Split('\n')
+                .Select(line => line.TrimStart())
+                .Where(line => !line.StartsWith("//", StringComparison.Ordinal))
+                .Any(line => line.Contains("AddApiValidationLocalization(", StringComparison.Ordinal)))
+            .Select(program =>
+                $"{program} never calls AddApiValidationLocalization. ADR 0089 localizes the " +
+                "data annotation templates once in Shared.Api so both hosts refuse a field in " +
+                "the caller's language — add the call to the AddControllers chain, or record " +
+                "the new decision")
+            .ShouldHold();
+
+    /// <summary>
+    /// Every key a screen asks, exists in its family.
+    /// </summary>
+    /// <remarks>
+    /// The read side of the catalog rule above, and the compile-time safety this repository
+    /// declined to buy from generated designer classes: a key is a string, so a typo compiles
+    /// and renders the key itself at runtime — in every language at once. Each source file's
+    /// localizer variables are mapped to their declared family, and every literal key asked of
+    /// one is held against that family's neutral file. Lookups whose key is an expression — the
+    /// funnel's <c>catalog[error.ErrorCode]</c> — carry no literal and are deliberately out of
+    /// reach here; the code-keyed family is held by
+    /// <see cref="EveryDomainErrorKey_IsACodeTheDomainRaises"/> instead. The reverse direction —
+    /// a key nobody asks — stays out too: two families are asked dynamically, and a screen
+    /// family's key may legitimately precede its screen by a commit.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0089",
+        "every surface reads its words from its own family: a literal key a source file asks of " +
+        "a localizer must exist in that family's neutral file, or the screen shows the key itself")]
+    public void EveryKeyAScreenAsks_ExistsInItsFamily()
+    {
+        var neutralKeys = new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal);
+
+        SourceTree.AllFiles
+            .Select(path => (Absolute: path, Relative: SourceTree.Relative(path)))
+            .Where(file => file.Relative.StartsWith("src/", StringComparison.Ordinal)
+                           && (file.Relative.EndsWith(".razor", StringComparison.OrdinalIgnoreCase)
+                               || file.Relative.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)))
+            .Selected("source file under src/")
+            .SelectMany(file => AskedKeys(file.Absolute)
+                .Select(asked => (file.Relative, asked.Family, asked.Key)))
+            .Where(asked => !NeutralKeysOf(neutralKeys, asked.Family).Contains(asked.Key))
+            .OrderBy(asked => asked.Relative, StringComparer.Ordinal)
+            .ThenBy(asked => asked.Key, StringComparer.Ordinal)
+            .Select(asked =>
+                $"{asked.Relative} asks {asked.Family} for '{asked.Key}', which " +
+                $"{TranslationsRoot}{asked.Family}.resx does not declare: the screen would show " +
+                "the key itself, in every language at once (ADR 0089)")
+            .ShouldHold();
+    }
+
+    /// <summary>Every (family, key) pair a source file asks of a localizer by literal.</summary>
+    /// <remarks>
+    /// The map is built from the file's own declarations — a Razor <c>@inject</c> and a C#
+    /// parameter or pattern write the same <c>IStringLocalizer&lt;Family&gt; name</c> shape — so
+    /// only variables the file binds to a family are followed, and an indexer on anything else
+    /// never becomes a false positive.
+    /// </remarks>
+    private static IEnumerable<(string Family, string Key)> AskedKeys(string absolutePath)
+    {
+        var text = SourceTree.ReadText(absolutePath);
+
+        var declared = LocalizerDeclaration.Matches(text)
+            .GroupBy(match => match.Groups["name"].Value, StringComparer.Ordinal)
+            .ToDictionary(
+                group => group.Key,
+                group => group.First().Groups["family"].Value,
+                StringComparer.Ordinal);
+
+        if (declared.Count == 0)
+        {
+            return [];
+        }
+
+        return LocalizerLookup.Matches(text)
+            .Where(match => declared.ContainsKey(match.Groups["name"].Value))
+            .Select(match => (declared[match.Groups["name"].Value], match.Groups["key"].Value));
+    }
+
+    /// <summary>The neutral keys of a family, read once per family for the whole scan.</summary>
+    private static IReadOnlySet<string> NeutralKeysOf(
+        Dictionary<string, IReadOnlySet<string>> cache, string family)
+    {
+        if (!cache.TryGetValue(family, out var keys))
+        {
+            var neutral = Path.Combine(
+                SourceTree.RepositoryRoot, "src", "TrainingHub.Translations", family + ".resx");
+
+            // A family with no neutral file declares no keys, so every literal asked of it is a
+            // violation naming the missing file's path.
+            keys = File.Exists(neutral) ? Keys(neutral) : new HashSet<string>(StringComparer.Ordinal);
+            cache[family] = keys;
+        }
+
+        return keys;
+    }
+
     /// <summary>The family a resource file belongs to: its name up to the culture, if any.</summary>
     private static string FamilyOf(string path)
     {
@@ -223,6 +381,12 @@ public sealed partial class LocalizationRules
             .Select(data => (string?)data.Attribute("name"))
             .OfType<string>()
             .ToHashSet(StringComparer.Ordinal);
+
+    [GeneratedRegex(@"IStringLocalizer<(?<family>\w+)>\s+(?<name>\w+)")]
+    private static partial Regex LocalizerDeclaration { get; }
+
+    [GeneratedRegex(@"(?<name>\w+)\[""(?<key>[^""]+)""")]
+    private static partial Regex LocalizerLookup { get; }
 
     [GeneratedRegex(@"All\s*=\s*\[(?<items>[^\]]*)\]")]
     private static partial Regex DeclaredList { get; }

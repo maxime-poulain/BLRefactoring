@@ -50,8 +50,8 @@ public sealed class TranslationsTests
     [Fact]
     public void ADomainError_AnswersByTheDomainsOwnCode() =>
         InCulture("en", () =>
-            Localizer<DomainErrorResources>()["Training.DuplicateTitle"].Value.Should().Be(
-                "A training with the same title already exists for this trainer.",
+            Localizer<DomainErrorResources>()["Trainer.AlreadySuspended"].Value.Should().Be(
+                "This trainer is already suspended.",
                 "the key is the domain's stable code, and the neutral sentence is the domain's own"));
 
     /// <summary>

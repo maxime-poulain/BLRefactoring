@@ -15,10 +15,40 @@
   <data name="Trainer.AlreadySuspended" xml:space="preserve">
     <value>Ce formateur est déjà suspendu.</value>
   </data>
+  <data name="Trainer.BioEmpty" xml:space="preserve">
+    <value>La biographie ne peut pas être vide.</value>
+  </data>
+  <data name="Trainer.BioExceeds500Characters" xml:space="preserve">
+    <value>La biographie ne peut pas dépasser 500 caractères.</value>
+  </data>
   <data name="Trainer.NotSuspended" xml:space="preserve">
     <value>Ce formateur n'est pas suspendu.</value>
   </data>
-  <data name="Training.DuplicateTitle" xml:space="preserve">
-    <value>Une formation portant le même titre existe déjà pour ce formateur.</value>
+  <data name="Trainer.PhotoEmpty" xml:space="preserve">
+    <value>Une photo ne peut pas être vide.</value>
+  </data>
+  <data name="Trainer.SuspensionReasonEmpty" xml:space="preserve">
+    <value>Une suspension doit dire pourquoi.</value>
+  </data>
+  <data name="Training.AlreadyPublished" xml:space="preserve">
+    <value>Cette formation est déjà publiée.</value>
+  </data>
+  <data name="Training.AlreadyUnpublished" xml:space="preserve">
+    <value>Cette formation est déjà retirée de la publication.</value>
+  </data>
+  <data name="Training.AlreadyWithheld" xml:space="preserve">
+    <value>Cette formation est déjà retenue.</value>
+  </data>
+  <data name="Training.NotWithheld" xml:space="preserve">
+    <value>Cette formation n'est pas retenue, il n'y a donc rien à libérer.</value>
+  </data>
+  <data name="Training.RecipientSuspended" xml:space="preserve">
+    <value>Le destinataire est suspendu et ne peut pas recevoir de formation.</value>
+  </data>
+  <data name="Training.TransferToSelf" xml:space="preserve">
+    <value>Une formation ne peut pas être transférée au formateur qui la possède déjà.</value>
+  </data>
+  <data name="Training.WithholdingReasonEmpty" xml:space="preserve">
+    <value>Retenir une formation doit dire pourquoi.</value>
   </data>
 </root>

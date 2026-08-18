@@ -12,10 +12,97 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Account" xml:space="preserve">
+    <value>Аккаунт</value>
+  </data>
+  <data name="AccountMenu" xml:space="preserve">
+    <value>Меню аккаунта</value>
+  </data>
+  <data name="AccountSuspended" xml:space="preserve">
+    <value>Ваш аккаунт приостановлен</value>
+  </data>
+  <data name="AccountSuspendedBody" xml:space="preserve">
+    <value>Вы по-прежнему можете читать все свое; изменять что-либо нельзя, пока это действует. Формы обжалования нет — ответьте на письмо, которое мы вам отправили, если считаете, что это ошибка.</value>
+  </data>
+  <data name="Administration" xml:space="preserve">
+    <value>Администрирование</value>
+  </data>
+  <data name="BackToYourOwnPages" xml:space="preserve">
+    <value>Вернуться к своим страницам</value>
+  </data>
+  <data name="BrowseTheCatalog" xml:space="preserve">
+    <value>Перейти в каталог</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
   <data name="Catalog" xml:space="preserve">
     <value>Каталог</value>
   </data>
+  <data name="EmailAddress" xml:space="preserve">
+    <value>Адрес электронной почты</value>
+  </data>
+  <data name="FirstName" xml:space="preserve">
+    <value>Имя</value>
+  </data>
   <data name="Language" xml:space="preserve">
     <value>Язык</value>
+  </data>
+  <data name="LanguageChangeFailed" xml:space="preserve">
+    <value>Не удалось изменить язык. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="LastName" xml:space="preserve">
+    <value>Фамилия</value>
+  </data>
+  <data name="ManageTrainers" xml:space="preserve">
+    <value>Управление тренерами</value>
+  </data>
+  <data name="ModerateTrainings" xml:space="preserve">
+    <value>Модерация тренингов</value>
+  </data>
+  <data name="MyTrainings" xml:space="preserve">
+    <value>Мои тренинги</value>
+  </data>
+  <data name="NoLongerAllowed" xml:space="preserve">
+    <value>Вам больше не разрешено это делать. Войдите снова, чтобы увидеть свое положение.</value>
+  </data>
+  <data name="NothingAtThisAddress" xml:space="preserve">
+    <value>По этому адресу ничего нет</value>
+  </data>
+  <data name="NothingHereBody" xml:space="preserve">
+    <value>Возможно, страница была перемещена или в адресе допущена опечатка. Каталог — лучшее место, чтобы начать поиск.</value>
+  </data>
+  <data name="NothingHerePageTitle" xml:space="preserve">
+    <value>Здесь ничего нет — TrainingHub</value>
+  </data>
+  <data name="NotYoursToOpen" xml:space="preserve">
+    <value>Эта страница вам недоступна</value>
+  </data>
+  <data name="NotYoursToOpenBody" xml:space="preserve">
+    <value>Вы вошли в систему, но для этой страницы нужны полномочия, которых у вашего аккаунта нет. Повторный вход ничего не изменит.</value>
+  </data>
+  <data name="Outbox" xml:space="preserve">
+    <value>Исходящие</value>
+  </data>
+  <data name="Profile" xml:space="preserve">
+    <value>Профиль</value>
+  </data>
+  <data name="RequestRejected" xml:space="preserve">
+    <value>Запрос был отклонен.</value>
+  </data>
+  <data name="SignIn" xml:space="preserve">
+    <value>Войти</value>
+  </data>
+  <data name="SignOut" xml:space="preserve">
+    <value>Выйти</value>
+  </data>
+  <data name="SignOutFailed" xml:space="preserve">
+    <value>Не удалось выйти. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="SuspendedCannotChange" xml:space="preserve">
+    <value>Приостановленные аккаунты не могут вносить изменения.</value>
+  </data>
+  <data name="ToggleTheme" xml:space="preserve">
+    <value>Переключить тему</value>
   </data>
 </root>

@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AToZ" xml:space="preserve">
+    <value>A–Z</value>
+  </data>
+  <data name="About" xml:space="preserve">
+    <value>À propos</value>
+  </data>
+  <data name="AntiRobotFailed" xml:space="preserve">
+    <value>La vérification anti-robot n'a pas abouti. Veuillez réessayer d'envoyer.</value>
+  </data>
+  <data name="BackToTheCatalog" xml:space="preserve">
+    <value>Retour au catalogue</value>
+  </data>
+  <data name="CatalogIntro" xml:space="preserve">
+    <value>Toutes les formations qu'un formateur publie actuellement. Aucun compte n'est nécessaire pour regarder.</value>
+  </data>
+  <data name="CatalogLoadFailed" xml:space="preserve">
+    <value>Le catalogue n'a pas pu être chargé.</value>
+  </data>
+  <data name="CatalogLoadFailedRetry" xml:space="preserve">
+    <value>Le catalogue n'a pas pu être chargé. Réessayez dans un instant.</value>
+  </data>
+  <data name="CatalogMetaDescription" xml:space="preserve">
+    <value>Toutes les formations qu'un formateur publie actuellement sur TrainingHub. Parcourez par sujet, cherchez par titre — aucun compte n'est nécessaire pour regarder.</value>
+  </data>
+  <data name="CatalogPageTitle" xml:space="preserve">
+    <value>Catalogue — TrainingHub</value>
+  </data>
+  <data name="CatalogUnreachable" xml:space="preserve">
+    <value>Le catalogue n'a pas pu être joint</value>
+  </data>
+  <data name="ClearTopics" xml:space="preserve">
+    <value>Effacer les sujets</value>
+  </data>
+  <data name="CompleteTheCheck" xml:space="preserve">
+    <value>Terminez la vérification ci-dessus pour envoyer votre message.</value>
+  </data>
+  <data name="ContactName" xml:space="preserve">
+    <value>Contacter {0}</value>
+  </data>
+  <data name="EmailHelper" xml:space="preserve">
+    <value>{0} vous répond ici ; l'adresse ne va à personne d'autre.</value>
+  </data>
+  <data name="EmailRequired" xml:space="preserve">
+    <value>Une adresse e-mail est requise</value>
+  </data>
+  <data name="EmailTooLong" xml:space="preserve">
+    <value>Une adresse e-mail ne peut pas dépasser {0} caractères</value>
+  </data>
+  <data name="FirstNameRequired" xml:space="preserve">
+    <value>Un prénom est requis</value>
+  </data>
+  <data name="LastNameRequired" xml:space="preserve">
+    <value>Un nom est requis</value>
+  </data>
+  <data name="MessageGoesTo" xml:space="preserve">
+    <value>Votre message est adressé à</value>
+  </data>
+  <data name="MessageLabel" xml:space="preserve">
+    <value>Message</value>
+  </data>
+  <data name="MessageNotAccepted" xml:space="preserve">
+    <value>Le message n'a pas été accepté.</value>
+  </data>
+  <data name="MessageOnItsWay" xml:space="preserve">
+    <value>Votre message est en route vers {0}.</value>
+  </data>
+  <data name="MessageRequired" xml:space="preserve">
+    <value>Un message est requis</value>
+  </data>
+  <data name="MessageSendFailed" xml:space="preserve">
+    <value>Le message n'a pas pu être envoyé. Réessayez dans un instant.</value>
+  </data>
+  <data name="MessageTooLong" xml:space="preserve">
+    <value>Un message ne peut pas dépasser {0} caractères</value>
+  </data>
+  <data name="MessageTooShort" xml:space="preserve">
+    <value>Un message doit compter au moins {0} caractères</value>
+  </data>
+  <data name="NameTooLong" xml:space="preserve">
+    <value>Un nom ne peut pas dépasser {0} caractères</value>
+  </data>
+  <data name="Newest" xml:space="preserve">
+    <value>Récentes</value>
+  </data>
+  <data name="NoTrainingMatches" xml:space="preserve">
+    <value>Aucune formation ne correspond</value>
+  </data>
+  <data name="OfferedBy" xml:space="preserve">
+    <value>Proposée par</value>
+  </data>
+  <data name="Prerequisites" xml:space="preserve">
+    <value>Prérequis</value>
+  </data>
+  <data name="ProfileLoadFailed" xml:space="preserve">
+    <value>Le profil n'a pas pu être chargé.</value>
+  </data>
+  <data name="ProfileLoadFailedRetry" xml:space="preserve">
+    <value>Le profil n'a pas pu être chargé. Réessayez dans un instant.</value>
+  </data>
+  <data name="ProfileNotAvailable" xml:space="preserve">
+    <value>Ce profil n'est pas disponible</value>
+  </data>
+  <data name="ProfileNotAvailableBody" xml:space="preserve">
+    <value>Le formateur n'existe peut-être pas, ou n'a peut-être rien à proposer.</value>
+  </data>
+  <data name="SearchHelper" xml:space="preserve">
+    <value>Chaque mot d'un titre, reconnu par son début</value>
+  </data>
+  <data name="SearchTheShelf" xml:space="preserve">
+    <value>Chercher sur l'étagère</value>
+  </data>
+  <data name="Send" xml:space="preserve">
+    <value>Envoyer</value>
+  </data>
+  <data name="TheyCanAnswer" xml:space="preserve">
+    <value>Il peut vous répondre à l'adresse que vous laissez ici.</value>
+  </data>
+  <data name="TrainerBusy" xml:space="preserve">
+    <value>{0} a reçu beaucoup de messages à l'instant. Réessayez dans une minute.</value>
+  </data>
+  <data name="TrainerFallbackTitle" xml:space="preserve">
+    <value>Formateur</value>
+  </data>
+  <data name="TrainerMetaFallback" xml:space="preserve">
+    <value>Un formateur avec des formations au catalogue TrainingHub.</value>
+  </data>
+  <data name="TrainerNoLongerContactable" xml:space="preserve">
+    <value>Ce formateur ne peut plus être contacté.</value>
+  </data>
+  <data name="TrainingFallbackTitle" xml:space="preserve">
+    <value>Formation</value>
+  </data>
+  <data name="TrainingLoadFailed" xml:space="preserve">
+    <value>La formation n'a pas pu être chargée.</value>
+  </data>
+  <data name="TrainingLoadFailedRetry" xml:space="preserve">
+    <value>La formation n'a pas pu être chargée. Réessayez dans un instant.</value>
+  </data>
+  <data name="TrainingMetaFallback" xml:space="preserve">
+    <value>Une formation proposée au catalogue TrainingHub.</value>
+  </data>
+  <data name="TrainingNotOnOffer" xml:space="preserve">
+    <value>Cette formation n'est pas proposée</value>
+  </data>
+  <data name="TrainingNotOnOfferBody" xml:space="preserve">
+    <value>Elle n'a peut-être jamais existé, ou elle a peut-être été retirée.</value>
+  </data>
+  <data name="TrainingsOfferedMany" xml:space="preserve">
+    <value>{0} formations proposées par {1}.</value>
+  </data>
+  <data name="TrainingsOfferedOne" xml:space="preserve">
+    <value>1 formation proposée par {0}.</value>
+  </data>
+  <data name="TrainingsOnOffer" xml:space="preserve">
+    <value>Formations proposées</value>
+  </data>
+  <data name="WhatYouLeaveWith" xml:space="preserve">
+    <value>Ce que vous en retirez</value>
+  </data>
+</root>

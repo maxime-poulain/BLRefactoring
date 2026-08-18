@@ -15,10 +15,40 @@
   <data name="Trainer.AlreadySuspended" xml:space="preserve">
     <value>This trainer is already suspended.</value>
   </data>
+  <data name="Trainer.BioEmpty" xml:space="preserve">
+    <value>Bio cannot be empty.</value>
+  </data>
+  <data name="Trainer.BioExceeds500Characters" xml:space="preserve">
+    <value>Bio cannot exceed 500 characters.</value>
+  </data>
   <data name="Trainer.NotSuspended" xml:space="preserve">
     <value>This trainer is not suspended.</value>
   </data>
-  <data name="Training.DuplicateTitle" xml:space="preserve">
-    <value>A training with the same title already exists for this trainer.</value>
+  <data name="Trainer.PhotoEmpty" xml:space="preserve">
+    <value>A photo cannot be empty.</value>
+  </data>
+  <data name="Trainer.SuspensionReasonEmpty" xml:space="preserve">
+    <value>A suspension must say why.</value>
+  </data>
+  <data name="Training.AlreadyPublished" xml:space="preserve">
+    <value>This training is already published.</value>
+  </data>
+  <data name="Training.AlreadyUnpublished" xml:space="preserve">
+    <value>This training is already unpublished.</value>
+  </data>
+  <data name="Training.AlreadyWithheld" xml:space="preserve">
+    <value>This training is already withheld.</value>
+  </data>
+  <data name="Training.NotWithheld" xml:space="preserve">
+    <value>This training is not withheld, so there is nothing to release.</value>
+  </data>
+  <data name="Training.RecipientSuspended" xml:space="preserve">
+    <value>The recipient is suspended and cannot receive a training.</value>
+  </data>
+  <data name="Training.TransferToSelf" xml:space="preserve">
+    <value>A training cannot be transferred to the trainer who already owns it.</value>
+  </data>
+  <data name="Training.WithholdingReasonEmpty" xml:space="preserve">
+    <value>Withholding a training must say why.</value>
   </data>
 </root>

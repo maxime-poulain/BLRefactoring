@@ -5,14 +5,16 @@
 @inject IAdministrationClient AdministrationClient
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject IStringLocalizer<AdministrationResources> L
+@inject IStringLocalizer<CommonResources> Common
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="my-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Trainers</MudText>
+    <MudText Typo="Typo.h4" Class="mb-4">@L["Trainers"]</MudText>
 
     <MudPaper Elevation="0" Class="pa-4 mb-4">
         <MudStack Row="true" Spacing="4" AlignItems="AlignItems.Center">
             <MudSelect T="string"
-                       Label="Standing"
+                       Label="@L["Standing"]"
                        Value="@_status"
                        ValueChanged="OnStatusChangedAsync"
                        Clearable="true"
@@ -22,12 +24,12 @@
                 @* The two words the domain publishes, compared ordinally by the server. Anything
                    else is a 400 naming the parameter rather than an empty page, so there is nothing
                    here to invent. *@
-                <MudSelectItem T="string" Value="@ActiveStatus">Active</MudSelectItem>
-                <MudSelectItem T="string" Value="@SuspendedStatus">Suspended</MudSelectItem>
+                <MudSelectItem T="string" Value="@ActiveStatus">@L["ActiveFilter"]</MudSelectItem>
+                <MudSelectItem T="string" Value="@SuspendedStatus">@L["SuspendedFilter"]</MudSelectItem>
             </MudSelect>
 
             <MudTextField T="string"
-                          Label="Search"
+                          Label="@L["SearchLabel"]"
                           Value="@_search"
                           ValueChanged="OnSearchChangedAsync"
                           DebounceInterval="400"
@@ -37,7 +39,7 @@
                           MaxLength="SearchMaxLength"
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
-                          HelperText="Name or contact address" />
+                          HelperText="@L["SearchTrainersHelper"]" />
         </MudStack>
     </MudPaper>
 
@@ -51,9 +53,9 @@
     {
         <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center">
             <MudIcon Icon="@Icons.Material.Filled.PersonSearch" Style="font-size: 6rem;" Class="mb-4" />
-            <MudText Typo="Typo.h6">No trainer matches</MudText>
+            <MudText Typo="Typo.h6">@L["NoTrainerMatches"]</MudText>
             <MudText Typo="Typo.body2" Color="Color.Secondary">
-                An empty page is a legitimate answer; a mistyped filter is refused instead.
+                @L["EmptyPageLegitimate"]
             </MudText>
         </MudPaper>
     }
@@ -61,27 +63,27 @@
     {
         <MudTable Items="@_page.Items" Hover="true" Elevation="1" T="AdministrationTrainerHttpResponse">
             <HeaderContent>
-                <MudTh>Name</MudTh>
-                <MudTh>Contact address</MudTh>
-                <MudTh>Standing</MudTh>
-                <MudTh>Reason</MudTh>
+                <MudTh>@L["NameHeader"]</MudTh>
+                <MudTh>@L["ContactAddressHeader"]</MudTh>
+                <MudTh>@L["Standing"]</MudTh>
+                <MudTh>@L["ReasonHeader"]</MudTh>
                 <MudTh />
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Name">@context.Firstname @context.Lastname</MudTd>
-                <MudTd DataLabel="Contact address">@context.ContactEmail</MudTd>
-                <MudTd DataLabel="Standing">
+                <MudTd DataLabel="@L["NameHeader"]">@context.Firstname @context.Lastname</MudTd>
+                <MudTd DataLabel="@L["ContactAddressHeader"]">@context.ContactEmail</MudTd>
+                <MudTd DataLabel="@L["Standing"]">
                     @* Only the sanctioned state gets a badge. Active is what a trainer is unless
                        something happened to them, and a chip on every row would make the one that
                        matters harder to see — the same choice the trainer's own catalog makes. *@
                     @if (IsSuspended(context))
                     {
                         <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">
-                            Suspended
+                            @L["SuspendedBadge"]
                         </MudChip>
                     }
                 </MudTd>
-                <MudTd DataLabel="Reason">
+                <MudTd DataLabel="@L["ReasonHeader"]">
                     <MudText Typo="Typo.body2" Color="Color.Secondary">@context.SuspensionReason</MudText>
                 </MudTd>
                 <MudTd>
@@ -91,7 +93,7 @@
                                    Color="Color.Success"
                                    Variant="Variant.Text"
                                    OnClick="@(() => Reinstate(context))">
-                            Reinstate
+                            @L["Reinstate"]
                         </MudButton>
                     }
                     else
@@ -100,7 +102,7 @@
                                    Color="Color.Error"
                                    Variant="Variant.Text"
                                    OnClick="@(() => Suspend(context))">
-                            Suspend
+                            @L["Suspend"]
                         </MudButton>
                     }
                 </MudTd>
@@ -185,7 +187,12 @@
         }
         catch (Exception exception)
         {
-            AdministrationFailures.Report(Snackbar, exception, "The trainers could not be loaded.");
+            AdministrationFailures.Report(
+                Snackbar,
+                exception,
+                Common["RequestRejected"],
+                L["TrainersLoadFailedRetry"],
+                L["TrainersLoadFailed"]);
         }
         finally
         {
@@ -197,13 +204,11 @@
     {
         var reason = await ReasonDialogs.AskAsync(
             DialogService,
-            title: "Suspend trainer",
-            prompt: "Suspend",
+            title: L["SuspendTrainerTitle"],
+            prompt: L["Suspend"],
             subject: $"{trainer.Firstname} {trainer.Lastname}",
-            consequence: "They keep their account and their trainings, and their catalog leaves "
-                         + "public view until the suspension is lifted. They are told by email, with "
-                         + "this reason.",
-            verb: "Suspend");
+            consequence: L["SuspendConsequence"],
+            verb: L["Suspend"]);
 
         if (reason is null)
         {
@@ -213,8 +218,9 @@
         await RunAsync(
             () => AdministrationClient.SuspendTrainerAsync(
                 trainer.Id, new SuspendTrainerHttpRequest { Reason = reason }),
-            "Trainer suspended. They have been told, with the reason.",
-            "suspended");
+            success: L["TrainerSuspended"],
+            couldNot: L["TrainerNotSuspendedRetry"],
+            wentWrong: L["TrainerNotSuspendedWrong"]);
     }
 
     private async Task Reinstate(AdministrationTrainerHttpResponse trainer) =>
@@ -222,12 +228,19 @@
         // record about it that the trainer needs to read (ADR 0050).
         await RunAsync(
             () => AdministrationClient.ReinstateTrainerAsync(trainer.Id),
-            "Trainer reinstated. Their catalog is on offer again.",
-            "reinstated");
+            success: L["TrainerReinstated"],
+            couldNot: L["TrainerNotReinstatedRetry"],
+            wentWrong: L["TrainerNotReinstatedWrong"]);
 
-    private async Task RunAsync(Func<Task> action, string success, string verb)
+    private async Task RunAsync(Func<Task> action, string success, string couldNot, string wentWrong)
     {
-        var outcome = await AdministrationFailures.RunAsync(Snackbar, action, success, verb, "trainer");
+        var outcome = await AdministrationFailures.RunAsync(Snackbar, action, new AdministrationCopy(
+            success,
+            Gone: L["TrainerGone"],
+            Rejected: Common["RequestRejected"],
+            NoLongerAllowed: Common["NoLongerAllowed"],
+            couldNot,
+            wentWrong));
 
         if (outcome is not AdministrationOutcome.Unreachable)
         {

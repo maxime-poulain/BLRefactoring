@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AccountCreated" xml:space="preserve">
+    <value>Account created successfully! Please sign in.</value>
+  </data>
+  <data name="AlreadyHaveAccount" xml:space="preserve">
+    <value>Already have an account?</value>
+  </data>
+  <data name="BackToSignIn" xml:space="preserve">
+    <value>Back to sign-in</value>
+  </data>
+  <data name="ChangeThePassword" xml:space="preserve">
+    <value>Change the password</value>
+  </data>
+  <data name="ChangingThePassword" xml:space="preserve">
+    <value>Changing the password...</value>
+  </data>
+  <data name="ChooseANewPassword" xml:space="preserve">
+    <value>Choose a new password</value>
+  </data>
+  <data name="ConfirmNewPasswordLabel" xml:space="preserve">
+    <value>Confirm the new password</value>
+  </data>
+  <data name="ConfirmPasswordLabel" xml:space="preserve">
+    <value>Confirm Password</value>
+  </data>
+  <data name="ConfirmPasswordRequired" xml:space="preserve">
+    <value>Password confirmation is required</value>
+  </data>
+  <data name="CreateAnAccount" xml:space="preserve">
+    <value>Create an account</value>
+  </data>
+  <data name="CreatingAccount" xml:space="preserve">
+    <value>Creating account...</value>
+  </data>
+  <data name="DontHaveAccount" xml:space="preserve">
+    <value>Don't have an account?</value>
+  </data>
+  <data name="EmailLabel" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="EmailRequired" xml:space="preserve">
+    <value>Email is required</value>
+  </data>
+  <data name="FirstNameLabel" xml:space="preserve">
+    <value>First Name</value>
+  </data>
+  <data name="FirstNameRequired" xml:space="preserve">
+    <value>First name is required</value>
+  </data>
+  <data name="ForgotIntro" xml:space="preserve">
+    <value>Enter your account email and we will send you a link to choose a new password.</value>
+  </data>
+  <data name="ForgotPasswordPageTitle" xml:space="preserve">
+    <value>Forgot password — TrainingHub</value>
+  </data>
+  <data name="ForgotYourPassword" xml:space="preserve">
+    <value>Forgot your password?</value>
+  </data>
+  <data name="InvalidCredentials" xml:space="preserve">
+    <value>Invalid username or password.</value>
+  </data>
+  <data name="InvalidEmail" xml:space="preserve">
+    <value>Invalid email address</value>
+  </data>
+  <data name="LastNameLabel" xml:space="preserve">
+    <value>Last Name</value>
+  </data>
+  <data name="LastNameRequired" xml:space="preserve">
+    <value>Last name is required</value>
+  </data>
+  <data name="LinkExpired" xml:space="preserve">
+    <value>Link expired?</value>
+  </data>
+  <data name="MissingToken" xml:space="preserve">
+    <value>This address is missing its reset token, so there is nothing to redeem. Open the link from the email exactly as it was sent — or ask for a new one.</value>
+  </data>
+  <data name="NewPasswordLabel" xml:space="preserve">
+    <value>New password</value>
+  </data>
+  <data name="PasswordChanged" xml:space="preserve">
+    <value>Your password was changed. Sign in with it now.</value>
+  </data>
+  <data name="PasswordLabel" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="PasswordRequired" xml:space="preserve">
+    <value>Password is required</value>
+  </data>
+  <data name="PasswordsDoNotMatch" xml:space="preserve">
+    <value>Passwords do not match</value>
+  </data>
+  <data name="RecoveryUnavailable" xml:space="preserve">
+    <value>Password recovery is unavailable right now. Try again in a moment.</value>
+  </data>
+  <data name="Register" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="RegisterHere" xml:space="preserve">
+    <value>Register here</value>
+  </data>
+  <data name="RegistrationRejected" xml:space="preserve">
+    <value>The registration was rejected.</value>
+  </data>
+  <data name="RegistrationUnavailable" xml:space="preserve">
+    <value>Registration is unavailable right now. Try again in a moment.</value>
+  </data>
+  <data name="RegistrationWrong" xml:space="preserve">
+    <value>Something went wrong creating the account.</value>
+  </data>
+  <data name="RememberedAfterAll" xml:space="preserve">
+    <value>Remembered it after all?</value>
+  </data>
+  <data name="RequestANewOne" xml:space="preserve">
+    <value>Request a new one</value>
+  </data>
+  <data name="RequestAResetLink" xml:space="preserve">
+    <value>Request a reset link</value>
+  </data>
+  <data name="ResetIntro" xml:space="preserve">
+    <value>Confirm the email the link was sent to, and choose the new password.</value>
+  </data>
+  <data name="ResetLinkSent" xml:space="preserve">
+    <value>If an account exists for this address, a message with a reset link is on its way. The link works for 15 minutes — and if you ask again, only the newest email counts.</value>
+  </data>
+  <data name="ResetPasswordPageTitle" xml:space="preserve">
+    <value>Reset password — TrainingHub</value>
+  </data>
+  <data name="ResetRejected" xml:space="preserve">
+    <value>The password reset was rejected.</value>
+  </data>
+  <data name="SendTheResetLink" xml:space="preserve">
+    <value>Send the reset link</value>
+  </data>
+  <data name="Sending" xml:space="preserve">
+    <value>Sending...</value>
+  </data>
+  <data name="SignInHere" xml:space="preserve">
+    <value>Sign in here</value>
+  </data>
+  <data name="SignInUnavailable" xml:space="preserve">
+    <value>Sign-in is unavailable right now. Try again in a moment.</value>
+  </data>
+  <data name="SignedIn" xml:space="preserve">
+    <value>Signed in.</value>
+  </data>
+  <data name="SigningIn" xml:space="preserve">
+    <value>Signing in...</value>
+  </data>
+  <data name="SomethingWentWrongRetry" xml:space="preserve">
+    <value>Something went wrong. Try again in a moment.</value>
+  </data>
+  <data name="TooManyRequests" xml:space="preserve">
+    <value>Too many requests. Wait a few minutes and try again.</value>
+  </data>
+  <data name="UsernameLabel" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="UsernameRequired" xml:space="preserve">
+    <value>Username is required</value>
+  </data>
+</root>

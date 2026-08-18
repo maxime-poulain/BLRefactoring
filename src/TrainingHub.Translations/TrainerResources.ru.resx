@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AccountErased" xml:space="preserve">
+    <value>Ваш аккаунт был удален.</value>
+  </data>
+  <data name="AddAPhoto" xml:space="preserve">
+    <value>Добавить фото</value>
+  </data>
+  <data name="BioLabel" xml:space="preserve">
+    <value>О себе</value>
+  </data>
+  <data name="ChangePhoto" xml:space="preserve">
+    <value>Изменить фото</value>
+  </data>
+  <data name="ContactEmail" xml:space="preserve">
+    <value>Контактный адрес</value>
+  </data>
+  <data name="ContactEmailHelper" xml:space="preserve">
+    <value>Публикуется в вашем профиле. Это не адрес, с которым вы входите.</value>
+  </data>
+  <data name="ContactEmailRequired" xml:space="preserve">
+    <value>Требуется контактный адрес</value>
+  </data>
+  <data name="CurrentPassword" xml:space="preserve">
+    <value>Текущий пароль</value>
+  </data>
+  <data name="EraseAccount" xml:space="preserve">
+    <value>Удалить аккаунт</value>
+  </data>
+  <data name="EraseExplanation" xml:space="preserve">
+    <value>Удаляет ваш профиль, ваши тренинги и ваш портрет, немедленно и навсегда. Пути назад нет.</value>
+  </data>
+  <data name="EraseFailed" xml:space="preserve">
+    <value>Не удалось удалить аккаунт.</value>
+  </data>
+  <data name="EraseFailedRetry" xml:space="preserve">
+    <value>Не удалось удалить аккаунт. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="EraseIntroEmphasis" xml:space="preserve">
+    <value>немедленно и навсегда</value>
+  </data>
+  <data name="EraseIntroEnd" xml:space="preserve">
+    <value>. Ваше имя пользователя и адрес электронной почты станут свободны для любой новой регистрации.</value>
+  </data>
+  <data name="EraseIntroStart" xml:space="preserve">
+    <value>Удаление аккаунта убирает ваш профиль, ваши тренинги и ваш портрет,</value>
+  </data>
+  <data name="ErasePasswordHelper" xml:space="preserve">
+    <value>Удаление необратимо, поэтому открытой вкладки недостаточно.</value>
+  </data>
+  <data name="EraseThisAccount" xml:space="preserve">
+    <value>Удалить этот аккаунт</value>
+  </data>
+  <data name="EraseThisAccountTitle" xml:space="preserve">
+    <value>Удалить этот аккаунт?</value>
+  </data>
+  <data name="FirstNameRequired" xml:space="preserve">
+    <value>Требуется имя</value>
+  </data>
+  <data name="LastNameRequired" xml:space="preserve">
+    <value>Требуется фамилия</value>
+  </data>
+  <data name="LoadingProfile" xml:space="preserve">
+    <value>Загрузка профиля...</value>
+  </data>
+  <data name="MyProfile" xml:space="preserve">
+    <value>Мой профиль</value>
+  </data>
+  <data name="PasswordRequired" xml:space="preserve">
+    <value>Требуется ваш пароль</value>
+  </data>
+  <data name="PhotoFormats" xml:space="preserve">
+    <value>PNG, JPEG или WebP, до {0} МиБ.</value>
+  </data>
+  <data name="PhotoRemoveFailed" xml:space="preserve">
+    <value>Не удалось удалить фото.</value>
+  </data>
+  <data name="PhotoRemoveFailedRetry" xml:space="preserve">
+    <value>Не удалось удалить фото. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="PhotoRemoveFailedWrong" xml:space="preserve">
+    <value>Что-то пошло не так при удалении фото.</value>
+  </data>
+  <data name="PhotoRemoved" xml:space="preserve">
+    <value>Фото удалено.</value>
+  </data>
+  <data name="PhotoTooLarge" xml:space="preserve">
+    <value>Это фото занимает {0} МиБ. Лимит — {1} МиБ.</value>
+  </data>
+  <data name="PhotoUpdated" xml:space="preserve">
+    <value>Фото обновлено.</value>
+  </data>
+  <data name="PhotoUploadFailed" xml:space="preserve">
+    <value>Не удалось загрузить фото.</value>
+  </data>
+  <data name="PhotoUploadFailedRetry" xml:space="preserve">
+    <value>Не удалось загрузить фото. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="PhotoUploadFailedWrong" xml:space="preserve">
+    <value>Что-то пошло не так при загрузке фото.</value>
+  </data>
+  <data name="ProfileEditConflict" xml:space="preserve">
+    <value>Кто-то изменил этот профиль, пока вы его редактировали. Перезагрузите страницу и попробуйте снова.</value>
+  </data>
+  <data name="ProfileLoadFailedRetry" xml:space="preserve">
+    <value>Не удалось загрузить профиль. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="ProfileLoadFailedWrong" xml:space="preserve">
+    <value>Что-то пошло не так при загрузке профиля.</value>
+  </data>
+  <data name="ProfilePhotoAlt" xml:space="preserve">
+    <value>Фото профиля</value>
+  </data>
+  <data name="ProfileSaveFailedRetry" xml:space="preserve">
+    <value>Не удалось сохранить профиль. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="ProfileSaveFailedWrong" xml:space="preserve">
+    <value>Что-то пошло не так при сохранении профиля.</value>
+  </data>
+  <data name="ProfileSaved" xml:space="preserve">
+    <value>Профиль сохранен.</value>
+  </data>
+  <data name="RemovePhoto" xml:space="preserve">
+    <value>Удалить фото</value>
+  </data>
+  <data name="SaveChanges" xml:space="preserve">
+    <value>Сохранить изменения</value>
+  </data>
+  <data name="Saving" xml:space="preserve">
+    <value>Сохранение...</value>
+  </data>
+</root>

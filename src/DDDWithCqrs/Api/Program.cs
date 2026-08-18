@@ -18,7 +18,10 @@ builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, relo
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+// The contract's own refusals answer in the resolved culture: the data annotation templates
+// are looked up in the validation family by their English text, which is why an English answer
+// never moves (ADR 0089).
+builder.Services.AddControllers().AddApiValidationLocalization();
 
 // Shared with the layered host so the two cannot drift: a policy defined in one Program.cs only
 // protects that host. See CorsExtensions for why the origins come from configuration.

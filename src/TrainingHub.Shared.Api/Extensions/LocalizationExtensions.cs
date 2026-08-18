@@ -32,6 +32,11 @@ public static class LocalizationExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
 
+        // The localizer factory itself, because the problem funnel answers each refusal from the
+        // domain error catalog in the resolved culture (ADR 0089). The middleware alone was
+        // enough while only FluentValidation read the culture.
+        services.AddLocalization();
+
         return services.Configure<RequestLocalizationOptions>(options =>
         {
             options.SetDefaultCulture(SupportedLanguages.Default);
@@ -42,6 +47,26 @@ public static class LocalizationExtensions
             // culture-independent (ADR 0088).
             options.RequestCultureProviders = [new AcceptLanguageHeaderRequestCultureProvider()];
         });
+    }
+
+    /// <summary>
+    /// Localizes the data annotation templates against the validation family, so a contract's
+    /// own refusal answers in the resolved culture.
+    /// </summary>
+    /// <remarks>
+    /// The provider hands every attribute's <c>ErrorMessage</c> to one localizer over
+    /// <see cref="ValidationResources"/>, where the key is the English template itself — which is
+    /// why the neutral file restates each template verbatim, and why an English answer is
+    /// byte-identical whether the lookup hit or never happened. A template the family does not
+    /// know falls back to itself, never to an exception (ADR 0089).
+    /// </remarks>
+    public static IMvcBuilder AddApiValidationLocalization(this IMvcBuilder builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        return builder.AddDataAnnotationsLocalization(options =>
+            options.DataAnnotationLocalizerProvider =
+                (_, factory) => factory.Create(typeof(ValidationResources)));
     }
 
     /// <summary>

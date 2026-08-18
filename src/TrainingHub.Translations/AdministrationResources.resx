@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ActiveFilter" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="AdministrationIntro" xml:space="preserve">
+    <value>What this catalog holds, and what is waiting on you.</value>
+  </data>
+  <data name="AlreadyDeliveredHeader" xml:space="preserve">
+    <value>Already delivered to</value>
+  </data>
+  <data name="AttemptsHeader" xml:space="preserve">
+    <value>Attempts</value>
+  </data>
+  <data name="ContactAddressHeader" xml:space="preserve">
+    <value>Contact address</value>
+  </data>
+  <data name="EmptyPageLegitimate" xml:space="preserve">
+    <value>An empty page is a legitimate answer; a mistyped filter is refused instead.</value>
+  </data>
+  <data name="EventHeader" xml:space="preserve">
+    <value>Event</value>
+  </data>
+  <data name="EverythingDelivered" xml:space="preserve">
+    <value>Every recorded fact has been delivered.</value>
+  </data>
+  <data name="InterdictionLifted" xml:space="preserve">
+    <value>Interdiction lifted. Its owner may publish it again.</value>
+  </data>
+  <data name="LastFailure" xml:space="preserve">
+    <value>Last failure</value>
+  </data>
+  <data name="MessageGone" xml:space="preserve">
+    <value>That message no longer exists.</value>
+  </data>
+  <data name="MessageNotRequeuedRetry" xml:space="preserve">
+    <value>The message could not be requeued. Try again in a moment.</value>
+  </data>
+  <data name="MessageNotRequeuedWrong" xml:space="preserve">
+    <value>Something went wrong; the message was not requeued.</value>
+  </data>
+  <data name="NameHeader" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="NoLongerATrainer" xml:space="preserve">
+    <value>No longer a trainer</value>
+  </data>
+  <data name="NoTrainerMatches" xml:space="preserve">
+    <value>No trainer matches</value>
+  </data>
+  <data name="NoTrainingMatches" xml:space="preserve">
+    <value>No training matches</value>
+  </data>
+  <data name="Nobody" xml:space="preserve">
+    <value>Nobody</value>
+  </data>
+  <data name="NothingGivenUpOn" xml:space="preserve">
+    <value>Nothing was given up on</value>
+  </data>
+  <data name="OpenTheOutbox" xml:space="preserve">
+    <value>Open the outbox</value>
+  </data>
+  <data name="OutboxIntro" xml:space="preserve">
+    <value>Facts this system recorded and then failed to announce. Each one spent its retry budget and will not be tried again until somebody asks. Requeueing runs only the consumers still owed.</value>
+  </data>
+  <data name="OutboxReadFailed" xml:space="preserve">
+    <value>The outbox could not be read.</value>
+  </data>
+  <data name="OutboxReadFailedRetry" xml:space="preserve">
+    <value>The outbox could not be read. Try again in a moment.</value>
+  </data>
+  <data name="OwnerHeader" xml:space="preserve">
+    <value>Owner</value>
+  </data>
+  <data name="PublishedFilter" xml:space="preserve">
+    <value>Published</value>
+  </data>
+  <data name="ReasonHeader" xml:space="preserve">
+    <value>Reason</value>
+  </data>
+  <data name="ReasonHelper" xml:space="preserve">
+    <value>The trainer is told this, word for word.</value>
+  </data>
+  <data name="ReasonLabel" xml:space="preserve">
+    <value>Reason</value>
+  </data>
+  <data name="ReasonRequired" xml:space="preserve">
+    <value>A reason is required</value>
+  </data>
+  <data name="ReasonTooLong" xml:space="preserve">
+    <value>A reason cannot exceed {0} characters</value>
+  </data>
+  <data name="RecordedHeader" xml:space="preserve">
+    <value>Recorded</value>
+  </data>
+  <data name="Reinstate" xml:space="preserve">
+    <value>Reinstate</value>
+  </data>
+  <data name="Release" xml:space="preserve">
+    <value>Release</value>
+  </data>
+  <data name="Requeue" xml:space="preserve">
+    <value>Requeue</value>
+  </data>
+  <data name="RequeuedOn" xml:space="preserve">
+    <value>Requeued {0}</value>
+  </data>
+  <data name="RequeuedSuccess" xml:space="preserve">
+    <value>Requeued. The worker will try it again on its next poll.</value>
+  </data>
+  <data name="SearchLabel" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="SearchTrainersHelper" xml:space="preserve">
+    <value>Name or contact address</value>
+  </data>
+  <data name="SearchTrainingsHelper" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="Standing" xml:space="preserve">
+    <value>Standing</value>
+  </data>
+  <data name="State" xml:space="preserve">
+    <value>State</value>
+  </data>
+  <data name="Suspend" xml:space="preserve">
+    <value>Suspend</value>
+  </data>
+  <data name="SuspendConsequence" xml:space="preserve">
+    <value>They keep their account and their trainings, and their catalog leaves public view until the suspension is lifted. They are told by email, with this reason.</value>
+  </data>
+  <data name="SuspendTrainerTitle" xml:space="preserve">
+    <value>Suspend trainer</value>
+  </data>
+  <data name="SuspendedBadge" xml:space="preserve">
+    <value>Suspended</value>
+  </data>
+  <data name="SuspendedFilter" xml:space="preserve">
+    <value>Suspended</value>
+  </data>
+  <data name="TitleHeader" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="TrainerGone" xml:space="preserve">
+    <value>That trainer no longer exists.</value>
+  </data>
+  <data name="TrainerNotReinstatedRetry" xml:space="preserve">
+    <value>The trainer could not be reinstated. Try again in a moment.</value>
+  </data>
+  <data name="TrainerNotReinstatedWrong" xml:space="preserve">
+    <value>Something went wrong; the trainer was not reinstated.</value>
+  </data>
+  <data name="TrainerNotSuspendedRetry" xml:space="preserve">
+    <value>The trainer could not be suspended. Try again in a moment.</value>
+  </data>
+  <data name="TrainerNotSuspendedWrong" xml:space="preserve">
+    <value>Something went wrong; the trainer was not suspended.</value>
+  </data>
+  <data name="TrainerReinstated" xml:space="preserve">
+    <value>Trainer reinstated. Their catalog is on offer again.</value>
+  </data>
+  <data name="TrainerSuspended" xml:space="preserve">
+    <value>Trainer suspended. They have been told, with the reason.</value>
+  </data>
+  <data name="Trainers" xml:space="preserve">
+    <value>Trainers</value>
+  </data>
+  <data name="TrainersLoadFailed" xml:space="preserve">
+    <value>The trainers could not be loaded.</value>
+  </data>
+  <data name="TrainersLoadFailedRetry" xml:space="preserve">
+    <value>The trainers could not be loaded. Try again in a moment.</value>
+  </data>
+  <data name="TrainingGone" xml:space="preserve">
+    <value>That training no longer exists.</value>
+  </data>
+  <data name="TrainingNotReleasedRetry" xml:space="preserve">
+    <value>The training could not be released. Try again in a moment.</value>
+  </data>
+  <data name="TrainingNotReleasedWrong" xml:space="preserve">
+    <value>Something went wrong; the training was not released.</value>
+  </data>
+  <data name="TrainingNotWithheldRetry" xml:space="preserve">
+    <value>The training could not be withheld. Try again in a moment.</value>
+  </data>
+  <data name="TrainingNotWithheldWrong" xml:space="preserve">
+    <value>Something went wrong; the training was not withheld.</value>
+  </data>
+  <data name="TrainingWithheld" xml:space="preserve">
+    <value>Training withheld. Its owner has been told, with the reason.</value>
+  </data>
+  <data name="Trainings" xml:space="preserve">
+    <value>Trainings</value>
+  </data>
+  <data name="TrainingsLoadFailed" xml:space="preserve">
+    <value>The trainings could not be loaded.</value>
+  </data>
+  <data name="TrainingsLoadFailedRetry" xml:space="preserve">
+    <value>The trainings could not be loaded. Try again in a moment.</value>
+  </data>
+  <data name="UnderSuspension" xml:space="preserve">
+    <value>under suspension</value>
+  </data>
+  <data name="UnpublishedBadge" xml:space="preserve">
+    <value>Unpublished</value>
+  </data>
+  <data name="UnpublishedFilter" xml:space="preserve">
+    <value>Unpublished</value>
+  </data>
+  <data name="WaitingToBeRequeued" xml:space="preserve">
+    <value>waiting to be requeued</value>
+  </data>
+  <data name="WithheldBadge" xml:space="preserve">
+    <value>Withheld</value>
+  </data>
+  <data name="WithheldFilter" xml:space="preserve">
+    <value>Withheld</value>
+  </data>
+  <data name="WithheldFromTheCatalog" xml:space="preserve">
+    <value>withheld from the catalog</value>
+  </data>
+  <data name="Withhold" xml:space="preserve">
+    <value>Withhold</value>
+  </data>
+  <data name="WithholdConsequence" xml:space="preserve">
+    <value>It stops being offered publicly and its owner cannot publish it again themselves. They are told by email, with this reason.</value>
+  </data>
+  <data name="WithholdTrainingTitle" xml:space="preserve">
+    <value>Withhold training</value>
+  </data>
+</root>

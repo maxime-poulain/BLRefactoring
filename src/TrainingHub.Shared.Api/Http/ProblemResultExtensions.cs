@@ -1,7 +1,9 @@
 using TrainingHub.Shared.Api.Contracts.Errors;
 using TrainingHub.Shared.Api.Contracts.Mappings;
 using TrainingHub.Shared.Common.Errors;
+using TrainingHub.Translations;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 
 namespace TrainingHub.Shared.Api.Http;
 
@@ -63,16 +65,18 @@ public static class ProblemResultExtensions
         ArgumentNullException.ThrowIfNull(controller);
         ArgumentNullException.ThrowIfNull(errors);
 
+        var translated = Translate(controller, errors);
+
         var problem = new ProblemDetails
         {
             Status = statusCode,
             // The first message is the summary; the whole set stays available below. Picking one
             // for `detail` beats leaving it null, which is what a caller reads first.
-            Detail = errors.Count > 0 ? errors[0].ErrorMessage : null,
+            Detail = translated.Count > 0 ? translated[0].ErrorMessage : null,
             Instance = controller.Request.Path
         };
 
-        problem.Extensions[DomainErrorsExtension] = errors;
+        problem.Extensions[DomainErrorsExtension] = translated;
 
         // ObjectResult with the media type stated, not StatusCode(int, object). That overload
         // produces a bare ObjectResult with no ContentTypes, so content negotiation lands on the
@@ -86,6 +90,45 @@ public static class ProblemResultExtensions
             StatusCode = statusCode,
             ContentTypes = { "application/problem+json" }
         };
+    }
+
+    /// <summary>
+    /// Answers each refusal in the request's language, where the catalog knows its code.
+    /// </summary>
+    /// <remarks>
+    /// The one translation point of the API, seated in the sink both overloads flow through
+    /// (ADR 0089). Each entry is looked up by its code in the domain error catalog against the
+    /// culture the localization middleware resolved: a hit answers that language's sentence, a
+    /// miss keeps the sentence the layer authored — which covers the codes whose messages
+    /// interpolate runtime values, the codes several sentences share, and everything the catalog
+    /// has not learned yet. An English request reads the neutral entries, which restate the
+    /// domain's sentences verbatim, so the English wire is byte-identical to what the domain
+    /// wrote. The codes themselves never move: a client branching on them keeps its logic in
+    /// every language.
+    /// </remarks>
+    private static List<ErrorHttpResponse> Translate(
+        ControllerBase controller,
+        IReadOnlyList<ErrorHttpResponse> errors)
+    {
+        // The BCL's own GetService rather than the container package's helper, because outside an
+        // .Extensions namespace this layer may not depend on that package at all
+        // (OnlyTheCompositionRoot_RegistersServices) — and a host that never registered
+        // localization keeps the authored sentences rather than throwing on its first refusal.
+        if (controller.HttpContext.RequestServices
+                .GetService(typeof(IStringLocalizer<DomainErrorResources>))
+            is not IStringLocalizer<DomainErrorResources> catalog)
+        {
+            return [.. errors];
+        }
+
+        return [.. errors.Select(error =>
+        {
+            var sentence = catalog[error.ErrorCode];
+
+            return sentence.ResourceNotFound
+                ? error
+                : new ErrorHttpResponse { ErrorCode = error.ErrorCode, ErrorMessage = sentence.Value };
+        })];
     }
 
     /// <summary>

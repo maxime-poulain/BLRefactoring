@@ -1,18 +1,18 @@
 @using TrainingHub.Blazor.Client.Authorization
 @inject NavigationManager NavigationManager
+@inject IStringLocalizer<CommonResources> L
 
 @if (_refused)
 {
     <MudContainer MaxWidth="MaxWidth.Small" Class="my-8">
         <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center">
             <MudIcon Icon="@Icons.Material.Filled.Lock" Style="font-size: 5rem;" Class="mb-4" />
-            <MudText Typo="Typo.h6" Class="mb-2">This page is not yours to open</MudText>
+            <MudText Typo="Typo.h6" Class="mb-2">@L["NotYoursToOpen"]</MudText>
             <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center" Class="mb-4">
-                You are signed in, but this page needs an authority your account does not carry.
-                Signing in again will not change that.
+                @L["NotYoursToOpenBody"]
             </MudText>
             <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/">
-                Back to your own pages
+                @L["BackToYourOwnPages"]
             </MudButton>
         </MudPaper>
     </MudContainer>

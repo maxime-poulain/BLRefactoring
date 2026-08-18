@@ -1,6 +1,6 @@
 # 0088 — Answer in the visitor's language, and resolve it at the door
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0089](0089-localize-every-surface-and-translate-the-refusal-at-its-funnel.md): the problem funnel now presents each cataloged refusal in the resolved culture, so `domainErrors[].errorMessage` is the domain's sentence only where the catalog has no entry
 - **Date:** 2026-08-18
 
 ## Context
