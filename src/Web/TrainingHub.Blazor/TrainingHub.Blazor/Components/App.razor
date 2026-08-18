@@ -1,5 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+@* The language is the request's, resolved by the localization middleware before any component
+   renders — the cookie choice first, the browser's Accept-Language otherwise, English when
+   neither says anything. Stamped here because this component renders on every route, so the
+   attribute is both the document's honest label and the one place the WebAssembly boot reads
+   the server's resolution back from (ADR 0088). *@
+<html lang="@Language">
 
 <head>
     <meta charset="utf-8"/>
@@ -82,6 +87,11 @@
     /// </summary>
     [CascadingParameter]
     public HttpContext? HttpContext { get; set; }
+
+    /// <summary>
+    /// The resolved language, as the localization middleware left it on this request's thread.
+    /// </summary>
+    private static string Language => System.Globalization.CultureInfo.CurrentUICulture.Name;
 
     /// <summary>
     /// One mode for both outlets: <c>HeadOutlet</c> and <c>Routes</c> must agree, or the head's

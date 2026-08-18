@@ -74,6 +74,10 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
+        // IStringLocalizer over the resource assembly's satellite files. The words come out in
+        // whatever the boot set DefaultThreadCurrentUICulture to — the language the server already
+        // answered in, read back from the document (ADR 0088).
+        services.AddLocalization();
         services.AddAuthorizationCore(options => options.AddPolicy(
             SessionPolicies.Trainer,
             policy => policy.RequireClaim(SessionClaims.TrainerId)));
@@ -84,6 +88,7 @@ public static class ServiceCollectionExtensions
         // with a no-op — and a layout that injected this provider could not render there (ADR 0072).
         services.AddScoped<IAuthenticationStateNotifier>(sp => sp.GetRequiredService<BffAuthenticationStateProvider>());
         services.AddScoped<IBffSessionClient, BffSessionClient>();
+        services.AddScoped<IBffCultureClient, BffCultureClient>();
 
         // Scoped, so the standing is read once and shared by the layout and every page that binds a
         // control to it (ADR 0057). The same instance under a second face: the user menu asks the

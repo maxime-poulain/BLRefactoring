@@ -2,6 +2,7 @@ using System.Threading.RateLimiting;
 using TrainingHub.Blazor.Client.Infrastructure;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Localization;
 using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Transforms;
 
@@ -184,9 +185,14 @@ public static class BffExtensions
         });
 
         // The API client this host uses for the endpoints it serves itself — sign-in, mostly.
-        // Forwarded traffic does not go through it; YARP handles that.
+        // Forwarded traffic does not go through it; YARP handles that. The culture handler rides
+        // every call under this name, the prerendering read clients included, so a page fetched
+        // during the prerendered pass is asked for in the language the page is answered in.
+        services.AddHttpContextAccessor();
+        services.AddTransient<CultureForwardingHandler>();
         services.AddHttpClient(BffEndpoints.ApiClientName, client =>
-            client.BaseAddress = new Uri(apiBaseAddress));
+                client.BaseAddress = new Uri(apiBaseAddress))
+            .AddHttpMessageHandler<CultureForwardingHandler>();
 
         services.AddOptions<TurnstileOptions>()
             .Bind(configuration.GetSection(TurnstileOptions.SectionName))
@@ -210,18 +216,39 @@ public static class BffExtensions
         services
             .AddReverseProxy()
             .LoadFromMemory(BuildRoutes(), BuildClusters(apiBaseAddress))
-            .AddTransforms(context => context.AddRequestTransform(async transform =>
+            .AddTransforms(context =>
             {
-                // The whole point of the proxy: the credential is attached here, server-side,
-                // from the cookie — never handed to the page that triggered the call.
-                var token = await transform.HttpContext.GetTokenAsync(AccessTokenName);
-
-                if (!string.IsNullOrEmpty(token))
+                context.AddRequestTransform(async transform =>
                 {
-                    transform.ProxyRequest.Headers.Authorization =
-                        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-                }
-            }));
+                    // The whole point of the proxy: the credential is attached here, server-side,
+                    // from the cookie — never handed to the page that triggered the call.
+                    var token = await transform.HttpContext.GetTokenAsync(AccessTokenName);
+
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        transform.ProxyRequest.Headers.Authorization =
+                            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                    }
+                });
+
+                context.AddRequestTransform(transform =>
+                {
+                    // The API reads Accept-Language alone, so the culture this host resolved — the
+                    // visitor's cookie choice first of all — is restated in that header before the
+                    // request crosses. Without this, a caller who chose French over an English
+                    // browser would read French pages around English error sentences (ADR 0088).
+                    var culture = transform.HttpContext.Features.Get<IRequestCultureFeature>();
+
+                    if (culture is not null)
+                    {
+                        transform.ProxyRequest.Headers.AcceptLanguage.Clear();
+                        transform.ProxyRequest.Headers.AcceptLanguage.ParseAdd(
+                            culture.RequestCulture.UICulture.Name);
+                    }
+
+                    return ValueTask.CompletedTask;
+                });
+            });
 
         return services;
     }

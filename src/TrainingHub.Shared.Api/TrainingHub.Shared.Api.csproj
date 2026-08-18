@@ -49,6 +49,9 @@
     <ItemGroup>
       <ProjectReference Include="..\TrainingHub.Shared.Application\TrainingHub.Shared.Application.csproj" />
       <ProjectReference Include="..\TrainingHub.Shared.Infrastructure\TrainingHub.Shared.Infrastructure.csproj" />
+      <!-- The languages the hosts answer in: LocalizationExtensions reads the supported set from
+           the one authority every surface shares. See ADR 0088. -->
+      <ProjectReference Include="..\TrainingHub.Translations\TrainingHub.Translations.csproj" />
     </ItemGroup>
 
 </Project>

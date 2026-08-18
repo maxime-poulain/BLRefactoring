@@ -129,6 +129,12 @@
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.10" />
+    <!--
+      IStringLocalizer and AddLocalization for the WebAssembly client, which sits outside the
+      shared framework that hands them to the three hosts for free. One package, browser side
+      only. See ADR 0088.
+    -->
+    <PackageVersion Include="Microsoft.Extensions.Localization" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
     <PackageVersion Include="Moq" Version="4.20.72" />

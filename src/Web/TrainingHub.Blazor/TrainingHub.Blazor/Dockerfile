@@ -22,6 +22,7 @@ WORKDIR /src
 COPY Directory.Build.props Directory.Packages.props .editorconfig ./
 COPY TrainingHub.slnx .
 COPY src/TrainingHub.GeneratedClients/TrainingHub.GeneratedClients.csproj src/TrainingHub.GeneratedClients/
+COPY src/TrainingHub.Translations/TrainingHub.Translations.csproj src/TrainingHub.Translations/
 COPY src/Web/TrainingHub.Blazor/TrainingHub.Blazor.Client/TrainingHub.Blazor.Client.csproj src/Web/TrainingHub.Blazor/TrainingHub.Blazor.Client/
 COPY src/Web/TrainingHub.Blazor/TrainingHub.Blazor/TrainingHub.Blazor.csproj src/Web/TrainingHub.Blazor/TrainingHub.Blazor/
 

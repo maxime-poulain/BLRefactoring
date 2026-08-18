@@ -215,6 +215,46 @@ public sealed class HostingRules
                 || file.EndsWith(".targets", StringComparison.Ordinal)));
 
     /// <summary>
+    /// Every image, copies every project its host reaches.
+    /// </summary>
+    /// <remarks>
+    /// The restore stage copies each csproj by name so the layer caches, which is a list that has
+    /// to grow the day the host's graph does — and the day it does not, <c>dotnet publish
+    /// --no-restore</c> fails on the one project restore never saw, with an assets-file error
+    /// naming a machine path. The pipeline catches that by building the image, one round-trip
+    /// later (<see cref="EveryImage_IsBuiltByThePipeline"/>); this rule catches it at the desk,
+    /// by holding the copied names to the project graph the csproj files already declare. The
+    /// twenty-eighth project is how the gap was found: three images restored without it while
+    /// every suite ran green.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0065",
+        "an image's restore stage copies the csproj of every project its host reaches: the layer-" +
+        "cached list is held to the project graph, not to memory")]
+    public void EveryImage_CopiesEveryProjectItsHostReaches() =>
+        Hosts
+            .Selected("host this repository runs")
+            .SelectMany(host =>
+            {
+                var dockerfile = SourceTree.ReadText(
+                    Path.Combine(SourceTree.RepositoryRoot, Image(host)));
+
+                var root = ProjectGraph.Projects.Single(project =>
+                    project.RelativePath.StartsWith($"{host}/", StringComparison.Ordinal));
+
+                return ProjectGraph.Closure(root.Name)
+                    .Append(root.Name)
+                    .Select(name => ProjectGraph.Project(name).RelativePath)
+                    .Where(csproj => !dockerfile.Contains(csproj, StringComparison.Ordinal))
+                    .OrderBy(csproj => csproj, StringComparer.Ordinal)
+                    .Select(csproj =>
+                        $"'{Image(host)}' never copies '{csproj}', which its host reaches. Restore " +
+                        "runs against what was copied, so publish --no-restore fails on the first " +
+                        "project it meets without an assets file (ADR 0065)");
+            })
+            .ShouldHold();
+
+    /// <summary>
     /// The image build, carries no layer cache.
     /// </summary>
     /// <remarks>

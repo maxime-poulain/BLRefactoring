@@ -30,6 +30,10 @@ builder.Services.AddApiProblemDetails();
 // ApiLogging section. Declared in Shared.Api so neither host can quietly log less than the other.
 builder.Services.AddApiLogging(builder.Configuration);
 
+// One language policy for both hosts: Accept-Language against the supported set, English
+// otherwise. The BFF says the visitor's cookie choice through that same header. See ADR 0088.
+builder.Services.AddApiLocalization();
+
 // The framework's OpenAPI generator, shared with the CQRS host — which described the same API with
 // a different library, and without a security scheme at all. See ADR 0006.
 builder.Services.AddApiOpenApi();
@@ -89,6 +93,10 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseApiCors();
+
+// Before authentication, because the culture is a fact about the request rather than about the
+// caller: everything downstream — the validators' sentences first — reads what is resolved here.
+app.UseApiLocalization();
 
 app.UseAuthentication();
 app.UseAuthorization();

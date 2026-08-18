@@ -329,7 +329,7 @@ public sealed partial class AmericanSpellingRules
     private static readonly IReadOnlySet<string> WrittenExtensions =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            ".cs", ".razor", ".css", ".js", ".md", ".json", ".yml", ".yaml",
+            ".cs", ".razor", ".css", ".js", ".md", ".json", ".resx", ".yml", ".yaml",
             ".csproj", ".props", ".slnx", ".sh", ".py", ".nswag", ".http", ".sql",
             ".editorconfig", ".gitignore", ".gitattributes", ".dockerignore", ".gitkeep"
         };
@@ -347,17 +347,19 @@ public sealed partial class AmericanSpellingRules
         new HashSet<string>(StringComparer.Ordinal) { "Dockerfile" };
 
     /// <summary>
-    /// What this repository holds without having written it, and why each is not read.
+    /// What this repository holds without having written it in English, and why each is not read.
     /// </summary>
     /// <remarks>
     /// Keyed by file name or by extension, whichever names the thing — and by neither a path nor a
-    /// glob, because all but one of these belong to a machine rather than to a commit and sit
-    /// wherever the tool that made them put them. A reason per entry, for the argument
+    /// glob, because most of these belong to a machine rather than to a commit and sit wherever
+    /// the tool that made them put them, while the rest are named exactly by what their extension
+    /// says they are. A reason per entry, for the argument
     /// <c>EveryDemotedRule_SaysWhyItWasDemoted</c> makes: an exemption without one is
     /// indistinguishable from an oversight.
     /// <para>
-    /// Three of the four are here because the rule found them rather than because anybody predicted
-    /// them, which is the argument for closing the two sets against each other in the first place.
+    /// Three of the first four were here because the rule found them rather than because anybody
+    /// predicted them, which is the argument for closing the two sets against each other in the
+    /// first place.
     /// </para>
     /// </remarks>
     private static readonly IReadOnlyDictionary<string, string> Unread =
@@ -370,6 +372,11 @@ public sealed partial class AmericanSpellingRules
             ["appsettings.Local.json"] = "a developer's private overrides, versioned by nothing (ADR 0035)",
             [".pfx"] = "a developer's private key, which is not text at all (ADR 0065)",
             [".log"] = "a rolling log a running host writes into the working tree, versioned by nothing (ADR 0026)",
+            [".fr.resx"] = "a French translation: its words are French, so an English spelling convention has " +
+                           "nothing to say about them — the keys it must carry are held against the neutral " +
+                           "file's by EveryCultureResource_CarriesExactlyTheDefaultsKeys (ADR 0088)",
+            [".ru.resx"] = "a Russian translation, unread for the French one's reason and held by the same " +
+                           "rule (ADR 0088)",
         };
 
     /// <summary>The file that declares the list above, and therefore has to hold every word in it.</summary>
@@ -461,7 +468,23 @@ public sealed partial class AmericanSpellingRules
     private static bool IsDeclaredUnread(string path) =>
         Unread.ContainsKey(Path.GetFileName(path))
         || Unread.ContainsKey(Path.GetExtension(path))
+        || Unread.ContainsKey(CultureExtension(path))
         || SourceTree.Relative(path) == ThisRule;
+
+    /// <summary>
+    /// The two-segment extension a culture-specific resource file carries, so that a language can
+    /// be declared unread once rather than once per resource family.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Path.GetExtension(string)"/> sees only the last segment — <c>.resx</c>, which is
+    /// a written extension because the neutral files are English prose this repository authors.
+    /// The culture between the family and that extension is what turns the same format into a
+    /// translation, so the declaration keeps both segments: <c>CommonResources.fr.resx</c> is
+    /// unread as <c>.fr.resx</c>, and a family added later inherits the exemption instead of
+    /// growing the list by two names.
+    /// </remarks>
+    private static string CultureExtension(string path) =>
+        Path.GetExtension(Path.GetFileNameWithoutExtension(path)) + Path.GetExtension(path);
 
     /// <summary>Every British word in a file, with the line it sits on.</summary>
     private static IEnumerable<string> Offences(string path)
