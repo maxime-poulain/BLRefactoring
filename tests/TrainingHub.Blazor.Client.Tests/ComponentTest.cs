@@ -58,7 +58,20 @@ public abstract class ComponentTest : BunitContext, IAsyncLifetime
         // fact about it reads what was deposited (ADR 0083). Registered here the way the browser
         // registers it: one instance, shared by the page and the handler.
         Services.AddSingleton<TurnstileTokenAccessor>();
+
+        // The real localizer over the real satellite assemblies, because the layout and the
+        // selector inject it and a mock would only prove that some indexer was called
+        // (ADR 0088). The runner's culture is English-or-invariant, so every fact that is not
+        // about language reads the neutral words it always read.
+        Services.AddLocalization();
+
+        // The selector's client, inert by default: a suite that is not about language says
+        // nothing about it, and the facts that are override this.
+        Services.AddSingleton(CultureClient.Object);
     }
+
+    /// <summary>The culture client the selector calls, substituted so a fact can watch the choice.</summary>
+    protected Mock<IBffCultureClient> CultureClient { get; } = new();
 
     /// <summary>The standing every page reads, substituted so a suite can suspend its caller.</summary>
     protected Mock<ITrainerStandingSource> Standing { get; } = new();

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+    </PropertyGroup>
+
+    <!--
+      No ProjectReference and no PackageReference, on purpose, and a rule holds it that way: this
+      project is the one assembly every surface may reach — the WebAssembly client, the BFF and
+      the API hosts alike — and anything it referenced would ride into all of them. The resx files
+      beside each marker type embed themselves; IStringLocalizer stays in the consumers. See
+      ADR 0088.
+    -->
+
+</Project>

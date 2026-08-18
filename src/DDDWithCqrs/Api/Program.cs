@@ -31,6 +31,10 @@ builder.Services.AddApiProblemDetails();
 // ApiLogging section. Declared in Shared.Api so neither host can quietly log less than the other.
 builder.Services.AddApiLogging(builder.Configuration);
 
+// One language policy for both hosts: Accept-Language against the supported set, English
+// otherwise. The BFF says the visitor's cookie choice through that same header. See ADR 0088.
+builder.Services.AddApiLocalization();
+
 // The framework's OpenAPI generator, shared with the layered host. This one used to call a bare
 // AddSwaggerGen(), so its document declared no security scheme and no authenticated endpoint could
 // be tried from its UI. See ADR 0006.
@@ -97,6 +101,10 @@ app.UseHttpsRedirection();
 // Before authentication on purpose: an unauthenticated cross-origin call must still be answered
 // with the CORS headers, or the browser reports a CORS failure instead of the 401 it received.
 app.UseApiCors();
+
+// Before authentication, because the culture is a fact about the request rather than about the
+// caller: everything downstream — the validators' sentences first — reads what is resolved here.
+app.UseApiLocalization();
 
 app.UseAuthentication();
 app.UseAuthorization();

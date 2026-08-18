@@ -43,6 +43,7 @@ public sealed class BffTests : IDisposable
     private const string LogoutPath = "bff/logout";
     private const string ForwardedPath = "api/Trainer/me";
     private const string AnonymousPath = "api/Catalog/trainings";
+    private const string CulturePath = "bff/culture";
 
     private readonly BffFactory _factory = new();
     private readonly HttpClient _browser;
@@ -1596,6 +1597,184 @@ public sealed class BffTests : IDisposable
             HttpStatusCode.Accepted,
             "the stub answers 202 to whatever reaches it, and reaching it is the assertion: the " +
             "window bounds the one write, never the reads beside it");
+    }
+
+    // ---------------------------------------------------------------- the language
+
+    /// <summary>
+    /// The page answers in the language the browser asks for.
+    /// </summary>
+    /// <remarks>
+    /// The no-flash requirement of ADR 0088, observed from outside: the prerendered response
+    /// already carries the resolved language — the document's own attribute and a localized word
+    /// of the layout — so the first paint is in the visitor's language, and the WebAssembly boot
+    /// reads the same attribute back rather than resolving a second time. Nothing here waits for
+    /// a script.
+    /// </remarks>
+    [Fact]
+    public async Task The_page_answers_in_the_language_the_browser_asks_for()
+    {
+        var response = await GetInLanguageAsync("/catalog", "fr");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var html = await response.Content.ReadAsStringAsync();
+
+        html.Should().Contain("lang=\"fr\"",
+            "the document says the language the middleware resolved (ADR 0088)");
+        html.Should().Contain("aria-label=\"Langue\"",
+            "the layout's words come from the French satellite on the prerendered pass — the " +
+            "proof the first paint needs no correction");
+    }
+
+    /// <summary>
+    /// A regional french browser gets french.
+    /// </summary>
+    /// <remarks>
+    /// The neutral-culture decision of ADR 0088, exercised on the browser a Belgian visitor
+    /// actually has: <c>fr-BE</c> is nothing the supported list names, and the framework's parent
+    /// fallback lands it on <c>fr</c> rather than on the English default.
+    /// </remarks>
+    [Fact]
+    public async Task A_regional_french_browser_gets_french()
+    {
+        var html = await (await GetInLanguageAsync("/catalog", "fr-BE")).Content.ReadAsStringAsync();
+
+        html.Should().Contain("lang=\"fr\"",
+            "fr-BE falls back to its parent culture, which the list offers (ADR 0088)");
+        html.Should().Contain("aria-label=\"Langue\"");
+    }
+
+    /// <summary>
+    /// A language nobody offers falls back to english.
+    /// </summary>
+    [Fact]
+    public async Task A_language_nobody_offers_falls_back_to_english()
+    {
+        var html = await (await GetInLanguageAsync("/catalog", "de")).Content.ReadAsStringAsync();
+
+        html.Should().Contain("lang=\"en\"",
+            "the default is explicit: English, the language of the repository (ADR 0088)");
+        html.Should().Contain("Catalog");
+    }
+
+    /// <summary>
+    /// The cookie choice wins over the browsers header.
+    /// </summary>
+    [Fact]
+    public async Task The_cookie_choice_wins_over_the_browsers_header()
+    {
+        var chosen = await SendAsync(
+            HttpMethod.Post, CulturePath, JsonContent.Create(new { language = "ru" }));
+
+        chosen.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var html = await (await GetInLanguageAsync("/catalog", "fr")).Content.ReadAsStringAsync();
+
+        html.Should().Contain("lang=\"ru\"",
+            "an explicit choice outranks whatever the browser happens to send (ADR 0088)");
+        // Decoded before asserting, because the renderer writes non-Latin text as character
+        // references — the browser's half of the exchange is undoing that.
+        WebUtility.HtmlDecode(html).Should().Contain("Каталог");
+    }
+
+    /// <summary>
+    /// The choice is a cookie a year long, and script cannot read it.
+    /// </summary>
+    [Fact]
+    public async Task The_choice_is_a_cookie_a_year_long_and_script_cannot_read_it()
+    {
+        var response = await SendAsync(
+            HttpMethod.Post, CulturePath, JsonContent.Create(new { language = "fr" }));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var cookie = response.Headers.GetValues("Set-Cookie").Single();
+
+        cookie.Should().StartWith(".AspNetCore.Culture=",
+            "the standard culture cookie is the persistence — the server must know the language " +
+            "before the first byte of a prerendered page (ADR 0088)");
+        cookie.Should().Contain("c%3Dfr%7Cuic%3Dfr",
+            "formatting culture and language travel together, one value for both");
+        cookie.Should().ContainEquivalentOf("max-age=31536000", "a preference outlives the session");
+        cookie.Should().ContainEquivalentOf("httponly", "nothing in the browser reads the cookie — " +
+            "the boot reads the document's lang attribute instead");
+        cookie.Should().ContainEquivalentOf("secure");
+        cookie.Should().ContainEquivalentOf("samesite=lax",
+            "unlike the session's Strict, the preference must arrive on a navigation from " +
+            "elsewhere, or the first paint after following a link would be in the wrong language");
+    }
+
+    /// <summary>
+    /// A language the list does not offer is refused.
+    /// </summary>
+    [Fact]
+    public async Task A_language_the_list_does_not_offer_is_refused()
+    {
+        var response = await SendAsync(
+            HttpMethod.Post, CulturePath, JsonContent.Create(new { language = "de" }));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.Headers.Contains("Set-Cookie").Should().BeFalse(
+            "a refused choice must not leave a cookie the middleware would then ignore");
+    }
+
+    /// <summary>
+    /// The choice reaches the api as accept language.
+    /// </summary>
+    /// <remarks>
+    /// The API resolves from <c>Accept-Language</c> alone, so the proxy restates the culture this
+    /// host resolved — cookie first — in that header. Without the rewrite, a visitor who chose
+    /// Russian over a French browser would read Russian pages around French error sentences: the
+    /// three legs disagreeing is the exact defect ADR 0088 exists to prevent.
+    /// </remarks>
+    [Fact]
+    public async Task The_choice_reaches_the_api_as_accept_language()
+    {
+        await SendAsync(HttpMethod.Post, CulturePath, JsonContent.Create(new { language = "ru" }));
+
+        var request = new HttpRequestMessage(HttpMethod.Get, AnonymousPath);
+        request.Headers.Add(BffContract.RequestedWithHeader, BffContract.RequestedWithValue);
+        request.Headers.Add("Accept-Language", "fr");
+
+        await _browser.SendAsync(request);
+
+        _factory.ProxiedApi.Requests.Single().AcceptLanguage.Should().Be("ru",
+            "the proxied request says what this host resolved, not what the browser sent (ADR 0088)");
+    }
+
+    /// <summary>
+    /// The bffs own call to the api speaks the resolved language.
+    /// </summary>
+    /// <remarks>
+    /// The other channel to the API — the named client the BFF endpoints and the prerendering
+    /// read clients go through — carries the same sentence, through the culture handler rather
+    /// than the proxy's transform.
+    /// </remarks>
+    [Fact]
+    public async Task The_bffs_own_call_to_the_api_speaks_the_resolved_language()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, ForgotPasswordPath)
+        {
+            Content = JsonContent.Create(new { email = "grace@example.org" })
+        };
+        request.Headers.Add(BffContract.RequestedWithHeader, BffContract.RequestedWithValue);
+        request.Headers.Add("Accept-Language", "fr");
+
+        await _browser.SendAsync(request);
+
+        _factory.LoginApi.Requests.Single().AcceptLanguage.Should().Be("fr",
+            "the culture handler restates the resolution on every call this host makes itself (ADR 0088)");
+    }
+
+    /// <summary>Fetches a page the way a browser with this language preference does.</summary>
+    private async Task<HttpResponseMessage> GetInLanguageAsync(string path, string acceptLanguage)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, path);
+
+        request.Headers.Add("Accept-Language", acceptLanguage);
+
+        return await _browser.SendAsync(request);
     }
 
     /// <summary>The ticket inside the session cookie, opened with the host's own format.</summary>

@@ -3,8 +3,10 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using TrainingHub.Blazor.Client.Infrastructure;
 using TrainingHub.GeneratedClients;
+using TrainingHub.Translations;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -85,6 +87,10 @@ public static class BffEndpoints
         bff.MapGet("/user", GetUser).AllowAnonymous();
 
         bff.MapGet("/turnstile", GetTurnstileSettings).AllowAnonymous();
+
+        // Anonymous like the identity read: choosing a language is something a visitor does
+        // before anything else, and tying it to a session would reset the choice at the door.
+        bff.MapPost("/culture", SetCulture).AllowAnonymous();
 
         // Outside the /bff group, at the address the proxy used to forward: the template outranks
         // the catch-all route, so every contact message lands here and none slips past the token
@@ -374,6 +380,48 @@ public static class BffEndpoints
     private static async Task<IResult> LogoutAsync(HttpContext httpContext)
     {
         await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+        return Results.NoContent();
+    }
+
+    /// <summary>
+    /// Records the visitor's language in the standard culture cookie, for every request after
+    /// this one.
+    /// </summary>
+    /// <remarks>
+    /// The cookie is the persistence (ADR 0088): the server has to know the language before the
+    /// first byte of a prerendered page, which rules the browser's own storage out — the theme
+    /// lives there and accepts a corrected first paint; a page in the wrong language is not a
+    /// flash but a page the visitor cannot read. <c>Lax</c> rather than the session cookie's
+    /// <c>Strict</c>, deliberately: a preference must arrive on a navigation from elsewhere, or
+    /// the first paint after following a link would be in the wrong language — the very thing
+    /// the cookie exists to prevent — and it authenticates nobody, so cross-site arrival risks
+    /// nothing. The choice itself answers no content: the page reloads to reboot the runtime in
+    /// the chosen language, and the reload is the answer.
+    /// </remarks>
+    private static IResult SetCulture(CultureChoice choice, HttpContext httpContext)
+    {
+        ArgumentNullException.ThrowIfNull(choice);
+
+        if (!SupportedLanguages.All.Contains(choice.Language, StringComparer.OrdinalIgnoreCase))
+        {
+            return Results.Problem(
+                title: "That language is not offered.",
+                detail: $"Choose one of: {string.Join(", ", SupportedLanguages.All)}.",
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        httpContext.Response.Cookies.Append(
+            CookieRequestCultureProvider.DefaultCookieName,
+            CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(choice.Language)),
+            new CookieOptions
+            {
+                Path = "/",
+                MaxAge = TimeSpan.FromDays(365),
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+            });
 
         return Results.NoContent();
     }

@@ -22,6 +22,7 @@ COPY src/TrainingHub.Shared.Domain/TrainingHub.Shared.Domain.csproj src/Training
 COPY src/TrainingHub.Shared.Application/TrainingHub.Shared.Application.csproj src/TrainingHub.Shared.Application/
 COPY src/TrainingHub.Shared.Infrastructure/TrainingHub.Shared.Infrastructure.csproj src/TrainingHub.Shared.Infrastructure/
 COPY src/TrainingHub.Shared.Api/TrainingHub.Shared.Api.csproj src/TrainingHub.Shared.Api/
+COPY src/TrainingHub.Translations/TrainingHub.Translations.csproj src/TrainingHub.Translations/
 COPY src/DDD/Domain/TrainingHub.DDD.Domain.csproj src/DDD/Domain/
 COPY src/DDD/Application/TrainingHub.DDD.Application.csproj src/DDD/Application/
 COPY src/DDD/Infrastructure/TrainingHub.DDD.Infrastructure.csproj src/DDD/Infrastructure/

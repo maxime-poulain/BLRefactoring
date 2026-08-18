@@ -56,6 +56,16 @@ public sealed record BffUser(IReadOnlyList<BffClaim> Claims);
 public sealed record BffClaim(string Type, string Value);
 
 /// <summary>
+/// The language a visitor asks to be answered in, sent to <c>/bff/culture</c> (ADR 0088).
+/// </summary>
+/// <remarks>
+/// A neutral language code from the supported set — <c>fr</c>, never a sentence or a locale the
+/// application does not carry; the endpoint refuses anything else. The answer is a cookie, so
+/// the type has no response half.
+/// </remarks>
+public sealed record CultureChoice(string Language);
+
+/// <summary>
 /// What the browser needs to render the anti-robot challenge: the public site key (ADR 0083).
 /// </summary>
 /// <remarks>

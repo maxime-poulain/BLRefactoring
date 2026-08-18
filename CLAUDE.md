@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 87 architecture decision records.
+2. `docs/adr/README.md` — the index of 88 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 215 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 220 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -153,6 +153,26 @@ repository a named question and maps the aggregates.
   (ADR 0004, ADR 0012).
 - Every action declares the statuses it can answer; every route identifier is constrained
   (`{id:guid}`). A creation answers 201 with the address of what was created (ADR 0011).
+
+## Localization
+
+- The words live in `src/TrainingHub.Translations` — marker types plus `.resx` families, neutral
+  English with `fr` and `ru` beside it — and that project references **nothing**, so every surface
+  may load it and no inner layer may reference it (ADR 0088, `NoInnerLayer_ReferencesThe
+  Translations`, `TheTranslations_DependOnNothing`). The domain keeps authoring codes; sentences
+  are the boundary's.
+- One list, one default: `SupportedLanguages` (`en`, `fr`, `ru`, default `en`). Adding a language
+  means growing that list, adding the culture's resx beside every neutral file with **exactly**
+  the same keys (`EveryCultureResource_CarriesExactlyTheDefaultsKeys`), and declaring the new
+  compound extension unread in `AmericanSpellingRules` — the census fails otherwise.
+- Resolution is the BFF's: culture cookie, then `Accept-Language`, then English. The API hosts
+  read the header alone through `AddApiLocalization`/`UseApiLocalization`
+  (`BothApiHosts_ResolveTheSameCulture`), and the BFF restates its resolution in that header on
+  both channels to the API. `<html lang>` carries the answer; the WebAssembly boot reads it back
+  — never resolve a culture a second time somewhere else.
+- Consumption is `IStringLocalizer<CommonResources>` and nothing custom. Neutral resx files are
+  read by the spelling rule (English we write); `.fr.resx`/`.ru.resx` are declared unread — their
+  keys are governed by the key-set rule instead.
 
 ## C# style
 

@@ -44,7 +44,10 @@ public sealed class RecordingHandler : HttpMessageHandler
             request.Headers.Authorization?.ToString(),
             request.Content is null
                 ? null
-                : await request.Content.ReadAsStringAsync(cancellationToken)));
+                : await request.Content.ReadAsStringAsync(cancellationToken),
+            request.Headers.AcceptLanguage.Count == 0
+                ? null
+                : request.Headers.AcceptLanguage.ToString()));
 
         return Respond(request);
     }
@@ -65,7 +68,12 @@ public sealed class RecordingHandler : HttpMessageHandler
 }
 
 /// <summary>What the API saw, kept beyond the lifetime of the request message.</summary>
-public sealed record RecordedRequest(HttpMethod Method, Uri? Uri, string? Authorization, string? Body = null);
+public sealed record RecordedRequest(
+    HttpMethod Method,
+    Uri? Uri,
+    string? Authorization,
+    string? Body = null,
+    string? AcceptLanguage = null);
 
 /// <summary>
 /// Hands YARP the stub instead of a real socket.

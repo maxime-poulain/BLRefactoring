@@ -1,0 +1,74 @@
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@using TrainingHub.Blazor.Client.Infrastructure
+@using TrainingHub.Translations
+@inject IBffCultureClient CultureClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IStringLocalizer<CommonResources> L
+
+@* The language, offered where the theme is: a fact about the whole surface, not about one page.
+   Each entry says its own language's name in that language — the one label a visitor who cannot
+   read the current one is guaranteed to recognize. Picking one records the choice in the culture
+   cookie and reloads the page, because the WebAssembly runtime speaks the language it booted in
+   and the honest way to change it is to boot again (ADR 0088). *@
+<MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+    <ActivatorContent>
+        <MudIconButton Icon="@Icons.Material.Filled.Translate"
+                       Color="Color.Inherit"
+                       aria-label="@L["Language"]"
+                       OnClick="@(args => context.ToggleAsync(args))" />
+    </ActivatorContent>
+    <ChildContent>
+        @foreach (var language in SupportedLanguages.All)
+        {
+            <MudMenuItem Disabled="@IsCurrent(language)"
+                         OnClick="@(() => ChangeAsync(language))">
+                @NativeName(language)
+            </MudMenuItem>
+        }
+    </ChildContent>
+</MudMenu>
+
+@code {
+    /// <summary>Whether this entry is the language the page is already in.</summary>
+    /// <remarks>
+    /// Compared by the two-letter code rather than the full name: the runtime boots on the
+    /// supported neutral cultures, but a host whose thread happens to wear a regional one —
+    /// a test runner's machine culture, say — still names the same language.
+    /// </remarks>
+    private static bool IsCurrent(string language) =>
+        string.Equals(
+            language,
+            CultureInfo.CurrentUICulture.TwoLetterISOLanguageName,
+            StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The language's own name for itself, capitalized the way it capitalizes.</summary>
+    private static string NativeName(string language)
+    {
+        var culture = CultureInfo.GetCultureInfo(language);
+        var name = culture.NativeName;
+
+        return char.ToUpper(name[0], culture) + name[1..];
+    }
+
+    private async Task ChangeAsync(string language)
+    {
+        try
+        {
+            await CultureClient.ChangeLanguageAsync(language);
+        }
+        catch (Exception exception)
+        {
+            // Whatever failed — the BFF unreachable first of all — the page keeps its language,
+            // and the person is told in it rather than left wondering why nothing happened.
+            Console.Error.WriteLine(exception);
+            Snackbar.Add("The language could not be changed. Try again in a moment.", Severity.Error);
+            return;
+        }
+
+        // A full reload rather than a re-render: satellite assemblies and formatting data load at
+        // boot, so the way to speak the new language everywhere is to boot again in it.
+        NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+    }
+}

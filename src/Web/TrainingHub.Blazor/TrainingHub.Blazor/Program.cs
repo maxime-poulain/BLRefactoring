@@ -1,11 +1,13 @@
 using TrainingHub.Blazor.Bff;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Localization;
 using MudBlazor.Services;
 using TrainingHub.Blazor.Client.Authorization;
 using TrainingHub.Blazor.Client.Infrastructure;
 using TrainingHub.Blazor.Components;
 using TrainingHub.Blazor.Prerendering;
 using TrainingHub.GeneratedClients;
+using TrainingHub.Translations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +39,24 @@ builder.Services.AddMudServices();
 //    "active" to a caller the API refuses.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddCascadingAuthenticationState();
+// The prerendered layout injects IStringLocalizer, so this host resolves it too — over the same
+// resource assembly the browser carries, because the two passes must say the same words (ADR 0088).
+builder.Services.AddLocalization();
+// This host answers people, so the visitor's explicit choice comes first: the standard culture
+// cookie — written by /bff/culture, nothing else writes one — then the browser's Accept-Language,
+// then English. The API hosts read the header alone; the proxy restates the resolution there, so
+// the three legs cannot disagree (ADR 0088).
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    options.SetDefaultCulture(SupportedLanguages.Default);
+    options.AddSupportedCultures([.. SupportedLanguages.All]);
+    options.AddSupportedUICultures([.. SupportedLanguages.All]);
+    options.RequestCultureProviders =
+    [
+        new CookieRequestCultureProvider(),
+        new AcceptLanguageHeaderRequestCultureProvider(),
+    ];
+});
 // The same policy the browser registers, because the same components render on both sides of the
 // prerender. Left out here, a page carrying it would be refused during the prerendered pass and
 // granted a moment later — which reads as a flicker and is really two hosts disagreeing about who
@@ -48,6 +68,7 @@ builder.Services.AddScoped<AuthenticationStateProvider, HostAuthenticationStateP
 builder.Services.AddScoped<IAuthenticationStateNotifier>(serviceProvider =>
     (HostAuthenticationStateProvider)serviceProvider.GetRequiredService<AuthenticationStateProvider>());
 builder.Services.AddScoped<IBffSessionClient, BffSessionClient>();
+builder.Services.AddScoped<IBffCultureClient, BffCultureClient>();
 builder.Services.AddScoped<TrainerStandingSource>();
 builder.Services.AddScoped<ITrainerStandingSource>(serviceProvider =>
     serviceProvider.GetRequiredService<TrainerStandingSource>());
@@ -94,6 +115,12 @@ else
 }
 
 app.UseHttpsRedirection();
+
+// Before the BFF, because the culture has to be a fact before anything renders or is forwarded:
+// the prerendered pass reads what is resolved here, and the proxy's transform repeats it to the
+// API. The cookie is the visitor's explicit choice; Accept-Language decides for everyone who
+// never chose; English otherwise (ADR 0088).
+app.UseRequestLocalization();
 
 // Before UseAntiforgery, because it is what authenticates the request: antiforgery binds its
 // token to the signed-in user, and a pipeline that validated before knowing who the caller is

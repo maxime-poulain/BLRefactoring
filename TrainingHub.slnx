@@ -21,6 +21,7 @@
   <Project Path="src/TrainingHub.Shared.Domain/TrainingHub.Shared.Domain.csproj" />
   <Project Path="src/TrainingHub.Shared.Infrastructure/TrainingHub.Shared.Infrastructure.csproj" />
   <Project Path="src/TrainingHub.Shared/TrainingHub.Shared.csproj" />
+  <Project Path="src/TrainingHub.Translations/TrainingHub.Translations.csproj" />
   <Folder Name="/Tests/">
     <Project Path="tests/TrainingHub.Shared.Domain.Tests/TrainingHub.Shared.Domain.Tests.csproj" />
     <Project Path="tests/TrainingHub.DDD.Application.Tests/TrainingHub.DDD.Application.Tests.csproj" />

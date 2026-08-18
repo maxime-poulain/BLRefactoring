@@ -1,6 +1,9 @@
+@using Microsoft.Extensions.Localization
 @using TrainingHub.Blazor.Client.Components
+@using TrainingHub.Translations
 @inherits LayoutComponentBase
 @inject IJSRuntime JS
+@inject IStringLocalizer<CommonResources> L
 
 <MudThemeProvider Theme="Theme" @bind-IsDarkMode="@_isDarkMode" />
 <MudPopoverProvider />
@@ -18,14 +21,17 @@
         </MudLink>
         @* Outside the AuthorizeView below, and that is the point: the catalog is the one screen
            that does not ask who is looking, so its link is there whether or not anybody is signed
-           in (ADR 0062). *@
+           in (ADR 0062). The label is the first localized word of the surface — the living proof
+           that a resource travels from the resx to the screen in the resolved language, on the
+           prerendered pass and the interactive one alike (ADR 0088). *@
         <MudButton Variant="Variant.Text" Color="Color.Inherit" Href="/catalog" Class="ml-4">
-            Catalog
+            @L["Catalog"]
         </MudButton>
         <MudSpacer />
         @* One component for the corner: Sign in for a visitor, the identity and its doors for a
            signed-in caller. The row of buttons that used to sit here lives inside it (ADR 0074). *@
         <UserMenu />
+        <CultureSelector />
         <MudIconButton Icon="@Icons.Material.Filled.Brightness4"
                        Color="Color.Inherit"
                        aria-label="Toggle theme"

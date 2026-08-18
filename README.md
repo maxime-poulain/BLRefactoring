@@ -151,7 +151,7 @@ them — the layered one had none at all. See
 
 ### Solution layout
 
-Twenty-seven projects: sixteen under `src/`, eleven under `tests/`. Every one of them targets
+Twenty-eight projects: seventeen under `src/`, eleven under `tests/`. Every one of them targets
 **net10.0** ([ADR 0076](docs/adr/0076-target-one-framework-across-the-solution.md)).
 
 | Project | Responsibility |
@@ -168,6 +168,7 @@ Twenty-seven projects: sixteen under `src/`, eleven under `tests/`. Every one of
 | `DDDWithCqrs.Api` | REST host for the CQRS stack — controllers, composition root |
 | `DDD.Domain`, `DDD.Infrastructure`, `DDDWithCqrs.Domain` | Routing projects with no source files; the domain and infrastructure they stand for live in the `TrainingHub.Shared.*` projects |
 | `TrainingHub.GeneratedClients` | NSwag-generated typed HTTP clients, checked in as source |
+| `TrainingHub.Translations` | The words: marker types and the `.resx` families beside them — neutral English plus `fr` and `ru`, one satellite assembly per language — and the supported-language list every surface shares. References nothing, so every surface may load it ([ADR 0088](docs/adr/0088-answer-in-the-visitors-language-and-resolve-it-at-the-door.md)) |
 | `TrainingHub.Blazor` / `.Client` | Blazor WebAssembly front end built with MudBlazor, and the **backend for frontend** that serves it: cookie authentication, and a YARP proxy that attaches the API's access token server-side |
 | `tests/*` | Eleven projects — ten test suites and the shared kit they draw from — see [Testing](#testing) |
 
@@ -192,6 +193,7 @@ flowchart LR
     CqrsApi["DDDWithCqrs.Api"]
 
     Clients["GeneratedClients"]
+    Translations["Translations"]
     BlazorClient["Blazor.Client"]
     BlazorHost["Blazor"]
 
@@ -201,6 +203,7 @@ flowchart LR
     SharedInfra --> SharedApp
     SharedApi --> SharedApp
     SharedApi --> SharedInfra
+    SharedApi --> Translations
 
     DddDomain --> Kernel
     DddApp --> SharedApp
@@ -220,11 +223,14 @@ flowchart LR
     CqrsApi --> SharedApi
 
     BlazorClient --> Clients
+    BlazorClient --> Translations
     BlazorHost --> BlazorClient
 ```
 
 The Blazor pair and the generated client form their own branch, reached by no backend project;
-the backend graph is rooted at the shared kernel.
+the backend graph is rooted at the shared kernel. The translations are the one assembly both
+branches reach — the browser for its labels, the shared API layer for the supported-language
+list — and they reference nothing at all ([ADR 0088](docs/adr/0088-answer-in-the-visitors-language-and-resolve-it-at-the-door.md)).
 
 ---
 

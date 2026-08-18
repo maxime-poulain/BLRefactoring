@@ -4,17 +4,27 @@
         <TargetFramework>net10.0</TargetFramework>
         <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
         <StaticWebAssetProjectMode>Default</StaticWebAssetProjectMode>
+        <!-- Ship the ICU data whole rather than sharded per boot culture: the visitor changes
+             language at runtime, and the runtime must be able to format any supported culture
+             whichever one it booted in. See ADR 0088. -->
+        <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly"/>
         <PackageReference Include="Microsoft.Extensions.Http" />
+        <!-- IStringLocalizer and AddLocalization for the browser, where no shared framework
+             provides them. The server side gets the same types from ASP.NET Core itself. -->
+        <PackageReference Include="Microsoft.Extensions.Localization" />
         <PackageReference Include="MudBlazor"/>
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\TrainingHub.GeneratedClients\TrainingHub.GeneratedClients.csproj" />
+      <!-- The words themselves: the marker types and the resx families beside them, one satellite
+           assembly per language. See ADR 0088. -->
+      <ProjectReference Include="..\..\..\TrainingHub.Translations\TrainingHub.Translations.csproj" />
     </ItemGroup>
 
 </Project>
