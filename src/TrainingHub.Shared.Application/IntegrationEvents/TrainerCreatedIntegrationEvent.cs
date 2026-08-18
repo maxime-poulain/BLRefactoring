@@ -14,8 +14,14 @@ namespace TrainingHub.Shared.Application.IntegrationEvents;
 /// <param name="Firstname">The trainer's first name.</param>
 /// <param name="Lastname">The trainer's last name.</param>
 /// <param name="ContactEmail">The address the trainer wishes to be contacted at.</param>
+/// <param name="Language">
+/// The language the recipient reads in, as the account stated it, or <see langword="null"/> when
+/// it stated none. It rides the fact for the reason the address does: whoever receives this notice
+/// is resolved here and nowhere else, so their language is resolved here too (ADR 0091).
+/// </param>
 public sealed record TrainerCreatedIntegrationEvent(
     Guid TrainerId,
     string Firstname,
     string Lastname,
-    string ContactEmail) : IIntegrationEvent;
+    string ContactEmail,
+    string? Language) : IIntegrationEvent;

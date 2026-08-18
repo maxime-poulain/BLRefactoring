@@ -1,3 +1,6 @@
+@using Microsoft.Extensions.Localization
+@using TrainingHub.Translations
+@inject IStringLocalizer<CommonResources> L
 <!DOCTYPE html>
 @* The language is the request's, resolved by the localization middleware before any component
    renders — the cookie choice first, the browser's Accept-Language otherwise, English when
@@ -39,9 +42,13 @@
         @* The routes that do not prerender ship an empty head until WebAssembly boots; these two
            lines are what a browser tab and a link unfurler see in the meantime. The catalog's
            routes write their own head during the prerendered pass (ADR 0073), which is why they
-           are excluded — a second title here would double theirs. *@
+           are excluded — a second title here would double theirs.
+
+           The title is the product's name and stays as it is in every language; the description
+           is a sentence and is read from CommonResources, in the culture the middleware just
+           resolved (ADR 0091). *@
         <title>TrainingHub</title>
-        <meta name="description" content="TrainingHub — where trainers publish trainings, and anyone can browse them."/>
+        <meta name="description" content="@L["SiteDescription"]"/>
     }
     @* Three faces, three jobs (the design's own vocabulary): Bricolage Grotesque carries the
        display voice, Source Sans 3 carries the body, and IBM Plex Mono carries the counts and

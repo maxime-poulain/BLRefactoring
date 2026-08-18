@@ -141,6 +141,42 @@ public abstract class AdministrativeNoticeTest<TFactory>(TFactory factory) : Int
     }
 
     /// <summary>
+    /// Suspending a russian speaking trainer, writes to them in russian.
+    /// </summary>
+    /// <remarks>
+    /// ADR 0091's whole decision in one fact, and the one no unit test can reach: the trainer
+    /// registered in Russian, the administrator who suspends them is served in English, and the
+    /// notice crosses a real outbox to a real SMTP server before anybody reads it. The language
+    /// that survives that trip is the recipient's, because it was read from the account beside the
+    /// address rather than carried from the request that caused the sanction.
+    /// <para>
+    /// The subject is the assertion, as everywhere in this suite: it is stable per language by
+    /// design, which is what makes it the thing a mailbox is searched by.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task SuspendingARussianSpeakingTrainer_WritesToThemInRussian()
+    {
+        var trainer = await RegisterTrainerAsync("ru");
+        var administrator = await AuthHelper.SignInAsAdministratorAsync(Factory);
+
+        (await administrator.PostAsJsonAsync(
+            $"/Administration/trainers/{trainer.Id}/suspend",
+            new SuspendTrainerHttpRequest { Reason = "Repeated breaches of the content policy." }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var text = await Mailbox.WaitForEmailAsync(
+            Factory,
+            trainer.AccountAddress,
+            "Ваша учетная запись преподавателя приостановлена");
+
+        text.Should().Contain(
+            "Repeated breaches of the content policy.",
+            "the administrator's own words are quoted as written — only the notice around them is " +
+            "translated");
+    }
+
+    /// <summary>
     /// A trainer whose account address and published contact address are deliberately different.
     /// </summary>
     /// <param name="Id">The trainer's identifier.</param>
@@ -150,9 +186,15 @@ public abstract class AdministrativeNoticeTest<TFactory>(TFactory factory) : Int
     private sealed record RegisteredTrainer(
         Guid Id, string AccountAddress, string ContactAddress, HttpClient Client);
 
-    private async Task<RegisteredTrainer> RegisterTrainerAsync()
+    /// <param name="language">
+    /// The language this trainer registers in, which is the language their account is written to
+    /// in from then on (ADR 0091). English by default, which is what every other fact here wants.
+    /// </param>
+    private async Task<RegisteredTrainer> RegisterTrainerAsync(string language = "en")
     {
         var client = Factory.CreateClient();
+        client.DefaultRequestHeaders.AcceptLanguage.ParseAdd(language);
+
         var request = AuthHelper.CreateUniqueRegisterRequest();
         (await AuthHelper.RegisterAsync(client, request)).EnsureSuccessStatusCode();
 

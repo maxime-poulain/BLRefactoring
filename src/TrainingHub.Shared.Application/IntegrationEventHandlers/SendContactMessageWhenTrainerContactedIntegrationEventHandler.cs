@@ -29,6 +29,7 @@ namespace TrainingHub.Shared.Application.IntegrationEventHandlers;
 public sealed class SendContactMessageWhenTrainerContactedIntegrationEventHandler(
     ITrainerContactQuery contactQuery,
     ICatalogDetailQuery catalogDetail,
+    INotificationComposer composer,
     IEmailSender emailSender,
     ILogger<SendContactMessageWhenTrainerContactedIntegrationEventHandler> logger)
     : IIntegrationEventHandler<TrainerContactedIntegrationEvent>
@@ -62,20 +63,22 @@ public sealed class SendContactMessageWhenTrainerContactedIntegrationEventHandle
         }
 
         var about = await AboutAsync(integrationEvent.TrainingId, cancellationToken);
-        var sender = $"{integrationEvent.SenderFirstname} {integrationEvent.SenderLastname}";
+
+        // In the trainer's language, not the visitor's: the words around the message belong to
+        // whoever opens it, and what the visitor wrote is passed through in whatever language they
+        // wrote it (ADR 0091).
+        var notification = composer.ContactMessage(
+            trainer.Language,
+            $"{trainer.Firstname} {trainer.Lastname}",
+            $"{integrationEvent.SenderFirstname} {integrationEvent.SenderLastname}",
+            integrationEvent.SenderEmailAddress,
+            integrationEvent.Message,
+            about);
 
         var message = new EmailMessage(
             trainer.EmailAddress,
-            about is null
-                ? $"{sender} contacted you through TrainingHub"
-                : $"{sender} contacted you about “{about}”",
-            $"Hello {trainer.Firstname} {trainer.Lastname},\n\n"
-            + $"{sender} <{integrationEvent.SenderEmailAddress}> wrote to you"
-            + (about is null ? string.Empty : $" about your training “{about}”")
-            + ":\n\n"
-            + integrationEvent.Message
-            + "\n\n"
-            + "Replying to this message answers them directly. They were never shown your address.",
+            notification.Subject,
+            notification.Body,
             ReplyTo: integrationEvent.SenderEmailAddress);
 
         await emailSender.SendAsync(message, cancellationToken);

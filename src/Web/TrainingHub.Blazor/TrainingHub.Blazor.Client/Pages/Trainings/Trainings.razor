@@ -5,10 +5,12 @@
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
 @using TrainingHub.Blazor.Client.Infrastructure
+@using TrainingHub.Blazor.Client.Models
 @inject ISnackbar Snackbar
 @inject ITrainerStandingSource StandingSource
 @inject IStringLocalizer<TrainingResources> L
 @inject IStringLocalizer<CommonResources> Common
+@inject IStringLocalizer<TopicResources> Topics
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="my-4">
     <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
@@ -106,7 +108,7 @@
                                              Size="Size.Small"
                                              Color="Color.Primary"
                                              Variant="Variant.Outlined">
-                                        @topic
+                                        @Topics[TopicNames.Key(topic)]
                                     </MudChip>
                                 }
                             </MudStack>

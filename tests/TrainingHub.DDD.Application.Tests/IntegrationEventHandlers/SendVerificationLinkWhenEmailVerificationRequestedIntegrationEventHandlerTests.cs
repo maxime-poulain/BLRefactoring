@@ -13,14 +13,14 @@ namespace TrainingHub.DDD.Application.Tests.IntegrationEventHandlers;
 /// <remarks>
 /// The reset consumer's two pins — one invitation becomes exactly one email, a null mint becomes
 /// nothing at all — plus the one this consumer adds: the words are the composer's, asked for in
-/// the fact's culture, and this layer forwards them without reading them.
+/// the language the invitation carries, and this layer forwards them without reading them.
 /// </remarks>
 public sealed class SendVerificationLinkWhenEmailVerificationRequestedIntegrationEventHandlerTests
 {
     private static readonly Guid KnownUserId = Guid.NewGuid();
 
     private readonly Mock<IEmailVerificationTokenStore> _verificationTokens = new();
-    private readonly Mock<IVerificationEmailComposer> _composer = new();
+    private readonly Mock<INotificationComposer> _composer = new();
     private readonly Mock<IEmailSender> _emailSender = new();
 
     /// <summary>
@@ -39,14 +39,14 @@ public sealed class SendVerificationLinkWhenEmailVerificationRequestedIntegratio
 
         // Act
         await sut.HandleAsync(
-            new EmailVerificationRequestedIntegrationEvent(KnownUserId, "en"), CancellationToken.None);
+            new EmailVerificationRequestedIntegrationEvent(KnownUserId), CancellationToken.None);
 
         // Assert
         _emailSender.Verify(
             sender => sender.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _composer.Verify(
-            composer => composer.Compose(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()),
+            composer => composer.VerificationLink(It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string>()),
             Times.Never);
     }
 
@@ -62,18 +62,19 @@ public sealed class SendVerificationLinkWhenEmailVerificationRequestedIntegratio
             .ReturnsAsync(new EmailVerificationInvitation(
                 "https://web.test/verify-email?token=the-minted-token",
                 "grace.hopper",
-                "grace.hopper@example.org"));
+                "grace.hopper@example.org",
+                "fr"));
         _composer
-            .Setup(composer => composer.Compose(
+            .Setup(composer => composer.VerificationLink(
                 "fr", "grace.hopper", "https://web.test/verify-email?token=the-minted-token"))
-            .Returns(new VerificationEmail("the composed subject", "the composed body"));
+            .Returns(new Notification("the composed subject", "the composed body"));
 
         var sut = new SendVerificationLinkWhenEmailVerificationRequestedIntegrationEventHandler(
             _verificationTokens.Object, _composer.Object, _emailSender.Object);
 
         // Act
         await sut.HandleAsync(
-            new EmailVerificationRequestedIntegrationEvent(KnownUserId, "fr"), CancellationToken.None);
+            new EmailVerificationRequestedIntegrationEvent(KnownUserId), CancellationToken.None);
 
         // Assert
         _emailSender.Verify(sender => sender.SendAsync(

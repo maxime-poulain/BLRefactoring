@@ -1,3 +1,4 @@
+using System.Globalization;
 using TrainingHub.Shared.Application.EventHandlers;
 using TrainingHub.Shared.Application.IntegrationEvents;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
@@ -37,7 +38,12 @@ public sealed class PublishIntegrationEventWhenTrainerCreatedDomainEventHandlerT
         await sut.Handle(domainEvent, CancellationToken.None);
 
         _publisher.Verify(p => p.PublishAsync(
-                new TrainerCreatedIntegrationEvent(trainerId.Value, "John", "Doe", "john.doe@example.com"),
+                new TrainerCreatedIntegrationEvent(
+                    trainerId.Value,
+                    "John",
+                    "Doe",
+                    "john.doe@example.com",
+                    CultureInfo.CurrentUICulture.Name),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }

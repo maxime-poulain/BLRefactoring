@@ -23,14 +23,14 @@ public sealed class EmailVerificationService(
     IUnitOfWork unitOfWork) : IEmailVerificationService
 {
     /// <inheritdoc />
-    public async Task RequestAsync(Guid userId, string culture, CancellationToken cancellationToken = default)
+    public async Task RequestAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         // The outbox row is the whole write, exactly like the recovery request's (ADR 0084):
         // there is no aggregate to update, so the save is this flow's own. No lookup here either
         // — an already-verified account asking again is absorbed by the consumer's null mint, so
         // the request path does the same work every time (ADR 0090).
         await integrationEvents.PublishAsync(
-            new EmailVerificationRequestedIntegrationEvent(userId, culture),
+            new EmailVerificationRequestedIntegrationEvent(userId),
             cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

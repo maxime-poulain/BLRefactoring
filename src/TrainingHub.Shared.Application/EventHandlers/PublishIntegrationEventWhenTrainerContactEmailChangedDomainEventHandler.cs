@@ -1,3 +1,4 @@
+using TrainingHub.Shared.Application.Accounts;
 using TrainingHub.Shared.Application.IntegrationEvents;
 using TrainingHub.Shared.Common;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
@@ -16,7 +17,9 @@ namespace TrainingHub.Shared.Application.EventHandlers;
 /// worker's reaction to a change that is real. Both addresses are flattened into the message
 /// because the aggregate has already forgotten the old one.
 /// </remarks>
-public sealed class PublishIntegrationEventWhenTrainerContactEmailChangedDomainEventHandler(IIntegrationEventPublisher publisher)
+public sealed class PublishIntegrationEventWhenTrainerContactEmailChangedDomainEventHandler(
+    IIntegrationEventPublisher publisher,
+    IAccountLanguageQuery languages)
     : IDomainEventHandler<TrainerContactEmailChangedDomainEvent>
 {
     /// <summary>
@@ -24,11 +27,23 @@ public sealed class PublishIntegrationEventWhenTrainerContactEmailChangedDomainE
     /// </summary>
     /// <param name="notification">The event that was raised.</param>
     /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-    public async ValueTask Handle(TrainerContactEmailChangedDomainEvent notification, CancellationToken cancellationToken) =>
+    public async ValueTask Handle(TrainerContactEmailChangedDomainEvent notification, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(notification);
+
+        // Read here rather than at delivery, for the reason the two addresses are: this is the
+        // last moment the recipient is unambiguous. The trainer's account is committed and its
+        // preference with it, so this is a plain indexed read (ADR 0091).
+        var language = await languages
+            .ByTrainerIdAsync(notification.TrainerId.Value, cancellationToken)
+            .ConfigureAwait(false);
+
         await publisher.PublishAsync(
             new TrainerContactEmailChangedIntegrationEvent(
                 notification.TrainerId.Value,
                 notification.OldContactEmail.FullAddress,
-                notification.NewContactEmail.FullAddress),
+                notification.NewContactEmail.FullAddress,
+                language),
             cancellationToken);
+    }
 }

@@ -42,6 +42,9 @@
   <data name="EmailAddress" xml:space="preserve">
     <value>Email address</value>
   </data>
+  <data name="ErrorPageTitle" xml:space="preserve">
+    <value>Something went wrong</value>
+  </data>
   <data name="FirstName" xml:space="preserve">
     <value>First name</value>
   </data>
@@ -50,6 +53,12 @@
   </data>
   <data name="LanguageChangeFailed" xml:space="preserve">
     <value>The language could not be changed. Try again in a moment.</value>
+  </data>
+  <data name="LanguageNotOffered" xml:space="preserve">
+    <value>That language is not offered.</value>
+  </data>
+  <data name="LanguageNotOfferedDetail" xml:space="preserve">
+    <value>Choose one of: {0}.</value>
   </data>
   <data name="LastName" xml:space="preserve">
     <value>Last name</value>
@@ -66,6 +75,12 @@
   <data name="NoLongerAllowed" xml:space="preserve">
     <value>You are no longer allowed to do that. Sign in again to see where you stand.</value>
   </data>
+  <data name="NotYoursToOpen" xml:space="preserve">
+    <value>This page is not yours to open</value>
+  </data>
+  <data name="NotYoursToOpenBody" xml:space="preserve">
+    <value>You are signed in, but this page needs an authority your account does not carry. Signing in again will not change that.</value>
+  </data>
   <data name="NothingAtThisAddress" xml:space="preserve">
     <value>There is nothing at this address</value>
   </data>
@@ -75,17 +90,14 @@
   <data name="NothingHerePageTitle" xml:space="preserve">
     <value>Nothing here — TrainingHub</value>
   </data>
-  <data name="NotYoursToOpen" xml:space="preserve">
-    <value>This page is not yours to open</value>
-  </data>
-  <data name="NotYoursToOpenBody" xml:space="preserve">
-    <value>You are signed in, but this page needs an authority your account does not carry. Signing in again will not change that.</value>
-  </data>
   <data name="Outbox" xml:space="preserve">
     <value>Outbox</value>
   </data>
   <data name="Profile" xml:space="preserve">
     <value>Profile</value>
+  </data>
+  <data name="RequestIdentifier" xml:space="preserve">
+    <value>Request identifier</value>
   </data>
   <data name="RequestRejected" xml:space="preserve">
     <value>The request was rejected.</value>
@@ -101,6 +113,15 @@
   </data>
   <data name="SignOutFailed" xml:space="preserve">
     <value>Sign-out failed. Try again in a moment.</value>
+  </data>
+  <data name="SiteDescription" xml:space="preserve">
+    <value>TrainingHub — where trainers publish trainings, and anyone can browse them.</value>
+  </data>
+  <data name="SomethingWentWrong" xml:space="preserve">
+    <value>Something went wrong</value>
+  </data>
+  <data name="SomethingWentWrongBody" xml:space="preserve">
+    <value>The request could not be completed. Nothing was changed by it — try again, and if it keeps happening, quote the identifier below.</value>
   </data>
   <data name="SuspendedCannotChange" xml:space="preserve">
     <value>Suspended accounts cannot make changes.</value>

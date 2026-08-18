@@ -12,6 +12,102 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AccountErasedBody" xml:space="preserve">
+    <value>Ваша учетная запись TrainingHub только что удалена вместе с профилем, курсами и портретом. На платформе от нее ничего не осталось.</value>
+  </data>
+  <data name="AccountErasedFarewell" xml:space="preserve">
+    <value>Если это были вы — спасибо, что преподавали вместе с нами, и до свидания.</value>
+  </data>
+  <data name="AccountErasedGreeting" xml:space="preserve">
+    <value>Здравствуйте, {0}!</value>
+  </data>
+  <data name="AccountErasedIntrusion" xml:space="preserve">
+    <value>Если это были не вы, значит учетную запись удалил кто-то, имеющий доступ к вашему сеансу. Данные восстановить нельзя, но имя и адрес снова свободны: вы можете зарегистрироваться заново, и тем самым закрыть их для того, кто это сделал.</value>
+  </data>
+  <data name="AccountErasedSubject" xml:space="preserve">
+    <value>Ваша учетная запись TrainingHub удалена</value>
+  </data>
+  <data name="ContactEmailChangedBody" xml:space="preserve">
+    <value>Контактный адрес в вашем профиле преподавателя изменен на {0}.</value>
+  </data>
+  <data name="ContactEmailChangedSubject" xml:space="preserve">
+    <value>Ваш контактный адрес электронной почты изменен</value>
+  </data>
+  <data name="ContactEmailChangedWarning" xml:space="preserve">
+    <value>Если вы не запрашивали это изменение, немедленно свяжитесь со службой поддержки.</value>
+  </data>
+  <data name="ContactMessageGreeting" xml:space="preserve">
+    <value>Здравствуйте, {0}!</value>
+  </data>
+  <data name="ContactMessageIntro" xml:space="preserve">
+    <value>{0} &lt;{1}&gt; написал(а) вам:</value>
+  </data>
+  <data name="ContactMessageIntroAbout" xml:space="preserve">
+    <value>{0} &lt;{1}&gt; написал(а) вам по поводу вашего курса «{2}»:</value>
+  </data>
+  <data name="ContactMessageReply" xml:space="preserve">
+    <value>Ответ на это письмо придет им напрямую. Ваш адрес им никогда не показывался.</value>
+  </data>
+  <data name="ContactMessageSubject" xml:space="preserve">
+    <value>{0} связался(-ась) с вами через TrainingHub</value>
+  </data>
+  <data name="ContactMessageSubjectAbout" xml:space="preserve">
+    <value>{0} связался(-ась) с вами по поводу «{1}»</value>
+  </data>
+  <data name="PasswordChangedBody" xml:space="preserve">
+    <value>Пароль вашей учетной записи TrainingHub только что изменен.</value>
+  </data>
+  <data name="PasswordChangedGreeting" xml:space="preserve">
+    <value>Здравствуйте, {0}!</value>
+  </data>
+  <data name="PasswordChangedIntrusion" xml:space="preserve">
+    <value>Если это были не вы, значит сброс пароля для вашей учетной записи завершил кто-то другой. Сразу воспользуйтесь ссылкой «Забыли пароль?» на странице входа: сброс отправит новую ссылку на этот адрес и отменит все прежние, закрыв злоумышленнику путь назад.</value>
+  </data>
+  <data name="PasswordChangedReassurance" xml:space="preserve">
+    <value>Если это были вы, делать ничего не нужно.</value>
+  </data>
+  <data name="PasswordChangedSubject" xml:space="preserve">
+    <value>Пароль TrainingHub изменен</value>
+  </data>
+  <data name="PasswordResetGreeting" xml:space="preserve">
+    <value>Здравствуйте, {0}!</value>
+  </data>
+  <data name="PasswordResetIgnore" xml:space="preserve">
+    <value>Если вы этого не запрашивали, просто проигнорируйте письмо — пароль не изменен, а ссылка выше остается единственным способом его изменить.</value>
+  </data>
+  <data name="PasswordResetIntro" xml:space="preserve">
+    <value>Кто-то запросил сброс пароля учетной записи TrainingHub, привязанной к этому адресу — надеемся, что вы. Выберите новый пароль здесь:</value>
+  </data>
+  <data name="PasswordResetLifetime" xml:space="preserve">
+    <value>Ссылка действует {0} минут и только один раз; повторный запрос заменит ее.</value>
+  </data>
+  <data name="PasswordResetSubject" xml:space="preserve">
+    <value>Сброс пароля TrainingHub</value>
+  </data>
+  <data name="ReinstatementBody" xml:space="preserve">
+    <value>Приостановка вашей учетной записи преподавателя снята. Все, что вы публиковали, снова доступно — ровно в том виде, в каком вы это оставили.</value>
+  </data>
+  <data name="ReinstatementGreeting" xml:space="preserve">
+    <value>Здравствуйте, {0}!</value>
+  </data>
+  <data name="ReinstatementSubject" xml:space="preserve">
+    <value>Ваша учетная запись преподавателя восстановлена</value>
+  </data>
+  <data name="SuspensionConsequence" xml:space="preserve">
+    <value>Пока действует приостановка, ваши курсы не предлагаются публично.</value>
+  </data>
+  <data name="SuspensionGreeting" xml:space="preserve">
+    <value>Здравствуйте, {0}!</value>
+  </data>
+  <data name="SuspensionReason" xml:space="preserve">
+    <value>Ваша учетная запись преподавателя приостановлена по следующей причине: {0}.</value>
+  </data>
+  <data name="SuspensionRecourse" xml:space="preserve">
+    <value>Если вы считаете это ошибкой, ответьте на это письмо.</value>
+  </data>
+  <data name="SuspensionSubject" xml:space="preserve">
+    <value>Ваша учетная запись преподавателя приостановлена</value>
+  </data>
   <data name="VerifyEmailGreeting" xml:space="preserve">
     <value>Здравствуйте, {0}!</value>
   </data>
@@ -26,5 +122,29 @@
   </data>
   <data name="VerifyEmailSubject" xml:space="preserve">
     <value>Подтвердите свой адрес электронной почты TrainingHub</value>
+  </data>
+  <data name="WelcomeBody" xml:space="preserve">
+    <value>Ваша учетная запись преподавателя создана. Добро пожаловать в TrainingHub!</value>
+  </data>
+  <data name="WelcomeGreeting" xml:space="preserve">
+    <value>Здравствуйте, {0}!</value>
+  </data>
+  <data name="WelcomeSubject" xml:space="preserve">
+    <value>Добро пожаловать!</value>
+  </data>
+  <data name="WithholdingConsequence" xml:space="preserve">
+    <value>Он больше не предлагается публично, и вы не можете опубликовать его снова самостоятельно.</value>
+  </data>
+  <data name="WithholdingGreeting" xml:space="preserve">
+    <value>Здравствуйте, {0}!</value>
+  </data>
+  <data name="WithholdingReason" xml:space="preserve">
+    <value>Ваш курс «{0}» снят с публикации по следующей причине: {1}.</value>
+  </data>
+  <data name="WithholdingRecourse" xml:space="preserve">
+    <value>Если вы считаете это ошибкой, ответьте на это письмо.</value>
+  </data>
+  <data name="WithholdingSubject" xml:space="preserve">
+    <value>Один из ваших курсов снят с публикации</value>
   </data>
 </root>

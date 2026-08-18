@@ -12,7 +12,13 @@ namespace TrainingHub.Shared.Application.IntegrationEvents;
 /// <param name="TrainerId">The identifier of the trainer whose contact address changed.</param>
 /// <param name="OldContactEmail">The address the trainer moved away from.</param>
 /// <param name="NewContactEmail">The address the trainer moved to.</param>
+/// <param name="Language">
+/// The language the recipient reads in, as the account stated it, or <see langword="null"/> when
+/// it stated none. It rides the fact for the reason the address does: whoever receives this notice
+/// is resolved here and nowhere else, so their language is resolved here too (ADR 0091).
+/// </param>
 public sealed record TrainerContactEmailChangedIntegrationEvent(
     Guid TrainerId,
     string OldContactEmail,
-    string NewContactEmail) : IIntegrationEvent;
+    string NewContactEmail,
+    string? Language) : IIntegrationEvent;

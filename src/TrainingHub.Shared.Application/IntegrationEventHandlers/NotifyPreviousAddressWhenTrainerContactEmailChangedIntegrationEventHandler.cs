@@ -11,9 +11,12 @@ namespace TrainingHub.Shared.Application.IntegrationEventHandlers;
 /// The warning gives the legitimate owner a chance to react to a change that was not theirs, which
 /// only makes sense for a change that committed — warning about a rolled-back edit would be noise
 /// at best and a phishing tutor at worst. The fact carries both addresses because the aggregate has
-/// long forgotten the old one by the time the worker delivers.
+/// long forgotten the old one by the time the worker delivers — and the language beside them,
+/// because whoever reads this notice is resolved here and nowhere else (ADR 0091).
 /// </remarks>
-public sealed class NotifyPreviousAddressWhenTrainerContactEmailChangedIntegrationEventHandler(IEmailSender emailSender)
+public sealed class NotifyPreviousAddressWhenTrainerContactEmailChangedIntegrationEventHandler(
+    INotificationComposer composer,
+    IEmailSender emailSender)
     : IIntegrationEventHandler<TrainerContactEmailChangedIntegrationEvent>
 {
     /// <inheritdoc />
@@ -26,11 +29,16 @@ public sealed class NotifyPreviousAddressWhenTrainerContactEmailChangedIntegrati
     /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     public async Task HandleAsync(TrainerContactEmailChangedIntegrationEvent integrationEvent, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(integrationEvent);
+
+        var notification = composer.ContactEmailChanged(
+            integrationEvent.Language,
+            integrationEvent.NewContactEmail);
+
         var message = new EmailMessage(
             integrationEvent.OldContactEmail,
-            "Your contact email address was changed",
-            $"The contact email address of your trainer profile was changed to {integrationEvent.NewContactEmail}. " +
-            "If you did not request this change, please contact support immediately.");
+            notification.Subject,
+            notification.Body);
 
         await emailSender.SendAsync(message, cancellationToken);
     }

@@ -25,6 +25,7 @@ public sealed class SendContactMessageWhenTrainerContactedIntegrationEventHandle
 
     private readonly Mock<ITrainerContactQuery> _contactQuery = new();
     private readonly Mock<ICatalogDetailQuery> _catalogDetail = new();
+    private readonly Mock<INotificationComposer> _composer = new();
     private readonly Mock<IEmailSender> _emailSender = new();
 
     /// <summary>
@@ -34,14 +35,15 @@ public sealed class SendContactMessageWhenTrainerContactedIntegrationEventHandle
     /// The two addresses on the message each do their one job: the recipient is what the trainer
     /// published for being written to — resolved here, at delivery, never carried on the fact —
     /// and the <c>Reply-To</c> is the visitor, so answering the mail answers the person
-    /// (ADR 0082). The body quotes the message and names the sender with their address, because
-    /// the trainer decides whether to answer on exactly that.
+    /// (ADR 0082). The words are the composer's, asked for in the trainer's own language and in
+    /// nobody else's — the visitor's culture never reaches this message (ADR 0091).
     /// </remarks>
     [Fact]
     public async Task Handle_AKnownTrainer_SendsToTheContactAddressWithReplyToTheVisitor()
     {
         var trainerId = Guid.CreateVersion7();
         KnownTrainer(trainerId);
+        Composes(about: null);
 
         await Sut().HandleAsync(Contacted(trainerId, trainingId: null), CancellationToken.None);
 
@@ -49,22 +51,22 @@ public sealed class SendContactMessageWhenTrainerContactedIntegrationEventHandle
                 It.Is<EmailMessage>(message =>
                     message.Recipient == ContactAddress
                     && message.ReplyTo == "grace@example.org"
-                    && message.Body.Contains("I would like to book this training.")
-                    && message.Body.Contains("Grace Hopper <grace@example.org>")),
+                    && message.Subject == "the composed subject"
+                    && message.Body == "the composed body"),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     /// <summary>
-    /// Handle, the training still offered, names its title in the subject.
+    /// Handle, the training still offered, hands its title to the composer.
     /// </summary>
     /// <remarks>
     /// Read through the catalog's port at delivery rather than carried on the fact, so a title is
-    /// never stored stale in the outbox: what the subject names is what the catalog offers at the
+    /// never stored stale in the outbox: what the message names is what the catalog offers at the
     /// moment of sending.
     /// </remarks>
     [Fact]
-    public async Task Handle_TheTrainingStillOffered_NamesItsTitleInTheSubject()
+    public async Task Handle_TheTrainingStillOffered_HandsItsTitleToTheComposer()
     {
         var trainerId = Guid.CreateVersion7();
         var trainingId = Guid.CreateVersion7();
@@ -83,13 +85,18 @@ public sealed class SendContactMessageWhenTrainerContactedIntegrationEventHandle
                 AcquiredSkills = "Drawing a context map."
             });
 
+        Composes(about: "Domain Driven Design");
+
         await Sut().HandleAsync(Contacted(trainerId, trainingId), CancellationToken.None);
 
-        _emailSender.Verify(sender => sender.SendAsync(
-                It.Is<EmailMessage>(message =>
-                    message.Subject.Contains("Domain Driven Design")
-                    && message.Body.Contains("Domain Driven Design")),
-                It.IsAny<CancellationToken>()),
+        _composer.Verify(
+            composer => composer.ContactMessage(
+                "ru",
+                "Ada Lovelace",
+                "Grace Hopper",
+                "grace@example.org",
+                "I would like to book this training.",
+                "Domain Driven Design"),
             Times.Once);
     }
 
@@ -106,14 +113,14 @@ public sealed class SendContactMessageWhenTrainerContactedIntegrationEventHandle
     {
         var trainerId = Guid.CreateVersion7();
         KnownTrainer(trainerId);
+        Composes(about: null);
 
         await Sut().HandleAsync(Contacted(trainerId, Guid.CreateVersion7()), CancellationToken.None);
 
         _emailSender.Verify(sender => sender.SendAsync(
                 It.Is<EmailMessage>(message =>
                     message.Recipient == ContactAddress
-                    && message.Subject.Contains("contacted you through TrainingHub")
-                    && message.Body.Contains("I would like to book this training.")),
+                    && message.Body == "the composed body"),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -140,13 +147,25 @@ public sealed class SendContactMessageWhenTrainerContactedIntegrationEventHandle
         new(
             _contactQuery.Object,
             _catalogDetail.Object,
+            _composer.Object,
             _emailSender.Object,
             NullLogger<SendContactMessageWhenTrainerContactedIntegrationEventHandler>.Instance);
 
     private void KnownTrainer(Guid trainerId) =>
         _contactQuery
             .Setup(query => query.GetByTrainerIdAsync(trainerId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new TrainerContactDto(ContactAddress, "Ada", "Lovelace"));
+            .ReturnsAsync(new TrainerContactDto(ContactAddress, "Ada", "Lovelace", "ru"));
+
+    private void Composes(string? about) =>
+        _composer
+            .Setup(composer => composer.ContactMessage(
+                "ru",
+                "Ada Lovelace",
+                "Grace Hopper",
+                "grace@example.org",
+                "I would like to book this training.",
+                about))
+            .Returns(new Notification("the composed subject", "the composed body"));
 
     private static TrainerContactedIntegrationEvent Contacted(Guid trainerId, Guid? trainingId) =>
         new(

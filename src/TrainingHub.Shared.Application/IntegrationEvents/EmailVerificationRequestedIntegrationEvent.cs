@@ -13,11 +13,12 @@ namespace TrainingHub.Shared.Application.IntegrationEvents;
 /// never touches the outbox table. The email address is absent too: the consumer resolves it
 /// from the account at delivery time, the way every notice does (ADR 0056), so a row retried
 /// tomorrow still writes to the address the account holds then.
+/// <para>
+/// It carried the requester's culture until ADR 0091, and no longer does. The address comes from
+/// the invitation the mint hands back, so the language comes from there too — one authority
+/// beats two that can disagree, and the account's stated preference is the one that survives a
+/// row retried tomorrow.
+/// </para>
 /// </remarks>
 /// <param name="UserId">The account that asked to prove its address.</param>
-/// <param name="Culture">
-/// The culture the requester was being served in, as a code and never as prose (ADR 0088): the
-/// email is composed at delivery, in the consumer, and this is the one fact about language the
-/// consumer cannot resolve on its own — the request that carried it is long gone.
-/// </param>
-public sealed record EmailVerificationRequestedIntegrationEvent(Guid UserId, string Culture) : IIntegrationEvent;
+public sealed record EmailVerificationRequestedIntegrationEvent(Guid UserId) : IIntegrationEvent;

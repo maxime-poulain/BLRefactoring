@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Topic_AgilePractices" xml:space="preserve">
+    <value>Pratiques agiles</value>
+  </data>
+  <data name="Topic_Business" xml:space="preserve">
+    <value>Gestion d'entreprise</value>
+  </data>
+  <data name="Topic_CloudComputing" xml:space="preserve">
+    <value>Informatique en nuage</value>
+  </data>
+  <data name="Topic_DataAndAnalytics" xml:space="preserve">
+    <value>Données et analyse</value>
+  </data>
+  <data name="Topic_Databases" xml:space="preserve">
+    <value>Bases de données</value>
+  </data>
+  <data name="Topic_Design" xml:space="preserve">
+    <value>Design</value>
+  </data>
+  <data name="Topic_DevOps" xml:space="preserve">
+    <value>DevOps</value>
+  </data>
+  <data name="Topic_Leadership" xml:space="preserve">
+    <value>Leadership</value>
+  </data>
+  <data name="Topic_Marketing" xml:space="preserve">
+    <value>Marketing</value>
+  </data>
+  <data name="Topic_PersonalDevelopment" xml:space="preserve">
+    <value>Développement personnel</value>
+  </data>
+  <data name="Topic_Programming" xml:space="preserve">
+    <value>Programmation</value>
+  </data>
+  <data name="Topic_ProjectManagement" xml:space="preserve">
+    <value>Gestion de projet</value>
+  </data>
+  <data name="Topic_Security" xml:space="preserve">
+    <value>Sécurité</value>
+  </data>
+  <data name="Topic_SoftwareArchitecture" xml:space="preserve">
+    <value>Architecture logicielle</value>
+  </data>
+  <data name="Topic_TestingAndQuality" xml:space="preserve">
+    <value>Tests et qualité</value>
+  </data>
+  <data name="Topic_WebDevelopment" xml:space="preserve">
+    <value>Développement web</value>
+  </data>
+</root>

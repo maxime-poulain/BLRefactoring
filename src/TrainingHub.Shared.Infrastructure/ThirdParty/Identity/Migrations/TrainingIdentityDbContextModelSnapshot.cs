@@ -219,6 +219,21 @@ namespace TrainingHub.Shared.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("TrainingHub.Shared.Infrastructure.ThirdParty.Identity.AccountLanguage", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("AccountLanguage", (string)null);
+                });
+
             modelBuilder.Entity("TrainingHub.Shared.Infrastructure.ThirdParty.Identity.EmailVerificationToken", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -311,6 +326,15 @@ namespace TrainingHub.Shared.Infrastructure.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser<System.Guid>", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TrainingHub.Shared.Infrastructure.ThirdParty.Identity.AccountLanguage", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser<System.Guid>", null)
+                        .WithOne()
+                        .HasForeignKey("TrainingHub.Shared.Infrastructure.ThirdParty.Identity.AccountLanguage", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

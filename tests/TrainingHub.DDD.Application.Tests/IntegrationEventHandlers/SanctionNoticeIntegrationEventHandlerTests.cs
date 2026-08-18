@@ -16,12 +16,14 @@ namespace TrainingHub.DDD.Application.Tests.IntegrationEventHandlers;
 /// account, not to the published contact address, and the two are deliberately different values in
 /// every fact below so that reading the wrong one fails rather than passes by coincidence
 /// (ADR 0056). And the reason: a sanction the product never explains is one the trainer discovers
-/// by failing to do something (ADR 0053).
+/// by failing to do something (ADR 0053) — which reaches the composer beside the language read
+/// from the same projection as the address (ADR 0091).
 /// </remarks>
 public sealed class SanctionNoticeIntegrationEventHandlerTests
 {
     private const string AccountAddress = "ada.lovelace@account.example.com";
 
+    private readonly Mock<INotificationComposer> _composer = new();
     private readonly Mock<IEmailSender> _emailSender = new();
     private readonly Mock<ITrainerAccountQuery> _accountQuery = new();
 
@@ -34,8 +36,14 @@ public sealed class SanctionNoticeIntegrationEventHandlerTests
         var trainerId = Guid.NewGuid();
         KnownAccount(trainerId);
 
+        _composer
+            .Setup(composer => composer.Suspension(
+                "fr", "Ada Lovelace", "Repeated breaches of the content policy."))
+            .Returns(new Notification("the composed subject", "the composed body"));
+
         var sut = new SendSuspensionNoticeWhenTrainerSuspendedIntegrationEventHandler(
             _accountQuery.Object,
+            _composer.Object,
             _emailSender.Object,
             NullLogger<SendSuspensionNoticeWhenTrainerSuspendedIntegrationEventHandler>.Instance);
 
@@ -46,8 +54,8 @@ public sealed class SanctionNoticeIntegrationEventHandlerTests
         _emailSender.Verify(sender => sender.SendAsync(
                 It.Is<EmailMessage>(message =>
                     message.Recipient == AccountAddress
-                    && message.Body.Contains("Repeated breaches of the content policy.")
-                    && message.Body.Contains("Ada")),
+                    && message.Subject == "the composed subject"
+                    && message.Body == "the composed body"),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -61,8 +69,13 @@ public sealed class SanctionNoticeIntegrationEventHandlerTests
         var trainerId = Guid.NewGuid();
         KnownAccount(trainerId);
 
+        _composer
+            .Setup(composer => composer.Reinstatement("fr", "Ada Lovelace"))
+            .Returns(new Notification("the composed subject", "the composed body"));
+
         var sut = new SendReinstatementNoticeWhenTrainerReinstatedIntegrationEventHandler(
             _accountQuery.Object,
+            _composer.Object,
             _emailSender.Object,
             NullLogger<SendReinstatementNoticeWhenTrainerReinstatedIntegrationEventHandler>.Instance);
 
@@ -71,7 +84,7 @@ public sealed class SanctionNoticeIntegrationEventHandlerTests
         _emailSender.Verify(sender => sender.SendAsync(
                 It.Is<EmailMessage>(message =>
                     message.Recipient == AccountAddress
-                    && message.Subject.Contains("reinstated")),
+                    && message.Subject == "the composed subject"),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -85,8 +98,14 @@ public sealed class SanctionNoticeIntegrationEventHandlerTests
         var trainerId = Guid.NewGuid();
         KnownAccount(trainerId);
 
+        _composer
+            .Setup(composer => composer.Withholding(
+                "fr", "Ada Lovelace", "Advanced domain modeling", "Reported for misleading claims."))
+            .Returns(new Notification("the composed subject", "the composed body"));
+
         var sut = new SendWithholdingNoticeWhenTrainingWithheldIntegrationEventHandler(
             _accountQuery.Object,
+            _composer.Object,
             _emailSender.Object,
             NullLogger<SendWithholdingNoticeWhenTrainingWithheldIntegrationEventHandler>.Instance);
 
@@ -98,8 +117,7 @@ public sealed class SanctionNoticeIntegrationEventHandlerTests
         _emailSender.Verify(sender => sender.SendAsync(
                 It.Is<EmailMessage>(message =>
                     message.Recipient == AccountAddress
-                    && message.Body.Contains("Advanced domain modeling")
-                    && message.Body.Contains("Reported for misleading claims.")),
+                    && message.Body == "the composed body"),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -122,6 +140,7 @@ public sealed class SanctionNoticeIntegrationEventHandlerTests
 
         var sut = new SendSuspensionNoticeWhenTrainerSuspendedIntegrationEventHandler(
             _accountQuery.Object,
+            _composer.Object,
             _emailSender.Object,
             NullLogger<SendSuspensionNoticeWhenTrainerSuspendedIntegrationEventHandler>.Instance);
 
@@ -137,5 +156,5 @@ public sealed class SanctionNoticeIntegrationEventHandlerTests
     private void KnownAccount(Guid trainerId) =>
         _accountQuery
             .Setup(query => query.GetByTrainerIdAsync(trainerId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new TrainerAccountDto(AccountAddress, "Ada", "Lovelace"));
+            .ReturnsAsync(new TrainerAccountDto(AccountAddress, "Ada", "Lovelace", "fr"));
 }

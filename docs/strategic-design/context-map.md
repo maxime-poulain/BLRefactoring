@@ -115,8 +115,12 @@ and it answers where that is when the notice is sent rather than when the decisi
 
 **State:** real, since [ADR 0031](../adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md):
 the facts land durably with the changes that justify them, the delivery worker (ADR 0025)
-hands them to the policies that compose the `EmailMessage`s, and a MailKit adapter sends each one
+hands them to the policies that build the `EmailMessage`s, and a MailKit adapter sends each one
 over SMTP — to a Mailpit container locally, to whatever relay the `Smtp` section names elsewhere.
+The words themselves are nobody's policy: a consumer asks `INotificationComposer`, whose adapter
+sits beside the sender and reads the translations, and it asks in the recipient's own language —
+read wherever that consumer reads their address, and never taken from whoever caused the notice
+([ADR 0091](../adr/0091-write-to-everyone-in-the-language-they-read.md)).
 Choosing a provider was, as promised, a registration in the composition root; the integration
 suites read the delivered messages back out of the real server.
 

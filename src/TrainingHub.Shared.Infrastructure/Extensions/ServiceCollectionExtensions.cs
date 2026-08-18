@@ -125,6 +125,10 @@ public static class ServiceCollectionExtensions
             .AddScoped<ITrainerNamesQuery, TrainerNamesQuery>()
             .AddScoped<ITrainerStandingQuery, TrainerStandingQuery>()
             .AddScoped<IAccountVerificationQuery, AccountVerificationQuery>()
+            // The language an account reads in (ADR 0091), asked where a notice's recipient is
+            // resolved by nothing else — the four facts that carry their own address. The six
+            // other notices read it beside that address, so they ask no port of their own.
+            .AddScoped<IAccountLanguageQuery, AccountLanguageQuery>()
             // The recovery credential's store (ADR 0084) — a writing port in the search indexer's
             // mold rather than a seventh read port: the consumer that issues a reset link and the
             // API flow that redeems one both write the Identity store, through this port's own
@@ -134,6 +138,9 @@ public static class ServiceCollectionExtensions
             // Identity store, deliberately not merged with the reset store: shared primitives,
             // separate meanings.
             .AddScoped<IEmailVerificationTokenStore, EmailVerificationTokenStore>()
+            // The preference's writing half (ADR 0091), in the two credential stores' mold and
+            // for their reason: it writes the Identity store through that context's own save.
+            .AddScoped<IAccountLanguageStore, AccountLanguageStore>()
             // Scoped like the DbContext it stages rows into: the publisher must share the unit of
             // work of the save that is dispatching the domain events (ADR 0002).
             .AddScoped<IIntegrationEventPublisher, OutboxIntegrationEventPublisher>()

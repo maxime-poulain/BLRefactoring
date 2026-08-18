@@ -15,4 +15,13 @@ namespace TrainingHub.Shared.Application.IntegrationEvents;
 /// <param name="UserId">The account that was erased.</param>
 /// <param name="Email">The erased account's address, where the farewell goes.</param>
 /// <param name="Username">The erased account's username, for the message's greeting.</param>
-public sealed record AccountErasedIntegrationEvent(Guid UserId, string Email, string Username) : IIntegrationEvent;
+/// <param name="Language">
+/// The language the recipient reads in, as the account stated it, or <see langword="null"/> when
+/// it stated none. It rides the fact for the reason the address does: whoever receives this notice
+/// is resolved here and nowhere else, so their language is resolved here too (ADR 0091).
+/// </param>
+public sealed record AccountErasedIntegrationEvent(
+    Guid UserId,
+    string Email,
+    string Username,
+    string? Language) : IIntegrationEvent;

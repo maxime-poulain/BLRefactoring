@@ -14,4 +14,13 @@ namespace TrainingHub.Shared.Application.IntegrationEvents;
 /// <param name="UserId">The account whose password changed.</param>
 /// <param name="Email">The account's own address, where the notice goes.</param>
 /// <param name="Username">The account's username, for the message's greeting.</param>
-public sealed record PasswordChangedIntegrationEvent(Guid UserId, string Email, string Username) : IIntegrationEvent;
+/// <param name="Language">
+/// The language the recipient reads in, as the account stated it, or <see langword="null"/> when
+/// it stated none. It rides the fact for the reason the address does: whoever receives this notice
+/// is resolved here and nowhere else, so their language is resolved here too (ADR 0091).
+/// </param>
+public sealed record PasswordChangedIntegrationEvent(
+    Guid UserId,
+    string Email,
+    string Username,
+    string? Language) : IIntegrationEvent;

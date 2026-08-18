@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using TrainingHub.Blazor.Client.Infrastructure;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 
 namespace TrainingHub.Blazor.Bff;
@@ -428,16 +430,35 @@ public static class BffEndpoints
     /// nothing. The choice itself answers no content: the page reloads to reboot the runtime in
     /// the chosen language, and the reload is the answer.
     /// </remarks>
-    private static IResult SetCulture(CultureChoice choice, HttpContext httpContext)
+    private static async Task<IResult> SetCulture(
+        CultureChoice choice,
+        HttpContext httpContext,
+        IHttpClientFactory httpClientFactory,
+        IStringLocalizer<CommonResources> localizer,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(choice);
+        ArgumentNullException.ThrowIfNull(localizer);
 
         if (!SupportedLanguages.All.Contains(choice.Language, StringComparer.OrdinalIgnoreCase))
         {
+            // Diagnostic prose rather than a message the selector can produce — it offers the
+            // three supported languages and nothing else — but it leaves by the same door as the
+            // rest, so it answers in the same language as the rest (ADR 0091).
             return Results.Problem(
-                title: "That language is not offered.",
-                detail: $"Choose one of: {string.Join(", ", SupportedLanguages.All)}.",
+                title: localizer["LanguageNotOffered"],
+                detail: localizer["LanguageNotOfferedDetail", string.Join(", ", SupportedLanguages.All)],
                 statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        // A signed-in visitor states two things at once: which language this browser reads in,
+        // and which language their account is written to in. The cookie answers the first and
+        // survives sign-out; the account answers the second and survives this browser (ADR 0091).
+        // The order matters — the account first, so a refusal leaves the two in agreement rather
+        // than a page in one language and a mailbox in another.
+        if (!await RecordAccountLanguageAsync(choice, httpContext, httpClientFactory, cancellationToken))
+        {
+            return Results.StatusCode(StatusCodes.Status502BadGateway);
         }
 
         httpContext.Response.Cookies.Append(
@@ -453,6 +474,51 @@ public static class BffEndpoints
             });
 
         return Results.NoContent();
+    }
+
+    /// <summary>
+    /// Tells the API the account's new language, when there is an account to tell.
+    /// </summary>
+    /// <remarks>
+    /// Answers whether the caller may go on. A visitor with no session has nothing to record and
+    /// passes; so does one whose ticket the API refuses — a <c>401</c> here means the session is
+    /// over, and somebody reading a page while signed out is exactly the anonymous case. Anything
+    /// else failed for a reason worth surfacing, and the caller turns it into a refusal rather
+    /// than pretending the choice landed.
+    /// </remarks>
+    private static async Task<bool> RecordAccountLanguageAsync(
+        CultureChoice choice,
+        HttpContext httpContext,
+        IHttpClientFactory httpClientFactory,
+        CancellationToken cancellationToken)
+    {
+        if (httpContext.User.Identity?.IsAuthenticated != true)
+        {
+            return true;
+        }
+
+        var token = await httpContext.GetTokenAsync(BffExtensions.AccessTokenName);
+
+        if (string.IsNullOrEmpty(token))
+        {
+            return true;
+        }
+
+        var client = httpClientFactory.CreateClient(ApiClientName);
+
+        using var request = new HttpRequestMessage(HttpMethod.Put, "/Auth/language")
+        {
+            // The body is written here rather than through the API's contract type: this host
+            // references the generated client and not TrainingHub.Shared.Api, and one property
+            // is not worth a project reference across that seam (ADR 0048's line).
+            Content = JsonContent.Create(new { language = choice.Language })
+        };
+
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        using var response = await client.SendAsync(request, cancellationToken);
+
+        return response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.Unauthorized;
     }
 
     /// <summary>

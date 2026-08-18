@@ -1,6 +1,6 @@
 # 0090 — Prove the address before the catalog grows
 
-- **Status:** Accepted
+- **Status:** Accepted — amended by [0091](0091-write-to-everyone-in-the-language-they-read.md): the deferral it recorded is lifted, `IVerificationEmailComposer` is folded into `INotificationComposer`, and the verification fact no longer carries a culture
 - **Date:** 2026-08-18
 
 ## Context

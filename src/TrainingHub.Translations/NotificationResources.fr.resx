@@ -12,6 +12,102 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AccountErasedBody" xml:space="preserve">
+    <value>Votre compte TrainingHub vient d'être effacé, avec votre profil, vos formations et votre portrait. Il n'en reste rien sur la plateforme.</value>
+  </data>
+  <data name="AccountErasedFarewell" xml:space="preserve">
+    <value>Si c'était vous : merci d'avoir enseigné avec nous, et au revoir.</value>
+  </data>
+  <data name="AccountErasedGreeting" xml:space="preserve">
+    <value>Bonjour {0},</value>
+  </data>
+  <data name="AccountErasedIntrusion" xml:space="preserve">
+    <value>Si ce n'était pas vous, quelqu'un ayant accès à votre session a effacé le compte. Les données sont irrécupérables, mais le nom et l'adresse vous appartiennent de nouveau : vous pouvez vous réinscrire, et cela fermera la porte à l'auteur de cet acte dès que vous le ferez.</value>
+  </data>
+  <data name="AccountErasedSubject" xml:space="preserve">
+    <value>Votre compte TrainingHub a été effacé</value>
+  </data>
+  <data name="ContactEmailChangedBody" xml:space="preserve">
+    <value>L'adresse de contact de votre profil de formateur a été remplacée par {0}.</value>
+  </data>
+  <data name="ContactEmailChangedSubject" xml:space="preserve">
+    <value>Votre adresse de contact a été modifiée</value>
+  </data>
+  <data name="ContactEmailChangedWarning" xml:space="preserve">
+    <value>Si vous n'êtes pas à l'origine de ce changement, contactez immédiatement le support.</value>
+  </data>
+  <data name="ContactMessageGreeting" xml:space="preserve">
+    <value>Bonjour {0},</value>
+  </data>
+  <data name="ContactMessageIntro" xml:space="preserve">
+    <value>{0} &lt;{1}&gt; vous a écrit :</value>
+  </data>
+  <data name="ContactMessageIntroAbout" xml:space="preserve">
+    <value>{0} &lt;{1}&gt; vous a écrit au sujet de votre formation « {2} » :</value>
+  </data>
+  <data name="ContactMessageReply" xml:space="preserve">
+    <value>Répondre à ce message leur répond directement. Votre adresse ne leur a jamais été montrée.</value>
+  </data>
+  <data name="ContactMessageSubject" xml:space="preserve">
+    <value>{0} vous a contacté via TrainingHub</value>
+  </data>
+  <data name="ContactMessageSubjectAbout" xml:space="preserve">
+    <value>{0} vous a contacté au sujet de « {1} »</value>
+  </data>
+  <data name="PasswordChangedBody" xml:space="preserve">
+    <value>Le mot de passe de votre compte TrainingHub vient d'être modifié.</value>
+  </data>
+  <data name="PasswordChangedGreeting" xml:space="preserve">
+    <value>Bonjour {0},</value>
+  </data>
+  <data name="PasswordChangedIntrusion" xml:space="preserve">
+    <value>Si ce n'était pas vous, quelqu'un d'autre a mené à bien une réinitialisation sur votre compte. Utilisez « Mot de passe oublié ? » sur la page de connexion sans attendre : une réinitialisation envoie un nouveau lien à cette adresse et annule tous les précédents, ce qui referme la porte derrière l'intrus.</value>
+  </data>
+  <data name="PasswordChangedReassurance" xml:space="preserve">
+    <value>Si c'était vous, il n'y a rien à faire.</value>
+  </data>
+  <data name="PasswordChangedSubject" xml:space="preserve">
+    <value>Votre mot de passe TrainingHub a été modifié</value>
+  </data>
+  <data name="PasswordResetGreeting" xml:space="preserve">
+    <value>Bonjour {0},</value>
+  </data>
+  <data name="PasswordResetIgnore" xml:space="preserve">
+    <value>Si vous n'avez rien demandé, ignorez ce message — votre mot de passe est inchangé, et le lien ci-dessus est le seul moyen de le changer.</value>
+  </data>
+  <data name="PasswordResetIntro" xml:space="preserve">
+    <value>Quelqu'un a demandé la réinitialisation du mot de passe du compte TrainingHub associé à cette adresse — vous, espérons-le. Choisissez un nouveau mot de passe ici :</value>
+  </data>
+  <data name="PasswordResetLifetime" xml:space="preserve">
+    <value>Le lien est valable {0} minutes et une seule fois ; une nouvelle demande le remplace.</value>
+  </data>
+  <data name="PasswordResetSubject" xml:space="preserve">
+    <value>Réinitialisez votre mot de passe TrainingHub</value>
+  </data>
+  <data name="ReinstatementBody" xml:space="preserve">
+    <value>La suspension de votre compte de formateur a été levée. Tout ce que vous aviez publié est de nouveau proposé, exactement tel que vous l'aviez laissé.</value>
+  </data>
+  <data name="ReinstatementGreeting" xml:space="preserve">
+    <value>Bonjour {0},</value>
+  </data>
+  <data name="ReinstatementSubject" xml:space="preserve">
+    <value>Votre compte de formateur a été rétabli</value>
+  </data>
+  <data name="SuspensionConsequence" xml:space="preserve">
+    <value>Vos formations ne sont plus proposées publiquement tant que la suspension dure.</value>
+  </data>
+  <data name="SuspensionGreeting" xml:space="preserve">
+    <value>Bonjour {0},</value>
+  </data>
+  <data name="SuspensionReason" xml:space="preserve">
+    <value>Votre compte de formateur a été suspendu pour le motif suivant : {0}.</value>
+  </data>
+  <data name="SuspensionRecourse" xml:space="preserve">
+    <value>Si vous pensez qu'il s'agit d'une erreur, répondez à ce message.</value>
+  </data>
+  <data name="SuspensionSubject" xml:space="preserve">
+    <value>Votre compte de formateur a été suspendu</value>
+  </data>
   <data name="VerifyEmailGreeting" xml:space="preserve">
     <value>Bonjour {0},</value>
   </data>
@@ -19,12 +115,36 @@
     <value>Si vous n'avez pas créé de compte TrainingHub, ignorez ce message — rien ne se passe sans ce lien.</value>
   </data>
   <data name="VerifyEmailIntro" xml:space="preserve">
-    <value>Confirmez que cette adresse est bien la vôtre en ouvrant le lien ci-dessous :</value>
+    <value>Merci de confirmer que cette adresse est bien la vôtre en ouvrant le lien ci-dessous :</value>
   </data>
   <data name="VerifyEmailLatestOnly" xml:space="preserve">
     <value>Seul le lien le plus récent fonctionne : en demander un autre remplace celui-ci.</value>
   </data>
   <data name="VerifyEmailSubject" xml:space="preserve">
     <value>Vérifiez votre adresse e-mail TrainingHub</value>
+  </data>
+  <data name="WelcomeBody" xml:space="preserve">
+    <value>Votre compte de formateur a été créé. Bienvenue sur TrainingHub !</value>
+  </data>
+  <data name="WelcomeGreeting" xml:space="preserve">
+    <value>Bonjour {0},</value>
+  </data>
+  <data name="WelcomeSubject" xml:space="preserve">
+    <value>Bienvenue à bord !</value>
+  </data>
+  <data name="WithholdingConsequence" xml:space="preserve">
+    <value>Elle n'est plus proposée publiquement, et vous ne pouvez pas la republier vous-même.</value>
+  </data>
+  <data name="WithholdingGreeting" xml:space="preserve">
+    <value>Bonjour {0},</value>
+  </data>
+  <data name="WithholdingReason" xml:space="preserve">
+    <value>Votre formation « {0} » a été retirée pour le motif suivant : {1}.</value>
+  </data>
+  <data name="WithholdingRecourse" xml:space="preserve">
+    <value>Si vous pensez qu'il s'agit d'une erreur, répondez à ce message.</value>
+  </data>
+  <data name="WithholdingSubject" xml:space="preserve">
+    <value>Une de vos formations a été retirée</value>
   </data>
 </root>

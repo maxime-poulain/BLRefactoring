@@ -16,7 +16,9 @@ namespace TrainingHub.Shared.Application.IntegrationEventHandlers;
 /// fails (ADR 0034); the residual duplicate a lapsed lease can cause is an annoyance, not a
 /// corruption, so this handler still carries no deduplication of its own.
 /// </remarks>
-public sealed class SendWelcomeEmailWhenTrainerCreatedIntegrationEventHandler(IEmailSender emailSender)
+public sealed class SendWelcomeEmailWhenTrainerCreatedIntegrationEventHandler(
+    INotificationComposer composer,
+    IEmailSender emailSender)
     : IIntegrationEventHandler<TrainerCreatedIntegrationEvent>
 {
     /// <inheritdoc />
@@ -29,15 +31,20 @@ public sealed class SendWelcomeEmailWhenTrainerCreatedIntegrationEventHandler(IE
     /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     public async Task HandleAsync(TrainerCreatedIntegrationEvent integrationEvent, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(integrationEvent);
+
         // "You can now publish your first training" left this message in ADR 0090: it stopped
         // being true the day publishing started asking for a verified address, and the account's
         // own mailbox — not the published contact address this notice goes to — is where the
         // verification email says what to do about that.
+        var notification = composer.Welcome(
+            integrationEvent.Language,
+            $"{integrationEvent.Firstname} {integrationEvent.Lastname}");
+
         var message = new EmailMessage(
             integrationEvent.ContactEmail,
-            "Welcome aboard!",
-            $"Hello {integrationEvent.Firstname} {integrationEvent.Lastname}, " +
-            "your trainer account has been created. Welcome to TrainingHub!");
+            notification.Subject,
+            notification.Body);
 
         await emailSender.SendAsync(message, cancellationToken);
     }

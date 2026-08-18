@@ -1,3 +1,4 @@
+using System.Globalization;
 using TrainingHub.Shared.Application.IntegrationEvents;
 using TrainingHub.Shared.Common;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.DomainEvents;
@@ -30,6 +31,11 @@ public sealed class PublishIntegrationEventWhenTrainerCreatedDomainEventHandler(
                 notification.TrainerId.Value,
                 notification.Name.Firstname,
                 notification.Name.Lastname,
-                notification.ContactEmail.FullAddress),
+                notification.ContactEmail.FullAddress,
+                // The one notice whose language is the request's rather than the store's, and the
+                // only place where the two cannot differ: this runs inside the registration that
+                // is writing the account's preference from this very culture, against a row that
+                // has not committed yet (ADR 0091).
+                CultureInfo.CurrentUICulture.Name),
             cancellationToken);
 }

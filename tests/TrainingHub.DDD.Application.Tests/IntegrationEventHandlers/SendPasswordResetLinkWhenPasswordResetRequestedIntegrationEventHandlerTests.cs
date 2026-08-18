@@ -20,6 +20,7 @@ public sealed class SendPasswordResetLinkWhenPasswordResetRequestedIntegrationEv
     private const string AskedAddress = "grace.hopper@example.org";
 
     private readonly Mock<IPasswordResetTokenStore> _resetTokens = new();
+    private readonly Mock<INotificationComposer> _composer = new();
     private readonly Mock<IEmailSender> _emailSender = new();
 
     /// <summary>
@@ -34,7 +35,7 @@ public sealed class SendPasswordResetLinkWhenPasswordResetRequestedIntegrationEv
             .ReturnsAsync((PasswordResetInvitation?)null);
 
         var sut = new SendPasswordResetLinkWhenPasswordResetRequestedIntegrationEventHandler(
-            _resetTokens.Object, _emailSender.Object);
+            _resetTokens.Object, _composer.Object, _emailSender.Object);
 
         // Act
         await sut.HandleAsync(new PasswordResetRequestedIntegrationEvent(AskedAddress), CancellationToken.None);
@@ -46,10 +47,15 @@ public sealed class SendPasswordResetLinkWhenPasswordResetRequestedIntegrationEv
     }
 
     /// <summary>
-    /// Handle, a known address, mails the invitation's link and window to the asked address.
+    /// Handle, a known address, mails the composer's words to the account's own address.
     /// </summary>
+    /// <remarks>
+    /// The recipient is the invitation's address and not the one the visitor typed, and the
+    /// language is the invitation's too: the mint read the account, so it answers both facts about
+    /// its owner at once (ADR 0091).
+    /// </remarks>
     [Fact]
-    public async Task Handle_AKnownAddress_MailsTheInvitationsLinkAndWindow()
+    public async Task Handle_AKnownAddress_MailsTheComposersWordsToTheAccountsOwnAddress()
     {
         // Arrange
         _resetTokens
@@ -57,10 +63,19 @@ public sealed class SendPasswordResetLinkWhenPasswordResetRequestedIntegrationEv
             .ReturnsAsync(new PasswordResetInvitation(
                 "https://web.test/reset-password?token=the-minted-token",
                 "grace.hopper",
-                TimeSpan.FromMinutes(15)));
+                TimeSpan.FromMinutes(15),
+                AskedAddress,
+                "fr"));
+        _composer
+            .Setup(composer => composer.PasswordResetLink(
+                "fr",
+                "grace.hopper",
+                "https://web.test/reset-password?token=the-minted-token",
+                TimeSpan.FromMinutes(15)))
+            .Returns(new Notification("the composed subject", "the composed body"));
 
         var sut = new SendPasswordResetLinkWhenPasswordResetRequestedIntegrationEventHandler(
-            _resetTokens.Object, _emailSender.Object);
+            _resetTokens.Object, _composer.Object, _emailSender.Object);
 
         // Act
         await sut.HandleAsync(new PasswordResetRequestedIntegrationEvent(AskedAddress), CancellationToken.None);
@@ -69,10 +84,8 @@ public sealed class SendPasswordResetLinkWhenPasswordResetRequestedIntegrationEv
         _emailSender.Verify(sender => sender.SendAsync(
                 It.Is<EmailMessage>(message =>
                     message.Recipient == AskedAddress
-                    && message.Subject == "Reset your TrainingHub password"
-                    && message.Body.Contains("grace.hopper")
-                    && message.Body.Contains("https://web.test/reset-password?token=the-minted-token")
-                    && message.Body.Contains("15 minutes")),
+                    && message.Subject == "the composed subject"
+                    && message.Body == "the composed body"),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }

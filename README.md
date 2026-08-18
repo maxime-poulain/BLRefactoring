@@ -421,7 +421,11 @@ sanction notices and the index updates now happen (ADR 0025, ADR 0056). The mess
 real SMTP: `IEmailSender` is declared beside its consumers in
 `Shared.Application/Notifications/` and implemented by a MailKit adapter
 pointed at whatever relay the `Smtp` section names — a Mailpit container locally (see
-[ADR 0031](docs/adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md)).
+[ADR 0031](docs/adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md)). Beside it
+sits `INotificationComposer`, the presenter half: a consumer hands over facts and receives finished
+prose in the recipient's own language, never in the language of whoever caused the notice — the
+account states that language at registration, and each consumer reads it wherever it reads the
+address ([ADR 0091](docs/adr/0091-write-to-everyone-in-the-language-they-read.md)).
 `ITrainingSearchIndexer` is no longer a fake either. It moved out of the kernel to
 `Shared.Application/Search/`, beside the query half the same record opened, and behind it sits a
 real inverted index in two tables of this database: one entry per training and one row per word of
@@ -914,6 +918,7 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 | `POST` | `/Auth/verify-email` | **Anonymous.** Redeems the emailed verification link, proving the address the account registered with. The token travels in the body, never in this endpoint's query — a live credential has no business in an access log. `204` on success; `400` keyed on `Token`, one fixed sentence for every way a link can be dead ([ADR 0090](docs/adr/0090-prove-the-address-before-the-catalog-grows.md)) |
 | `POST` | `/Auth/resend-verification` | Asks for the verification email again, to the caller's own address. `202` always — even for an account already verified, absorbed later in the delivery worker; `429` when the account asks more than five times in fifteen minutes, because each permit revokes the previous link. A suspension does not bar this door either (ADR 0090) |
 | `POST` | `/Auth/erase-account` | Erases the caller's account: the trainer, their trainings and the Identity account leave in one transaction, and the portrait's bytes follow through the outbox. The caller proves intent with their current password — a live session is not enough — and a suspension does not bar this one door. `204`; `400` keyed on `Password` when it is wrong; `401` ([ADR 0085](docs/adr/0085-let-the-account-erase-itself-trainings-and-all.md)) |
+| `PUT` | `/Auth/language` | Records the language the caller's account is written to in — every notice this platform sends goes out in it, whoever triggered the notice. Idempotent, because an account holds one preference: the language selector calls this beside the culture cookie, so a signed-in visitor changes the page and the mailbox in one gesture. `204`; `400` when the code names no supported language; `401`. A suspension does not bar this door either — the notices it produces are the ones this decides the language of ([ADR 0091](docs/adr/0091-write-to-everyone-in-the-language-they-read.md)) |
 | `GET` | `/Trainer/me` | The caller's own profile, with an `ETag`. `200`, `404` |
 | `PUT` | `/Trainer/me` | Requires `If-Match`. `200`, `400`, `404`, `412`, `428` |
 | `GET` | `/Trainer/{id}/photo` | The trainer's portrait, with a strong `ETag` and a year-long `max-age`. Not `immutable`: this address does not name the photo, so its bytes change when the owner replaces it and a stale cache has to revalidate (ADR 0063). `200`, `304`, `404` |
@@ -942,7 +947,7 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 | `GET` | `/Catalog/trainers/{trainerId:guid}` | **Anonymous.** One offering trainer's public page: first name, last name, bio, the sanitized portrait's identity, and the offered trainings as catalog rows, alphabetically. Answers if and only if the search index holds at least one entry for this trainer — offered or invisible, so a person nobody registered, a suspended one and one with nothing published are the same `404`. `200`, `400`, `404` ([ADR 0070](docs/adr/0070-open-a-trainers-public-page.md)) |
 | `GET` | `/Catalog/trainers/{trainerId:guid}/photo/{photoId:guid}` | **Anonymous.** The same sanitized portrait as the per-training address, at the profile's own: the trainer and the photo, which is what that page has in hand. The same four refusals in one `404` and the same forever-cache — the identity in the path is what makes `immutable` true (ADR 0063, ADR 0070). `200`, `304`, `400`, `404` |
 
-Thirty-five endpoints, and not one of them lets a trainer reach what another trainer owns. The eight
+Thirty-six endpoints, and not one of them lets a trainer reach what another trainer owns. The eight
 under `/Administration` act on something that is not the caller's by design and are the only eight
 that do — behind a role that is granted by hand and by no endpoint at all (ADR 0051). They are
 grouped by the authority they exercise rather than by the resource they act on, which is what that

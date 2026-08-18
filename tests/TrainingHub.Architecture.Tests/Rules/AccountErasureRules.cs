@@ -31,6 +31,12 @@ public sealed class AccountErasureRules
             nameof(AccountErasedIntegrationEvent.UserId),
             nameof(AccountErasedIntegrationEvent.Email),
             nameof(AccountErasedIntegrationEvent.Username),
+
+            // The fourth member since ADR 0091, admitted here for exactly this rule's own reason:
+            // the language the farewell is written in is read from the same place its address is,
+            // and for this one notice that place is the fact — because the account it would
+            // otherwise be read from is the one being erased.
+            nameof(AccountErasedIntegrationEvent.Language),
         };
 
         var properties = typeof(AccountErasedIntegrationEvent).GetProperties();
@@ -39,9 +45,9 @@ public sealed class AccountErasureRules
             .Selected("property the erasure's fact declares")
             .Where(property => !expected.Contains(property.Name, StringComparer.Ordinal))
             .Select(property =>
-                $"AccountErasedIntegrationEvent.{property.Name} is not one of the three members " +
-                "ADR 0085 names — the account, the address the farewell goes to, and the name it " +
-                "greets")
+                $"AccountErasedIntegrationEvent.{property.Name} is not one of the four members " +
+                "this fact carries — the account, the address the farewell goes to, the name it " +
+                "greets (ADR 0085), and the language it is written in (ADR 0091)")
             .Concat(properties.Any(property => property.Name == nameof(AccountErasedIntegrationEvent.Email))
                 ? []
                 : new[]

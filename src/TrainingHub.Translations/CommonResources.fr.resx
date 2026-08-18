@@ -42,6 +42,9 @@
   <data name="EmailAddress" xml:space="preserve">
     <value>Adresse e-mail</value>
   </data>
+  <data name="ErrorPageTitle" xml:space="preserve">
+    <value>Une erreur est survenue</value>
+  </data>
   <data name="FirstName" xml:space="preserve">
     <value>Prénom</value>
   </data>
@@ -50,6 +53,12 @@
   </data>
   <data name="LanguageChangeFailed" xml:space="preserve">
     <value>La langue n'a pas pu être changée. Réessayez dans un instant.</value>
+  </data>
+  <data name="LanguageNotOffered" xml:space="preserve">
+    <value>Cette langue n'est pas proposée.</value>
+  </data>
+  <data name="LanguageNotOfferedDetail" xml:space="preserve">
+    <value>Choisissez parmi : {0}.</value>
   </data>
   <data name="LastName" xml:space="preserve">
     <value>Nom</value>
@@ -66,6 +75,12 @@
   <data name="NoLongerAllowed" xml:space="preserve">
     <value>Vous n'êtes plus autorisé à faire cela. Reconnectez-vous pour voir où vous en êtes.</value>
   </data>
+  <data name="NotYoursToOpen" xml:space="preserve">
+    <value>Cette page ne vous est pas ouverte</value>
+  </data>
+  <data name="NotYoursToOpenBody" xml:space="preserve">
+    <value>Vous êtes connecté, mais cette page requiert une autorité que votre compte ne possède pas. Vous reconnecter n'y changera rien.</value>
+  </data>
   <data name="NothingAtThisAddress" xml:space="preserve">
     <value>Il n'y a rien à cette adresse</value>
   </data>
@@ -75,17 +90,14 @@
   <data name="NothingHerePageTitle" xml:space="preserve">
     <value>Rien ici — TrainingHub</value>
   </data>
-  <data name="NotYoursToOpen" xml:space="preserve">
-    <value>Cette page ne vous est pas ouverte</value>
-  </data>
-  <data name="NotYoursToOpenBody" xml:space="preserve">
-    <value>Vous êtes connecté, mais cette page requiert une autorité que votre compte ne possède pas. Vous reconnecter n'y changera rien.</value>
-  </data>
   <data name="Outbox" xml:space="preserve">
     <value>Boîte d'envoi</value>
   </data>
   <data name="Profile" xml:space="preserve">
     <value>Profil</value>
+  </data>
+  <data name="RequestIdentifier" xml:space="preserve">
+    <value>Identifiant de la demande</value>
   </data>
   <data name="RequestRejected" xml:space="preserve">
     <value>La demande a été rejetée.</value>
@@ -101,6 +113,15 @@
   </data>
   <data name="SignOutFailed" xml:space="preserve">
     <value>La déconnexion a échoué. Réessayez dans un instant.</value>
+  </data>
+  <data name="SiteDescription" xml:space="preserve">
+    <value>TrainingHub — là où les formateurs publient leurs formations, et où chacun peut les parcourir.</value>
+  </data>
+  <data name="SomethingWentWrong" xml:space="preserve">
+    <value>Une erreur est survenue</value>
+  </data>
+  <data name="SomethingWentWrongBody" xml:space="preserve">
+    <value>La demande n'a pas pu aboutir. Elle n'a rien modifié — réessayez, et si cela se reproduit, indiquez l'identifiant ci-dessous.</value>
   </data>
   <data name="SuspendedCannotChange" xml:space="preserve">
     <value>Les comptes suspendus ne peuvent effectuer aucune modification.</value>

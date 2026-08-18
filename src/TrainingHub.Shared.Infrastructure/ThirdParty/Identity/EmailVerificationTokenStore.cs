@@ -72,7 +72,12 @@ public sealed class EmailVerificationTokenStore(
 
         var link = $"{options.Value.LinkBaseAddress.TrimEnd('/')}/verify-email?token={Uri.EscapeDataString(token)}";
 
-        return new EmailVerificationInvitation(link, user.UserName ?? user.Email, user.Email);
+        // Read from the same account the mint just loaded, so the invitation answers who to write
+        // to and in what language in one breath (ADR 0091). A null here means the account stated
+        // no preference, and the composer is what turns that into the default.
+        var language = await LanguageOfAsync(user.Id, cancellationToken).ConfigureAwait(false);
+
+        return new EmailVerificationInvitation(link, user.UserName ?? user.Email, user.Email, language);
     }
 
     /// <inheritdoc />
@@ -109,5 +114,18 @@ public sealed class EmailVerificationTokenStore(
     /// malformed token digests to something that matches nothing instead of throwing — every
     /// wrong token walks the same path as a valid-looking one.
     /// </remarks>
+    /// <summary>The language the account chose, or <see langword="null"/> when it chose none.</summary>
+    /// <remarks>
+    /// One indexed read on a primary key, on the same context the credential was just written
+    /// through. The fallback is not applied here: the composer owns it, because it is the one
+    /// corner allowed to name the list of languages (ADR 0091).
+    /// </remarks>
+    private Task<string?> LanguageOfAsync(Guid userId, CancellationToken cancellationToken) =>
+        identityContext.Set<AccountLanguage>()
+            .AsNoTracking()
+            .Where(preference => preference.UserId == userId)
+            .Select(preference => preference.Language)
+            .FirstOrDefaultAsync(cancellationToken);
+
     private static byte[] Digest(string token) => SHA256.HashData(Encoding.UTF8.GetBytes(token));
 }

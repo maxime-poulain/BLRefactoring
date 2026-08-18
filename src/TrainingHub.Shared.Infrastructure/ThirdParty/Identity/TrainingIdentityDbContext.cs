@@ -25,10 +25,11 @@ public sealed class TrainingIdentityDbContext : IdentityDbContext<IdentityUser<G
     /// <param name="builder">The builder for the model.</param>
     /// <remarks>
     /// The base call comes first and is not optional: it is what shapes the seven Identity tables,
-    /// and the reset credential of ADR 0084 is a guest in that store, keyed to its
-    /// <c>AspNetUsers</c> row. Applied by name rather than through the configuration interface,
-    /// for the reason the configuration itself records: the business context scans this assembly
-    /// for that interface, and the credential belongs to this model alone.
+    /// and the three guests below are keyed to their <c>AspNetUsers</c> row — the reset credential
+    /// of ADR 0084, the verification credential of ADR 0090, and the language preference of
+    /// ADR 0091. Each is applied by name rather than through the configuration interface, for the
+    /// reason the configurations themselves record: the business context scans this assembly for
+    /// that interface, and these tables belong to this model alone.
     /// </remarks>
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -36,5 +37,6 @@ public sealed class TrainingIdentityDbContext : IdentityDbContext<IdentityUser<G
 
         PasswordResetTokenConfiguration.Configure(builder.Entity<PasswordResetToken>());
         EmailVerificationTokenConfiguration.Configure(builder.Entity<EmailVerificationToken>());
+        AccountLanguageConfiguration.Configure(builder.Entity<AccountLanguage>());
     }
 }

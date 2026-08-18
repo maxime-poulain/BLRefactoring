@@ -1,9 +1,11 @@
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using NetArchTest.Rules;
 using TrainingHub.Architecture.Tests.Framework;
 using TrainingHub.Shared.Common.Errors;
+using TrainingHub.Shared.Domain.Aggregates.TrainingAggregate.ValueObjects;
 using Xunit;
 
 namespace TrainingHub.Architecture.Tests.Rules;
@@ -35,6 +37,15 @@ public sealed partial class LocalizationRules
 
     /// <summary>Where the resource families live, as the repository writes the path.</summary>
     private const string TranslationsRoot = "src/TrainingHub.Translations/";
+
+    /// <summary>Where the consumers that send an email live, as the repository writes the path.</summary>
+    private const string ConsumersRoot = "src/TrainingHub.Shared.Application/IntegrationEventHandlers/";
+
+    /// <summary>Where the browser's half of this product lives, as the repository writes the path.</summary>
+    private const string WebRoot = "src/Web/";
+
+    /// <summary>The product's name, which is a name in every language and therefore not a word.</summary>
+    private const string Brand = "TrainingHub";
 
     /// <summary>The composition roots the culture decision is about, by host.</summary>
     private static readonly string[] ApiHostPrograms =
@@ -348,6 +359,361 @@ public sealed partial class LocalizationRules
             .ShouldHold();
     }
 
+    /// <summary>
+    /// No notice, composes its own prose.
+    /// </summary>
+    /// <remarks>
+    /// The presence half of ADR 0091, and the half that makes the deferral impossible to reopen:
+    /// a consumer that writes its own subject and body writes them in one language, and every
+    /// recipient who reads another gets English by accident rather than by decision. So the
+    /// message a consumer hands the gateway carries a composed notification's two properties and
+    /// nothing else — a literal cannot match the shape, which is the point. The prose itself lives
+    /// where ADR 0090 put it, in the resource families the email corner of the infrastructure
+    /// reads.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0091",
+        "no consumer writes the words of an email: the message it sends carries a composed " +
+        "notification's subject and body, and the words come from the translations")]
+    public void NoNotice_ComposesItsOwnProse() =>
+        EmailConsumers()
+            .Selected("email consumer")
+            .Select(consumer => (consumer.Relative, Match: ComposedMessage.Match(consumer.Text)))
+            .Where(consumer => !consumer.Match.Success
+                               || !string.Equals(
+                                   consumer.Match.Groups["subject"].Value,
+                                   consumer.Match.Groups["body"].Value,
+                                   StringComparison.Ordinal))
+            .Select(consumer =>
+                $"{consumer.Relative} builds an EmailMessage whose subject and body are not one " +
+                "composed notification's. A consumer that writes its own prose writes it in one " +
+                "language, and every recipient who reads another gets English by accident " +
+                "(ADR 0091)")
+            .ShouldHold();
+
+    /// <summary>
+    /// Every notice, reads its language where it reads its address.
+    /// </summary>
+    /// <remarks>
+    /// ADR 0091's thesis, made mechanical. An email is written in the language of the person who
+    /// opens it, and the only way to be sure of that is to take the language from whatever
+    /// resolved the recipient: the fact when the address rides on the fact, the invitation when
+    /// the store just minted one, the read port when a port answered who to tell. Reading it
+    /// anywhere else means reading the culture of whoever triggered the action — which is right
+    /// for the five notices a person sends themselves and wrong for the four an administrator or
+    /// a visitor causes, and a rule cannot tell the two apart. Same root, both times, is what it
+    /// can tell.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0091",
+        "an email is written in the language of its recipient, and that language is read from " +
+        "the same source as their address — never from the culture of whoever caused it")]
+    public void EveryNotice_ReadsItsLanguageWhereItReadsItsAddress() =>
+        EmailConsumers()
+            .Selected("email consumer")
+            .Select(consumer => (
+                consumer.Relative,
+                Address: ComposedMessage.Match(consumer.Text).Groups["address"].Value,
+                Language: ComposedLanguage.Match(consumer.Text).Groups["language"].Value))
+            .Where(consumer => consumer.Language.Length == 0
+                               || !string.Equals(consumer.Address, consumer.Language, StringComparison.Ordinal))
+            .Select(consumer => consumer.Language.Length == 0
+                ? $"{consumer.Relative} composes no notification from a Language: it cannot be " +
+                  "writing in the recipient's (ADR 0091)"
+                : $"{consumer.Relative} addresses '{consumer.Address}' but composes from " +
+                  $"'{consumer.Language}.Language'. The language belongs to the person who opens " +
+                  "the message, so it is read wherever their address was (ADR 0091)")
+            .ShouldHold();
+
+    /// <summary>Every consumer that sends an email, with its source.</summary>
+    private static IReadOnlyList<(string Relative, string Text)> EmailConsumers() =>
+    [
+        .. SourceTree.SourceFiles
+            .Select(path => (Relative: SourceTree.Relative(path), Text: SourceTree.ReadText(path)))
+            .Where(file => file.Relative.StartsWith(ConsumersRoot, StringComparison.Ordinal)
+                           && file.Text.Contains("new EmailMessage(", StringComparison.Ordinal))
+            .OrderBy(file => file.Relative, StringComparer.Ordinal)
+    ];
+
+    /// <summary>
+    /// Every topic, is named by the translations.
+    /// </summary>
+    /// <remarks>
+    /// The census of ADR 0091's other half, in the shape
+    /// <see cref="EveryDomainErrorKey_IsACodeTheDomainRaises"/> already uses and in both
+    /// directions, because both failures are silent. A subject with no key renders its key on
+    /// four screens, in every language at once; a key naming no subject is a translation of
+    /// nothing, kept green by never being asked for. The names themselves stay English wherever
+    /// they are values rather than words — the filter's query string, the contract's
+    /// <c>[KnownTopic]</c>, the search index — so what a visitor reads and what a request carries
+    /// are deliberately two different things.
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0091",
+        "the closed set of subjects is a vocabulary a visitor reads: every topic the domain " +
+        "admits has a key in the topic family, and every key in it names a topic")]
+    public void EveryTopic_IsNamedByTheTranslations()
+    {
+        var declared = Topic.GetTopics()
+            .Select(topic => topic.Name)
+            .Selected("topic")
+            .ToDictionary(TopicKey, name => name, StringComparer.Ordinal);
+
+        var keys = NeutralKeysOf(new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal), "TopicResources");
+
+        declared.Keys
+            .Except(keys, StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .Select(key =>
+                $"TopicResources.resx declares no '{key}' for the topic '{declared[key]}': the " +
+                "four screens that offer it would show the key itself (ADR 0091)")
+            .Concat(keys
+                .Except(declared.Keys, StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal)
+                .Select(key =>
+                    $"TopicResources.resx carries '{key}', which names no topic the domain " +
+                    "admits: a translation of nothing, kept green by never being asked for " +
+                    "(ADR 0091)"))
+            .ShouldHold();
+    }
+
+    /// <summary>
+    /// The key a topic's name is filed under: its own name in Pascal case, prefixed by the family.
+    /// </summary>
+    /// <remarks>
+    /// Derived rather than mapped, so a topic added to the closed set names its key without a
+    /// second list to keep in step — and the derivation lands on the identifier the front end
+    /// already uses for the same subject, <c>DataAndAnalytics</c> for <c>Data and Analytics</c>.
+    /// </remarks>
+    private static string TopicKey(string name) =>
+        "Topic_" + string.Concat(name
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(word => char.ToUpperInvariant(word[0]) + word[1..]));
+
+    /// <summary>
+    /// No screen, shows a word it did not ask for.
+    /// </summary>
+    /// <remarks>
+    /// The direction <see cref="EveryKeyAScreenAsks_ExistsInItsFamily"/> deliberately leaves open,
+    /// and the reason ADR 0091 closes it: that rule holds a key a screen asks against its family,
+    /// so a screen that asks for nothing at all satisfies it perfectly. Until this rule, every
+    /// translated screen in this repository was translated by discipline — one
+    /// <c>&lt;MudText&gt;Saved&lt;/MudText&gt;</c> would have shipped in English to a French
+    /// visitor and no build, no request and no test would have said so.
+    /// <para>
+    /// What it reads is the markup alone: the <c>@code</c> block, the directives, the comments,
+    /// the scripts and the styles are removed first, then every Razor transition to C# is
+    /// consumed, and what remains between the tags is what a browser paints. Two things in it are
+    /// not words a visitor reads, and both are named rather than guessed — an HTML entity, and a
+    /// C# statement inside a control-flow block, which ends in a semicolon where prose never
+    /// does.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0091",
+        "every word a screen paints comes from a resource family: a literal between the tags of " +
+        "a component is a sentence one language gets and the other two never will")]
+    public void NoScreen_ShowsAWordItDidNotAskFor() =>
+        SourceTree.AllFiles
+            .Where(path => path.EndsWith(".razor", StringComparison.OrdinalIgnoreCase)
+                           && !Path.GetFileName(path).Equals("_Imports.razor", StringComparison.Ordinal))
+            .Select(path => (Relative: SourceTree.Relative(path), Absolute: path))
+            .Where(file => file.Relative.StartsWith(WebRoot, StringComparison.Ordinal))
+            .OrderBy(file => file.Relative, StringComparer.Ordinal)
+            .Selected("component of the web front end")
+            .SelectMany(file => PaintedLiterals(file.Absolute)
+                .Select(literal => $"{file.Relative} paints \"{literal}\", which it asked no " +
+                                   "family for: the other two languages would read it in English, " +
+                                   "and nothing would report it (ADR 0091)"))
+            .ShouldHold();
+
+    /// <summary>Every run of words a component paints without asking a family for it.</summary>
+    /// <remarks>
+    /// The brand is the one exemption, and it is an exemption because it is not a word: a product
+    /// is called what it is called in every language, and translating <c>TrainingHub</c> would be
+    /// translating a name.
+    /// </remarks>
+    private static IEnumerable<string> PaintedLiterals(string absolutePath) =>
+        TextNodes(Markup(SourceTree.ReadText(absolutePath)))
+            .SelectMany(node => node.Split('\n'))
+            .Where(line => !CodeFragment.IsMatch(line))
+            .Select(line => HtmlEntity.Replace(line, " ").Replace(Brand, " ", StringComparison.Ordinal).Trim())
+            .Where(line => Word.IsMatch(line));
+
+    /// <summary>What a browser is asked to paint: the file, minus everything that is not markup.</summary>
+    private static string Markup(string razor)
+    {
+        var code = CodeBlock.Match(razor);
+        var markup = code.Success ? razor[..code.Index] : razor;
+
+        markup = RazorComment.Replace(markup, " ");
+        markup = HtmlComment.Replace(markup, " ");
+        markup = ScriptOrStyle.Replace(markup, " ");
+
+        return Directive.Replace(markup, " ");
+    }
+
+    /// <summary>
+    /// The text between the tags, with every Razor transition to C# consumed.
+    /// </summary>
+    /// <remarks>
+    /// Hand-walked rather than matched, because a transition ends where its brackets balance and
+    /// no regular expression counts brackets. Everything a tag holds is skipped whole — an
+    /// attribute's value is not a text node, and the one attribute a person reads,
+    /// <c>aria-label</c>, is already held by <see cref="EveryKeyAScreenAsks_ExistsInItsFamily"/>
+    /// through the localizer it has to name.
+    /// </remarks>
+    private static IEnumerable<string> TextNodes(string markup)
+    {
+        var nodes = new List<string>();
+        var index = 0;
+
+        while (index < markup.Length)
+        {
+            if (markup[index] == '<')
+            {
+                index = EndOfTag(markup, index);
+                continue;
+            }
+
+            var node = new StringBuilder();
+
+            while (index < markup.Length && markup[index] != '<')
+            {
+                if (markup[index] != '@')
+                {
+                    node.Append(markup[index++]);
+                    continue;
+                }
+
+                // "@@" is how Razor writes a literal at sign, and it paints one character.
+                index = index + 1 < markup.Length && markup[index + 1] == '@'
+                    ? index + 2
+                    : EndOfTransition(markup, index);
+            }
+
+            nodes.Add(node.ToString());
+        }
+
+        return nodes;
+    }
+
+    /// <summary>The index just past a tag, quoted attribute values included.</summary>
+    private static int EndOfTag(string markup, int index)
+    {
+        while (index < markup.Length && markup[index] != '>')
+        {
+            if (markup[index] == '"')
+            {
+                index++;
+
+                while (index < markup.Length && markup[index] != '"')
+                {
+                    index++;
+                }
+            }
+
+            index++;
+        }
+
+        return index + 1;
+    }
+
+    /// <summary>The index just past a Razor transition to C#, whatever shape it takes.</summary>
+    private static int EndOfTransition(string markup, int index)
+    {
+        var start = index + 1;
+
+        if (start < markup.Length && markup[start] is '{' or '(')
+        {
+            return Balanced(markup, start);
+        }
+
+        var keyword = Keyword.Match(markup[start..]);
+
+        if (keyword.Success)
+        {
+            var afterKeyword = SkipWhitespace(markup, start + keyword.Length);
+
+            return afterKeyword < markup.Length && markup[afterKeyword] == '('
+                ? Balanced(markup, afterKeyword)
+                : start + keyword.Length;
+        }
+
+        var cursor = start;
+
+        while (cursor < markup.Length && (char.IsLetterOrDigit(markup[cursor]) || markup[cursor] == '_'))
+        {
+            cursor++;
+        }
+
+        while (cursor < markup.Length)
+        {
+            if (markup[cursor] is '(' or '[')
+            {
+                cursor = Balanced(markup, cursor);
+            }
+            else if (markup[cursor] == '?' && cursor + 1 < markup.Length && markup[cursor + 1] == '.')
+            {
+                cursor++;
+            }
+            else if (markup[cursor] == '.'
+                     && cursor + 1 < markup.Length
+                     && (char.IsLetter(markup[cursor + 1]) || markup[cursor + 1] == '_'))
+            {
+                cursor++;
+
+                while (cursor < markup.Length && (char.IsLetterOrDigit(markup[cursor]) || markup[cursor] == '_'))
+                {
+                    cursor++;
+                }
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return cursor;
+    }
+
+    /// <summary>The index just past the bracket opened at <paramref name="index"/>.</summary>
+    private static int Balanced(string markup, int index)
+    {
+        var depth = 0;
+
+        while (index < markup.Length)
+        {
+            if (markup[index] is '(' or '[' or '{')
+            {
+                depth++;
+            }
+            else if (markup[index] is ')' or ']' or '}')
+            {
+                depth--;
+
+                if (depth == 0)
+                {
+                    return index + 1;
+                }
+            }
+
+            index++;
+        }
+
+        return markup.Length;
+    }
+
+    private static int SkipWhitespace(string markup, int index)
+    {
+        while (index < markup.Length && char.IsWhiteSpace(markup[index]))
+        {
+            index++;
+        }
+
+        return index;
+    }
+
     /// <summary>Every (family, key) pair a source file asks of a localizer by literal.</summary>
     /// <remarks>
     /// The map is built from the file's own declarations — a Razor <c>@inject</c> and a C#
@@ -425,6 +791,49 @@ public sealed partial class LocalizationRules
 
     [GeneratedRegex(@"(?<name>\w+)\[""(?<key>[^""]+)""")]
     private static partial Regex LocalizerLookup { get; }
+
+    [GeneratedRegex(@"new EmailMessage\(\s*(?<address>\w+)\.\w+,\s*(?<subject>\w+)\.Subject,\s*(?<body>\w+)\.Body")]
+    private static partial Regex ComposedMessage { get; }
+
+    [GeneratedRegex(@"composer\.\w+\(\s*(?<language>\w+)\.Language\b")]
+    private static partial Regex ComposedLanguage { get; }
+
+    [GeneratedRegex(@"^@code\b", RegexOptions.Multiline)]
+    private static partial Regex CodeBlock { get; }
+
+    [GeneratedRegex(@"@\*.*?\*@", RegexOptions.Singleline)]
+    private static partial Regex RazorComment { get; }
+
+    [GeneratedRegex(@"<!--.*?-->", RegexOptions.Singleline)]
+    private static partial Regex HtmlComment { get; }
+
+    [GeneratedRegex(@"<(?<tag>script|style)\b.*?</\k<tag>>", RegexOptions.Singleline | RegexOptions.IgnoreCase)]
+    private static partial Regex ScriptOrStyle { get; }
+
+    [GeneratedRegex(
+        @"^[ \t]*@(page|using|inject|inherits|implements|attribute|namespace|typeparam|layout|rendermode|preservewhitespace)\b.*$",
+        RegexOptions.Multiline)]
+    private static partial Regex Directive { get; }
+
+    [GeneratedRegex(@"^(if|else|foreach|for|while|switch|do|try|catch|finally|lock|using)\b")]
+    private static partial Regex Keyword { get; }
+
+    /// <summary>
+    /// A line of a text node that is not prose: markup punctuation, or a C# statement.
+    /// </summary>
+    /// <remarks>
+    /// A control-flow block's body is C# that happens to hold markup, so a statement standing
+    /// between two elements — <c>var topic = facet.Topic;</c> inside a <c>@foreach</c> — reaches
+    /// the scan as text. It ends in a semicolon, and prose never does.
+    /// </remarks>
+    [GeneratedRegex(@"^\s*([{}]+|(else|case|default)\b.*|.*;)\s*$")]
+    private static partial Regex CodeFragment { get; }
+
+    [GeneratedRegex(@"&[a-zA-Z]+;|&#\d+;")]
+    private static partial Regex HtmlEntity { get; }
+
+    [GeneratedRegex(@"\p{L}{2,}")]
+    private static partial Regex Word { get; }
 
     [GeneratedRegex(@"All\s*=\s*\[(?<items>[^\]]*)\]")]
     private static partial Regex DeclaredList { get; }

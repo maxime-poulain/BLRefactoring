@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 90 architecture decision records.
+2. `docs/adr/README.md` — the index of 91 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 229 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 233 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -161,11 +161,21 @@ repository a named question and maps the aggregates.
   may load it and no inner circle may reference it (ADR 0088,
   `NoInnerCircle_ReferencesTheTranslations`, `TheTranslations_DependOnNothing`). The domain keeps
   authoring codes; sentences are the boundary's.
-- Composing an email is presentation too: the application asks
-  `IVerificationEmailComposer` for finished words, and the adapter lives in
-  `Shared.Infrastructure/Email/` beside `SmtpEmailSender` — the one corner of the infrastructure
+- Composing an email is presentation too: the application asks `INotificationComposer` for finished
+  words — one method per notice, ten of them — and the adapter lives in
+  `Shared.Infrastructure/Email/` beside `SmtpEmailSender`, the one corner of the infrastructure
   allowed to read Translations (`OnlyTheEmailCorner_OfTheInfrastructureReadsTheTranslations`,
   ADR 0090). A repository, an interceptor, the outbox processor never compose prose.
+- **An email is written in its recipient's language, and that language is read where their address
+  is** (ADR 0091). The account states it at registration and changes it from the language selector;
+  each consumer takes it from whatever resolved the recipient — the fact, the invitation, or the
+  read port — and never from the culture of whoever caused the notice, which for a suspension is
+  the administrator's. Two rules hold it: `EveryNotice_ReadsItsLanguageWhereItReadsItsAddress` and
+  `NoNotice_ComposesItsOwnProse`.
+- **A word between the tags of a `.razor` is a red build** (`NoScreen_ShowsAWordItDidNotAskFor`),
+  with the brand as the one named exemption. The topics are a family of their own, keyed by name
+  and censused both ways against the domain's closed set — and the *value* that travels stays the
+  English name, because a filter key is a value and not a word.
 - One list, one default: `SupportedLanguages` (`en`, `fr`, `ru`, default `en`). Adding a language
   means growing that list, adding the culture's resx beside every neutral file with **exactly**
   the same keys (`EveryCultureResource_CarriesExactlyTheDefaultsKeys`), and declaring the new

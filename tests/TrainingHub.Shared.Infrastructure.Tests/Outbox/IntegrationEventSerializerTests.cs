@@ -20,8 +20,8 @@ public sealed class IntegrationEventSerializerTests
     // of each registered integration event.
     private static readonly IIntegrationEvent[] Instances =
     [
-        new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "John", "Doe", "john.doe@example.com"),
-        new TrainerContactEmailChangedIntegrationEvent(Guid.NewGuid(), "old@example.com", "new@example.com"),
+        new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "John", "Doe", "john.doe@example.com", "en"),
+        new TrainerContactEmailChangedIntegrationEvent(Guid.NewGuid(), "old@example.com", "new@example.com", "en"),
         new TrainerSuspendedIntegrationEvent(Guid.NewGuid(), "Repeated breaches of the content policy."),
         new TrainerReinstatedIntegrationEvent(Guid.NewGuid()),
         new TrainerContactedIntegrationEvent(
@@ -35,9 +35,9 @@ public sealed class IntegrationEventSerializerTests
         new TrainingDeletedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
         new TrainerDeletedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
         new PasswordResetRequestedIntegrationEvent("grace.hopper@example.org"),
-        new EmailVerificationRequestedIntegrationEvent(Guid.NewGuid(), "fr"),
-        new PasswordChangedIntegrationEvent(Guid.NewGuid(), "grace.hopper@example.org", "grace.hopper"),
-        new AccountErasedIntegrationEvent(Guid.NewGuid(), "grace.hopper@example.org", "grace.hopper"),
+        new EmailVerificationRequestedIntegrationEvent(Guid.NewGuid()),
+        new PasswordChangedIntegrationEvent(Guid.NewGuid(), "grace.hopper@example.org", "grace.hopper", "en"),
+        new AccountErasedIntegrationEvent(Guid.NewGuid(), "grace.hopper@example.org", "grace.hopper", "en"),
     ];
 
     /// <summary>One instance of each registered integration event, as theory rows.</summary>

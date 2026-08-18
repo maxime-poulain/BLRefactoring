@@ -44,7 +44,7 @@ public sealed class OutboxIntegrationEventPublisherTests
         await using var context = CreateUnconnectedContext();
         var sut = new OutboxIntegrationEventPublisher(context, new StoppedClock(Now));
         var integrationEvent = new TrainerCreatedIntegrationEvent(
-            Guid.NewGuid(), "John", "Doe", "john.doe@example.com");
+            Guid.NewGuid(), "John", "Doe", "john.doe@example.com", "en");
 
         await sut.PublishAsync(integrationEvent);
 
@@ -70,7 +70,7 @@ public sealed class OutboxIntegrationEventPublisherTests
         await using var context = CreateUnconnectedContext();
         var sut = new OutboxIntegrationEventPublisher(context, new StoppedClock(Now));
         var integrationEvent = new TrainerCreatedIntegrationEvent(
-            Guid.NewGuid(), "Ada", "Lovelace", "ada.lovelace@example.com");
+            Guid.NewGuid(), "Ada", "Lovelace", "ada.lovelace@example.com", "en");
 
         await sut.PublishAsync(integrationEvent);
 
