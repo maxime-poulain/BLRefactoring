@@ -31,6 +31,10 @@ public sealed class CreateTrainingCommandHandlerTests
                 It.IsAny<TrainerId>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
+
+        _trainerVerification
+            .Setup(v => v.IsVerifiedAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
     }
 
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
@@ -42,9 +46,13 @@ public sealed class CreateTrainingCommandHandlerTests
     // Answers "not suspended" unless a test raises it, for the same reason as the counter above.
     private readonly Mock<ITrainerStanding> _trainerStanding = new();
 
+    // Answers "verified" from the constructor, because a bare mock would answer false and fail
+    // every fact that is not about the rule (ADR 0090).
+    private readonly Mock<ITrainerVerification> _trainerVerification = new();
+
     private CreateTrainingCommandHandler CreateSut() =>
         new(_trainingRepository.Object, _trainerRepository.Object, _titleChecker.Object, _trainingCounter.Object,
-            _trainerStanding.Object, _currentUserService.Object, _unitOfWork.Object);
+            _trainerStanding.Object, _trainerVerification.Object, _currentUserService.Object, _unitOfWork.Object);
 
     /// <summary>
     /// Handle, valid command, returns success and calls save.

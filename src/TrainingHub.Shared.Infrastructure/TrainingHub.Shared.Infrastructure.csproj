@@ -43,6 +43,12 @@
         framework, the one piece it genuinely needs is requested on its own.
       -->
       <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+      <!--
+        IStringLocalizer, for VerificationEmailComposer. The hosts register the localization
+        services; this project only needs the abstraction the composer injects, and the resource
+        lookup machinery rides along with it. See ADR 0090.
+      -->
+      <PackageReference Include="Microsoft.Extensions.Localization" />
     </ItemGroup>
 
     <!--
@@ -57,6 +63,13 @@
     <ItemGroup>
       <ProjectReference Include="..\TrainingHub.Shared.Application\TrainingHub.Shared.Application.csproj" />
       <ProjectReference Include="..\TrainingHub.Shared.Domain\TrainingHub.Shared.Domain.csproj" />
+      <!--
+        Translations, for the one presenter this ring holds: VerificationEmailComposer reads
+        NotificationResources to put finished words into an email. A rule fences the reference to
+        the Email namespace — the domain and the application stay clean of it, and no repository,
+        interceptor or outbox plumbing composes prose. See ADR 0090.
+      -->
+      <ProjectReference Include="..\TrainingHub.Translations\TrainingHub.Translations.csproj" />
     </ItemGroup>
 
 </Project>

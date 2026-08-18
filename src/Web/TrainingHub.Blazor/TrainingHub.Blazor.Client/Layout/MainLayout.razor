@@ -42,6 +42,10 @@
         <AuthorizeView>
             <Authorized>
                 <SuspensionBanner />
+                @* Beside the suspension for the same reason, in a friendlier voice: it asks for
+                   one click, offers the resend, and dies without a reload the moment the address
+                   is proven, because the standing source rereads the database (ADR 0090). *@
+                <VerificationBanner />
             </Authorized>
         </AuthorizeView>
         @Body

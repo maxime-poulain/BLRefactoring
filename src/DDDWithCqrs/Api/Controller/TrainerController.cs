@@ -9,6 +9,7 @@ using TrainingHub.Shared.Api.Contracts.Mappings;
 using TrainingHub.Shared.Api.Contracts.Trainers;
 using TrainingHub.Shared.Api.Controllers;
 using TrainingHub.Shared.Api.Http;
+using TrainingHub.Shared.Application.Queries;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 using TrainingHub.Shared.Common.Errors;
 using TrainingHub.Shared.CQS;
@@ -30,9 +31,16 @@ namespace TrainingHub.DDDWithCqrs.Api.Controller;
 public sealed class TrainerController(
     ICommandDispatcher commandDispatcher,
     IQueryDispatcher queryDispatcher,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IAccountVerificationQuery accountVerificationQuery)
     : ApiControllerBase
 {
+    /// <summary>
+    /// The verification flag every answer describing the caller carries (ADR 0090).
+    /// </summary>
+    private Task<bool> IsCallerVerifiedAsync(CancellationToken cancellationToken) =>
+        accountVerificationQuery.IsVerifiedAsync(currentUserService.UserId, cancellationToken);
+
     /// <summary>
     /// Retrieves the profile of the authenticated trainer.
     /// </summary>
@@ -56,7 +64,7 @@ public sealed class TrainerController(
         }
 
         this.SetETag(trainer.RowVersion);
-        return Ok(trainer.ToHttp());
+        return Ok(trainer.ToHttp(await IsCallerVerifiedAsync(cancellationToken)));
     }
 
     /// <summary>
@@ -113,7 +121,7 @@ public sealed class TrainerController(
                 }
 
                 this.SetETag(trainer.RowVersion);
-                return Ok(trainer.ToHttp());
+                return Ok(trainer.ToHttp(await IsCallerVerifiedAsync(cancellationToken)));
             },
             onFailure: errors => ValueTask.FromResult<ActionResult>(
                 errors.Any(error => error.ErrorCode == ErrorCodes.NotFound) ? NotFound()
@@ -207,7 +215,9 @@ public sealed class TrainerController(
                 var trainer = await queryDispatcher.DispatchAsync(
                     HttpToApplicationMappings.ToGetTrainerByIdQuery(trainerId), cancellationToken);
 
-                return trainer is null ? NotFound() : Ok(trainer.ToHttp());
+                return trainer is null
+                    ? NotFound()
+                    : Ok(trainer.ToHttp(await IsCallerVerifiedAsync(cancellationToken)));
             },
             onFailure: errors => ValueTask.FromResult(this.PhotoProblem(errors)));
     }

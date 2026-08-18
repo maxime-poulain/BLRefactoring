@@ -72,6 +72,19 @@ public static class ServiceCollectionExtensions
                 $"'{PasswordResetOptions.SectionName}:{nameof(PasswordResetOptions.LinkBaseAddress)}' must be an absolute URL.")
             .ValidateOnStart();
 
+        // The verification link's base address, in the reset link's exact mold and deliberately
+        // its own section: the two credentials are separate concepts end to end, and a
+        // deployment that moves one page keeps the other's address (ADR 0090).
+        services.AddOptions<EmailVerificationOptions>()
+            .Bind(configuration.GetSection(EmailVerificationOptions.SectionName))
+            .Validate(
+                verification => !string.IsNullOrWhiteSpace(verification.LinkBaseAddress),
+                $"Missing configuration value '{EmailVerificationOptions.SectionName}:{nameof(EmailVerificationOptions.LinkBaseAddress)}'.")
+            .Validate(
+                verification => Uri.TryCreate(verification.LinkBaseAddress, UriKind.Absolute, out _),
+                $"'{EmailVerificationOptions.SectionName}:{nameof(EmailVerificationOptions.LinkBaseAddress)}' must be an absolute URL.")
+            .ValidateOnStart();
+
         return services
             .AddScoped<IDomainEventDispatcher, MediatorDomainEventDispatcher>()
             .AddScoped<IUnitOfWork, UnitOfWork>()
@@ -88,13 +101,18 @@ public static class ServiceCollectionExtensions
             // implements it — resolved through ITrainerRepository for the same reason as above.
             .AddScoped<ITrainerStanding>(serviceProvider =>
                 (TrainerRepository)serviceProvider.GetRequiredService<ITrainerRepository>())
-            // The read side of six questions that used to cost a whole aggregate, or would have:
-            // who owns this training, which trainer is behind this Identity user, where a trainer
-            // is reachable as a person, where they are reachable as a professional, what a page of
-            // trainers is called, and whether a trainer is under suspension. Each answer is a
-            // handful of columns, and none of these ports can write — which is what a post-commit
-            // consumer may hold (ADR 0056). Two of them are read on the authorization path, before
-            // any use case runs (ADR 0053).
+            // The verification port answers about the account behind a trainer, which is a row of
+            // the Identity store — so its adapter is a class of its own rather than a repository
+            // method, and the only domain-port adapter that opens both stores (ADR 0090).
+            .AddScoped<ITrainerVerification, TrainerVerification>()
+            // The read side of seven questions that used to cost a whole aggregate, or would
+            // have: who owns this training, which trainer is behind this Identity user, where a
+            // trainer is reachable as a person, where they are reachable as a professional, what
+            // a page of trainers is called, whether a trainer is under suspension, and whether an
+            // account has proven its address. Each answer is a handful of columns, and none of
+            // these ports can write — which is what a post-commit consumer may hold (ADR 0056).
+            // Three of them are read on the authorization path, before any use case runs
+            // (ADR 0053, ADR 0090).
             //
             // The fourth and the third are deliberately not one port: an account address is a
             // credential and a contact address is something a trainer published, and keeping them
@@ -106,21 +124,27 @@ public static class ServiceCollectionExtensions
             .AddScoped<ITrainerContactQuery, TrainerContactQuery>()
             .AddScoped<ITrainerNamesQuery, TrainerNamesQuery>()
             .AddScoped<ITrainerStandingQuery, TrainerStandingQuery>()
+            .AddScoped<IAccountVerificationQuery, AccountVerificationQuery>()
             // The recovery credential's store (ADR 0084) — a writing port in the search indexer's
             // mold rather than a seventh read port: the consumer that issues a reset link and the
             // API flow that redeems one both write the Identity store, through this port's own
             // save and never through the unit of work.
             .AddScoped<IPasswordResetTokenStore, PasswordResetTokenStore>()
+            // The verification credential's store (ADR 0090) — the second writing port into the
+            // Identity store, deliberately not merged with the reset store: shared primitives,
+            // separate meanings.
+            .AddScoped<IEmailVerificationTokenStore, EmailVerificationTokenStore>()
             // Scoped like the DbContext it stages rows into: the publisher must share the unit of
             // work of the save that is dispatching the domain events (ADR 0002).
             .AddScoped<IIntegrationEventPublisher, OutboxIntegrationEventPublisher>()
             // The outbox's read side (ADR 0025, hardened per ADR 0033): the worker each host
             // runs, the processor it scopes per batch, the dispatcher that routes a fact to its
-            // consumers, and the nineteen consumers themselves — the policies that used to run
+            // consumers, and the twenty consumers themselves — the policies that used to run
             // inside the transaction, reattached after the commit, the six that answer a sanction
             // (ADR 0056), the one that carries a visitor's message to a trainer (ADR 0082), the
-            // two that guard an account's recovery (ADR 0084), and the two that close an
-            // account's erasure — the farewell, and the portrait's collector (ADR 0085).
+            // two that guard an account's recovery (ADR 0084), the one that mails the
+            // verification link (ADR 0090), and the two that close an account's erasure — the
+            // farewell, and the portrait's collector (ADR 0085).
             // The options bind above, validated.
             .AddScoped<OutboxProcessor>()
             .AddScoped<IntegrationEventDispatcher>()
@@ -158,6 +182,8 @@ public static class ServiceCollectionExtensions
                 RemovePortraitWhenTrainerDeletedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<PasswordResetRequestedIntegrationEvent>,
                 SendPasswordResetLinkWhenPasswordResetRequestedIntegrationEventHandler>()
+            .AddScoped<IIntegrationEventHandler<EmailVerificationRequestedIntegrationEvent>,
+                SendVerificationLinkWhenEmailVerificationRequestedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<PasswordChangedIntegrationEvent>,
                 SendPasswordChangedNoticeWhenPasswordChangedIntegrationEventHandler>()
             .AddScoped<IIntegrationEventHandler<AccountErasedIntegrationEvent>,

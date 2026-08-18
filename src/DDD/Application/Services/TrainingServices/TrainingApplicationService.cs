@@ -139,6 +139,7 @@ public sealed class TrainingApplicationService(
     IUniquenessTitleChecker uniquenessTitleChecker,
     ITrainingCounter trainingCounter,
     ITrainerStanding trainerStanding,
+    ITrainerVerification trainerVerification,
     ITrainingRepository trainingRepository,
     ICurrentUserService currentUserService,
     IUnitOfWork unitOfWork)
@@ -171,6 +172,7 @@ public sealed class TrainingApplicationService(
                 uniquenessTitleChecker,
                 trainingCounter,
                 trainerStanding,
+                trainerVerification,
                 cancellationToken),
             Result<Training>.FailureAsync);
 
@@ -447,7 +449,13 @@ public sealed class TrainingApplicationService(
         }
 
         var result = await TrainingTransferDomainService.TransferAsync(
-            training, recipient, trainingCounter, uniquenessTitleChecker, trainerStanding, cancellationToken);
+            training,
+            recipient,
+            trainingCounter,
+            uniquenessTitleChecker,
+            trainerStanding,
+            trainerVerification,
+            cancellationToken);
 
         return await result.MatchAsync(
             onSuccess: async () =>

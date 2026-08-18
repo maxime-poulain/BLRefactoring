@@ -33,6 +33,7 @@ public sealed class IntegrationEventDispatcher(
     IEnumerable<IIntegrationEventHandler<TrainingDeletedIntegrationEvent>> trainingDeletedConsumers,
     IEnumerable<IIntegrationEventHandler<TrainerDeletedIntegrationEvent>> trainerDeletedConsumers,
     IEnumerable<IIntegrationEventHandler<PasswordResetRequestedIntegrationEvent>> passwordResetRequestedConsumers,
+    IEnumerable<IIntegrationEventHandler<EmailVerificationRequestedIntegrationEvent>> emailVerificationRequestedConsumers,
     IEnumerable<IIntegrationEventHandler<PasswordChangedIntegrationEvent>> passwordChangedConsumers,
     IEnumerable<IIntegrationEventHandler<AccountErasedIntegrationEvent>> accountErasedConsumers)
 {
@@ -64,6 +65,7 @@ public sealed class IntegrationEventDispatcher(
             TrainingDeletedIntegrationEvent fact => HandleAllAsync(trainingDeletedConsumers, fact, alreadyDelivered, cancellationToken),
             TrainerDeletedIntegrationEvent fact => HandleAllAsync(trainerDeletedConsumers, fact, alreadyDelivered, cancellationToken),
             PasswordResetRequestedIntegrationEvent fact => HandleAllAsync(passwordResetRequestedConsumers, fact, alreadyDelivered, cancellationToken),
+            EmailVerificationRequestedIntegrationEvent fact => HandleAllAsync(emailVerificationRequestedConsumers, fact, alreadyDelivered, cancellationToken),
             PasswordChangedIntegrationEvent fact => HandleAllAsync(passwordChangedConsumers, fact, alreadyDelivered, cancellationToken),
             AccountErasedIntegrationEvent fact => HandleAllAsync(accountErasedConsumers, fact, alreadyDelivered, cancellationToken),
             _ => throw new InvalidOperationException(

@@ -38,6 +38,7 @@ public sealed class BffTests : IDisposable
     private const string ForgotPasswordPath = "bff/forgot-password";
 
     private const string ResetPasswordPath = "bff/reset-password";
+    private const string VerifyEmailPath = "bff/verify-email";
     private const string EraseAccountPath = "bff/erase-account";
     private const string UserPath = "bff/user";
     private const string LogoutPath = "bff/logout";
@@ -767,6 +768,77 @@ public sealed class BffTests : IDisposable
             "and gone one hop later (ADR 0084)");
         _factory.LoginApi.Requests.Should().HaveCount(
             10, "a request refused at the door must never reach the API, and never cost an email");
+    }
+
+    // ---------------------------------------------------------------- verifying an email
+
+    /// <summary>
+    /// A verification link reaches the api from a visitor with no session, and answers a bare
+    /// status.
+    /// </summary>
+    /// <remarks>
+    /// Sign-in's passthrough rather than the reset redemption's: the API's one refusal is one
+    /// fixed sentence the page renders in its own language, so no document crosses this host in
+    /// either direction (ADR 0090). Anonymous, because the visitor arrives from their inbox and
+    /// the session cookie is <c>SameSite=Strict</c> — even a signed-in trainer lands here bare.
+    /// </remarks>
+    [Fact]
+    public async Task A_verification_link_reaches_the_api_and_answers_a_bare_status()
+    {
+        _factory.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.NoContent);
+
+        var response = await VerifyEmailAsync();
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await response.Content.ReadAsStringAsync()).Should().BeEmpty();
+
+        var forwarded = _factory.LoginApi.Requests.Should().ContainSingle().Subject;
+
+        forwarded.Uri!.AbsolutePath.Should().Be("/Auth/verify-email");
+        forwarded.Authorization.Should().BeNull(
+            "the click is the proof — the visitor from the inbox has no credential to send");
+    }
+
+    /// <summary>
+    /// A dead verification link answers the bare status too.
+    /// </summary>
+    /// <remarks>
+    /// The API's problem document names a field the browser never submitted, so the BFF drops it
+    /// deliberately: the page owns the one localized dead-link sentence (ADR 0090).
+    /// </remarks>
+    [Fact]
+    public async Task A_dead_verification_link_answers_the_bare_status_too()
+    {
+        _factory.LoginApi.Respond = _ => new HttpResponseMessage(HttpStatusCode.BadRequest)
+        {
+            Content = new StringContent(
+                """{"title":"One or more validation errors occurred.","status":400}""",
+                System.Text.Encoding.UTF8,
+                "application/problem+json")
+        };
+
+        var response = await VerifyEmailAsync();
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync()).Should().BeEmpty(
+            "the dead-link sentence is the page's own, in the visitor's language (ADR 0090)");
+    }
+
+    /// <summary>
+    /// A verification without the application header never reaches the api.
+    /// </summary>
+    [Fact]
+    public async Task A_verification_without_the_application_header_never_reaches_the_api()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, VerifyEmailPath)
+        {
+            Content = JsonContent.Create(new { token = "the-emailed-token" })
+        };
+
+        var response = await _browser.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        _factory.LoginApi.Requests.Should().BeEmpty();
     }
 
     // ---------------------------------------------------------------- identity
@@ -1810,6 +1882,10 @@ public sealed class BffTests : IDisposable
             password = "a-new-password",
             confirmPassword = "a-new-password"
         }));
+
+    /// <summary>Redeems a verification link the way the front end does.</summary>
+    private Task<HttpResponseMessage> VerifyEmailAsync() =>
+        SendAsync(HttpMethod.Post, VerifyEmailPath, JsonContent.Create(new { token = "the-emailed-token" }));
 
     /// <summary>Sends what the front end sends: the marker header, always.</summary>
     private Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, HttpContent? content = null)

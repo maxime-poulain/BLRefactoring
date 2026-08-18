@@ -7,6 +7,7 @@ using TrainingHub.Shared.Api.Contracts.Mappings;
 using TrainingHub.Shared.Api.Contracts.Trainers;
 using TrainingHub.Shared.Api.Controllers;
 using TrainingHub.Shared.Api.Http;
+using TrainingHub.Shared.Application.Queries;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate.ValueObjects;
 using TrainingHub.Shared.Common.Errors;
 using Microsoft.AspNetCore.Authorization;
@@ -28,11 +29,20 @@ namespace TrainingHub.DDD.Api.Controller;
 /// </remarks>
 /// <param name="trainerApplicationService">Application service for trainer operations.</param>
 /// <param name="currentUserService">Provides the identity of the caller.</param>
+/// <param name="accountVerificationQuery">Whether the caller's account has proven its address —
+/// the Identity store's fact, stitched into the response at the boundary (ADR 0090).</param>
 public sealed class TrainerController(
     ITrainerApplicationService trainerApplicationService,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IAccountVerificationQuery accountVerificationQuery)
     : ApiControllerBase
 {
+    /// <summary>
+    /// The verification flag every answer describing the caller carries (ADR 0090).
+    /// </summary>
+    private Task<bool> IsCallerVerifiedAsync(CancellationToken cancellationToken) =>
+        accountVerificationQuery.IsVerifiedAsync(currentUserService.UserId, cancellationToken);
+
     /// <summary>
     /// Retrieves the profile of the authenticated trainer.
     /// </summary>
@@ -55,6 +65,8 @@ public sealed class TrainerController(
         var result = await trainerApplicationService.GetByIdAsync(
             currentUserService.TrainerId, cancellationToken);
 
+        var isEmailVerified = await IsCallerVerifiedAsync(cancellationToken);
+
         // The only refusal GetByIdAsync can answer is NotFound: the identifier comes from the
         // caller's own token, never from input that could fail validation. Declaring a 400 here
         // would promise an answer this action cannot give — and the CQRS host does not.
@@ -62,7 +74,7 @@ public sealed class TrainerController(
             trainer =>
             {
                 this.SetETag(trainer.RowVersion);
-                return Ok(trainer.ToHttp());
+                return Ok(trainer.ToHttp(isEmailVerified));
             },
             _ => NotFound());
     }
@@ -114,11 +126,13 @@ public sealed class TrainerController(
             expectedVersion,
             cancellationToken);
 
+        var isEmailVerified = await IsCallerVerifiedAsync(cancellationToken);
+
         return result.Match<ActionResult>(
             trainer =>
             {
                 this.SetETag(trainer.RowVersion);
-                return Ok(trainer.ToHttp());
+                return Ok(trainer.ToHttp(isEmailVerified));
             },
             errors =>
             {
@@ -209,8 +223,10 @@ public sealed class TrainerController(
         var result = await trainerApplicationService.SetPhotoAsync(
             content, request.Photo.ContentType, cancellationToken);
 
+        var isEmailVerified = await IsCallerVerifiedAsync(cancellationToken);
+
         return result.Match<ActionResult>(
-            trainer => Ok(trainer.ToHttp()),
+            trainer => Ok(trainer.ToHttp(isEmailVerified)),
             this.PhotoProblem);
     }
 

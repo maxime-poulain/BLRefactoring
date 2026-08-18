@@ -67,6 +67,12 @@ public static class BffEndpoints
             .AllowAnonymous()
             .RequireRateLimiting(BffExtensions.RecoveryWindowPolicy);
 
+        // Anonymous like the reset redemption, and for the same arrival: the visitor comes from
+        // their inbox, and the session cookie is SameSite=Strict, so even a signed-in trainer
+        // lands here bare. No window: a redemption costs the API one indexed read, and guessing
+        // 256 bits is not a plan a window needs an answer for (ADR 0090).
+        bff.MapPost("/verify-email", VerifyEmailAsync).AllowAnonymous();
+
         // The cast is load-bearing. LogoutAsync takes one HttpContext and returns a Task, which is
         // RequestDelegate's shape exactly, and that overload wins over the route-handler one: the
         // returned IResult is discarded — hence a 200 where 204 was written — and, far worse, the
@@ -300,6 +306,29 @@ public static class BffEndpoints
             problem,
             response.Content.Headers.ContentType?.ToString(),
             statusCode: (int)response.StatusCode);
+    }
+
+    /// <summary>
+    /// Passes a verification-link redemption on to the API, and its answer back — a status and
+    /// nothing more.
+    /// </summary>
+    /// <remarks>
+    /// Sign-in's passthrough shape rather than the reset redemption's, deliberately: the API's
+    /// one refusal is one fixed sentence for every way a link can be dead, and the page renders
+    /// its own localized version of it — a problem document naming a field the browser never
+    /// submitted would be dead weight on the wire (ADR 0090). The status is the whole verdict:
+    /// 204, the address is proven; 400, the link is dead.
+    /// </remarks>
+    private static async Task<IResult> VerifyEmailAsync(
+        VerifyEmailHttpRequest request,
+        IHttpClientFactory httpClientFactory,
+        CancellationToken cancellationToken)
+    {
+        var client = httpClientFactory.CreateClient(ApiClientName);
+
+        var response = await client.PostAsJsonAsync("/Auth/verify-email", request, cancellationToken);
+
+        return Results.StatusCode((int)response.StatusCode);
     }
 
     /// <summary>

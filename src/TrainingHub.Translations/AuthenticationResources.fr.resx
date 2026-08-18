@@ -13,7 +13,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AccountCreated" xml:space="preserve">
-    <value>Compte créé ! Connectez-vous maintenant.</value>
+    <value>Compte créé ! Consultez votre boîte mail pour le lien de vérification, puis connectez-vous.</value>
   </data>
   <data name="AlreadyHaveAccount" xml:space="preserve">
     <value>Vous avez déjà un compte ?</value>
@@ -30,6 +30,9 @@
   <data name="ChooseANewPassword" xml:space="preserve">
     <value>Choisissez un nouveau mot de passe</value>
   </data>
+  <data name="ConfirmMyAddress" xml:space="preserve">
+    <value>Confirmer mon adresse</value>
+  </data>
   <data name="ConfirmNewPasswordLabel" xml:space="preserve">
     <value>Confirmez le nouveau mot de passe</value>
   </data>
@@ -39,11 +42,17 @@
   <data name="ConfirmPasswordRequired" xml:space="preserve">
     <value>La confirmation du mot de passe est requise</value>
   </data>
+  <data name="ConfirmingYourAddress" xml:space="preserve">
+    <value>Confirmation…</value>
+  </data>
   <data name="CreateAnAccount" xml:space="preserve">
     <value>Créer un compte</value>
   </data>
   <data name="CreatingAccount" xml:space="preserve">
     <value>Création du compte...</value>
+  </data>
+  <data name="DeadVerificationLink" xml:space="preserve">
+    <value>Ce lien de vérification est invalide ou a déjà été utilisé. Si vous avez déjà vérifié votre adresse, connectez-vous simplement.</value>
   </data>
   <data name="DontHaveAccount" xml:space="preserve">
     <value>Pas encore de compte ?</value>
@@ -53,6 +62,9 @@
   </data>
   <data name="EmailRequired" xml:space="preserve">
     <value>Un e-mail est requis</value>
+  </data>
+  <data name="EmailVerified" xml:space="preserve">
+    <value>Votre adresse e-mail est vérifiée. Vous pouvez vous connecter et publier votre première formation.</value>
   </data>
   <data name="FirstNameLabel" xml:space="preserve">
     <value>Prénom</value>
@@ -170,5 +182,14 @@
   </data>
   <data name="UsernameRequired" xml:space="preserve">
     <value>Le nom d'utilisateur est requis</value>
+  </data>
+  <data name="VerifyEmailIntro" xml:space="preserve">
+    <value>Un clic nous confirme que cette adresse est la vôtre. Rien ne se passe tant que vous n&apos;appuyez pas sur le bouton.</value>
+  </data>
+  <data name="VerifyEmailMissingToken" xml:space="preserve">
+    <value>Il manque à cette adresse son jeton de vérification, il n&apos;y a donc rien à confirmer. Ouvrez le lien de l&apos;e-mail exactement tel qu&apos;il a été envoyé — ou demandez-en un nouveau depuis votre compte.</value>
+  </data>
+  <data name="VerifyEmailPageTitle" xml:space="preserve">
+    <value>Vérifiez votre adresse e-mail</value>
   </data>
 </root>

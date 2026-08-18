@@ -140,6 +140,10 @@ public abstract class DomainEventPipelineTest<TFactory>(TFactory factory) : Inte
         var titleChecker = scope.ServiceProvider.GetRequiredService<IUniquenessTitleChecker>();
         var trainingCounter = scope.ServiceProvider.GetRequiredService<ITrainingCounter>();
         var trainerStanding = scope.ServiceProvider.GetRequiredService<ITrainerStanding>();
+        // A stub rather than the registered adapter: this helper fabricates a trainer with no
+        // Identity account behind it, and the real port would honestly answer "unverified" for a
+        // row it cannot find. The verification rule is not what this pipeline test exercises.
+        var trainerVerification = new AlwaysVerified();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
         trainers.Add(Trainer.Create(
@@ -163,7 +167,8 @@ public abstract class DomainEventPipelineTest<TFactory>(TFactory factory) : Inte
                 [Topic.Programming],
                 titleChecker,
                 trainingCounter,
-                trainerStanding));
+                trainerStanding,
+                trainerVerification));
 
             trainings.Add(training);
             seeded.Add(training.Id);
@@ -178,6 +183,12 @@ public abstract class DomainEventPipelineTest<TFactory>(TFactory factory) : Inte
     /// Unwraps a result the fixture expects to succeed. A failure here is a broken test, not a
     /// failing assertion, so it throws rather than reporting.
     /// </summary>
+    private sealed class AlwaysVerified : ITrainerVerification
+    {
+        public Task<bool> IsVerifiedAsync(TrainerId trainerId, CancellationToken cancellationToken = default)
+            => Task.FromResult(true);
+    }
+
     private static T Required<T>(Result<T> result) => result.Match(
         value => value,
         errors => throw new InvalidOperationException(

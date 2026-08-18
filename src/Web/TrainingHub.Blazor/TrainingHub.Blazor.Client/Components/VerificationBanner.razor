@@ -1,0 +1,74 @@
+@using TrainingHub.Blazor.Client.Infrastructure
+@using TrainingHub.GeneratedClients
+@implements IDisposable
+@inject ITrainerStandingSource StandingSource
+@inject IAuthClient AuthClient
+@inject ISnackbar Snackbar
+@inject IStringLocalizer<CommonResources> L
+
+@if (!_standing.IsEmailVerified)
+{
+    @* Info rather than Warning, deliberately: an unverified trainer did nothing wrong — the
+       suspension banner accuses, this one asks for a click (ADR 0090). *@
+    <MudAlert Severity="Severity.Info" Class="mb-4" NoIcon="false">
+        <MudText Typo="Typo.subtitle2">@L["VerifyYourEmail"]</MudText>
+        <MudText Typo="Typo.body2" Class="mt-1">
+            @L["VerifyYourEmailBody"]
+        </MudText>
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Primary"
+                   Size="Size.Small"
+                   Disabled="_isResending"
+                   OnClick="ResendAsync"
+                   Class="mt-2">
+            @L["ResendVerificationEmail"]
+        </MudButton>
+    </MudAlert>
+}
+
+@code {
+    private TrainerStanding _standing = TrainerStanding.Active;
+    private bool _isResending;
+
+    protected override async Task OnInitializedAsync()
+    {
+        StandingSource.Changed += OnChanged;
+        _standing = await StandingSource.GetAsync();
+    }
+
+    private async void OnChanged()
+    {
+        _standing = await StandingSource.GetAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ResendAsync()
+    {
+        _isResending = true;
+        try
+        {
+            // Through the generated client and the proxy, which attaches the bearer: unlike the
+            // click from the inbox, the resend is a signed-in gesture (ADR 0090).
+            await AuthClient.ResendVerificationAsync();
+            Snackbar.Add(L["VerificationEmailSent"], Severity.Success);
+        }
+        catch (ApiException exception) when (exception.StatusCode == 429)
+        {
+            // The per-account window. Being told to wait is a verdict to render, not an outage:
+            // every resend also kills the previous link, which is why the window exists.
+            Snackbar.Add(L["VerificationResendRefused"], Severity.Warning);
+        }
+        catch (Exception exception)
+        {
+            // The detail is ours, not the user's — the sign-in page's rule, for the same reason.
+            Console.Error.WriteLine(exception);
+            Snackbar.Add(L["RequestRejected"], Severity.Error);
+        }
+        finally
+        {
+            _isResending = false;
+        }
+    }
+
+    public void Dispose() => StandingSource.Changed -= OnChanged;
+}

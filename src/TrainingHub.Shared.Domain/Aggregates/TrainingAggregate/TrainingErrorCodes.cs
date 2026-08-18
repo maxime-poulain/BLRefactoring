@@ -65,6 +65,20 @@ public static class TrainingErrorCodes
     /// </summary>
     public static readonly ErrorCode RecipientSuspended = new("Training.RecipientSuspended");
 
+    /// <summary>
+    /// The trainer's account has not verified its email address, and may not grow what the
+    /// public can see until it does (ADR 0090).
+    /// </summary>
+    public static readonly ErrorCode TrainerUnverified = new("Training.TrainerUnverified");
+
+    /// <summary>
+    /// The recipient of a transfer has not verified their email address. Distinct from
+    /// <see cref="TrainerUnverified"/> for the reason <see cref="RecipientSuspended"/> is
+    /// distinct from <see cref="TrainerSuspended"/>: "verify your address" and "they have not
+    /// verified theirs" send a caller to different places (ADR 0015).
+    /// </summary>
+    public static readonly ErrorCode RecipientUnverified = new("Training.RecipientUnverified");
+
     /// <summary>The training is already withheld, so withholding it changes nothing.</summary>
     public static readonly ErrorCode AlreadyWithheld = new("Training.AlreadyWithheld");
 

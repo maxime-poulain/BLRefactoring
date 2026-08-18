@@ -157,8 +157,8 @@ Twenty-eight projects: seventeen under `src/`, eleven under `tests/`. Every one 
 | Project | Responsibility |
 |---|---|
 | `TrainingHub.Shared` | Shared kernel: `Entity`, `AggregateRoot`, `ValueObject`, `EntityId`, `Result`/`ErrorCollection`, `Specification`, `PageRequest`/`PagedResult`, and the cross-cutting ports `IUnitOfWork` and `ICurrentUserService`, plus the CQS marker interfaces |
-| `TrainingHub.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, and the fact ports `IUniquenessTitleChecker`, `ITrainingCounter`, `ITrainerStanding` and `ITrainerPhotoStore` |
-| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the search ports, the eighteen domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the nineteen post-commit consumers — all shared by both stacks |
+| `TrainingHub.Shared.Domain` | The domain model: `Trainer` and `Training` aggregates, value objects, domain events, specifications, repository interfaces, and the fact ports `IUniquenessTitleChecker`, `ITrainingCounter`, `ITrainerStanding`, `ITrainerVerification` and `ITrainerPhotoStore` |
+| `TrainingHub.Shared.Application` | Value-object factories, DTOs, the aggregate-to-DTO projections, the search ports, the eighteen domain event handlers, the integration events with their stable-name registry and both ports (publisher and consumer), and the twenty post-commit consumers — all shared by both stacks |
 | `TrainingHub.Shared.Infrastructure` | Persistence only: EF Core `TrainingContext`, mappings, migrations, interceptors, `UnitOfWork`, repositories, the paged-read extensions (`NewestFirst`, `ToPagedResultAsync`), the identity store, and the transactional outbox — publisher, delivery worker, dispatcher |
 | `TrainingHub.Shared.Api` | The HTTP boundary: the `*HttpRequest` and `*HttpResponse` contracts both hosts publish, their mappings to the application layer, the controller bases, the `TrainingOwner` policy, CORS, Identity, JWT wiring, token issuance, concurrency helpers |
 | `DDD.Application` | Application services: `TrainerApplicationService`, `TrainingApplicationService`, `CatalogApplicationService`, `OutboxApplicationService` |
@@ -201,6 +201,7 @@ flowchart LR
     SharedApp --> Domain
     SharedInfra --> Domain
     SharedInfra --> SharedApp
+    SharedInfra --> Translations
     SharedApi --> SharedApp
     SharedApi --> SharedInfra
     SharedApi --> Translations
@@ -230,7 +231,9 @@ flowchart LR
 The Blazor pair and the generated client form their own branch, reached by no backend project;
 the backend graph is rooted at the shared kernel. The translations are the one assembly both
 branches reach — the browser for its labels, the shared API layer for the supported-language
-list — and they reference nothing at all ([ADR 0088](docs/adr/0088-answer-in-the-visitors-language-and-resolve-it-at-the-door.md)).
+list, the shared infrastructure for the words its email presenter composes
+([ADR 0090](docs/adr/0090-prove-the-address-before-the-catalog-grows.md)) — and they reference
+nothing at all ([ADR 0088](docs/adr/0088-answer-in-the-visitors-language-and-resolve-it-at-the-door.md)).
 
 ---
 
@@ -527,7 +530,7 @@ broken, and carries that aggregate's name.
 | Holder | Codes |
 |---|---|
 | `ErrorCodes` (kernel) | `Unspecified`, `NotFound`, `ConcurrencyConflict`, `Validation` |
-| `TrainingErrorCodes` | `Training.InvalidTitle`, `Training.DuplicateTitle`, `Training.InvalidDescription`, `Training.InvalidPrerequisites`, `Training.InvalidAcquiredSkills`, `Training.InvalidTopic`, `Training.CatalogFull`, `Training.TransferToSelf`, `Training.RecipientCatalogFull`, `Training.UnknownRecipient`, `Training.AlreadyPublished`, `Training.AlreadyUnpublished`, `Training.TrainerSuspended`, `Training.RecipientSuspended`, `Training.AlreadyWithheld`, `Training.NotWithheld`, `Training.Withheld`, `Training.WithholdingReasonEmpty`, `Training.WithholdingReasonTooLong` |
+| `TrainingErrorCodes` | `Training.InvalidTitle`, `Training.DuplicateTitle`, `Training.InvalidDescription`, `Training.InvalidPrerequisites`, `Training.InvalidAcquiredSkills`, `Training.InvalidTopic`, `Training.CatalogFull`, `Training.TransferToSelf`, `Training.RecipientCatalogFull`, `Training.UnknownRecipient`, `Training.AlreadyPublished`, `Training.AlreadyUnpublished`, `Training.TrainerSuspended`, `Training.RecipientSuspended`, `Training.TrainerUnverified`, `Training.RecipientUnverified`, `Training.AlreadyWithheld`, `Training.NotWithheld`, `Training.Withheld`, `Training.WithholdingReasonEmpty`, `Training.WithholdingReasonTooLong` |
 | `TrainerErrorCodes` | `Trainer.InvalidEmail`, `Trainer.InvalidFirstname`, `Trainer.InvalidLastname`, `Trainer.BioEmpty`, `Trainer.BioExceeds500Characters`, `Trainer.PhotoEmpty`, `Trainer.PhotoTooLarge`, `Trainer.PhotoFormatNotSupported`, `Trainer.PhotoContentMismatch`, `Trainer.PhotoUnreadable`, `Trainer.AlreadySuspended`, `Trainer.NotSuspended`, `Trainer.SuspensionReasonEmpty`, `Trainer.SuspensionReasonTooLong` |
 | `OutboxErrorCodes` | `Outbox.NotPoison` |
 
@@ -908,6 +911,8 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 | `POST` | `/Auth/login` | `200` with a JWT, or `401` — the same answer for an unknown username, a wrong password and a locked-out account |
 | `POST` | `/Auth/forgot-password` | **Anonymous.** `202` always — known address and unknown alike, because the lookup happens later, in the outbox worker, where nobody can time it. The reset link goes out by email when there is an account to send it to, and to nobody's knowledge when there is not ([ADR 0084](docs/adr/0084-reset-a-forgotten-password-with-a-credential-the-database-cannot-leak.md)) |
 | `POST` | `/Auth/reset-password` | **Anonymous.** Redeems the emailed link against a new password. `204` on success; `400` keyed by field — one fixed sentence on `Token` for every way a link can be dead (unknown address, wrong token, expired, spent, superseded), Identity's own words on `Password` when the link was fine and the password was not, in which case the link deliberately survives |
+| `POST` | `/Auth/verify-email` | **Anonymous.** Redeems the emailed verification link, proving the address the account registered with. The token travels in the body, never in this endpoint's query — a live credential has no business in an access log. `204` on success; `400` keyed on `Token`, one fixed sentence for every way a link can be dead ([ADR 0090](docs/adr/0090-prove-the-address-before-the-catalog-grows.md)) |
+| `POST` | `/Auth/resend-verification` | Asks for the verification email again, to the caller's own address. `202` always — even for an account already verified, absorbed later in the delivery worker; `429` when the account asks more than five times in fifteen minutes, because each permit revokes the previous link. A suspension does not bar this door either (ADR 0090) |
 | `POST` | `/Auth/erase-account` | Erases the caller's account: the trainer, their trainings and the Identity account leave in one transaction, and the portrait's bytes follow through the outbox. The caller proves intent with their current password — a live session is not enough — and a suspension does not bar this one door. `204`; `400` keyed on `Password` when it is wrong; `401` ([ADR 0085](docs/adr/0085-let-the-account-erase-itself-trainings-and-all.md)) |
 | `GET` | `/Trainer/me` | The caller's own profile, with an `ETag`. `200`, `404` |
 | `PUT` | `/Trainer/me` | Requires `If-Match`. `200`, `400`, `404`, `412`, `428` |
@@ -937,7 +942,7 @@ broke a business rule carries this API's own codes under `domainErrors`. See ADR
 | `GET` | `/Catalog/trainers/{trainerId:guid}` | **Anonymous.** One offering trainer's public page: first name, last name, bio, the sanitized portrait's identity, and the offered trainings as catalog rows, alphabetically. Answers if and only if the search index holds at least one entry for this trainer — offered or invisible, so a person nobody registered, a suspended one and one with nothing published are the same `404`. `200`, `400`, `404` ([ADR 0070](docs/adr/0070-open-a-trainers-public-page.md)) |
 | `GET` | `/Catalog/trainers/{trainerId:guid}/photo/{photoId:guid}` | **Anonymous.** The same sanitized portrait as the per-training address, at the profile's own: the trainer and the photo, which is what that page has in hand. The same four refusals in one `404` and the same forever-cache — the identity in the path is what makes `immutable` true (ADR 0063, ADR 0070). `200`, `304`, `400`, `404` |
 
-Thirty-three endpoints, and not one of them lets a trainer reach what another trainer owns. The eight
+Thirty-five endpoints, and not one of them lets a trainer reach what another trainer owns. The eight
 under `/Administration` act on something that is not the caller's by design and are the only eight
 that do — behind a role that is granted by hand and by no endpoint at all (ADR 0051). They are
 grouped by the authority they exercise rather than by the resource they act on, which is what that
@@ -1367,7 +1372,7 @@ The two filters are exact inverses, so between them every test runs exactly once
 | Project | Scope |
 |---|---|
 | `TrainingHub.Shared.Domain.Tests` | Aggregates, value objects, typed identifiers, `Result`, specifications, the page vocabulary's bounds and arithmetic |
-| `TrainingHub.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers — including the twelve that translate a domain event into an integration event — and the nineteen post-commit consumers |
+| `TrainingHub.DDD.Application.Tests` | Application services, factories, mappers, domain event handlers — including the twelve that translate a domain event into an integration event — and the twenty post-commit consumers |
 | `TrainingHub.DDDWithCqrs.Tests` | Command handlers, validators, pipeline behaviors |
 | `TrainingHub.Shared.Api.Tests` | Entity-tag encoding and parsing, the guard that keeps client generation away from a database, what the unhandled-exception handler is allowed to tell a caller, and the transformer that describes an uploaded file inline so a client generator recognizes it as one |
 | `TrainingHub.Shared.Infrastructure.Tests` | The auditable-entities interceptor — that it stamps, and reads the clock once per entity —, the outbox publisher observed through the change tracker, the serializer's round trip for every registered event, the dispatcher held to its routing table, the envelope's state transitions, the bucket bootstrapper, mostly for when it does nothing, and — over SQLite rather than a substitute — the names a page of trainings asks for by identifier, and the reset credential's store: only a digest at rest, one row per account, a delete that consumes exactly once and refuses past the lifetime (ADR 0084) |

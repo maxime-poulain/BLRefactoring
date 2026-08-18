@@ -106,7 +106,8 @@
                     </MudButton>
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
-                               Disabled="@(!_isValid || !HasSelectedTopics || _isLoading || _standing.IsSuspended)"
+                               Disabled="@(!_isValid || !HasSelectedTopics || _isLoading || _standing.IsSuspended
+                                           || (!IsEditMode && !_standing.IsEmailVerified))"
                                OnClick="HandleSubmit">
                         @if (_isLoading)
                         {

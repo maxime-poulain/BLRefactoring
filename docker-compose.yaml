@@ -124,6 +124,8 @@ services:
       # The address a browser on the host opens, not a service name: the reset link this key
       # anchors travels by email and is clicked outside the compose network (ADR 0084).
       - PasswordReset__LinkBaseAddress=https://localhost:7068
+      # Same reasoning for the verification link (ADR 0090).
+      - EmailVerification__LinkBaseAddress=https://localhost:7068
     healthcheck:
       # Liveness, not readiness, on purpose: a container check drives restart decisions, and
       # restarting this process cannot fix a dependency /health/ready would report on. curl is
@@ -174,6 +176,7 @@ services:
       - Smtp__SenderAddress=no-reply@traininghub.local
       - Smtp__SenderName=TrainingHub
       - PasswordReset__LinkBaseAddress=https://localhost:7068
+      - EmailVerification__LinkBaseAddress=https://localhost:7068
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/health/live"]
       interval: 10s

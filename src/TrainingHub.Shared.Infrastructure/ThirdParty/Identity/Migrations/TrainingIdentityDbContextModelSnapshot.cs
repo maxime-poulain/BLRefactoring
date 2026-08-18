@@ -219,6 +219,28 @@ namespace TrainingHub.Shared.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("TrainingHub.Shared.Infrastructure.ThirdParty.Identity.EmailVerificationToken", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedOnUtc")
+                        .HasPrecision(7)
+                        .HasColumnType("datetime2(7)");
+
+                    b.Property<byte[]>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varbinary(32)");
+
+                    b.HasKey("UserId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.ToTable("EmailVerificationToken", (string)null);
+                });
+
             modelBuilder.Entity("TrainingHub.Shared.Infrastructure.ThirdParty.Identity.PasswordResetToken", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -289,6 +311,15 @@ namespace TrainingHub.Shared.Infrastructure.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser<System.Guid>", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TrainingHub.Shared.Infrastructure.ThirdParty.Identity.EmailVerificationToken", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser<System.Guid>", null)
+                        .WithOne()
+                        .HasForeignKey("TrainingHub.Shared.Infrastructure.ThirdParty.Identity.EmailVerificationToken", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

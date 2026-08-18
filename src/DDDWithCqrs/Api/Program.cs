@@ -78,9 +78,15 @@ builder.Services.AddApiIdentity(builder.Configuration);
 builder.Services.AddJwtBearerAuthentication(builder.Configuration);
 builder.Services.AddApiAuthorization();
 
-// The window bounding how much mail one trainer can be made to receive, partitioned by the
-// recipient because behind the proxy every caller wears the same address (ADR 0082).
-builder.Services.AddRateLimiter(ContactRateLimiting.Configure);
+// The two windows this host enforces: how much mail one trainer can be made to receive,
+// partitioned by the recipient because behind the proxy every caller wears the same address
+// (ADR 0082), and how often one account can ask for its verification email, partitioned by the
+// authenticated caller because on that route the identity is real (ADR 0090).
+builder.Services.AddRateLimiter(options =>
+{
+    ContactRateLimiting.Configure(options);
+    VerificationRateLimiting.Configure(options);
+});
 
 var app = builder.Build();
 

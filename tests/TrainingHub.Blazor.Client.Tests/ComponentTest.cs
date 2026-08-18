@@ -68,6 +68,11 @@ public abstract class ComponentTest : BunitContext, IAsyncLifetime
         // The selector's client, inert by default: a suite that is not about language says
         // nothing about it, and the facts that are override this.
         Services.AddSingleton(CultureClient.Object);
+
+        // The verification banner's resend, inert by default: the layout renders the banner on
+        // every authorized page, so the client must resolve everywhere even though only the
+        // verification facts ever make it answer anything (ADR 0090).
+        Services.AddSingleton(AuthClient.Object);
     }
 
     /// <summary>The culture client the selector calls, substituted so a fact can watch the choice.</summary>
@@ -78,6 +83,10 @@ public abstract class ComponentTest : BunitContext, IAsyncLifetime
 
     /// <summary>The portrait the user menu shows, substituted so a fact can give its caller a face.</summary>
     protected Mock<ITrainerPortraitSource> Portrait { get; } = new();
+
+    /// <summary>The auth client the verification banner resends through, substituted so a fact
+    /// can watch the ask — or refuse it with the window's 429 (ADR 0090).</summary>
+    protected Mock<TrainingHub.GeneratedClients.IAuthClient> AuthClient { get; } = new();
 
     /// <summary>The messages the page raised, in the order it raised them.</summary>
     /// <remarks>

@@ -20,9 +20,11 @@ public sealed class AuthController(
     SignInManager<IdentityUser<Guid>> signInManager,
     ITokenService tokenService,
     IPasswordRecoveryService passwordRecovery,
+    IEmailVerificationService emailVerification,
     IIntegrationEventPublisher integrationEventPublisher,
     ICommandDispatcher commandDispatcher)
-    : AuthControllerBase(userManager, signInManager, tokenService, passwordRecovery, integrationEventPublisher)
+    : AuthControllerBase(
+        userManager, signInManager, tokenService, passwordRecovery, emailVerification, integrationEventPublisher)
 {
     /// <inheritdoc />
     /// <remarks>

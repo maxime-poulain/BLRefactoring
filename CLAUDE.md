@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 89 architecture decision records.
+2. `docs/adr/README.md` — the index of 90 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 223 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 229 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -157,10 +157,15 @@ repository a named question and maps the aggregates.
 ## Localization
 
 - The words live in `src/TrainingHub.Translations` — marker types plus `.resx` families, neutral
-  English with `fr` and `ru` beside it — and that project references **nothing**, so every surface
-  may load it and no inner layer may reference it (ADR 0088, `NoInnerLayer_ReferencesThe
-  Translations`, `TheTranslations_DependOnNothing`). The domain keeps authoring codes; sentences
-  are the boundary's.
+  English with `fr` and `ru` beside it — and that project references **nothing**, so every adapter
+  may load it and no inner circle may reference it (ADR 0088,
+  `NoInnerCircle_ReferencesTheTranslations`, `TheTranslations_DependOnNothing`). The domain keeps
+  authoring codes; sentences are the boundary's.
+- Composing an email is presentation too: the application asks
+  `IVerificationEmailComposer` for finished words, and the adapter lives in
+  `Shared.Infrastructure/Email/` beside `SmtpEmailSender` — the one corner of the infrastructure
+  allowed to read Translations (`OnlyTheEmailCorner_OfTheInfrastructureReadsTheTranslations`,
+  ADR 0090). A repository, an interceptor, the outbox processor never compose prose.
 - One list, one default: `SupportedLanguages` (`en`, `fr`, `ru`, default `en`). Adding a language
   means growing that list, adding the culture's resx beside every neutral file with **exactly**
   the same keys (`EveryCultureResource_CarriesExactlyTheDefaultsKeys`), and declaring the new

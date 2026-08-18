@@ -34,7 +34,7 @@ namespace TrainingHub.Shared.Infrastructure.Extensions;
 /// This is what puts five hundred trainings behind them.
 /// <para>
 /// <b>Built by the domain, not around it.</b> Every trainer goes through <c>Trainer.Create</c>,
-/// every training through <c>Training.CreateAsync</c> with the same three ports the application
+/// every training through <c>Training.CreateAsync</c> with the same four ports the application
 /// layer resolves, every portrait through the sanitizer and the object store, and every state
 /// change through the aggregate's own method. A seeder writing rows directly would produce data
 /// the product could not have produced, which is the one thing a development dataset must never be
@@ -212,7 +212,10 @@ public static class DevelopmentSeedExtensions
             new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
             TransactionScopeAsyncFlowOption.Enabled);
 
-        var user = new IdentityUser<Guid> { UserName = seed.Username, Email = seed.Email };
+        // Confirmed at birth: a seeded trainer has no mailbox to click from, and a dataset of
+        // five hundred unverifiable catalogs would hide exactly the screens it exists to fill
+        // (ADR 0090).
+        var user = new IdentityUser<Guid> { UserName = seed.Username, Email = seed.Email, EmailConfirmed = true };
 
         var account = await userManager.CreateAsync(user, password);
         if (!account.Succeeded)
@@ -239,6 +242,13 @@ public static class DevelopmentSeedExtensions
         {
             await AttachPortraitAsync(services, trainer, hue, cancellationToken);
         }
+
+        // Written before the first training rather than with it, because the verification port
+        // reads the database: it joins the trainer's row to the account's EmailConfirmed, and a
+        // trainer that exists only in the change tracker would answer unverified — refusing the
+        // whole catalog this seeder exists to create (ADR 0090). Still inside the scope: a run
+        // that fails later leaves no half-seeded trainer behind.
+        await services.GetRequiredService<IUnitOfWork>().SaveChangesAsync(cancellationToken);
 
         var scheduled = new List<(TrainingId Id, DateTime CreatedOnUtc)>(seed.Trainings.Count);
 
@@ -282,11 +292,12 @@ public static class DevelopmentSeedExtensions
     /// Creates one training and puts it in the state the dataset placed it in.
     /// </summary>
     /// <remarks>
-    /// The three ports are resolved from the container rather than stubbed, so the seeded data is
-    /// subject to the same uniqueness, capacity and standing questions any caller would meet. Two
-    /// of those questions read the database, which has not been written yet inside this unit of
-    /// work — which is exactly why the dataset guarantees distinct titles per trainer rather than
-    /// relying on the checker to notice.
+    /// The four ports are resolved from the container rather than stubbed, so the seeded data is
+    /// subject to the same uniqueness, capacity, standing and verification questions any caller
+    /// would meet. The uniqueness and capacity questions read trainings the unit of work has not
+    /// written yet — which is exactly why the dataset guarantees distinct titles per trainer
+    /// rather than relying on the checker to notice. The verification question is the reason the
+    /// trainer's own row is saved before this method first runs (ADR 0090).
     /// </remarks>
     private static async Task<Training?> CreateTrainingAsync(
         IServiceProvider services,
@@ -305,6 +316,7 @@ public static class DevelopmentSeedExtensions
             services.GetRequiredService<IUniquenessTitleChecker>(),
             services.GetRequiredService<ITrainingCounter>(),
             services.GetRequiredService<ITrainerStanding>(),
+            services.GetRequiredService<ITrainerVerification>(),
             cancellationToken);
 
         return creation.Match<Training?>(

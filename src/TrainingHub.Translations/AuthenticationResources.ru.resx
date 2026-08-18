@@ -13,7 +13,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AccountCreated" xml:space="preserve">
-    <value>Аккаунт создан! Теперь войдите.</value>
+    <value>Аккаунт создан! Проверьте почту — там ссылка для подтверждения, затем войдите.</value>
   </data>
   <data name="AlreadyHaveAccount" xml:space="preserve">
     <value>Уже есть аккаунт?</value>
@@ -30,6 +30,9 @@
   <data name="ChooseANewPassword" xml:space="preserve">
     <value>Выберите новый пароль</value>
   </data>
+  <data name="ConfirmMyAddress" xml:space="preserve">
+    <value>Подтвердить мой адрес</value>
+  </data>
   <data name="ConfirmNewPasswordLabel" xml:space="preserve">
     <value>Подтвердите новый пароль</value>
   </data>
@@ -39,11 +42,17 @@
   <data name="ConfirmPasswordRequired" xml:space="preserve">
     <value>Требуется подтверждение пароля</value>
   </data>
+  <data name="ConfirmingYourAddress" xml:space="preserve">
+    <value>Подтверждение…</value>
+  </data>
   <data name="CreateAnAccount" xml:space="preserve">
     <value>Создать аккаунт</value>
   </data>
   <data name="CreatingAccount" xml:space="preserve">
     <value>Создание аккаунта...</value>
+  </data>
+  <data name="DeadVerificationLink" xml:space="preserve">
+    <value>Эта ссылка для подтверждения недействительна или уже была использована. Если вы уже подтвердили свой адрес, просто войдите.</value>
   </data>
   <data name="DontHaveAccount" xml:space="preserve">
     <value>Нет аккаунта?</value>
@@ -53,6 +62,9 @@
   </data>
   <data name="EmailRequired" xml:space="preserve">
     <value>Требуется адрес электронной почты</value>
+  </data>
+  <data name="EmailVerified" xml:space="preserve">
+    <value>Ваш адрес электронной почты подтвержден. Вы можете войти и опубликовать свой первый тренинг.</value>
   </data>
   <data name="FirstNameLabel" xml:space="preserve">
     <value>Имя</value>
@@ -170,5 +182,14 @@
   </data>
   <data name="UsernameRequired" xml:space="preserve">
     <value>Требуется имя пользователя</value>
+  </data>
+  <data name="VerifyEmailIntro" xml:space="preserve">
+    <value>Один клик подтвердит, что этот адрес принадлежит вам. Ничего не произойдет, пока вы не нажмете кнопку.</value>
+  </data>
+  <data name="VerifyEmailMissingToken" xml:space="preserve">
+    <value>В этом адресе нет токена подтверждения, поэтому подтверждать нечего. Откройте ссылку из письма точно так, как она была отправлена, — или запросите новую из своей учетной записи.</value>
+  </data>
+  <data name="VerifyEmailPageTitle" xml:space="preserve">
+    <value>Подтвердите свой адрес электронной почты</value>
   </data>
 </root>

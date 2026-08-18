@@ -40,7 +40,13 @@ public sealed class TrainingController(
     /// <summary>
     /// Creates a training owned by the calling trainer.
     /// </summary>
+    /// <remarks>
+    /// The one action behind the verification policy as well: creation is the only door into the
+    /// catalog an unverified trainer can reach, so the courtesy 403 sits here and nowhere else —
+    /// the domain's own check remains the enforcement (ADR 0090).
+    /// </remarks>
     [Authorize(Policy = ActiveTrainerPolicy.Name)]
+    [Authorize(Policy = VerifiedTrainerPolicy.Name)]
     [HttpPost]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

@@ -90,6 +90,9 @@
   <data name="RequestRejected" xml:space="preserve">
     <value>La demande a été rejetée.</value>
   </data>
+  <data name="ResendVerificationEmail" xml:space="preserve">
+    <value>Renvoyer l&apos;e-mail</value>
+  </data>
   <data name="SignIn" xml:space="preserve">
     <value>Se connecter</value>
   </data>
@@ -104,5 +107,17 @@
   </data>
   <data name="ToggleTheme" xml:space="preserve">
     <value>Changer de thème</value>
+  </data>
+  <data name="VerificationEmailSent" xml:space="preserve">
+    <value>E-mail de vérification envoyé. Seul le lien le plus récent fonctionne.</value>
+  </data>
+  <data name="VerificationResendRefused" xml:space="preserve">
+    <value>Vous avez demandé plusieurs fois de suite. Patientez un instant, puis utilisez l&apos;e-mail le plus récent.</value>
+  </data>
+  <data name="VerifyYourEmail" xml:space="preserve">
+    <value>Vérifiez votre adresse e-mail</value>
+  </data>
+  <data name="VerifyYourEmailBody" xml:space="preserve">
+    <value>Nous avons envoyé un lien de vérification à l&apos;adresse de votre compte. Publier une formation reste fermé tant que vous ne l&apos;avez pas ouvert.</value>
   </data>
 </root>

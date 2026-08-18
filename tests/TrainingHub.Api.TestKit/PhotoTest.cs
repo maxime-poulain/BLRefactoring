@@ -30,7 +30,7 @@ namespace TrainingHub.Api.TestKit;
 /// </remarks>
 /// <typeparam name="TFactory">The suite's fixture.</typeparam>
 public abstract class PhotoTest<TFactory>(TFactory factory) : IntegrationTest<TFactory>(factory)
-    where TFactory : IResettableDatabase, IHttpClientSource, IServerErrorSource
+    where TFactory : IResettableDatabase, IHttpClientSource, IServerErrorSource, IServiceScopeSource
 {
     /// <summary>
     /// Upload then read, gives back the picture without what the camera wrote into it.

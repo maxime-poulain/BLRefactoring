@@ -31,7 +31,13 @@ public static class ApplicationToHttpMappings
     /// Publishes a trainer read model. The row version is deliberately dropped: it leaves in the
     /// <c>ETag</c>, which the controller sets from the read model itself.
     /// </summary>
-    public static TrainerHttpResponse ToHttp(this TrainerDto trainer)
+    /// <remarks>
+    /// The verification flag arrives as a parameter rather than on the read model, because the
+    /// fact is the Identity store's and the application layer deliberately does not know it: the
+    /// controller reads it through <c>IAccountVerificationQuery</c> and stitches the two halves
+    /// together here, at the boundary (ADR 0090).
+    /// </remarks>
+    public static TrainerHttpResponse ToHttp(this TrainerDto trainer, bool isEmailVerified)
     {
         ArgumentNullException.ThrowIfNull(trainer);
 
@@ -44,15 +50,10 @@ public static class ApplicationToHttpMappings
             Bio = trainer.Bio,
             PhotoId = trainer.PhotoId,
             Status = trainer.Status,
+            IsEmailVerified = isEmailVerified,
             SuspensionReason = trainer.SuspensionReason
         };
     }
-
-    /// <summary>
-    /// Publishes a sequence of trainer read models.
-    /// </summary>
-    public static List<TrainerHttpResponse> ToHttp(this IEnumerable<TrainerDto> trainers)
-        => [.. trainers.Select(ToHttp)];
 
     /// <summary>
     /// Publishes a training read model.

@@ -133,11 +133,13 @@ public sealed class Training : AggregateRoot<TrainingId>
         IUniquenessTitleChecker titleChecker,
         ITrainingCounter trainingCounter,
         ITrainerStanding trainerStanding,
+        ITrainerVerification trainerVerification,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(trainerId);
         ArgumentNullException.ThrowIfNull(trainingCounter);
         ArgumentNullException.ThrowIfNull(trainerStanding);
+        ArgumentNullException.ThrowIfNull(trainerVerification);
 
         // Standing before capacity: a suspended trainer may not add to what the public can see,
         // and that refusal does not depend on how full their catalog is (ADR 0050).
@@ -145,6 +147,16 @@ public sealed class Training : AggregateRoot<TrainingId>
         {
             return Result<Training>.Failure(TrainingErrorCodes.TrainerSuspended,
                 "A suspended trainer cannot publish a new training.");
+        }
+
+        // After the sanction, before the formality of capacity: an account that never proved its
+        // address may not grow the public catalog (ADR 0090). Creation is one of only two doors a
+        // catalog grows through, which is why publishing never asks — an unverified trainer has
+        // nothing to publish, and a rule nothing can reach is a rule no test can keep honest.
+        if (!await trainerVerification.IsVerifiedAsync(trainerId, cancellationToken))
+        {
+            return Result<Training>.Failure(TrainingErrorCodes.TrainerUnverified,
+                "An unverified trainer cannot publish a new training.");
         }
 
         // Asked before the content is even looked at: no title makes an eleventh training

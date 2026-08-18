@@ -29,7 +29,7 @@ namespace TrainingHub.Api.TestKit;
 /// <typeparam name="TFactory">The suite's fixture — one per host, since the pipeline under test is
 /// each host's own.</typeparam>
 public abstract class ContactTrainerTest<TFactory>(TFactory factory) : IntegrationTest<TFactory>(factory)
-    where TFactory : IResettableDatabase, IHttpClientSource, IMailboxSource
+    where TFactory : IResettableDatabase, IHttpClientSource, IMailboxSource, IServiceScopeSource
 {
     /// <summary>
     /// Contacting an offered trainer, delivers to the contact address, through real SMTP.
@@ -51,6 +51,11 @@ public abstract class ContactTrainerTest<TFactory>(TFactory factory) : Integrati
         var trainer = Factory.CreateClient();
         var register = AuthHelper.CreateUniqueRegisterRequest();
         (await AuthHelper.RegisterAsync(trainer, register)).EnsureSuccessStatusCode();
+
+        // Verified like every caller that is not about the verification, so the create door
+        // admits the training the visitor writes about (ADR 0090).
+        await AuthHelper.MarkEmailVerifiedAsync(Factory, register.Username);
+
         var token = await AuthHelper.LoginAsync(trainer, register.Username, register.Password);
         trainer.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 

@@ -45,6 +45,12 @@
   <data name="Training.RecipientSuspended" xml:space="preserve">
     <value>Le destinataire est suspendu et ne peut pas recevoir de formation.</value>
   </data>
+  <data name="Training.RecipientUnverified" xml:space="preserve">
+    <value>Le destinataire n'est pas vérifié et ne peut pas recevoir de formation.</value>
+  </data>
+  <data name="Training.TrainerUnverified" xml:space="preserve">
+    <value>Un formateur non vérifié ne peut pas publier de nouvelle formation.</value>
+  </data>
   <data name="Training.TransferToSelf" xml:space="preserve">
     <value>Une formation ne peut pas être transférée au formateur qui la possède déjà.</value>
   </data>

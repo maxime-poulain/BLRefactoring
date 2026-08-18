@@ -230,13 +230,18 @@ here as a fact without a preceding blue sticky, and why the consumer that reads 
 `SendContactMessage`, resolves the trainer's published contact address at delivery rather than
 carrying it on the wire.
 
-**Three more of the same shape, one context over.** `PasswordResetRequestedIntegrationEvent`,
-`PasswordChangedIntegrationEvent` and `AccountErasedIntegrationEvent` belong to Identity & Access,
-whose model is the framework's, so no blue sticky could ever precede them either: the recovery and
-erasure endpoints commit them directly (ADR 0084, ADR 0085). The first goes further than the
-contact fact went — its consumer, `SendPasswordResetLink`, does not merely resolve a detail at
-delivery, it *mints the secret* at delivery, so the reset token never touches the outbox row at
-all. The other two are the owner's alarm bells, each committed in the same transaction as the
+**Four more of the same shape, one context over.** `PasswordResetRequestedIntegrationEvent`,
+`EmailVerificationRequestedIntegrationEvent`, `PasswordChangedIntegrationEvent` and
+`AccountErasedIntegrationEvent` belong to Identity & Access,
+whose model is the framework's, so no blue sticky could ever precede them either: the recovery,
+verification, and erasure endpoints commit them directly (ADR 0084, ADR 0085, ADR 0090). The first
+two go further than the contact fact went — their consumers, `SendPasswordResetLink` and
+`SendVerificationLink`, do not merely resolve a detail at
+delivery, they *mint the secret* at delivery, so neither token ever touches the outbox row at
+all. The verification fact carries the one thing its consumer could not resolve on its own — the
+culture the requester was being served in, so the email arrives in the requester's language — and
+deliberately not the address, which is read off the account at delivery like every notice's
+(ADR 0056). The other two are the owner's alarm bells, each committed in the same transaction as the
 change it announces — and the erasure's carries the address and the username on the wire, because
 by delivery time the rows that held them are gone.
 

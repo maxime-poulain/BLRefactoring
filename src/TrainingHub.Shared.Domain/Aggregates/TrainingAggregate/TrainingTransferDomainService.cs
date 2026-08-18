@@ -28,6 +28,7 @@ public static class TrainingTransferDomainService
     /// <param name="trainingCounter">Answers how many trainings the recipient publishes.</param>
     /// <param name="titleChecker">Answers whether the recipient already lists the title.</param>
     /// <param name="trainerStanding">Answers whether either trainer is under sanction.</param>
+    /// <param name="trainerVerification">Answers whether the recipient's account is verified.</param>
     /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     public static async Task<Result> TransferAsync(
         Training training,
@@ -35,6 +36,7 @@ public static class TrainingTransferDomainService
         ITrainingCounter trainingCounter,
         IUniquenessTitleChecker titleChecker,
         ITrainerStanding trainerStanding,
+        ITrainerVerification trainerVerification,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(training);
@@ -42,6 +44,7 @@ public static class TrainingTransferDomainService
         ArgumentNullException.ThrowIfNull(trainingCounter);
         ArgumentNullException.ThrowIfNull(titleChecker);
         ArgumentNullException.ThrowIfNull(trainerStanding);
+        ArgumentNullException.ThrowIfNull(trainerVerification);
 
         // The aggregate's own question, asked first: a transfer to the current owner would make
         // the recipient-side rules vacuous and put a lie of a fact on the wire.
@@ -67,6 +70,17 @@ public static class TrainingTransferDomainService
         {
             return Result.Failure(TrainingErrorCodes.RecipientSuspended,
                 "The recipient is suspended and cannot receive a training.");
+        }
+
+        // Only the recipient is asked about verification, and the asymmetry is the invariant:
+        // the giver owns a training, and owning one is something an unverified account can never
+        // have done — creation asks the same question at the only other door a catalog grows
+        // through (ADR 0090). A transfer the recipient's unproven account cannot refuse would
+        // grow a catalog verification exists to gate.
+        if (!await trainerVerification.IsVerifiedAsync(recipient, cancellationToken))
+        {
+            return Result.Failure(TrainingErrorCodes.RecipientUnverified,
+                "The recipient is unverified and cannot receive a training.");
         }
 
         // Capacity before content, mirroring creation: no title makes an eleventh training

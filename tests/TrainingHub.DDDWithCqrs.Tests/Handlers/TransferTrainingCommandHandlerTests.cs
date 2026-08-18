@@ -26,6 +26,7 @@ public sealed class TransferTrainingCommandHandlerTests
     private readonly Mock<ITrainingCounter> _trainingCounter = new();
     private readonly Mock<IUniquenessTitleChecker> _titleChecker = new();
     private readonly Mock<ITrainerStanding> _trainerStanding = new();
+    private readonly Mock<ITrainerVerification> _trainerVerification = Verified();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
     private TransferTrainingCommandHandler CreateSut() => new(
@@ -34,7 +35,19 @@ public sealed class TransferTrainingCommandHandlerTests
         _trainingCounter.Object,
         _titleChecker.Object,
         _trainerStanding.Object,
+        _trainerVerification.Object,
         _unitOfWork.Object);
+
+    // Answers "verified" unless a test says otherwise, because a bare mock would answer false
+    // and fail every fact that is not about the rule (ADR 0090).
+    private static Mock<ITrainerVerification> Verified()
+    {
+        var verification = new Mock<ITrainerVerification>();
+        verification
+            .Setup(v => v.IsVerifiedAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        return verification;
+    }
 
     /// <summary>
     /// Handle, an existing training and a willing recipient, transfers and saves.
