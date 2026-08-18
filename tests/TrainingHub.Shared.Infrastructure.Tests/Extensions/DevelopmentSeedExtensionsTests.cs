@@ -504,6 +504,11 @@ public sealed class DevelopmentSeedExtensionsTests
             services.AddScoped<ITrainerStanding>(serviceProvider =>
                 (TrainerRepository)serviceProvider.GetRequiredService<ITrainerRepository>());
 
+            // The real adapter over both stores, exactly as AddInfrastructure registers it: the
+            // seeder confirms every account it creates (ADR 0090), and whether that satisfies the
+            // factory's verification check is one of the things this world must prove.
+            services.AddScoped<ITrainerVerification, TrainerVerification>();
+
             // The real decoder: whether a drawn portrait survives the rules is one of the things this
             // seeder is asserted to get right.
             services.AddSingleton<IPhotoSanitizer, SkiaSharpPhotoSanitizer>();

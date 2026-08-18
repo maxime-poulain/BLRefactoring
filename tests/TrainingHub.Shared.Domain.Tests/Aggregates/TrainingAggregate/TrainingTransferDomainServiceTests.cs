@@ -46,6 +46,14 @@ public sealed class TrainingTransferDomainServiceTests
         return standing;
     }
 
+    private static Mock<ITrainerVerification> VerificationAnswering(bool verified)
+    {
+        var verification = new Mock<ITrainerVerification>();
+        verification.Setup(v => v.IsVerifiedAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(verified);
+        return verification;
+    }
+
     /// <summary>
     /// Transfer async, a recipient with room and a free title, reassigns the owner.
     /// </summary>
@@ -55,7 +63,8 @@ public sealed class TrainingTransferDomainServiceTests
         var training = await new TrainingBuilder().BuildValidAsync();
 
         var result = await TrainingTransferDomainService.TransferAsync(
-            training, Recipient, CounterAnswering(0).Object, TitleCheckerAnswering(false).Object, StandingAnswering(false).Object);
+            training, Recipient, CounterAnswering(0).Object, TitleCheckerAnswering(false).Object, StandingAnswering(false).Object,
+            VerificationAnswering(true).Object);
 
         result.ShouldBeSuccess();
         training.TrainerId.Should().Be(Recipient);
@@ -71,7 +80,8 @@ public sealed class TrainingTransferDomainServiceTests
         var formerOwner = training.TrainerId;
 
         (await TrainingTransferDomainService.TransferAsync(
-            training, Recipient, CounterAnswering(0).Object, TitleCheckerAnswering(false).Object, StandingAnswering(false).Object))
+            training, Recipient, CounterAnswering(0).Object, TitleCheckerAnswering(false).Object, StandingAnswering(false).Object,
+            VerificationAnswering(true).Object))
             .ShouldBeSuccess();
 
         var fact = training.DomainEvents.Should()
@@ -95,7 +105,8 @@ public sealed class TrainingTransferDomainServiceTests
 
         var result = await TrainingTransferDomainService.TransferAsync(
             training, Recipient, CounterAnswering(Training.MaximumPerTrainer).Object,
-            TitleCheckerAnswering(false).Object, StandingAnswering(false).Object);
+            TitleCheckerAnswering(false).Object, StandingAnswering(false).Object,
+            VerificationAnswering(true).Object);
 
         var error = result.ShouldBeFailure().Should().ContainSingle().Which;
         error.ErrorCode.Should().Be(TrainingErrorCodes.RecipientCatalogFull);
@@ -113,7 +124,8 @@ public sealed class TrainingTransferDomainServiceTests
 
         var result = await TrainingTransferDomainService.TransferAsync(
             training, Recipient, CounterAnswering(Training.MaximumPerTrainer - 1).Object,
-            TitleCheckerAnswering(false).Object, StandingAnswering(false).Object);
+            TitleCheckerAnswering(false).Object, StandingAnswering(false).Object,
+            VerificationAnswering(true).Object);
 
         // Nine published trainings leave room for a tenth: the boundary is >= 10, not > 9.
         result.ShouldBeSuccess();
@@ -130,7 +142,8 @@ public sealed class TrainingTransferDomainServiceTests
 
         var result = await TrainingTransferDomainService.TransferAsync(
             training, Recipient, CounterAnswering(Training.MaximumPerTrainer).Object, titleChecker.Object,
-            StandingAnswering(false).Object);
+            StandingAnswering(false).Object,
+            VerificationAnswering(true).Object);
 
         result.ShouldBeFailure().Should().ContainSingle()
             .Which.ErrorCode.Should().Be(TrainingErrorCodes.RecipientCatalogFull);
@@ -149,7 +162,8 @@ public sealed class TrainingTransferDomainServiceTests
         var formerOwner = training.TrainerId;
 
         var result = await TrainingTransferDomainService.TransferAsync(
-            training, Recipient, CounterAnswering(0).Object, TitleCheckerAnswering(true).Object, StandingAnswering(false).Object);
+            training, Recipient, CounterAnswering(0).Object, TitleCheckerAnswering(true).Object, StandingAnswering(false).Object,
+            VerificationAnswering(true).Object);
 
         result.ShouldBeFailure().Should().ContainSingle()
             .Which.ErrorCode.Should().Be(TrainingErrorCodes.DuplicateTitle);
@@ -168,7 +182,8 @@ public sealed class TrainingTransferDomainServiceTests
         var titleChecker = TitleCheckerAnswering(false);
 
         var result = await TrainingTransferDomainService.TransferAsync(
-            training, training.TrainerId, counter.Object, titleChecker.Object, StandingAnswering(false).Object);
+            training, training.TrainerId, counter.Object, titleChecker.Object, StandingAnswering(false).Object,
+            VerificationAnswering(true).Object);
 
         result.ShouldBeFailure().Should().ContainSingle()
             .Which.ErrorCode.Should().Be(TrainingErrorCodes.TransferToSelf);
@@ -177,6 +192,33 @@ public sealed class TrainingTransferDomainServiceTests
         titleChecker.Verify(c => c.TitleForTrainerExistsAsync(
                 It.IsAny<TrainingTitle>(), It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()),
             Times.Never);
+    }
+
+    /// <summary>
+    /// Transfer async, an unverified recipient, refuses before measuring their catalog (ADR 0090).
+    /// </summary>
+    /// <remarks>
+    /// The recipient side is the second of the two doors a catalog grows through, and the one a
+    /// boundary policy cannot guard — a policy reads the caller's claims, and the recipient is in
+    /// the body. The giver is never asked: owning a training is something an unverified account
+    /// can never have done.
+    /// </remarks>
+    [Fact]
+    public async Task TransferAsync_AnUnverifiedRecipient_RefusesBeforeMeasuringTheirCatalog()
+    {
+        var training = await new TrainingBuilder().BuildValidAsync();
+        var counter = CounterAnswering(0);
+
+        var result = await TrainingTransferDomainService.TransferAsync(
+            training, Recipient, counter.Object, TitleCheckerAnswering(false).Object,
+            StandingAnswering(false).Object,
+            VerificationAnswering(false).Object);
+
+        result.ShouldBeFailure().Should().ContainSingle()
+            .Which.ErrorCode.Should().Be(TrainingErrorCodes.RecipientUnverified);
+        counter.Verify(c => c.CountForTrainerAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()),
+            Times.Never, "an unverified recipient is refused whole, not measured");
+        training.TrainerId.Should().NotBe(Recipient);
     }
 
     /// <summary>
@@ -189,14 +231,16 @@ public sealed class TrainingTransferDomainServiceTests
         var counter = CounterAnswering(0).Object;
         var titleChecker = TitleCheckerAnswering(false).Object;
         var standing = StandingAnswering(false).Object;
+        var verification = VerificationAnswering(true).Object;
 
         var acts = new Func<Task>[]
         {
-            () => TrainingTransferDomainService.TransferAsync(null!, Recipient, counter, titleChecker, standing),
-            () => TrainingTransferDomainService.TransferAsync(training, null!, counter, titleChecker, standing),
-            () => TrainingTransferDomainService.TransferAsync(training, Recipient, null!, titleChecker, standing),
-            () => TrainingTransferDomainService.TransferAsync(training, Recipient, counter, null!, standing),
-            () => TrainingTransferDomainService.TransferAsync(training, Recipient, counter, titleChecker, null!),
+            () => TrainingTransferDomainService.TransferAsync(null!, Recipient, counter, titleChecker, standing, verification),
+            () => TrainingTransferDomainService.TransferAsync(training, null!, counter, titleChecker, standing, verification),
+            () => TrainingTransferDomainService.TransferAsync(training, Recipient, null!, titleChecker, standing, verification),
+            () => TrainingTransferDomainService.TransferAsync(training, Recipient, counter, null!, standing, verification),
+            () => TrainingTransferDomainService.TransferAsync(training, Recipient, counter, titleChecker, null!, verification),
+            () => TrainingTransferDomainService.TransferAsync(training, Recipient, counter, titleChecker, standing, null!),
         };
 
         foreach (var act in acts)

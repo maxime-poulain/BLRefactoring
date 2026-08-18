@@ -1,6 +1,8 @@
+using System.Globalization;
 using System.Transactions;
 using TrainingHub.Shared.Api.Authorization;
 using TrainingHub.Shared.Api.Contracts.Auth;
+using TrainingHub.Shared.Api.Extensions;
 using TrainingHub.Shared.Api.Http;
 using TrainingHub.Shared.Api.Identity;
 using TrainingHub.Shared.Application.IntegrationEvents;
@@ -9,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace TrainingHub.Shared.Api.Controllers;
 
@@ -25,6 +28,7 @@ public abstract class AuthControllerBase(
     SignInManager<IdentityUser<Guid>> signInManager,
     ITokenService tokenService,
     IPasswordRecoveryService passwordRecovery,
+    IEmailVerificationService emailVerification,
     IIntegrationEventPublisher integrationEventPublisher) : ControllerBase
 {
     /// <summary>
@@ -127,6 +131,16 @@ public abstract class AuthControllerBase(
         {
             return IdentityRejection(result.Errors);
         }
+
+        // Staged, not sent, like the erasure's fact: the row rides the save the trainer half is
+        // about to make, so the invitation to prove the address exists exactly when the account
+        // does — a rolled-back registration mails nobody (ADR 0090). The culture is the request's
+        // resolved one, captured now because the consumer that composes the email runs long after
+        // this request is gone (ADR 0088).
+        await integrationEventPublisher.PublishAsync(
+            new EmailVerificationRequestedIntegrationEvent(
+                user.Id, CultureInfo.CurrentUICulture.Name),
+            cancellationToken);
 
         var creationResult = await CreateTrainerAsync(request, user.Id, cancellationToken);
 
@@ -364,6 +378,78 @@ public abstract class AuthControllerBase(
     }
 
     /// <summary>
+    /// Redeems an emailed verification link, proving the address the account registered with.
+    /// </summary>
+    /// <param name="request">The token the link carried, and nothing else.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// A 204 No Content response when the address is proven — the link is spent.
+    /// A 400 Bad Request response keyed on <c>Token</c>, one fixed sentence for every way a link
+    /// can be dead.
+    /// </returns>
+    /// <remarks>
+    /// Anonymous, because the click is the proof: the visitor arriving from their inbox holds no
+    /// session, and asking them to sign in before proving their address would put the wrong gate
+    /// in front of the right door (ADR 0090). The failure detail is one sentence whatever killed
+    /// the link — unknown, superseded, spent, or an account that left — for the reset flow's
+    /// reason: naming the difference would name account state to whoever holds a stray link
+    /// (ADR 0084).
+    /// </remarks>
+    [AllowAnonymous]
+    [HttpPost("verify-email")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> VerifyEmail(
+        [FromBody] VerifyEmailHttpRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await emailVerification.VerifyAsync(request.Token, cancellationToken)
+            ? NoContent()
+            : RefusedVerificationLink();
+    }
+
+    /// <summary>
+    /// Asks for the verification email to be sent again, to the calling account's own address.
+    /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// A 202 Accepted response with no body, always — even for an account that is already
+    /// verified: the request was recorded, and whatever happens next happens by email.
+    /// A 429 Too Many Requests response, bare, when the account's window is spent.
+    /// </returns>
+    /// <remarks>
+    /// Behind the trainer policy rather than the active-trainer policy, deliberately: proving an
+    /// address grants nothing a suspension withholds, so this is the second write a suspended
+    /// trainer keeps, beside leaving (ADR 0085, ADR 0090). The <c>202</c> is literal and constant
+    /// for the recovery request's reason — the mint happens in the delivery worker, where an
+    /// account already verified is absorbed in silence, so this path answers the same way every
+    /// time. The window is per account, and one permit is one revocation of the earlier link,
+    /// which is why it exists at all (see <see cref="VerificationRateLimiting"/>).
+    /// </remarks>
+    [Authorize(Policy = TrainerPolicy.Name)]
+    [EnableRateLimiting(VerificationRateLimiting.PolicyName)]
+    [HttpPost("resend-verification")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<IActionResult> ResendVerification(CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.GetUserAsync(User);
+
+        if (user is null)
+        {
+            // A live token over an account that no longer exists. The session is over, and a
+            // body would have nothing true to say.
+            return Unauthorized();
+        }
+
+        await emailVerification.RequestAsync(
+            user.Id, CultureInfo.CurrentUICulture.Name, cancellationToken);
+
+        return Accepted();
+    }
+
+    /// <summary>
     /// Erases the calling trainer's account: the Identity account, the trainer, their trainings —
     /// everything, in one transaction, against the caller's own password.
     /// </summary>
@@ -469,6 +555,25 @@ public abstract class AuthControllerBase(
             {
                 [nameof(ResetPasswordHttpRequest.Token)] =
                     ["This password reset link is invalid or has expired. Request a new one and use the most recent email."]
+            });
+
+    /// <summary>
+    /// The one answer a dead verification link gets, whatever killed it.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="RefusedLink"/>'s discipline for the sibling credential: one method, one fixed
+    /// sentence, so a superseded link, a spent one and a fabricated one cannot drift into
+    /// distinguishable answers (ADR 0090). No expiry in the sentence, because the credential has
+    /// none — and the second half is there because "already spent" is the happy path's own echo:
+    /// the visitor who double-clicked has nothing to fix but signing in.
+    /// </remarks>
+    private ActionResult RefusedVerificationLink() =>
+        ValidationFailure(
+            StatusCodes.Status400BadRequest,
+            new Dictionary<string, string[]>
+            {
+                [nameof(VerifyEmailHttpRequest.Token)] =
+                    ["This verification link is invalid or has already been used. If you already verified your address, just sign in."]
             });
 
     /// <summary>

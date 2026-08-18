@@ -35,7 +35,7 @@ namespace TrainingHub.Api.TestKit;
 /// </remarks>
 /// <typeparam name="TFactory">The suite's fixture.</typeparam>
 public abstract class OwnTrainingsTest<TFactory>(TFactory factory) : IntegrationTest<TFactory>(factory)
-    where TFactory : IResettableDatabase, IHttpClientSource
+    where TFactory : IResettableDatabase, IHttpClientSource, IServiceScopeSource
 {
     // Short on purpose: CreateTrainingHttpRequest.Title is [StringLength(100, MinimumLength = 5)],
     // so a sentence-length title is refused at model binding and the POST that sets the scene fails

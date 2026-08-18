@@ -108,7 +108,7 @@ public sealed class TrainingTests
         var act = () => Training.CreateAsync(
             TrainingId.Generate(), TrainerId.Generate(),
             null!, Description(), Prerequisites(), Skills(), Topics(), checker, EmptyCatalogCounter().Object,
-            ActiveTrainerStanding().Object);
+            ActiveTrainerStanding().Object, VerifiedTrainer().Object);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -124,7 +124,7 @@ public sealed class TrainingTests
         var act = () => Training.CreateAsync(
             TrainingId.Generate(), TrainerId.Generate(),
             Title(), Description(), Prerequisites(), Skills(), Topics(), null!, EmptyCatalogCounter().Object,
-            ActiveTrainerStanding().Object);
+            ActiveTrainerStanding().Object, VerifiedTrainer().Object);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -143,7 +143,26 @@ public sealed class TrainingTests
         var act = () => Training.CreateAsync(
             TrainingId.Generate(), TrainerId.Generate(),
             Title(), Description(), Prerequisites(), Skills(), Topics(), checker, null!,
-            ActiveTrainerStanding().Object);
+            ActiveTrainerStanding().Object, VerifiedTrainer().Object);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentNullException>();
+    }
+
+    /// <summary>
+    /// Create async, null trainer verification, throws argument null exception.
+    /// </summary>
+    [Fact]
+    public async Task CreateAsync_NullTrainerVerification_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var checker = new Mock<IUniquenessTitleChecker>().Object;
+
+        // Act
+        var act = () => Training.CreateAsync(
+            TrainingId.Generate(), TrainerId.Generate(),
+            Title(), Description(), Prerequisites(), Skills(), Topics(), checker, EmptyCatalogCounter().Object,
+            ActiveTrainerStanding().Object, null!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -396,6 +415,16 @@ public sealed class TrainingTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         return standing;
+    }
+
+    private static Mock<ITrainerVerification> VerifiedTrainer()
+    {
+        var verification = new Mock<ITrainerVerification>();
+        verification.Setup(v => v.IsVerifiedAsync(
+                It.IsAny<TrainerId>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        return verification;
     }
 
     private static Mock<ITrainingCounter> EmptyCatalogCounter()

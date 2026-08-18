@@ -90,6 +90,9 @@
   <data name="RequestRejected" xml:space="preserve">
     <value>The request was rejected.</value>
   </data>
+  <data name="ResendVerificationEmail" xml:space="preserve">
+    <value>Send the email again</value>
+  </data>
   <data name="SignIn" xml:space="preserve">
     <value>Sign in</value>
   </data>
@@ -104,5 +107,17 @@
   </data>
   <data name="ToggleTheme" xml:space="preserve">
     <value>Toggle theme</value>
+  </data>
+  <data name="VerificationEmailSent" xml:space="preserve">
+    <value>Verification email sent. Only the most recent link works.</value>
+  </data>
+  <data name="VerificationResendRefused" xml:space="preserve">
+    <value>You have asked several times in a row. Wait a moment, and use the most recent email.</value>
+  </data>
+  <data name="VerifyYourEmail" xml:space="preserve">
+    <value>Verify your email address</value>
+  </data>
+  <data name="VerifyYourEmailBody" xml:space="preserve">
+    <value>We sent a verification link to your account&apos;s address. Publishing a training stays closed until you open it.</value>
   </data>
 </root>

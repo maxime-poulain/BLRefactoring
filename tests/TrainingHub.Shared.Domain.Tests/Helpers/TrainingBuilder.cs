@@ -22,6 +22,7 @@ public sealed class TrainingBuilder
     private bool _titleExistsResult;
     private int _publishedCount;
     private bool _trainerSuspended;
+    private bool _trainerVerified = true;
 
     /// <summary>
     /// With title.
@@ -96,6 +97,24 @@ public sealed class TrainingBuilder
     }
 
     /// <summary>
+    /// With the owning trainer's account still unverified (ADR 0090).
+    /// </summary>
+    public TrainingBuilder WithUnverifiedTrainer() { _trainerVerified = false; return this; }
+
+    /// <summary>
+    /// Create trainer verification mock.
+    /// </summary>
+    public Mock<ITrainerVerification> CreateTrainerVerificationMock()
+    {
+        var mock = new Mock<ITrainerVerification>();
+        mock.Setup(c => c.IsVerifiedAsync(
+                It.IsAny<TrainerId>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_trainerVerified);
+        return mock;
+    }
+
+    /// <summary>
     /// Create training counter mock.
     /// </summary>
     public Mock<ITrainingCounter> CreateTrainingCounterMock()
@@ -125,6 +144,7 @@ public sealed class TrainingBuilder
         var mockChecker = CreateTitleCheckerMock();
         var mockCounter = CreateTrainingCounterMock();
         var mockStanding = CreateTrainerStandingMock();
+        var mockVerification = CreateTrainerVerificationMock();
 
         return await Training.CreateAsync(
             TrainingId.Generate(),
@@ -136,7 +156,8 @@ public sealed class TrainingBuilder
             BuildTopics(),
             mockChecker.Object,
             mockCounter.Object,
-            mockStanding.Object);
+            mockStanding.Object,
+            mockVerification.Object);
     }
 
     /// <summary>

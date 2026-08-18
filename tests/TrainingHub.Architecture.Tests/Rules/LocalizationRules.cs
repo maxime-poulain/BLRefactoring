@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using NetArchTest.Rules;
 using TrainingHub.Architecture.Tests.Framework;
 using TrainingHub.Shared.Common.Errors;
 using Xunit;
@@ -21,8 +22,16 @@ namespace TrainingHub.Architecture.Tests.Rules;
 /// </remarks>
 public sealed partial class LocalizationRules
 {
-    /// <summary>The suffix an inner-layer project's name carries, per stack and shared alike.</summary>
-    private static readonly string[] InnerLayerSuffixes = [".Domain", ".Application", ".Infrastructure"];
+    /// <summary>
+    /// The suffix an inner-circle project's name carries, per stack and shared alike.
+    /// </summary>
+    /// <remarks>
+    /// <c>.Infrastructure</c> left the list in ADR 0090: the infrastructure projects are the
+    /// interface-adapters ring, not an inner circle, and the shared one now holds the presenter
+    /// that composes the verification email — fenced to its <c>Email</c> namespace by the rule
+    /// below.
+    /// </remarks>
+    private static readonly string[] InnerCircleSuffixes = [".Domain", ".Application"];
 
     /// <summary>Where the resource families live, as the repository writes the path.</summary>
     private const string TranslationsRoot = "src/TrainingHub.Translations/";
@@ -35,31 +44,60 @@ public sealed partial class LocalizationRules
     ];
 
     /// <summary>
-    /// No inner layer, references the translations.
+    /// No inner circle, references the translations.
     /// </summary>
     /// <remarks>
     /// The domain's half of this line is already held by <c>TheDomain_ReferencesTheKernelAnd
-    /// NothingElse</c>; this rule is what keeps the other inner layers honest, because nothing
-    /// else bounds what an application or infrastructure project may reference. Read from the
-    /// project graph rather than compiled metadata, like every layering rule: the compiler prunes
-    /// a reference no type uses yet, and the csproj is where the coupling decision is written.
+    /// NothingElse</c>; this rule is what keeps the application projects honest, because nothing
+    /// else bounds what they may reference. Read from the project graph rather than compiled
+    /// metadata, like every layering rule: the compiler prunes a reference no type uses yet, and
+    /// the csproj is where the coupling decision is written. The infrastructure projects left the
+    /// census in ADR 0090: an adapter ring is where presenters live, and the shared one now
+    /// composes the verification email there — the reference it gained is fenced to its Email
+    /// namespace by <see cref="OnlyTheEmailCorner_OfTheInfrastructureReadsTheTranslations"/>,
+    /// which is the companion this narrowing leans on.
     /// </remarks>
     [Fact]
     [ArchitectureRule("0088",
         "translations are presentation: the domain answers codes, the edge answers sentences, " +
-        "and no inner layer references the resource assembly")]
-    public void NoInnerLayer_ReferencesTheTranslations() =>
+        "and no use-case or entity circle references the resource assembly")]
+    public void NoInnerCircle_ReferencesTheTranslations() =>
         ProjectGraph.Projects
             .Where(project => project.Name == "TrainingHub.Shared"
-                              || InnerLayerSuffixes.Any(suffix =>
+                              || InnerCircleSuffixes.Any(suffix =>
                                   project.Name.EndsWith(suffix, StringComparison.Ordinal)))
-            .Selected("inner-layer project")
+            .Selected("inner-circle project")
             .Where(project => project.ProjectReferences.Contains("TrainingHub.Translations"))
             .Select(project =>
                 $"{project.RelativePath} references TrainingHub.Translations. A sentence's language " +
-                "belongs to the caller and is known only at the boundary: an inner layer that could " +
+                "belongs to the caller and is known only at the boundary: an inner circle that could " +
                 "read a resource would start answering in one, and the same decision would come out " +
                 "worded by whoever happened to ask (ADR 0088)")
+            .ShouldHold();
+
+    /// <summary>
+    /// Only the email corner, of the infrastructure reads the translations.
+    /// </summary>
+    /// <remarks>
+    /// The fence around the exception the rule above records: the shared infrastructure may
+    /// reference the resource assembly, and only its <c>Email</c> namespace may use it, because
+    /// that corner is where the messages a human reads are composed and delivered (ADR 0090).
+    /// <c>OnlyTheCompositionRoot_RegistersServices</c>'s shape, for its reason — a whole ring is
+    /// admitted to a capability, and a namespace names the one place inside it allowed to
+    /// exercise it. A repository, an interceptor or the outbox plumbing reaching for a localizer
+    /// goes red here: a persisted fact never varies with a language (ADR 0026, ADR 0088).
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0090",
+        "the words of an email are presentation: inside the shared infrastructure, only the Email " +
+        "namespace — the ring's presenter and its gateway — may read the resource assembly")]
+    public void OnlyTheEmailCorner_OfTheInfrastructureReadsTheTranslations() =>
+        Types.InAssembly(Solution.Infrastructure)
+            .That()
+            .DoNotResideInNamespaceEndingWith(".Email")
+            .Should()
+            .NotHaveDependencyOnAny("TrainingHub.Translations")
+            .GetResult()
             .ShouldHold();
 
     /// <summary>

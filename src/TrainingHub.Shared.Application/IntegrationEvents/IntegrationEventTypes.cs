@@ -36,6 +36,7 @@ public static class IntegrationEventTypes
             [typeof(TrainingDeletedIntegrationEvent)] = ("TrainingDeleted", 1),
             [typeof(TrainerDeletedIntegrationEvent)] = ("TrainerDeleted", 1),
             [typeof(PasswordResetRequestedIntegrationEvent)] = ("PasswordResetRequested", 1),
+            [typeof(EmailVerificationRequestedIntegrationEvent)] = ("EmailVerificationRequested", 1),
             [typeof(PasswordChangedIntegrationEvent)] = ("PasswordChanged", 1),
             [typeof(AccountErasedIntegrationEvent)] = ("AccountErased", 1),
         };

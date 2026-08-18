@@ -11,7 +11,7 @@ using Xunit;
 namespace TrainingHub.Shared.Api.Tests.Authorization;
 
 /// <summary>
-/// Behavior covered for <c>AddApiAuthorization</c>: the three policies both hosts enforce, and
+/// Behavior covered for <c>AddApiAuthorization</c>: the policies both hosts enforce, and
 /// what each of them demands.
 /// </summary>
 /// <remarks>
@@ -119,18 +119,49 @@ public sealed class PolicyRegistrationTests
         policy!.Requirements.Should().ContainSingle().Which.Should().BeOfType<ActiveTrainerRequirement>();
     }
 
+    /// <summary>
+    /// The verification policy, carries the handler that decides it.
+    /// </summary>
+    /// <remarks>
+    /// The third policy whose question only the database can answer, and the third that fails
+    /// silently without its handler: a requirement nothing decides never succeeds, so the create
+    /// door would answer <c>403</c> to every trainer, verified or not (ADR 0090).
+    /// </remarks>
+    [Fact]
+    public void TheVerificationPolicy_CarriesTheHandlerThatDecidesIt() =>
+        Services().BuildServiceProvider()
+            .GetServices<IAuthorizationHandler>()
+            .Should().ContainSingle(handler => handler is VerifiedTrainerAuthorizationHandler);
+
+    /// <summary>
+    /// The verification policy, demands a trainer whose address is proven.
+    /// </summary>
+    [Fact]
+    public async Task TheVerificationPolicy_DemandsATrainerWhoseAddressIsProven()
+    {
+        var policy = await PolicyProvider().GetPolicyAsync(VerifiedTrainerPolicy.Name);
+
+        policy!.Requirements.Should().ContainSingle().Which.Should().BeOfType<VerifiedTrainerRequirement>();
+    }
+
     private sealed class StubTrainerStandingQuery : ITrainerStandingQuery
     {
         public Task<bool> IsSuspendedAsync(Guid trainerId, CancellationToken cancellationToken = default) =>
             Task.FromResult(false);
     }
 
+    private sealed class StubAccountVerificationQuery : IAccountVerificationQuery
+    {
+        public Task<bool> IsVerifiedAsync(Guid userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(true);
+    }
+
     private static IAuthorizationPolicyProvider PolicyProvider() =>
         Services().BuildServiceProvider().GetRequiredService<IAuthorizationPolicyProvider>();
 
     /// <remarks>
-    /// Logging because <c>AddAuthorization</c>'s own services ask for it, and the ownership
-    /// handler's two dependencies because resolving <c>IAuthorizationHandler</c> constructs it.
+    /// Logging because <c>AddAuthorization</c>'s own services ask for it, and the handlers'
+    /// dependencies because resolving <c>IAuthorizationHandler</c> constructs them.
     /// Nothing else of the host is present, which is the point: this asserts the registration and
     /// not a pipeline.
     /// </remarks>
@@ -140,6 +171,7 @@ public sealed class PolicyRegistrationTests
             .AddHttpContextAccessor()
             .AddSingleton<ITrainingOwnerQuery, StubTrainingOwnerQuery>()
             .AddSingleton<ITrainerStandingQuery, StubTrainerStandingQuery>()
+            .AddSingleton<IAccountVerificationQuery, StubAccountVerificationQuery>()
             .AddApiAuthorization();
 
     private sealed class StubTrainingOwnerQuery : ITrainingOwnerQuery

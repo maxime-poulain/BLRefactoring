@@ -274,6 +274,10 @@ public abstract class AccountErasureTest<TFactory>(TFactory factory) : Integrati
 
         (await AuthHelper.RegisterAsync(client, request)).EnsureSuccessStatusCode();
 
+        // Verified like every caller that is not about the verification, so the create door
+        // admits the training the erasure is about to take away (ADR 0090).
+        await AuthHelper.MarkEmailVerifiedAsync(Factory, request.Username);
+
         var token = await AuthHelper.LoginAsync(client, request.Username, request.Password);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 

@@ -90,6 +90,9 @@
   <data name="RequestRejected" xml:space="preserve">
     <value>Запрос был отклонен.</value>
   </data>
+  <data name="ResendVerificationEmail" xml:space="preserve">
+    <value>Отправить письмо еще раз</value>
+  </data>
   <data name="SignIn" xml:space="preserve">
     <value>Войти</value>
   </data>
@@ -104,5 +107,17 @@
   </data>
   <data name="ToggleTheme" xml:space="preserve">
     <value>Переключить тему</value>
+  </data>
+  <data name="VerificationEmailSent" xml:space="preserve">
+    <value>Письмо для подтверждения отправлено. Действует только самая новая ссылка.</value>
+  </data>
+  <data name="VerificationResendRefused" xml:space="preserve">
+    <value>Вы запрашивали несколько раз подряд. Подождите немного и используйте самое новое письмо.</value>
+  </data>
+  <data name="VerifyYourEmail" xml:space="preserve">
+    <value>Подтвердите свой адрес электронной почты</value>
+  </data>
+  <data name="VerifyYourEmailBody" xml:space="preserve">
+    <value>Мы отправили ссылку для подтверждения на адрес вашей учетной записи. Публикация тренинга закрыта, пока вы ее не откроете.</value>
   </data>
 </root>

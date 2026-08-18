@@ -24,7 +24,7 @@ namespace TrainingHub.Api.TestKit;
 /// </remarks>
 /// <typeparam name="TFactory">The suite's fixture.</typeparam>
 public abstract class TrainingLifecycleTest<TFactory>(TFactory factory) : IntegrationTest<TFactory>(factory)
-    where TFactory : IResettableDatabase, IHttpClientSource
+    where TFactory : IResettableDatabase, IHttpClientSource, IServiceScopeSource
 {
     // One definition of "a valid training", from the kit, rather than the copies of the same object
     // literal the two suites used to carry between them.

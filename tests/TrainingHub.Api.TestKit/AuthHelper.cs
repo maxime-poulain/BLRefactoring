@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using AwesomeAssertions;
 using System.Net.Http.Json;
 using TrainingHub.Shared.Api.Authorization;
 using TrainingHub.Shared.Api.Contracts.Auth;
@@ -60,13 +61,21 @@ public static class AuthHelper
     }
 
     /// <remarks>
-    /// Takes the capability rather than the fixture. <c>WebApplicationFactory&lt;TEntryPoint&gt;</c>
+    /// Takes the capabilities rather than the fixture. <c>WebApplicationFactory&lt;TEntryPoint&gt;</c>
     /// would drag its entry-point type parameter into every shared test that signs a caller in,
     /// and the shared tests are generic over the fixture precisely so they do not have to name a
-    /// host. Both concrete fixtures satisfy <see cref="IHttpClientSource"/>, so no call site
-    /// changed.
+    /// host. Both concrete fixtures satisfy both capabilities, so no call site changed.
+    /// <para>
+    /// The account comes back <em>verified</em>, flipped through a service scope rather than by
+    /// clicking an emailed link: every flow that is not about the verification needs a caller
+    /// the create door admits, and a hundred tests each fishing a token out of Mailpit would
+    /// prove the round-trip a hundred redundant times. The honest click lives in exactly one
+    /// place, <c>EmailVerificationTest</c> (ADR 0090) — the aging precedent
+    /// <c>PasswordRecoveryTest</c> set, promoted to a helper because everybody needs this one.
+    /// </para>
     /// </remarks>
-    public static async Task<HttpClient> RegisterAndGetAuthenticatedClientAsync(IHttpClientSource factory)
+    public static async Task<HttpClient> RegisterAndGetAuthenticatedClientAsync<TFactory>(TFactory factory)
+        where TFactory : IHttpClientSource, IServiceScopeSource
     {
         ArgumentNullException.ThrowIfNull(factory);
 
@@ -76,10 +85,36 @@ public static class AuthHelper
         var registerResponse = await RegisterAsync(client, request);
         registerResponse.EnsureSuccessStatusCode();
 
+        await MarkEmailVerifiedAsync(factory, request.Username);
+
         var token = await LoginAsync(client, request.Username, request.Password);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         return client;
+    }
+
+    /// <summary>
+    /// Marks an account's address as proven, the way the emailed click would have.
+    /// </summary>
+    /// <remarks>
+    /// Through the host's own <see cref="UserManager{TUser}"/>, because no route through the API
+    /// sets the flag without the emailed token — which is the property under test elsewhere and
+    /// scaffolding here (ADR 0090).
+    /// </remarks>
+    /// <param name="factory">The suite's fixture.</param>
+    /// <param name="username">The account whose address is declared proven.</param>
+    public static async Task MarkEmailVerifiedAsync(IServiceScopeSource factory, string username)
+    {
+        ArgumentNullException.ThrowIfNull(factory);
+
+        using var scope = factory.CreateScope();
+
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser<Guid>>>();
+
+        var user = await userManager.FindByNameAsync(username);
+        user!.EmailConfirmed = true;
+
+        (await userManager.UpdateAsync(user)).Succeeded.Should().BeTrue();
     }
 
     /// <summary>

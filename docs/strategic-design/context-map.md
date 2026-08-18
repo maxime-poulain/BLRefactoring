@@ -101,11 +101,13 @@ trainers because it is never shown one.
 `TrainerCreatedIntegrationEvent`, `TrainerContactEmailChangedIntegrationEvent`,
 `TrainerSuspendedIntegrationEvent`, `TrainerReinstatedIntegrationEvent`,
 `TrainingWithheldIntegrationEvent`, `TrainerContactedIntegrationEvent`,
-`PasswordResetRequestedIntegrationEvent`, `PasswordChangedIntegrationEvent` and
+`PasswordResetRequestedIntegrationEvent`, `EmailVerificationRequestedIntegrationEvent`,
+`PasswordChangedIntegrationEvent` and
 `AccountErasedIntegrationEvent`, committed to the
-outbox by nine producers — six policies in `Shared.Application/EventHandlers/`, and three flows
-whose endpoints commit their own fact, the contact message, the account recovery and the account's
-erasure (ADR 0002, ADR 0024, ADR 0056, ADR 0082, ADR 0084, ADR 0085).
+outbox by ten producers — six policies in `Shared.Application/EventHandlers/`, and four flows
+whose endpoints commit their own fact, the contact message, the account recovery, the email
+verification and the account's
+erasure (ADR 0002, ADR 0024, ADR 0056, ADR 0082, ADR 0084, ADR 0085, ADR 0090).
 A second port sits beside the sender for the three sanction notices, `ITrainerAccountQuery` —
 one of the three read ports in `Shared.Application/Queries/`, and the only one that opens two
 stores. Those notices are addressed to the account rather than to the published contact address,

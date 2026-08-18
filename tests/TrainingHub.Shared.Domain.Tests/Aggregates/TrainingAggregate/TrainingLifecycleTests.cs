@@ -216,6 +216,43 @@ public sealed class TrainingLifecycleTests
     }
 
     /// <summary>
+    /// Create async, an unverified trainer, is refused (ADR 0090).
+    /// </summary>
+    /// <remarks>
+    /// Creation is one of only two doors a catalog grows through, and the only one this rule
+    /// guards on the owner's side — publishing never asks, because an unverified trainer has
+    /// nothing to publish. The transfer's recipient side is proven beside the domain service.
+    /// </remarks>
+    [Fact]
+    public async Task CreateAsync_AnUnverifiedTrainer_IsRefused()
+    {
+        var result = await new TrainingBuilder().WithUnverifiedTrainer().BuildAsync();
+
+        result.ShouldBeFailure().Should().ContainSingle()
+            .Which.ErrorCode.Should().Be(TrainingErrorCodes.TrainerUnverified);
+    }
+
+    /// <summary>
+    /// Create async, a suspended and unverified trainer, answers the sanction first.
+    /// </summary>
+    /// <remarks>
+    /// The order is deliberate: a sanction outranks a formality, and a trainer told to verify
+    /// their address while suspended would verify it and still be refused — the worse of the two
+    /// sentences must come first.
+    /// </remarks>
+    [Fact]
+    public async Task CreateAsync_ASuspendedAndUnverifiedTrainer_AnswersTheSanctionFirst()
+    {
+        var result = await new TrainingBuilder()
+            .WithSuspendedTrainer()
+            .WithUnverifiedTrainer()
+            .BuildAsync();
+
+        result.ShouldBeFailure().Should().ContainSingle()
+            .Which.ErrorCode.Should().Be(TrainingErrorCodes.TrainerSuspended);
+    }
+
+    /// <summary>
     /// Mark for deletion, announces the fact deletion never used to raise.
     /// </summary>
     /// <remarks>

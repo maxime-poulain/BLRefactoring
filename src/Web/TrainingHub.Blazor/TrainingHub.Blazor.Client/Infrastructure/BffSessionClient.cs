@@ -143,6 +143,33 @@ public sealed class BffSessionClient(IHttpClientFactory httpClientFactory) : IBf
     }
 
     /// <summary>
+    /// Redeems a verification link, through the BFF.
+    /// </summary>
+    /// <remarks>
+    /// Sign-in's shape rather than the reset redemption's, because the BFF passes only the
+    /// status through: the API answers every dead link with one fixed sentence, and the page
+    /// renders its own localized version of it, so there is no document to read (ADR 0090).
+    /// </remarks>
+    public async Task<bool> VerifyEmailAsync(string token, CancellationToken cancellationToken = default)
+    {
+        var client = httpClientFactory.CreateClient(HttpClientNames.Bff);
+
+        var response = await client.PostAsJsonAsync(
+            "bff/verify-email",
+            new VerifyEmailHttpRequest { Token = token },
+            cancellationToken);
+
+        if (response.StatusCode is HttpStatusCode.BadRequest)
+        {
+            return false;
+        }
+
+        response.EnsureSuccessStatusCode();
+
+        return true;
+    }
+
+    /// <summary>
     /// Erases the account, and with it the session that asked.
     /// </summary>
     /// <remarks>
@@ -236,6 +263,15 @@ public interface IBffSessionClient
     Task<ProblemDetails?> ResetPasswordAsync(
         ResetPasswordHttpRequest reset,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Redeems a verification link. <see langword="true"/> means the address is proven;
+    /// <see langword="false"/> means the link is dead — one answer for every way it can be,
+    /// which is all the API tells anyone (ADR 0090).
+    /// </summary>
+    /// <param name="token">The verification token, exactly as the emailed link carried it.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+    Task<bool> VerifyEmailAsync(string token, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Erases the account. <see langword="null"/> means it is gone and the session with it; a

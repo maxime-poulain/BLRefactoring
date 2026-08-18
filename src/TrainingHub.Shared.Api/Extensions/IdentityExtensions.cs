@@ -39,6 +39,11 @@ public static class IdentityExtensions
 
         services.AddIdentity<IdentityUser<Guid>, IdentityRole<Guid>>(options =>
             {
+                // Deliberately absent, and a rule keeps it that way: SignIn.RequireConfirmedEmail
+                // and SignIn.RequireConfirmedAccount must never be set here. An unverified account
+                // signs in, manages its space and reads everything — only the catalog write asks
+                // for the proof — and the one-line "hardening" either flag offers would silently
+                // invert that business rule (ADR 0090).
                 options.Password.RequireUppercase = false;
                 options.Password.RequireDigit = false;
                 options.Password.RequiredLength = 4;
@@ -59,6 +64,9 @@ public static class IdentityExtensions
             .AddScoped<ICurrentUserService, CurrentUserService>()
             // The recovery flow of ADR 0084 — a shared Identity service in TokenService's mold,
             // so both hosts publish the same two endpoints from one implementation.
-            .AddScoped<IPasswordRecoveryService, PasswordRecoveryService>();
+            .AddScoped<IPasswordRecoveryService, PasswordRecoveryService>()
+            // The verification flow of ADR 0090, in the recovery service's mold and for its
+            // reason: one implementation behind both hosts' verify and resend endpoints.
+            .AddScoped<IEmailVerificationService, EmailVerificationService>();
     }
 }

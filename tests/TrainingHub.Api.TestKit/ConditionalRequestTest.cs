@@ -20,7 +20,7 @@ namespace TrainingHub.Api.TestKit;
 /// </remarks>
 /// <typeparam name="TFactory">The suite's fixture.</typeparam>
 public abstract class ConditionalRequestTest<TFactory>(TFactory factory) : IntegrationTest<TFactory>(factory)
-    where TFactory : IResettableDatabase, IHttpClientSource
+    where TFactory : IResettableDatabase, IHttpClientSource, IServiceScopeSource
 {
     /// <summary>
     /// Get me, authenticated, returns 200 with ETag.

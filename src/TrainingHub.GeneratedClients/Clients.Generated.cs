@@ -1158,6 +1158,72 @@ namespace TrainingHub.GeneratedClients
         System.Threading.Tasks.Task ResetPasswordAsync(ResetPasswordHttpRequest body, System.Threading.CancellationToken cancellationToken);
 
         /// <summary>
+        /// Redeems an emailed verification link, proving the address the account registered with.
+        /// </summary>
+        /// <remarks>
+        /// Anonymous, because the click is the proof: the visitor arriving from their inbox holds no
+        /// <br/>session, and asking them to sign in before proving their address would put the wrong gate
+        /// <br/>in front of the right door (ADR 0090). The failure detail is one sentence whatever killed
+        /// <br/>the link — unknown, superseded, spent, or an account that left — for the reset flow's
+        /// <br/>reason: naming the difference would name account state to whoever holds a stray link
+        /// <br/>(ADR 0084).
+        /// </remarks>
+        /// <param name="body">A token to cancel the operation.</param>
+        /// <returns>No Content</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task VerifyEmailAsync(VerifyEmailHttpRequest body);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Redeems an emailed verification link, proving the address the account registered with.
+        /// </summary>
+        /// <remarks>
+        /// Anonymous, because the click is the proof: the visitor arriving from their inbox holds no
+        /// <br/>session, and asking them to sign in before proving their address would put the wrong gate
+        /// <br/>in front of the right door (ADR 0090). The failure detail is one sentence whatever killed
+        /// <br/>the link — unknown, superseded, spent, or an account that left — for the reset flow's
+        /// <br/>reason: naming the difference would name account state to whoever holds a stray link
+        /// <br/>(ADR 0084).
+        /// </remarks>
+        /// <param name="body">A token to cancel the operation.</param>
+        /// <returns>No Content</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task VerifyEmailAsync(VerifyEmailHttpRequest body, System.Threading.CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Asks for the verification email to be sent again, to the calling account's own address.
+        /// </summary>
+        /// <remarks>
+        /// Behind the trainer policy rather than the active-trainer policy, deliberately: proving an
+        /// <br/>address grants nothing a suspension withholds, so this is the second write a suspended
+        /// <br/>trainer keeps, beside leaving (ADR 0085, ADR 0090). The `202` is literal and constant
+        /// <br/>for the recovery request's reason — the mint happens in the delivery worker, where an
+        /// <br/>account already verified is absorbed in silence, so this path answers the same way every
+        /// <br/>time. The window is per account, and one permit is one revocation of the earlier link,
+        /// <br/>which is why it exists at all (see VerificationRateLimiting).
+        /// </remarks>
+        /// <returns>Accepted</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task ResendVerificationAsync();
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Asks for the verification email to be sent again, to the calling account's own address.
+        /// </summary>
+        /// <remarks>
+        /// Behind the trainer policy rather than the active-trainer policy, deliberately: proving an
+        /// <br/>address grants nothing a suspension withholds, so this is the second write a suspended
+        /// <br/>trainer keeps, beside leaving (ADR 0085, ADR 0090). The `202` is literal and constant
+        /// <br/>for the recovery request's reason — the mint happens in the delivery worker, where an
+        /// <br/>account already verified is absorbed in silence, so this path answers the same way every
+        /// <br/>time. The window is per account, and one permit is one revocation of the earlier link,
+        /// <br/>which is why it exists at all (see VerificationRateLimiting).
+        /// </remarks>
+        /// <returns>Accepted</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task ResendVerificationAsync(System.Threading.CancellationToken cancellationToken);
+
+        /// <summary>
         /// Erases the calling trainer's account: the Identity account, the trainer, their trainings —
         /// <br/>everything, in one transaction, against the caller's own password.
         /// </summary>
@@ -1709,6 +1775,236 @@ namespace TrainingHub.GeneratedClients
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Redeems an emailed verification link, proving the address the account registered with.
+        /// </summary>
+        /// <remarks>
+        /// Anonymous, because the click is the proof: the visitor arriving from their inbox holds no
+        /// <br/>session, and asking them to sign in before proving their address would put the wrong gate
+        /// <br/>in front of the right door (ADR 0090). The failure detail is one sentence whatever killed
+        /// <br/>the link — unknown, superseded, spent, or an account that left — for the reset flow's
+        /// <br/>reason: naming the difference would name account state to whoever holds a stray link
+        /// <br/>(ADR 0084).
+        /// </remarks>
+        /// <param name="body">A token to cancel the operation.</param>
+        /// <returns>No Content</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task VerifyEmailAsync(VerifyEmailHttpRequest body)
+        {
+            return VerifyEmailAsync(body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Redeems an emailed verification link, proving the address the account registered with.
+        /// </summary>
+        /// <remarks>
+        /// Anonymous, because the click is the proof: the visitor arriving from their inbox holds no
+        /// <br/>session, and asking them to sign in before proving their address would put the wrong gate
+        /// <br/>in front of the right door (ADR 0090). The failure detail is one sentence whatever killed
+        /// <br/>the link — unknown, superseded, spent, or an account that left — for the reset flow's
+        /// <br/>reason: naming the difference would name account state to whoever holds a stray link
+        /// <br/>(ADR 0084).
+        /// </remarks>
+        /// <param name="body">A token to cancel the operation.</param>
+        /// <returns>No Content</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task VerifyEmailAsync(VerifyEmailHttpRequest body, System.Threading.CancellationToken cancellationToken)
+        {
+            if (body == null)
+                throw new System.ArgumentNullException("body");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.ByteArrayContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                
+                    // Operation Path: "Auth/verify-email"
+                    urlBuilder_.Append("Auth/verify-email");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 204)
+                        {
+                            return;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Asks for the verification email to be sent again, to the calling account's own address.
+        /// </summary>
+        /// <remarks>
+        /// Behind the trainer policy rather than the active-trainer policy, deliberately: proving an
+        /// <br/>address grants nothing a suspension withholds, so this is the second write a suspended
+        /// <br/>trainer keeps, beside leaving (ADR 0085, ADR 0090). The `202` is literal and constant
+        /// <br/>for the recovery request's reason — the mint happens in the delivery worker, where an
+        /// <br/>account already verified is absorbed in silence, so this path answers the same way every
+        /// <br/>time. The window is per account, and one permit is one revocation of the earlier link,
+        /// <br/>which is why it exists at all (see VerificationRateLimiting).
+        /// </remarks>
+        /// <returns>Accepted</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task ResendVerificationAsync()
+        {
+            return ResendVerificationAsync(System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Asks for the verification email to be sent again, to the calling account's own address.
+        /// </summary>
+        /// <remarks>
+        /// Behind the trainer policy rather than the active-trainer policy, deliberately: proving an
+        /// <br/>address grants nothing a suspension withholds, so this is the second write a suspended
+        /// <br/>trainer keeps, beside leaving (ADR 0085, ADR 0090). The `202` is literal and constant
+        /// <br/>for the recovery request's reason — the mint happens in the delivery worker, where an
+        /// <br/>account already verified is absorbed in silence, so this path answers the same way every
+        /// <br/>time. The window is per account, and one permit is one revocation of the earlier link,
+        /// <br/>which is why it exists at all (see VerificationRateLimiting).
+        /// </remarks>
+        /// <returns>Accepted</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task ResendVerificationAsync(System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Content = new System.Net.Http.StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json");
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                
+                    // Operation Path: "Auth/resend-verification"
+                    urlBuilder_.Append("Auth/resend-verification");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 202)
+                        {
+                            return;
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 429)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Too Many Requests", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         {
@@ -6780,6 +7076,12 @@ namespace TrainingHub.GeneratedClients
         public string Status { get; set; } = default!;
 
         /// <summary>
+        /// Whether the account behind this trainer has proven its email address.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("isEmailVerified")]
+        public bool IsEmailVerified { get; set; } = default!;
+
+        /// <summary>
         /// Why the trainer was suspended, or `null` when they are not.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("suspensionReason")]
@@ -6889,6 +7191,31 @@ namespace TrainingHub.GeneratedClients
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("recipientTrainerId")]
         public System.Guid RecipientTrainerId { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// The body of `POST /Auth/verify-email`: the token the emailed verification link carried.
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class VerifyEmailHttpRequest
+    {
+
+        /// <summary>
+        /// The verification token, exactly as the emailed link carried it.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("token")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Token { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

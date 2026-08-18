@@ -35,6 +35,7 @@ public sealed class IntegrationEventSerializerTests
         new TrainingDeletedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
         new TrainerDeletedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
         new PasswordResetRequestedIntegrationEvent("grace.hopper@example.org"),
+        new EmailVerificationRequestedIntegrationEvent(Guid.NewGuid(), "fr"),
         new PasswordChangedIntegrationEvent(Guid.NewGuid(), "grace.hopper@example.org", "grace.hopper"),
         new AccountErasedIntegrationEvent(Guid.NewGuid(), "grace.hopper@example.org", "grace.hopper"),
     ];

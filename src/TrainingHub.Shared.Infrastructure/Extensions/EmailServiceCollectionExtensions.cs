@@ -51,6 +51,10 @@ public static class EmailServiceCollectionExtensions
 
         return services
             .AddSingleton<IEmailSender, SmtpEmailSender>()
+            // The presenter half of the same mechanics (ADR 0090): the consumer hands facts to
+            // this port and mails back whatever prose it answers. Transient because the localizer
+            // it holds is, and it holds nothing else.
+            .AddTransient<IVerificationEmailComposer, VerificationEmailComposer>()
             .AddSingleton<IEmailTransportReachability, SmtpReachability>();
     }
 }

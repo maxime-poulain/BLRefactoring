@@ -268,19 +268,21 @@ Registration, authentication, token issuance, lockout, password recovery, accoun
   ([ADR 0031](../adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md)). The
   protocol is the boundary: only the infrastructure names the mail client, and a rule holds that
   line.
-- **Fed by:** the transactional outbox, end to end. Registration, recovery, address changes, the
-  account's erasure and the
+- **Fed by:** the transactional outbox, end to end. Registration, recovery, verification, address
+  changes, the account's erasure and the
   administration's decisions commit `TrainerCreatedIntegrationEvent`,
   `TrainerContactEmailChangedIntegrationEvent`, `TrainerSuspendedIntegrationEvent`,
   `TrainerReinstatedIntegrationEvent`, `TrainingWithheldIntegrationEvent`,
   `TrainerContactedIntegrationEvent`, `PasswordResetRequestedIntegrationEvent`,
+  `EmailVerificationRequestedIntegrationEvent`,
   `PasswordChangedIntegrationEvent` and `AccountErasedIntegrationEvent` with the change
-  itself (ADR 0002, ADR 0024, ADR 0056, ADR 0082, ADR 0084, ADR 0085), and the delivery worker hands each fact to the consumer
+  itself (ADR 0002, ADR 0024, ADR 0056, ADR 0082, ADR 0084, ADR 0085, ADR 0090), and the delivery worker hands each fact to the consumer
   that composes its `EmailMessage` — after the commit, at-least-once (ADR 0025). The three
   sanction notices go to the account's address rather than the published contact address, resolved
-  through `ITrainerAccountQuery` when the notice is sent; the reset link does not exist until its
-  consumer mints it, which is what keeps the one secret in this list off the outbox row entirely
-  (ADR 0084); and the farewell's address travels on its own fact, because by delivery time the
+  through `ITrainerAccountQuery` when the notice is sent; neither the reset link nor the
+  verification link exists until its
+  consumer mints it, which is what keeps the two secrets in this list off the outbox row entirely
+  (ADR 0084, ADR 0090); and the farewell's address travels on its own fact, because by delivery time the
   rows that could answer it are gone (ADR 0085).
 
 ---

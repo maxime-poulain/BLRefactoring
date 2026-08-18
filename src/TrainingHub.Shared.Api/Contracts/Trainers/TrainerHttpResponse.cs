@@ -61,6 +61,19 @@ public sealed class TrainerHttpResponse
     public required string Status { get; init; }
 
     /// <summary>
+    /// Whether the account behind this trainer has proven its email address.
+    /// </summary>
+    /// <remarks>
+    /// Composed at the boundary rather than read off <c>TrainerDto</c>: the fact is a column of
+    /// the Identity store, not of the trainer, and the application read models deliberately do
+    /// not know it — the controller asks the same boundary reader the create policy consults and
+    /// stitches the answer in here (ADR 0090). Published on this contract for the standing's
+    /// reason: the only reader is the trainer it describes, and the browser needs the bit to say
+    /// what the catalog door will refuse before the trainer walks into a 403 (ADR 0057).
+    /// </remarks>
+    public required bool IsEmailVerified { get; init; }
+
+    /// <summary>
     /// Why the trainer was suspended, or <see langword="null"/> when they are not.
     /// </summary>
     /// <remarks>

@@ -29,11 +29,15 @@ public sealed class SendWelcomeEmailWhenTrainerCreatedIntegrationEventHandler(IE
     /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
     public async Task HandleAsync(TrainerCreatedIntegrationEvent integrationEvent, CancellationToken cancellationToken)
     {
+        // "You can now publish your first training" left this message in ADR 0090: it stopped
+        // being true the day publishing started asking for a verified address, and the account's
+        // own mailbox — not the published contact address this notice goes to — is where the
+        // verification email says what to do about that.
         var message = new EmailMessage(
             integrationEvent.ContactEmail,
             "Welcome aboard!",
             $"Hello {integrationEvent.Firstname} {integrationEvent.Lastname}, " +
-            "your trainer account has been created. You can now publish your first training.");
+            "your trainer account has been created. Welcome to TrainingHub!");
 
         await emailSender.SendAsync(message, cancellationToken);
     }

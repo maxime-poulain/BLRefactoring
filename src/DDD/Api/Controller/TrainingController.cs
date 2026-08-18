@@ -42,7 +42,13 @@ public sealed class TrainingController(ITrainingApplicationService trainingAppli
     /// 409 Conflict when a training with the same title already exists for the trainer.
     /// 400 Bad Request with validation errors on failure.
     /// </returns>
+    /// <remarks>
+    /// The one action behind the verification policy as well: creation is the only door into the
+    /// catalog an unverified trainer can reach, so the courtesy 403 sits here and nowhere else —
+    /// the domain's own check remains the enforcement (ADR 0090).
+    /// </remarks>
     [Authorize(Policy = ActiveTrainerPolicy.Name)]
+    [Authorize(Policy = VerifiedTrainerPolicy.Name)]
     [HttpPost]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]

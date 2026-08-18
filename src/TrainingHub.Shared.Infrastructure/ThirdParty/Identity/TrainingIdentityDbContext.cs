@@ -35,5 +35,6 @@ public sealed class TrainingIdentityDbContext : IdentityDbContext<IdentityUser<G
         base.OnModelCreating(builder);
 
         PasswordResetTokenConfiguration.Configure(builder.Entity<PasswordResetToken>());
+        EmailVerificationTokenConfiguration.Configure(builder.Entity<EmailVerificationToken>());
     }
 }

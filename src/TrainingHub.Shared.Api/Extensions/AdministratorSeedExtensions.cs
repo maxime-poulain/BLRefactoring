@@ -173,6 +173,9 @@ public static class AdministratorSeedExtensions
         var user = new IdentityUser<Guid>
         {
             UserName = username,
+            // Confirmed at birth: a seeded account has no mailbox to click from, and an
+            // administrator is provisioned by hand rather than through registration (ADR 0090).
+            EmailConfirmed = true,
             Email = $"{username}@traininghub.local"
         };
 

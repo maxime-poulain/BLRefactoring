@@ -27,7 +27,7 @@ namespace TrainingHub.Api.TestKit;
 /// </remarks>
 /// <typeparam name="TFactory">The suite's fixture.</typeparam>
 public abstract class ErrorFormatTest<TFactory>(TFactory factory) : IntegrationTest<TFactory>(factory)
-    where TFactory : IResettableDatabase, IHttpClientSource
+    where TFactory : IResettableDatabase, IHttpClientSource, IServiceScopeSource
 {
     private static async Task<JsonElement> BodyAsync(HttpResponseMessage response)
         => JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;

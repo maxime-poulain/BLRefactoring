@@ -39,6 +39,13 @@ public sealed class TrainingServiceTestFixture
     public Mock<ITrainerStanding> TrainerStanding { get; } = new();
 
     /// <summary>
+    /// Trainer verification — answers "verified" unless a test says otherwise, because a bare
+    /// mock would answer <see langword="false"/> and fail every fact that is not about the
+    /// rule (ADR 0090).
+    /// </summary>
+    public Mock<ITrainerVerification> TrainerVerification { get; } = Verified();
+
+    /// <summary>
     /// Current user service.
     /// </summary>
     public Mock<ICurrentUserService> CurrentUserService { get; } = new();
@@ -75,6 +82,20 @@ public sealed class TrainingServiceTestFixture
     }
 
     /// <summary>
+    /// A verification port answering yes, the state every fact but the rule's own starts from.
+    /// </summary>
+    public static Mock<ITrainerVerification> Verified()
+    {
+        var verification = new Mock<ITrainerVerification>();
+
+        verification
+            .Setup(port => port.IsVerifiedAsync(It.IsAny<TrainerId>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        return verification;
+    }
+
+    /// <summary>
     /// Create sut.
     /// </summary>
     public TrainingApplicationService CreateSut() => new(
@@ -83,6 +104,7 @@ public sealed class TrainingServiceTestFixture
         TitleChecker.Object,
         TrainingCounter.Object,
         TrainerStanding.Object,
+        TrainerVerification.Object,
         TrainingRepository.Object,
         CurrentUserService.Object,
         UnitOfWork.Object);

@@ -17,7 +17,7 @@
                    Color="Color.Primary"
                    StartIcon="@Icons.Material.Filled.Add"
                    Href="/trainings/create"
-                   Disabled="@_standing.IsSuspended">
+                   Disabled="@(_standing.IsSuspended || !_standing.IsEmailVerified)">
             @L["CreateTraining"]
         </MudButton>
     </MudStack>
@@ -44,7 +44,7 @@
                        Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.Add"
                        Href="/trainings/create"
-                   Disabled="@_standing.IsSuspended">
+                   Disabled="@(_standing.IsSuspended || !_standing.IsEmailVerified)">
                 @L["CreateTraining"]
             </MudButton>
         </MudPaper>

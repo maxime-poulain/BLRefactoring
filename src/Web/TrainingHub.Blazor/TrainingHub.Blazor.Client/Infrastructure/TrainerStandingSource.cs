@@ -64,10 +64,17 @@ public sealed class TrainerStandingSource(
     {
         var trainer = await read;
 
-        return trainer is not null
-               && string.Equals(trainer.Status, Suspended, StringComparison.Ordinal)
-            ? new TrainerStanding(IsSuspended: true, trainer.SuspensionReason)
-            : TrainerStanding.Active;
+        if (trainer is null)
+        {
+            // Fail open on both flags: a failed read must neither accuse somebody of a sanction
+            // nor nag somebody who already clicked their link (ADR 0057, ADR 0090).
+            return TrainerStanding.Active;
+        }
+
+        return new TrainerStanding(
+            IsSuspended: string.Equals(trainer.Status, Suspended, StringComparison.Ordinal),
+            Reason: trainer.SuspensionReason,
+            IsEmailVerified: trainer.IsEmailVerified);
     }
 
     private async Task<TrainerHttpResponse?> ReadAsync()
