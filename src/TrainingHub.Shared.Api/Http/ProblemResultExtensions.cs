@@ -65,18 +65,18 @@ public static class ProblemResultExtensions
         ArgumentNullException.ThrowIfNull(controller);
         ArgumentNullException.ThrowIfNull(errors);
 
-        var translated = Translate(controller, errors);
+        var translatedErrors = Translate(controller, errors);
 
         var problem = new ProblemDetails
         {
             Status = statusCode,
             // The first message is the summary; the whole set stays available below. Picking one
             // for `detail` beats leaving it null, which is what a caller reads first.
-            Detail = translated.Count > 0 ? translated[0].ErrorMessage : null,
+            Detail = translatedErrors.Count > 0 ? translatedErrors[0].ErrorMessage : null,
             Instance = controller.Request.Path
         };
 
-        problem.Extensions[DomainErrorsExtension] = translated;
+        problem.Extensions[DomainErrorsExtension] = translatedErrors;
 
         // ObjectResult with the media type stated, not StatusCode(int, object). That overload
         // produces a bare ObjectResult with no ContentTypes, so content negotiation lands on the
@@ -116,14 +116,14 @@ public static class ProblemResultExtensions
         // localization keeps the authored sentences rather than throwing on its first refusal.
         if (controller.HttpContext.RequestServices
                 .GetService(typeof(IStringLocalizer<DomainErrorResources>))
-            is not IStringLocalizer<DomainErrorResources> catalog)
+            is not IStringLocalizer<DomainErrorResources> localizer)
         {
             return [.. errors];
         }
 
         return [.. errors.Select(error =>
         {
-            var sentence = catalog[error.ErrorCode];
+            var sentence = localizer[error.ErrorCode];
 
             return sentence.ResourceNotFound
                 ? error
