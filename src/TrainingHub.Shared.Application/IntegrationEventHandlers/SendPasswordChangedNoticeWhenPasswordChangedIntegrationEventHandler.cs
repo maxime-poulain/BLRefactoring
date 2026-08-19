@@ -14,7 +14,9 @@ namespace TrainingHub.Shared.Application.IntegrationEventHandlers;
 /// previous address when a contact email changes: a change to something that identifies you is
 /// announced to who you were.
 /// </remarks>
-public sealed class SendPasswordChangedNoticeWhenPasswordChangedIntegrationEventHandler(IEmailSender emailSender)
+public sealed class SendPasswordChangedNoticeWhenPasswordChangedIntegrationEventHandler(
+    INotificationComposer composer,
+    IEmailSender emailSender)
     : IIntegrationEventHandler<PasswordChangedIntegrationEvent>
 {
     /// <inheritdoc />
@@ -31,16 +33,12 @@ public sealed class SendPasswordChangedNoticeWhenPasswordChangedIntegrationEvent
     {
         ArgumentNullException.ThrowIfNull(integrationEvent);
 
+        var notification = composer.PasswordChanged(integrationEvent.Language, integrationEvent.Username);
+
         var message = new EmailMessage(
             integrationEvent.Email,
-            "Your TrainingHub password was changed",
-            $"Hello {integrationEvent.Username},\n\n"
-            + "The password of your TrainingHub account was just changed.\n\n"
-            + "If that was you, there is nothing to do.\n\n"
-            + "If it was not, somebody else completed a password reset against your account. "
-            + "Use \"Forgot your password?\" on the sign-in page right away: resetting mails a "
-            + "fresh link to this address and invalidates every earlier one, which locks the "
-            + "intruder's way back out.");
+            notification.Subject,
+            notification.Body);
 
         await emailSender.SendAsync(message, cancellationToken);
     }

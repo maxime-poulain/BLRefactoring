@@ -22,9 +22,8 @@ public interface IEmailVerificationService
     /// same way every time (ADR 0090).
     /// </remarks>
     /// <param name="userId">The account asking to prove its address.</param>
-    /// <param name="culture">The culture the requester is being served in, as a code (ADR 0088).</param>
     /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-    Task RequestAsync(Guid userId, string culture, CancellationToken cancellationToken = default);
+    Task RequestAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Redeems an emailed verification link, proving the address it was sent to.

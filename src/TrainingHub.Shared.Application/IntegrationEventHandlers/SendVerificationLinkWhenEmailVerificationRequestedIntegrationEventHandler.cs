@@ -15,14 +15,15 @@ namespace TrainingHub.Shared.Application.IntegrationEventHandlers;
 /// a resend that lost to the click, and a retry re-running a delivery whose account verified in
 /// the meantime (ADR 0090). This consumer holds no logger at all for ADR 0084's reason.
 /// <para>
-/// The words are not composed here: the fact's culture, the invitation's name and its link go to
-/// <see cref="IVerificationEmailComposer"/>, and what comes back is prose this layer never
-/// inspects — the application knows no language, the same way it knows no URL (ADR 0090).
+/// The words are not composed here: the invitation's language, name and link go to
+/// <see cref="INotificationComposer"/>, and what comes back is prose this layer never inspects —
+/// the application knows no language, the same way it knows no URL (ADR 0090). The language rides
+/// on the invitation rather than on the fact since ADR 0091, beside the address it belongs to.
 /// </para>
 /// </remarks>
 public sealed class SendVerificationLinkWhenEmailVerificationRequestedIntegrationEventHandler(
     IEmailVerificationTokenStore verificationTokens,
-    IVerificationEmailComposer composer,
+    INotificationComposer composer,
     IEmailSender emailSender)
     : IIntegrationEventHandler<EmailVerificationRequestedIntegrationEvent>
 {
@@ -47,9 +48,15 @@ public sealed class SendVerificationLinkWhenEmailVerificationRequestedIntegratio
             return;
         }
 
-        var email = composer.Compose(integrationEvent.Culture, invitation.Username, invitation.Link);
+        var notification = composer.VerificationLink(
+            invitation.Language,
+            invitation.Username,
+            invitation.Link);
 
-        var message = new EmailMessage(invitation.EmailAddress, email.Subject, email.Body);
+        var message = new EmailMessage(
+            invitation.EmailAddress,
+            notification.Subject,
+            notification.Body);
 
         await emailSender.SendAsync(message, cancellationToken);
     }

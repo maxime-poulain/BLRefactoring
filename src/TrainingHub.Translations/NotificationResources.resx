@@ -12,6 +12,102 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AccountErasedBody" xml:space="preserve">
+    <value>Your TrainingHub account was just erased, along with your profile, your trainings and your portrait. Nothing of it remains on the platform.</value>
+  </data>
+  <data name="AccountErasedFarewell" xml:space="preserve">
+    <value>If that was you: thank you for having taught with us, and goodbye.</value>
+  </data>
+  <data name="AccountErasedGreeting" xml:space="preserve">
+    <value>Hello {0},</value>
+  </data>
+  <data name="AccountErasedIntrusion" xml:space="preserve">
+    <value>If it was not, somebody with access to your session erased the account. The data cannot be restored, but the name and address are yours again: registering anew is open to you, and closed to whoever did this the moment you do.</value>
+  </data>
+  <data name="AccountErasedSubject" xml:space="preserve">
+    <value>Your TrainingHub account was erased</value>
+  </data>
+  <data name="ContactEmailChangedBody" xml:space="preserve">
+    <value>The contact email address of your trainer profile was changed to {0}.</value>
+  </data>
+  <data name="ContactEmailChangedSubject" xml:space="preserve">
+    <value>Your contact email address was changed</value>
+  </data>
+  <data name="ContactEmailChangedWarning" xml:space="preserve">
+    <value>If you did not request this change, please contact support immediately.</value>
+  </data>
+  <data name="ContactMessageGreeting" xml:space="preserve">
+    <value>Hello {0},</value>
+  </data>
+  <data name="ContactMessageIntro" xml:space="preserve">
+    <value>{0} &lt;{1}&gt; wrote to you:</value>
+  </data>
+  <data name="ContactMessageIntroAbout" xml:space="preserve">
+    <value>{0} &lt;{1}&gt; wrote to you about your training “{2}”:</value>
+  </data>
+  <data name="ContactMessageReply" xml:space="preserve">
+    <value>Replying to this message answers them directly. They were never shown your address.</value>
+  </data>
+  <data name="ContactMessageSubject" xml:space="preserve">
+    <value>{0} contacted you through TrainingHub</value>
+  </data>
+  <data name="ContactMessageSubjectAbout" xml:space="preserve">
+    <value>{0} contacted you about “{1}”</value>
+  </data>
+  <data name="PasswordChangedBody" xml:space="preserve">
+    <value>The password of your TrainingHub account was just changed.</value>
+  </data>
+  <data name="PasswordChangedGreeting" xml:space="preserve">
+    <value>Hello {0},</value>
+  </data>
+  <data name="PasswordChangedIntrusion" xml:space="preserve">
+    <value>If it was not, somebody else completed a password reset against your account. Use "Forgot your password?" on the sign-in page right away: resetting mails a fresh link to this address and invalidates every earlier one, which locks the intruder's way back out.</value>
+  </data>
+  <data name="PasswordChangedReassurance" xml:space="preserve">
+    <value>If that was you, there is nothing to do.</value>
+  </data>
+  <data name="PasswordChangedSubject" xml:space="preserve">
+    <value>Your TrainingHub password was changed</value>
+  </data>
+  <data name="PasswordResetGreeting" xml:space="preserve">
+    <value>Hello {0},</value>
+  </data>
+  <data name="PasswordResetIgnore" xml:space="preserve">
+    <value>If you did not ask for this, ignore this message — your password is unchanged and the link above is the only way anyone could change it.</value>
+  </data>
+  <data name="PasswordResetIntro" xml:space="preserve">
+    <value>Somebody asked to reset the password of the TrainingHub account behind this address — hopefully you. Choose a new password here:</value>
+  </data>
+  <data name="PasswordResetLifetime" xml:space="preserve">
+    <value>The link works for {0} minutes and only once, and asking again replaces it.</value>
+  </data>
+  <data name="PasswordResetSubject" xml:space="preserve">
+    <value>Reset your TrainingHub password</value>
+  </data>
+  <data name="ReinstatementBody" xml:space="preserve">
+    <value>The suspension of your trainer account has been lifted. Everything you had published is on offer again, exactly as you left it.</value>
+  </data>
+  <data name="ReinstatementGreeting" xml:space="preserve">
+    <value>Hello {0},</value>
+  </data>
+  <data name="ReinstatementSubject" xml:space="preserve">
+    <value>Your trainer account has been reinstated</value>
+  </data>
+  <data name="SuspensionConsequence" xml:space="preserve">
+    <value>Your trainings are no longer offered publicly while the suspension lasts.</value>
+  </data>
+  <data name="SuspensionGreeting" xml:space="preserve">
+    <value>Hello {0},</value>
+  </data>
+  <data name="SuspensionReason" xml:space="preserve">
+    <value>Your trainer account has been suspended for the following reason: {0}.</value>
+  </data>
+  <data name="SuspensionRecourse" xml:space="preserve">
+    <value>If you believe this is a mistake, reply to this message.</value>
+  </data>
+  <data name="SuspensionSubject" xml:space="preserve">
+    <value>Your trainer account has been suspended</value>
+  </data>
   <data name="VerifyEmailGreeting" xml:space="preserve">
     <value>Hello {0},</value>
   </data>
@@ -26,5 +122,29 @@
   </data>
   <data name="VerifyEmailSubject" xml:space="preserve">
     <value>Verify your TrainingHub email address</value>
+  </data>
+  <data name="WelcomeBody" xml:space="preserve">
+    <value>Your trainer account has been created. Welcome to TrainingHub!</value>
+  </data>
+  <data name="WelcomeGreeting" xml:space="preserve">
+    <value>Hello {0},</value>
+  </data>
+  <data name="WelcomeSubject" xml:space="preserve">
+    <value>Welcome aboard!</value>
+  </data>
+  <data name="WithholdingConsequence" xml:space="preserve">
+    <value>It is no longer offered publicly, and you cannot publish it again yourself.</value>
+  </data>
+  <data name="WithholdingGreeting" xml:space="preserve">
+    <value>Hello {0},</value>
+  </data>
+  <data name="WithholdingReason" xml:space="preserve">
+    <value>Your training “{0}” has been withheld for the following reason: {1}.</value>
+  </data>
+  <data name="WithholdingRecourse" xml:space="preserve">
+    <value>If you believe this is a mistake, reply to this message.</value>
+  </data>
+  <data name="WithholdingSubject" xml:space="preserve">
+    <value>One of your trainings has been withheld</value>
   </data>
 </root>

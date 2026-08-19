@@ -1,7 +1,7 @@
+using Moq;
 using TrainingHub.Shared.Application.IntegrationEventHandlers;
 using TrainingHub.Shared.Application.IntegrationEvents;
 using TrainingHub.Shared.Application.Notifications;
-using Moq;
 using Xunit;
 
 namespace TrainingHub.DDD.Application.Tests.IntegrationEventHandlers;
@@ -11,6 +11,7 @@ namespace TrainingHub.DDD.Application.Tests.IntegrationEventHandlers;
 /// </summary>
 public sealed class NotifyPreviousAddressWhenTrainerContactEmailChangedIntegrationEventHandlerTests
 {
+    private readonly Mock<INotificationComposer> _composer = new();
     private readonly Mock<IEmailSender> _emailSender = new();
 
     /// <summary>
@@ -19,16 +20,26 @@ public sealed class NotifyPreviousAddressWhenTrainerContactEmailChangedIntegrati
     [Fact]
     public async Task Handle_WarnsTheOldAddress_AndNamesTheNewOne()
     {
+        // Arrange
         var fact = new TrainerContactEmailChangedIntegrationEvent(
-            Guid.NewGuid(), "old@example.com", "new@example.com");
+            Guid.NewGuid(), "old@example.com", "new@example.com", "ru");
 
-        var sut = new NotifyPreviousAddressWhenTrainerContactEmailChangedIntegrationEventHandler(_emailSender.Object);
+        _composer
+            .Setup(composer => composer.ContactEmailChanged("ru", "new@example.com"))
+            .Returns(new Notification("the composed subject", "the composed body"));
+
+        var sut = new NotifyPreviousAddressWhenTrainerContactEmailChangedIntegrationEventHandler(
+            _composer.Object, _emailSender.Object);
+
+        // Act
         await sut.HandleAsync(fact, CancellationToken.None);
 
-        _emailSender.Verify(s => s.SendAsync(
-                It.Is<EmailMessage>(m =>
-                    m.Recipient == "old@example.com"
-                    && m.Body.Contains("new@example.com")),
+        // Assert
+        _emailSender.Verify(sender => sender.SendAsync(
+                It.Is<EmailMessage>(message =>
+                    message.Recipient == "old@example.com"
+                    && message.Subject == "the composed subject"
+                    && message.Body == "the composed body"),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }

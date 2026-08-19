@@ -11,19 +11,25 @@ namespace TrainingHub.DDD.Application.Tests.IntegrationEventHandlers;
 /// </summary>
 public sealed class SendPasswordChangedNoticeWhenPasswordChangedIntegrationEventHandlerTests
 {
+    private readonly Mock<INotificationComposer> _composer = new();
     private readonly Mock<IEmailSender> _emailSender = new();
 
     /// <summary>
-    /// Handle, tells the account's own address, and names the way back in.
+    /// Handle, tells the account's own address, in the language it read.
     /// </summary>
     [Fact]
-    public async Task Handle_TellsTheAccountsOwnAddress_AndNamesTheWayBackIn()
+    public async Task Handle_TellsTheAccountsOwnAddress_InTheLanguageItRead()
     {
         // Arrange
         var fact = new PasswordChangedIntegrationEvent(
-            Guid.NewGuid(), "grace.hopper@example.org", "grace.hopper");
+            Guid.NewGuid(), "grace.hopper@example.org", "grace.hopper", "ru");
 
-        var sut = new SendPasswordChangedNoticeWhenPasswordChangedIntegrationEventHandler(_emailSender.Object);
+        _composer
+            .Setup(composer => composer.PasswordChanged("ru", "grace.hopper"))
+            .Returns(new Notification("the composed subject", "the composed body"));
+
+        var sut = new SendPasswordChangedNoticeWhenPasswordChangedIntegrationEventHandler(
+            _composer.Object, _emailSender.Object);
 
         // Act
         await sut.HandleAsync(fact, CancellationToken.None);
@@ -32,9 +38,8 @@ public sealed class SendPasswordChangedNoticeWhenPasswordChangedIntegrationEvent
         _emailSender.Verify(sender => sender.SendAsync(
                 It.Is<EmailMessage>(message =>
                     message.Recipient == "grace.hopper@example.org"
-                    && message.Subject == "Your TrainingHub password was changed"
-                    && message.Body.Contains("grace.hopper")
-                    && message.Body.Contains("Forgot your password?")),
+                    && message.Subject == "the composed subject"
+                    && message.Body == "the composed body"),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }

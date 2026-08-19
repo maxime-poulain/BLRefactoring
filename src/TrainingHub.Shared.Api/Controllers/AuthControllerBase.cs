@@ -5,6 +5,7 @@ using TrainingHub.Shared.Api.Contracts.Auth;
 using TrainingHub.Shared.Api.Extensions;
 using TrainingHub.Shared.Api.Http;
 using TrainingHub.Shared.Api.Identity;
+using TrainingHub.Shared.Application.Accounts;
 using TrainingHub.Shared.Application.IntegrationEvents;
 using TrainingHub.Shared.Common.Results;
 using Microsoft.AspNetCore.Authorization;
@@ -29,6 +30,8 @@ public abstract class AuthControllerBase(
     ITokenService tokenService,
     IPasswordRecoveryService passwordRecovery,
     IEmailVerificationService emailVerification,
+    IAccountLanguageStore accountLanguages,
+    IAccountLanguageQuery languages,
     IIntegrationEventPublisher integrationEventPublisher) : ControllerBase
 {
     /// <summary>
@@ -132,14 +135,18 @@ public abstract class AuthControllerBase(
             return IdentityRejection(result.Errors);
         }
 
+        // The first thing the account states about itself, and the one ADR 0091 turns into every
+        // email it will ever receive: the culture ADR 0088 resolved for this request. Written
+        // inside the same scope as everything else here, so a registration that rolls back leaves
+        // no preference for an account that does not exist.
+        await accountLanguages.SetAsync(user.Id, CultureInfo.CurrentUICulture.Name, cancellationToken);
+
         // Staged, not sent, like the erasure's fact: the row rides the save the trainer half is
         // about to make, so the invitation to prove the address exists exactly when the account
-        // does — a rolled-back registration mails nobody (ADR 0090). The culture is the request's
-        // resolved one, captured now because the consumer that composes the email runs long after
-        // this request is gone (ADR 0088).
+        // does — a rolled-back registration mails nobody (ADR 0090). It carries no culture: the
+        // mint reads the preference just written, beside the address it is proving (ADR 0091).
         await integrationEventPublisher.PublishAsync(
-            new EmailVerificationRequestedIntegrationEvent(
-                user.Id, CultureInfo.CurrentUICulture.Name),
+            new EmailVerificationRequestedIntegrationEvent(user.Id),
             cancellationToken);
 
         var creationResult = await CreateTrainerAsync(request, user.Id, cancellationToken);
@@ -443,10 +450,54 @@ public abstract class AuthControllerBase(
             return Unauthorized();
         }
 
-        await emailVerification.RequestAsync(
-            user.Id, CultureInfo.CurrentUICulture.Name, cancellationToken);
+        await emailVerification.RequestAsync(user.Id, cancellationToken);
 
         return Accepted();
+    }
+
+    /// <summary>
+    /// Records the language the calling account wants to be written to in.
+    /// </summary>
+    /// <param name="request">The language, as a neutral culture code.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>
+    /// A 204 No Content response: the preference is recorded and there is nothing to read back.
+    /// </returns>
+    /// <remarks>
+    /// Behind the trainer policy rather than the active-trainer one, for the resend's reason:
+    /// choosing a language grants nothing a suspension withholds, and a suspended trainer still
+    /// receives the notice telling them so — in whatever language they last asked for (ADR 0085,
+    /// ADR 0091).
+    /// <para>
+    /// A <c>PUT</c> because it is idempotent and the account holds exactly one preference:
+    /// sending the same language twice leaves the same single row, which is what the primary key
+    /// already guarantees. The language selector calls it beside the culture cookie, so a visitor
+    /// who is signed in changes both in one gesture and a visitor who is not changes the cookie
+    /// alone.
+    /// </para>
+    /// </remarks>
+    [Authorize(Policy = TrainerPolicy.Name)]
+    [HttpPut("language")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> SetLanguage(
+        [FromBody] SetAccountLanguageHttpRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var user = await userManager.GetUserAsync(User);
+
+        if (user is null)
+        {
+            // A live token over an account that no longer exists, as the resend answers it.
+            return Unauthorized();
+        }
+
+        await accountLanguages.SetAsync(user.Id, request.Language, cancellationToken);
+
+        return NoContent();
     }
 
     /// <summary>
@@ -513,10 +564,15 @@ public abstract class AuthControllerBase(
             new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
             TransactionScopeAsyncFlowOption.Enabled);
 
+        // Read before the row is gone, and carried on the fact for the reason the address is:
+        // this notice is the only one whose recipient stops existing before it is delivered
+        // (ADR 0091).
+        var language = await languages.ByUserIdAsync(user.Id, cancellationToken);
+
         // Staged, not sent: the row rides the save the trainer half is about to make, and
         // evaporates with the scope if anything below refuses (ADR 0002).
         await integrationEventPublisher.PublishAsync(
-            new AccountErasedIntegrationEvent(user.Id, user.Email!, user.UserName!),
+            new AccountErasedIntegrationEvent(user.Id, user.Email!, user.UserName!, language),
             cancellationToken);
 
         var erasure = await EraseTrainerAsync(cancellationToken);

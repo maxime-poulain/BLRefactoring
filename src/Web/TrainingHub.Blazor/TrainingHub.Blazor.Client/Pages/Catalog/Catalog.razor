@@ -2,6 +2,7 @@
 @page "/catalog"
 @using TrainingHub.Blazor.Client.Infrastructure
 @using TrainingHub.GeneratedClients
+@using TrainingHub.Blazor.Client.Models
 @implements IDisposable
 @inject ICatalogClient CatalogClient
 @inject ISnackbar Snackbar
@@ -9,6 +10,7 @@
 @inject PersistentComponentState ApplicationState
 @inject IStringLocalizer<CatalogResources> L
 @inject IStringLocalizer<CommonResources> Common
+@inject IStringLocalizer<TopicResources> Topics
 
 @* No [Authorize], and it is the only routed page here without one. ADR 0059 built the index and
    gave it an anonymous endpoint; ADR 0062 gave the endpoint a face and taught the proxy to forward
@@ -73,7 +75,7 @@
                         @* The shelf's mark: the same hue this topic's spines wear below, so the
                            chip and the rows it filters read as one thing. *@
                         <span class="th-mark" style="background-color: @CatalogTopics.SpineVar(topic)"></span>
-                        @topic (@facet.OfferedCount)
+                        @Topics[TopicNames.Key(topic)] (@facet.OfferedCount)
                     </MudChip>
                 }
 

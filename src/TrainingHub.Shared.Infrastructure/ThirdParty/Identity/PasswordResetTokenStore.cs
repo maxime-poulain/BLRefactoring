@@ -69,7 +69,17 @@ public sealed class PasswordResetTokenStore(
 
         var link = $"{options.Value.LinkBaseAddress.TrimEnd('/')}/reset-password?token={Uri.EscapeDataString(token)}";
 
-        return new PasswordResetInvitation(link, user.UserName ?? emailAddress, PasswordResetToken.Lifetime);
+        // The account's own address rather than the one the visitor typed, and the language beside
+        // it: the mint has the row in hand, and ADR 0091 reads both facts about a recipient at the
+        // same place.
+        var language = await LanguageOfAsync(user.Id, cancellationToken).ConfigureAwait(false);
+
+        return new PasswordResetInvitation(
+            link,
+            user.UserName ?? emailAddress,
+            PasswordResetToken.Lifetime,
+            user.Email ?? emailAddress,
+            language);
     }
 
     /// <inheritdoc />
@@ -118,5 +128,18 @@ public sealed class PasswordResetTokenStore(
     /// malformed token digests to something that matches nothing instead of throwing — every
     /// wrong token walks the same path as a valid-looking one.
     /// </remarks>
+    /// <summary>The language the account chose, or <see langword="null"/> when it chose none.</summary>
+    /// <remarks>
+    /// One indexed read on a primary key, on the same context the credential was just written
+    /// through. The fallback is not applied here: the composer owns it, because it is the one
+    /// corner allowed to name the list of languages (ADR 0091).
+    /// </remarks>
+    private Task<string?> LanguageOfAsync(Guid userId, CancellationToken cancellationToken) =>
+        identityContext.Set<AccountLanguage>()
+            .AsNoTracking()
+            .Where(preference => preference.UserId == userId)
+            .Select(preference => preference.Language)
+            .FirstOrDefaultAsync(cancellationToken);
+
     private static byte[] Digest(string token) => SHA256.HashData(Encoding.UTF8.GetBytes(token));
 }

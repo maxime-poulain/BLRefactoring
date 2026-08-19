@@ -20,6 +20,7 @@ namespace TrainingHub.Shared.Application.IntegrationEventHandlers;
 /// </remarks>
 public sealed class SendWithholdingNoticeWhenTrainingWithheldIntegrationEventHandler(
     ITrainerAccountQuery accountQuery,
+    INotificationComposer composer,
     IEmailSender emailSender,
     ILogger<SendWithholdingNoticeWhenTrainingWithheldIntegrationEventHandler> logger)
     : IIntegrationEventHandler<TrainingWithheldIntegrationEvent>
@@ -46,13 +47,16 @@ public sealed class SendWithholdingNoticeWhenTrainingWithheldIntegrationEventHan
             return;
         }
 
+        var notification = composer.Withholding(
+            account.Language,
+            $"{account.Firstname} {account.Lastname}",
+            integrationEvent.Title,
+            integrationEvent.Reason);
+
         var message = new EmailMessage(
             account.EmailAddress,
-            "One of your trainings has been withheld",
-            $"Hello {account.Firstname} {account.Lastname}, your training \"{integrationEvent.Title}\" "
-            + $"has been withheld for the following reason: {integrationEvent.Reason}. "
-            + "It is no longer offered publicly, and you cannot publish it again yourself. "
-            + "If you believe this is a mistake, reply to this message.");
+            notification.Subject,
+            notification.Body);
 
         await emailSender.SendAsync(message, cancellationToken);
     }

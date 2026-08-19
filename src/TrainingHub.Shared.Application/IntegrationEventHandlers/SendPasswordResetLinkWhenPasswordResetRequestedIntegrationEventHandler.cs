@@ -22,6 +22,7 @@ namespace TrainingHub.Shared.Application.IntegrationEventHandlers;
 /// </remarks>
 public sealed class SendPasswordResetLinkWhenPasswordResetRequestedIntegrationEventHandler(
     IPasswordResetTokenStore resetTokens,
+    INotificationComposer composer,
     IEmailSender emailSender)
     : IIntegrationEventHandler<PasswordResetRequestedIntegrationEvent>
 {
@@ -46,18 +47,16 @@ public sealed class SendPasswordResetLinkWhenPasswordResetRequestedIntegrationEv
             return;
         }
 
+        var notification = composer.PasswordResetLink(
+            invitation.Language,
+            invitation.Username,
+            invitation.Link,
+            invitation.Lifetime);
+
         var message = new EmailMessage(
-            integrationEvent.Email,
-            "Reset your TrainingHub password",
-            $"Hello {invitation.Username},\n\n"
-            + "Somebody asked to reset the password of the TrainingHub account behind this "
-            + "address — hopefully you. Choose a new password here:\n\n"
-            + invitation.Link
-            + "\n\n"
-            + $"The link works for {invitation.Lifetime.TotalMinutes:0} minutes and only once, "
-            + "and asking again replaces it.\n\n"
-            + "If you did not ask for this, ignore this message — your password is unchanged "
-            + "and the link above is the only way anyone could change it.");
+            invitation.EmailAddress,
+            notification.Subject,
+            notification.Body);
 
         await emailSender.SendAsync(message, cancellationToken);
     }

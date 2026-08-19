@@ -15,7 +15,16 @@ namespace TrainingHub.Shared.Application.Accounts;
 /// <param name="Link">The absolute address of the verification page, the raw token in its query.</param>
 /// <param name="Username">The account's username, for the message's greeting.</param>
 /// <param name="EmailAddress">The account's email address, the one the link must prove.</param>
-public sealed record EmailVerificationInvitation(string Link, string Username, string EmailAddress);
+/// <param name="Language">
+/// The language the account reads in, or <see langword="null"/> when it stated none. It rides
+/// beside the address because that is where ADR 0091 puts it: the mint has just read the account,
+/// so it answers both facts about its owner in one breath.
+/// </param>
+public sealed record EmailVerificationInvitation(
+    string Link,
+    string Username,
+    string EmailAddress,
+    string? Language);
 
 /// <summary>
 /// Issues and redeems the one email-verification credential an account can hold.

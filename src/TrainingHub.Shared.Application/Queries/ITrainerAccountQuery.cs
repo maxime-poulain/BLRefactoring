@@ -12,7 +12,16 @@ namespace TrainingHub.Shared.Application.Queries;
 /// <param name="EmailAddress">The address of the account the trainer signs in with.</param>
 /// <param name="Firstname">The trainer's first name.</param>
 /// <param name="Lastname">The trainer's last name.</param>
-public sealed record TrainerAccountDto(string EmailAddress, string Firstname, string Lastname);
+/// <param name="Language">
+/// The language the account reads in, or <see langword="null"/> when it stated none. It rides
+/// beside the address for ADR 0091's reason: whoever this notice reaches is resolved here, so
+/// the language they read is resolved here too.
+/// </param>
+public sealed record TrainerAccountDto(
+    string EmailAddress,
+    string Firstname,
+    string Lastname,
+    string? Language);
 
 /// <summary>
 /// Reads the account behind a trainer, for the notices a sanction produces.

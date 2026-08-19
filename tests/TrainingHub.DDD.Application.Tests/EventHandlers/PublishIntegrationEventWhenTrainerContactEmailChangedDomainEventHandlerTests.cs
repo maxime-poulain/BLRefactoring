@@ -1,3 +1,4 @@
+using TrainingHub.Shared.Application.Accounts;
 using TrainingHub.Shared.Application.EventHandlers;
 using TrainingHub.Shared.Application.IntegrationEvents;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
@@ -19,6 +20,7 @@ namespace TrainingHub.DDD.Application.Tests.EventHandlers;
 public sealed class PublishIntegrationEventWhenTrainerContactEmailChangedDomainEventHandlerTests
 {
     private readonly Mock<IIntegrationEventPublisher> _publisher = new();
+    private readonly Mock<IAccountLanguageQuery> _languages = new();
 
     /// <summary>
     /// Handle, publishes both addresses, each in its place.
@@ -32,11 +34,17 @@ public sealed class PublishIntegrationEventWhenTrainerContactEmailChangedDomainE
             Email.Create("old@example.com").ShouldBeSuccess(),
             Email.Create("new@example.com").ShouldBeSuccess());
 
-        var sut = new PublishIntegrationEventWhenTrainerContactEmailChangedDomainEventHandler(_publisher.Object);
+        _languages
+            .Setup(languages => languages.ByTrainerIdAsync(trainerId.Value, It.IsAny<CancellationToken>()))
+            .ReturnsAsync("ru");
+
+        var sut = new PublishIntegrationEventWhenTrainerContactEmailChangedDomainEventHandler(
+            _publisher.Object, _languages.Object);
         await sut.Handle(domainEvent, CancellationToken.None);
 
         _publisher.Verify(p => p.PublishAsync(
-                new TrainerContactEmailChangedIntegrationEvent(trainerId.Value, "old@example.com", "new@example.com"),
+                new TrainerContactEmailChangedIntegrationEvent(
+                    trainerId.Value, "old@example.com", "new@example.com", "ru"),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }

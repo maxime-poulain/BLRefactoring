@@ -10,6 +10,7 @@
 @inject ITrainerStandingSource StandingSource
 @inject IStringLocalizer<TrainingResources> L
 @inject IStringLocalizer<CommonResources> Common
+@inject IStringLocalizer<TopicResources> Topics
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="my-4">
     <MudPaper Elevation="4" Class="pa-8">
@@ -47,7 +48,7 @@
                                 CheckMark="true">
                         @foreach (var topic in Topic.All)
                         {
-                            <MudChip Text="@topic"
+                            <MudChip Text="@Topics[TopicNames.Key(topic)]"
                                      Value="@topic"
                                      Disabled="_isLoading" />
                         }

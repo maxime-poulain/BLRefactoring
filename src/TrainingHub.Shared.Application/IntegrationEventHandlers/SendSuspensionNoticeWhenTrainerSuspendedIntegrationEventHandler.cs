@@ -21,6 +21,7 @@ namespace TrainingHub.Shared.Application.IntegrationEventHandlers;
 /// </remarks>
 public sealed class SendSuspensionNoticeWhenTrainerSuspendedIntegrationEventHandler(
     ITrainerAccountQuery accountQuery,
+    INotificationComposer composer,
     IEmailSender emailSender,
     ILogger<SendSuspensionNoticeWhenTrainerSuspendedIntegrationEventHandler> logger)
     : IIntegrationEventHandler<TrainerSuspendedIntegrationEvent>
@@ -49,13 +50,15 @@ public sealed class SendSuspensionNoticeWhenTrainerSuspendedIntegrationEventHand
             return;
         }
 
+        var notification = composer.Suspension(
+            account.Language,
+            $"{account.Firstname} {account.Lastname}",
+            integrationEvent.Reason);
+
         var message = new EmailMessage(
             account.EmailAddress,
-            "Your trainer account has been suspended",
-            $"Hello {account.Firstname} {account.Lastname}, your trainer account has been suspended "
-            + $"for the following reason: {integrationEvent.Reason}. "
-            + "Your trainings are no longer offered publicly while the suspension lasts. "
-            + "If you believe this is a mistake, reply to this message.");
+            notification.Subject,
+            notification.Body);
 
         await emailSender.SendAsync(message, cancellationToken);
     }

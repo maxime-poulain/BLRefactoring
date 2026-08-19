@@ -1778,6 +1778,53 @@ public sealed class BffTests : IDisposable
     }
 
     /// <summary>
+    /// A signed in visitor records the choice on their account too.
+    /// </summary>
+    /// <remarks>
+    /// The half ADR 0091 adds to ADR 0088's cookie: the browser reads in the language it just
+    /// chose, and so does the mailbox. Two things are worth pinning — that the API is told at all,
+    /// and that it is told with the session's own bearer, because the endpoint behind it is
+    /// authorized and a call without one would silently record nothing.
+    /// </remarks>
+    [Fact]
+    public async Task A_signed_in_visitor_records_the_choice_on_their_account_too()
+    {
+        await SignInAsync();
+
+        var chosen = await SendAsync(
+            HttpMethod.Post, CulturePath, JsonContent.Create(new { language = "ru" }));
+
+        chosen.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var recorded = _factory.LoginApi.Requests
+            .Should().ContainSingle(request => request.Uri!.AbsolutePath == "/Auth/language").Subject;
+
+        recorded.Method.Should().Be(HttpMethod.Put, "an account holds one preference, so the write is idempotent");
+        recorded.Authorization.Should().Be($"Bearer {_token}");
+        recorded.Body.Should().Contain("\"language\":\"ru\"");
+    }
+
+    /// <summary>
+    /// A visitor with no session changes the cookie and tells the api nothing.
+    /// </summary>
+    /// <remarks>
+    /// There is no account to record a preference on, and the language selector is anonymous on
+    /// purpose — choosing a language is something a visitor does before anything else (ADR 0088).
+    /// </remarks>
+    [Fact]
+    public async Task A_visitor_with_no_session_changes_the_cookie_and_tells_the_api_nothing()
+    {
+        var chosen = await SendAsync(
+            HttpMethod.Post, CulturePath, JsonContent.Create(new { language = "fr" }));
+
+        chosen.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        chosen.Headers.GetValues("Set-Cookie").Should().ContainSingle();
+
+        _factory.LoginApi.Requests.Should().NotContain(
+            request => request.Uri!.AbsolutePath == "/Auth/language");
+    }
+
+    /// <summary>
     /// A language the list does not offer is refused.
     /// </summary>
     [Fact]

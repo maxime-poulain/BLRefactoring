@@ -10,7 +10,21 @@ namespace TrainingHub.Shared.Application.Accounts;
 /// How long the link stays valid — told by the store that stamped the expiry, so the email
 /// announces the same window the database enforces.
 /// </param>
-public sealed record PasswordResetInvitation(string Link, string Username, TimeSpan Lifetime);
+/// <param name="EmailAddress">
+/// The address the link is mailed to, as the account holds it. The visitor typed an address to
+/// start the recovery; this is the canonical one behind it, and writing to the account's own
+/// spelling is what keeps the notice and the account in agreement (ADR 0091).
+/// </param>
+/// <param name="Language">
+/// The language the account reads in, or <see langword="null"/> when it stated none — read here
+/// because this is where the address is read (ADR 0091).
+/// </param>
+public sealed record PasswordResetInvitation(
+    string Link,
+    string Username,
+    TimeSpan Lifetime,
+    string EmailAddress,
+    string? Language);
 
 /// <summary>
 /// Issues, checks and redeems the one password-reset credential an account can hold.

@@ -1,5 +1,6 @@
 using TrainingHub.DDDWithCqrs.Api.Mappings;
 using TrainingHub.DDDWithCqrs.Application.Features.Trainers.Erase;
+using TrainingHub.Shared.Application.Accounts;
 using TrainingHub.Shared.Application.IntegrationEvents;
 using TrainingHub.Shared.Common.Results;
 using TrainingHub.Shared.CQS;
@@ -21,10 +22,19 @@ public sealed class AuthController(
     ITokenService tokenService,
     IPasswordRecoveryService passwordRecovery,
     IEmailVerificationService emailVerification,
+    IAccountLanguageStore accountLanguages,
+    IAccountLanguageQuery languages,
     IIntegrationEventPublisher integrationEventPublisher,
     ICommandDispatcher commandDispatcher)
     : AuthControllerBase(
-        userManager, signInManager, tokenService, passwordRecovery, emailVerification, integrationEventPublisher)
+        userManager,
+        signInManager,
+        tokenService,
+        passwordRecovery,
+        emailVerification,
+        accountLanguages,
+        languages,
+        integrationEventPublisher)
 {
     /// <inheritdoc />
     /// <remarks>

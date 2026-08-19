@@ -16,6 +16,7 @@ namespace TrainingHub.Shared.Application.IntegrationEventHandlers;
 /// </remarks>
 public sealed class SendReinstatementNoticeWhenTrainerReinstatedIntegrationEventHandler(
     ITrainerAccountQuery accountQuery,
+    INotificationComposer composer,
     IEmailSender emailSender,
     ILogger<SendReinstatementNoticeWhenTrainerReinstatedIntegrationEventHandler> logger)
     : IIntegrationEventHandler<TrainerReinstatedIntegrationEvent>
@@ -41,11 +42,14 @@ public sealed class SendReinstatementNoticeWhenTrainerReinstatedIntegrationEvent
             return;
         }
 
+        var notification = composer.Reinstatement(
+            account.Language,
+            $"{account.Firstname} {account.Lastname}");
+
         var message = new EmailMessage(
             account.EmailAddress,
-            "Your trainer account has been reinstated",
-            $"Hello {account.Firstname} {account.Lastname}, the suspension of your trainer account "
-            + "has been lifted. Everything you had published is on offer again, exactly as you left it.");
+            notification.Subject,
+            notification.Body);
 
         await emailSender.SendAsync(message, cancellationToken);
     }

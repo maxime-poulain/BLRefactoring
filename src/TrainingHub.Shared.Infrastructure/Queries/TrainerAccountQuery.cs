@@ -46,15 +46,25 @@ public sealed class TrainerAccountQuery(
 
         var userId = trainer.UserId.Value;
 
-        var emailAddress = await identityContext.Users
+        // The address and the language in one projection: a notice needs both, and they are two
+        // columns of the same store (ADR 0091). The preference is an outer join because an account
+        // that never chose one still has to be written to.
+        var account = await identityContext.Users
             .AsNoTracking()
             .Where(user => user.Id == userId)
-            .Select(user => user.Email)
+            .Select(user => new
+            {
+                user.Email,
+                Language = identityContext.Set<AccountLanguage>()
+                    .Where(preference => preference.UserId == user.Id)
+                    .Select(preference => preference.Language)
+                    .FirstOrDefault(),
+            })
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        return string.IsNullOrWhiteSpace(emailAddress)
+        return account is null || string.IsNullOrWhiteSpace(account.Email)
             ? null
-            : new TrainerAccountDto(emailAddress, trainer.Firstname, trainer.Lastname);
+            : new TrainerAccountDto(account.Email, trainer.Firstname, trainer.Lastname, account.Language);
     }
 }

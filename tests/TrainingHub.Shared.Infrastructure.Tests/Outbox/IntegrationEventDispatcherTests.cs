@@ -26,8 +26,8 @@ public sealed class IntegrationEventDispatcherTests
     // One hand-built instance per registered event, like the serializer's own guard.
     private static readonly IIntegrationEvent[] Instances =
     [
-        new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "John", "Doe", "john.doe@example.com"),
-        new TrainerContactEmailChangedIntegrationEvent(Guid.NewGuid(), "old@example.com", "new@example.com"),
+        new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "John", "Doe", "john.doe@example.com", "en"),
+        new TrainerContactEmailChangedIntegrationEvent(Guid.NewGuid(), "old@example.com", "new@example.com", "en"),
         new TrainerSuspendedIntegrationEvent(Guid.NewGuid(), "Repeated breaches of the content policy."),
         new TrainerReinstatedIntegrationEvent(Guid.NewGuid()),
         new TrainerContactedIntegrationEvent(
@@ -41,9 +41,9 @@ public sealed class IntegrationEventDispatcherTests
         new TrainingDeletedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
         new TrainerDeletedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid()),
         new PasswordResetRequestedIntegrationEvent("grace.hopper@example.org"),
-        new EmailVerificationRequestedIntegrationEvent(Guid.NewGuid(), "fr"),
-        new PasswordChangedIntegrationEvent(Guid.NewGuid(), "grace.hopper@example.org", "grace.hopper"),
-        new AccountErasedIntegrationEvent(Guid.NewGuid(), "grace.hopper@example.org", "grace.hopper"),
+        new EmailVerificationRequestedIntegrationEvent(Guid.NewGuid()),
+        new PasswordChangedIntegrationEvent(Guid.NewGuid(), "grace.hopper@example.org", "grace.hopper", "en"),
+        new AccountErasedIntegrationEvent(Guid.NewGuid(), "grace.hopper@example.org", "grace.hopper", "en"),
     ];
 
     private static IntegrationEventDispatcher CreateSutWithoutConsumers() =>
@@ -92,7 +92,7 @@ public sealed class IntegrationEventDispatcherTests
         var sut = new IntegrationEventDispatcher(
             [first.Object, second.Object], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []);
 
-        var fact = new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "Ada", "Lovelace", "ada@example.com");
+        var fact = new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "Ada", "Lovelace", "ada@example.com", "en");
         var outcome = await sut.DispatchAsync(fact, NothingDeliveredYet, CancellationToken.None);
 
         first.Verify(h => h.HandleAsync(fact, It.IsAny<CancellationToken>()), Times.Once);
@@ -115,7 +115,7 @@ public sealed class IntegrationEventDispatcherTests
         var sut = new IntegrationEventDispatcher(
             [first.Object, second.Object], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []);
 
-        var fact = new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "Ada", "Lovelace", "ada@example.com");
+        var fact = new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "Ada", "Lovelace", "ada@example.com", "en");
         var outcome = await sut.DispatchAsync(fact, NothingDeliveredYet, CancellationToken.None);
 
         second.Verify(h => h.HandleAsync(fact, It.IsAny<CancellationToken>()), Times.Once,
@@ -137,7 +137,7 @@ public sealed class IntegrationEventDispatcherTests
         var sut = new IntegrationEventDispatcher(
             [first.Object, second.Object], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []);
 
-        var fact = new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "Ada", "Lovelace", "ada@example.com");
+        var fact = new TrainerCreatedIntegrationEvent(Guid.NewGuid(), "Ada", "Lovelace", "ada@example.com", "en");
         var outcome = await sut.DispatchAsync(fact, new HashSet<string> { "First" }, CancellationToken.None);
 
         first.Verify(h => h.HandleAsync(It.IsAny<TrainerCreatedIntegrationEvent>(), It.IsAny<CancellationToken>()),

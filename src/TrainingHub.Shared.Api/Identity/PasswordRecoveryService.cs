@@ -18,6 +18,7 @@ namespace TrainingHub.Shared.Api.Identity;
 public sealed class PasswordRecoveryService(
     UserManager<IdentityUser<Guid>> userManager,
     IPasswordResetTokenStore resetTokens,
+    IAccountLanguageQuery accountLanguages,
     IIntegrationEventPublisher integrationEvents,
     IUnitOfWork unitOfWork) : IPasswordRecoveryService
 {
@@ -113,11 +114,14 @@ public sealed class PasswordRecoveryService(
         await userManager.SetLockoutEndDateAsync(user, null);
         await userManager.ResetAccessFailedCountAsync(user);
 
+        var language = await accountLanguages.ByUserIdAsync(user.Id, cancellationToken);
+
         await integrationEvents.PublishAsync(
             new PasswordChangedIntegrationEvent(
                 user.Id,
                 user.Email ?? emailAddress,
-                user.UserName ?? emailAddress),
+                user.UserName ?? emailAddress,
+                language),
             cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

@@ -1,9 +1,11 @@
 using AwesomeAssertions;
+using Moq;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using TrainingHub.Shared.Domain.Aggregates.TrainerAggregate;
 using TrainingHub.Shared.Domain.Tests.Helpers;
+using TrainingHub.Shared.Application.Accounts;
 using TrainingHub.Shared.Infrastructure.Queries;
 using TrainingHub.Shared.Infrastructure.ThirdParty.EfCore;
 using Xunit;
@@ -26,6 +28,7 @@ namespace TrainingHub.Shared.Infrastructure.Tests.Queries;
 public sealed class TrainerContactQueryTests : IAsyncLifetime
 {
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
+    private readonly Mock<IAccountLanguageQuery> _languages = new();
     private TrainingContext _context = null!;
 
     /// <summary>Opens the connection the database lives inside, and builds the schema on it.</summary>
@@ -64,12 +67,20 @@ public sealed class TrainerContactQueryTests : IAsyncLifetime
 
         await AddAsync(ada);
 
-        var contact = await new TrainerContactQuery(_context).GetByTrainerIdAsync(ada.Id.Value);
+        _languages
+            .Setup(languages => languages.ByTrainerIdAsync(ada.Id.Value, It.IsAny<CancellationToken>()))
+            .ReturnsAsync("ru");
+
+        var contact = await Sut().GetByTrainerIdAsync(ada.Id.Value);
 
         contact.Should().NotBeNull();
         contact!.EmailAddress.Should().Be("ada.published@example.com");
         contact.Firstname.Should().Be("Ada");
         contact.Lastname.Should().Be("Lovelace");
+        contact.Language.Should().Be(
+            "ru",
+            "the language rides beside the address, asked of the port rather than joined — this " +
+            "adapter never opens the Identity store (ADR 0082, ADR 0091)");
     }
 
     /// <summary>
@@ -85,10 +96,12 @@ public sealed class TrainerContactQueryTests : IAsyncLifetime
     {
         await AddAsync(Trainer("Ada", "Lovelace", "ada.published@example.com"));
 
-        var contact = await new TrainerContactQuery(_context).GetByTrainerIdAsync(Guid.NewGuid());
+        var contact = await Sut().GetByTrainerIdAsync(Guid.NewGuid());
 
         contact.Should().BeNull();
     }
+
+    private TrainerContactQuery Sut() => new(_context, _languages.Object);
 
     private static Trainer Trainer(string firstname, string lastname, string contactEmail) =>
         new TrainerBuilder()

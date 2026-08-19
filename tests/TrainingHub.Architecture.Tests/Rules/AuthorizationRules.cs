@@ -162,14 +162,17 @@ public sealed class AuthorizationRules
     /// nobody's trainer, carries no standing, and suspending one is not a thing this product can do.
     /// </para>
     /// <para>
-    /// Two writes are exempted by name, and each exemption is an amendment rather than a hole:
+    /// Three writes are exempted by name, and each exemption is an amendment rather than a hole:
     /// ADR 0085 amends ADR 0053 so that erasing the account is a write a suspension does not
     /// take away — the right to leave outlives the sanction, and the withheld trainings die with
-    /// the account — and ADR 0090 adds asking for the verification email, because proving an
+    /// the account — ADR 0090 adds asking for the verification email, because proving an
     /// address grants nothing a suspension withholds and the proof will be wanted the day the
-    /// sanction lifts. Both actions sit behind <c>TrainerPolicy</c> deliberately, and pinning
-    /// them here is what keeps the next reader from "fixing" them into the refusal the records
-    /// argue against.
+    /// sanction lifts, and ADR 0091 adds choosing the language the account is written to in, for
+    /// the sharpest version of the same argument: the notices a suspension produces are the ones
+    /// this preference decides the language of, so taking it away would refuse a sanctioned
+    /// trainer the ability to read the sanction. All three sit behind <c>TrainerPolicy</c>
+    /// deliberately, and pinning them here is what keeps the next reader from "fixing" them into
+    /// the refusal the records argue against.
     /// </para>
     /// </remarks>
     [Fact]
@@ -196,11 +199,11 @@ public sealed class AuthorizationRules
             .ShouldHold();
 
     /// <summary>
-    /// The actions ADR 0085 and ADR 0090 exempt from ADR 0053's table: erasing the account and
-    /// asking for the verification email are the two writes a suspension does not take away.
+    /// The actions ADR 0085, ADR 0090 and ADR 0091 exempt from ADR 0053's table: leaving, proving
+    /// the address, and choosing the language — the three writes a suspension does not take away.
     /// </summary>
     private static readonly IReadOnlySet<string> TheWritesASuspensionKeeps =
-        new HashSet<string>(StringComparer.Ordinal) { "EraseAccount", "ResendVerification" };
+        new HashSet<string>(StringComparer.Ordinal) { "EraseAccount", "ResendVerification", "SetLanguage" };
 
     /// <summary>
     /// No read, and no administrative action, is behind the standing policy.

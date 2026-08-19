@@ -14,7 +14,9 @@ namespace TrainingHub.Shared.Application.IntegrationEventHandlers;
 /// erased name, because the username and address were freed with the account. Delivered
 /// at-least-once; a duplicate farewell is an email, not a defect (ADR 0034).
 /// </remarks>
-public sealed class SendErasureNoticeWhenAccountErasedIntegrationEventHandler(IEmailSender emailSender)
+public sealed class SendErasureNoticeWhenAccountErasedIntegrationEventHandler(
+    INotificationComposer composer,
+    IEmailSender emailSender)
     : IIntegrationEventHandler<AccountErasedIntegrationEvent>
 {
     /// <inheritdoc />
@@ -31,16 +33,12 @@ public sealed class SendErasureNoticeWhenAccountErasedIntegrationEventHandler(IE
     {
         ArgumentNullException.ThrowIfNull(integrationEvent);
 
+        var notification = composer.AccountErased(integrationEvent.Language, integrationEvent.Username);
+
         var message = new EmailMessage(
             integrationEvent.Email,
-            "Your TrainingHub account was erased",
-            $"Hello {integrationEvent.Username},\n\n"
-            + "Your TrainingHub account was just erased, along with your profile, your trainings "
-            + "and your portrait. Nothing of it remains on the platform.\n\n"
-            + "If that was you: thank you for having taught with us, and goodbye.\n\n"
-            + "If it was not, somebody with access to your session erased the account. The data "
-            + "cannot be restored, but the name and address are yours again: registering anew is "
-            + "open to you, and closed to whoever did this the moment you do.");
+            notification.Subject,
+            notification.Body);
 
         await emailSender.SendAsync(message, cancellationToken);
     }
