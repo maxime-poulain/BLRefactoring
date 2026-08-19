@@ -1,6 +1,6 @@
 # 0038 — Derive every counted claim from the code
 
-- **Status:** Accepted — amended by [0065](0065-ship-every-host-as-an-image-and-build-them-in-the-pipeline.md): the compose file and the Dockerfiles it recorded as read by nothing are read by two rules
+- **Status:** Accepted — amended by [0065](0065-ship-every-host-as-an-image-and-build-them-in-the-pipeline.md): the compose file and the Dockerfiles it recorded as read by nothing are read by two rules; amended by [0092](0092-hold-a-documents-claims-of-absence-to-the-code.md): a third ledger joins the two, for the claims that deny rather than count or enumerate
 - **Date:** 2026-08-05
 
 ## Context

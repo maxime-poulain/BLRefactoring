@@ -116,6 +116,26 @@ public sealed partial class DocumentationRules
         (StrategicDesign + "event-storming.md", @"events, (?<count>[\w-]+) handlers, and",
             "domain event handlers", () => DomainEventHandlers().Count),
 
+        // The closed set of subjects, in both documents that state its size. ADR 0079 grew it from
+        // six to sixteen and one of the two sentences was not told, so the folder spent ten merges
+        // contradicting itself about the first thing a reader is shown.
+        (StrategicDesign + "README.md", @"drawn from a closed set of (?<count>[\w-]+)",
+            "topics", () => ValuesOf<Topic>(typeof(Topic))),
+        (StrategicDesign + "bounded-contexts.md", @"A \*\*closed set of (?<count>[\w-]+)\*\*",
+            "topics", () => ValuesOf<Topic>(typeof(Topic))),
+
+        // A port's consumers, counted where the prose counts them. The same merge that made the
+        // named lists above stale makes this number stale, and it is the one a reader trusts to
+        // decide whether a seam is small.
+        (StrategicDesign + "bounded-contexts.md", @"beside its (?<count>[\w-]+) consumers",
+            "consumers of IEmailSender", () => ConsumersOf(EmailPort)),
+
+        // The two surfaces a controller base defines, counted off that base rather than off a list.
+        (StrategicDesign + "bounded-contexts.md", @"(?<count>[\w-]+) endpoints under `/Administration`",
+            "endpoints under /Administration", () => EndpointsOn("AdministrationControllerBase")),
+        (StrategicDesign + "bounded-contexts.md", @"the catalog's (?<count>[\w-]+) anonymous endpoints",
+            "anonymous catalog endpoints", () => EndpointsOn("CatalogControllerBase")),
+
         // A policy commits exactly one fact — the publishing handlers are named after the domain
         // event they translate — so the facts feeding a port also count the policies that commit
         // them. Two sentences say it that way, and both went stale on the same merge.
@@ -159,6 +179,45 @@ public sealed partial class DocumentationRules
         (StrategicDesign + "context-map.md",
             @"The facts it would subscribe to are now durable — (?<list>.+?) land in the transactional outbox",
             "the facts that feed Search Indexing", () => FactsFeeding(IndexerPort)),
+
+        // What a fact carries is a list like any other, and this one was described carrying a
+        // culture for a merge after ADR 0091 took it off. The record's own remark said so; the
+        // board did not.
+        (StrategicDesign + "event-storming.md",
+            @"The verification fact carries (?<list>.+?) and nothing else",
+            "what EmailVerificationRequestedIntegrationEvent carries",
+            () => MembersOf("EmailVerificationRequestedIntegrationEvent")),
+    ];
+
+    /// <summary>
+    /// The claims of absence the living documents make, each with the anchor that locates the
+    /// denial and the predicate that says whether it still holds.
+    /// </summary>
+    /// <remarks>
+    /// The third ledger, and the one the other two could not carry. A counted claim goes stale by
+    /// a number moving and a named list by a member arriving; a claim of absence goes stale by
+    /// something being <em>built</em>, which is the one event nobody thinks to grep the documents
+    /// for. It is also the shape that ages worst: a sentence saying what a system does can only
+    /// become incomplete, while a sentence saying what it does not do becomes a lie the day the
+    /// feature ships — and reads as a decision, so the next reader takes it for one.
+    /// <para>
+    /// A row is worth writing when the denial is load-bearing: it explains a shape somebody would
+    /// otherwise read as an omission. A denial another rule already enforces stays out —
+    /// <c>IObjectStore</c> offers no <c>Replace</c>, and <c>ObjectStorageRules</c> fails before any
+    /// document could go stale about it. See ADR 0092.
+    /// </para>
+    /// </remarks>
+    private static readonly (string Document, string Anchor, string Subject, Func<bool> HoldsStill)[] ClaimsOfAbsence =
+    [
+        (StrategicDesign + "README.md", @"It has no date, no session, no capacity and no price",
+            "a training that is described rather than scheduled", NothingIsScheduled),
+        (StrategicDesign + "bounded-contexts.md", @"\*\*It does not schedule anything\.\*\*",
+            "a training that is described rather than scheduled", NothingIsScheduled),
+        (StrategicDesign + "bounded-contexts.md", @"There is no participant in this system",
+            "a catalog nobody enrolls in", NobodyEnrolls),
+        (StrategicDesign + "context-map.md", @"`POST /Trainer`\s*does not exist",
+            "a trainer who comes into being through registration or not at all",
+            NoEndpointCreatesATrainer),
     ];
 
     private const string StrategicDesign = "docs/strategic-design/";
@@ -261,6 +320,53 @@ public sealed partial class DocumentationRules
                                 $"{claim.Document} names '{member}' among {claim.Subject}, and the " +
                                 "code has nothing of that name feeding it"));
                 });
+            })
+            .ShouldHold();
+
+    /// <summary>
+    /// Every claim of absence, agrees with the code.
+    /// </summary>
+    /// <remarks>
+    /// The third sibling, for the claims that deny rather than count or enumerate. It fails the
+    /// same two ways as the other two — a denial the code has outgrown, and an anchor that has
+    /// stopped matching — and the second is why the denial and its predicate are written down
+    /// together: a sentence quietly reworded is a guarantee quietly withdrawn.
+    /// <para>
+    /// Written because five sentences of the strategic design denied a catalog this repository had
+    /// been serving for eleven merges, one of them under a heading reading <em>what this context
+    /// deliberately does not do</em>. Nothing was wrong with the mechanisms already here: a
+    /// counted claim was never made about it, and a named list has nothing to enumerate. The
+    /// failure had no rule that could have caught it, which is what makes it a record rather than
+    /// a row. See ADR 0092.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    [ArchitectureRule("0092",
+        "a claim of absence the documentation makes about the code is derived from the code, or it is not made")]
+    public void EveryClaimOfAbsence_AgreesWithTheCode() =>
+        ClaimsOfAbsence
+            .Selected("claim of absence")
+            .SelectMany(claim =>
+            {
+                if (!Regex.IsMatch(AsOneLine(claim.Document), claim.Anchor))
+                {
+                    return
+                    [
+                        $"the sentence this claim anchors on is gone from {claim.Document} " +
+                        $"(/{claim.Anchor}/, about {claim.Subject}). Re-anchor the denial on the " +
+                        "sentence as it now reads, or drop the row — an anchor that matches nothing " +
+                        "checks nothing"
+                    ];
+                }
+
+                return claim.HoldsStill()
+                    ? Array.Empty<string>()
+                    :
+                    [
+                        $"{claim.Document} still denies {claim.Subject}, and the code no longer " +
+                        "agrees. A denial that has stopped being true does not read as out of date, " +
+                        "it reads as a decision — which is how the next reader inherits it"
+                    ];
             })
             .ShouldHold();
 
@@ -508,6 +614,103 @@ public sealed partial class DocumentationRules
         Solution.SharedApi.DeclaredTypes()
             .Count(type => !type.IsAbstract
                 && type.GetInterfaces().Any(contract => contract.Name == "IHealthCheck"));
+
+    /// <summary>The post-commit consumers that speak through one port.</summary>
+    private static int ConsumersOf(string port) =>
+        IntegrationEventHandlers().Count(consumer => consumer
+            .GetConstructors()
+            .SelectMany(constructor => constructor.GetParameters())
+            .Any(parameter => parameter.ParameterType.Name == port));
+
+    /// <summary>
+    /// The actions the layered host publishes on one shared controller base.
+    /// </summary>
+    /// <remarks>
+    /// Off the base rather than off a route prefix: what makes an endpoint administrative is the
+    /// authority it sits behind (ADR 0054), and a second controller joining that base is exactly
+    /// the change a counted claim should notice. The outbox pair joined it that way.
+    /// </remarks>
+    private static int EndpointsOn(string controllerBase)
+    {
+        var controllers = Solution.LayeredApi.DeclaredTypes()
+            .Where(type => !type.IsAbstract && type.BaseType?.Name == controllerBase)
+            .ToArray();
+
+        if (controllers.Length == 0)
+        {
+            // Vacuity: a renamed base would count zero endpoints and make every claim about this
+            // surface true by there being no surface.
+            throw new InvalidOperationException(
+                $"No controller of the layered host derives from '{controllerBase}'. The ledgers " +
+                "count that surface off its base; with none found, the rows citing it assert nothing.");
+        }
+
+        return controllers
+            .SelectMany(controller => controller
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                .Where(IsAction))
+            .Count();
+    }
+
+    /// <summary>What one integration event carries, by the members of the record that is it.</summary>
+    private static IReadOnlySet<string> MembersOf(string fact)
+    {
+        var carrier = Solution.Application.DeclaredTypes().SingleOrDefault(type => type.Name == fact)
+            ?? throw new InvalidOperationException(
+                $"The application layer declares no '{fact}'. The named-list ledger reads its " +
+                "members to compute what the documents should enumerate; with none found, the row " +
+                "citing it asserts nothing.");
+
+        return carrier
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .Select(member => member.Name)
+            .ToHashSet(StringComparer.Ordinal);
+    }
+
+    /// <summary>Whether a training is still described rather than scheduled.</summary>
+    /// <remarks>
+    /// Declared members only: the audit stamps every aggregate inherits are not the training's own
+    /// date, and reading them as one would make the claim unwritable rather than checked.
+    /// </remarks>
+    private static bool NothingIsScheduled() =>
+        !DomainType("Training")
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .Any(member =>
+                member.PropertyType == typeof(DateTime)
+                || member.PropertyType == typeof(DateTimeOffset)
+                || member.PropertyType == typeof(DateOnly)
+                || ScheduledWords.Any(word =>
+                    member.Name.Contains(word, StringComparison.OrdinalIgnoreCase)));
+
+    private static readonly string[] ScheduledWords = ["Session", "Capacity", "Price", "Seat"];
+
+    private static readonly string[] EnrolledWords =
+        ["Participant", "Registration", "Attendance", "Enrollment"];
+
+    /// <summary>Whether the catalog is still one nobody enrolls in.</summary>
+    private static bool NobodyEnrolls() =>
+        !Solution.Domain.DeclaredTypes().Any(type => EnrolledWords.Contains(type.Name, StringComparer.Ordinal));
+
+    /// <summary>Whether a trainer still comes into being through registration or not at all.</summary>
+    private static bool NoEndpointCreatesATrainer() =>
+        !Solution.LayeredApi.DeclaredTypes()
+            .Where(type => type.Name == "TrainerController")
+            .SelectMany(controller => controller
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            .Any(action => action.GetCustomAttributes(inherit: true)
+                .Any(attribute => attribute.GetType().Name == "HttpPostAttribute"));
+
+    private static Type DomainType(string name) =>
+        Solution.Domain.DeclaredTypes().SingleOrDefault(type => type.Name == name)
+        ?? throw new InvalidOperationException(
+            $"The domain declares no '{name}'. A claim of absence is computed from it; with none " +
+            "found, the row citing it asserts nothing.");
+
+    /// <summary>Whether a method is an action — it carries one of the framework's verb attributes.</summary>
+    private static bool IsAction(MethodInfo method) =>
+        method.GetCustomAttributes(inherit: true)
+            .Any(attribute => attribute.GetType().Name.StartsWith("Http", StringComparison.Ordinal)
+                && attribute.GetType().Name.EndsWith("Attribute", StringComparison.Ordinal));
 
     /// <summary>The <c>{Controller}Client.{Action}</c> names the API publishes.</summary>
     private static IReadOnlySet<string> Operations() =>

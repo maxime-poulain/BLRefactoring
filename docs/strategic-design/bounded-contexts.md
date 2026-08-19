@@ -147,8 +147,8 @@ holds a `Trainer` instance.
 | Actor | What they may do | Status |
 |---|---|---|
 | **Trainer** | Everything in this context, and only to their own data | Implemented — `ICurrentUserService.TrainerId` |
-| **Visitor** | Register, then sign in | Implemented |
-| **Administrator** | Suspend and reinstate a trainer; withhold and release a training; list either, filtered by state | Implemented — six endpoints under `/Administration`, behind the `Administrator` role (ADR 0051, ADR 0052, ADR 0055). Removing a trainer is still not among them, and now by decision rather than by delay: erasure is the account's own act, behind the account's own password (ADR 0085) |
+| **Visitor** | Browse the public catalog, write to a trainer through it, register, then sign in | Implemented — the reading needs no account (ADR 0062, ADR 0070, ADR 0082) |
+| **Administrator** | Suspend and reinstate a trainer; withhold and release a training; list either, filtered by state; read the delivery backlog and hand a poison message back to the worker | Implemented — eight endpoints under `/Administration`, behind the `Administrator` role (ADR 0051, ADR 0052, ADR 0055, ADR 0061). Removing a trainer is still not among them, and now by decision rather than by delay: erasure is the account's own act, behind the account's own password (ADR 0085) |
 
 The third row has said three different things in three commits, and the sequence is the point. It
 began by saying the permission was absent — no role was ever granted, so the rules it named could
@@ -200,10 +200,18 @@ Every one of them exists twice — once per application style. See the
 
 - **It does not schedule anything.** `Training` has no date, no session, no capacity and no price.
   That absence is the clearest statement in the model about where this context ends.
-- **It does not serve a catalog.** Every read is scoped to the caller. Five endpoints that handed
-  out other trainers' data were removed rather than restricted, because a read scoped to one caller
-  is not a catalog read.
 - **It does not authenticate.** See below.
+
+It did once say a third thing — *it does not serve a catalog* — and that sentence outlived its
+truth by eleven merges, under this very heading, where a reader would take it for a decision rather
+than for a lag. It is gone, and what replaced it is the honest version: the context **does** serve
+a catalog, at the catalog's seven anonymous endpoints, and every *write* is still scoped to its
+owner.
+The five endpoints removed in ADR 0055's prehistory are still removed, because what came back came
+back anonymous, read-only, and over the search index rather than over the trainers' own rows. The
+rule that now keeps this list honest is `EveryClaimOfAbsence_AgreesWithTheCode` (ADR 0092): the two
+bullets above are computed from the model on every build, so the third one's failure mode is closed
+rather than merely corrected.
 
 ---
 
@@ -263,7 +271,7 @@ Registration, authentication, token issuance, lockout, password recovery, accoun
 - **Language:** `EmailMessage` — a recipient, a subject, a body. Deliberately primitive: the port
   carries no domain type, so the notifier can never grow an opinion about trainers.
 - **Aggregates:** none.
-- **Status:** real. `IEmailSender` is declared in the application layer beside its two consumers
+- **Status:** real. `IEmailSender` is declared in the application layer beside its ten consumers
   and implemented by `SmtpEmailSender` over MailKit — Mailpit locally, any relay by configuration
   ([ADR 0031](../adr/0031-send-email-over-smtp-and-prove-it-against-a-real-server.md)). The
   protocol is the boundary: only the infrastructure names the mail client, and a rule holds that
@@ -307,8 +315,10 @@ Registration, authentication, token issuance, lockout, password recovery, accoun
   word of that title so that a search seeks instead of scanning. One adapter writes it, the query
   port reads it, and `GET /Catalog/trainings` is its first reader. Since ADR 0062 it has a second,
   `GET /Catalog/trainings/{id}`, which asks this index one question only — is this training on
-  offer — and reads the write model for everything it then shows. Those two are the whole anonymous
-  surface of this API.
+  offer — and reads the write model for everything it then shows. Those two were the whole
+  anonymous surface for one merge and have not been since: the facets, the trainer's public page,
+  the two portrait addresses and the contact door joined them, and a counted claim now holds the
+  size of that surface rather than a sentence naming its members (ADR 0069, ADR 0070, ADR 0082).
 - **Fed by:** the transactional outbox, end to end. Every change that alters what a visitor
   would be shown commits its own fact with it — `TrainingCreatedIntegrationEvent`,
   `TrainingEditedIntegrationEvent`, `TrainingTransferredIntegrationEvent`,

@@ -7,9 +7,9 @@ outrank shipping speed. Understand the existing design before changing it.
 ## Read first, in this order
 
 1. `README.md` — the architecture, the domain model, the conventions.
-2. `docs/adr/README.md` — the index of 91 architecture decision records.
+2. `docs/adr/README.md` — the index of 92 architecture decision records.
 3. The records relevant to what you are touching.
-4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 233 executable rules. Often
+4. `tests/TrainingHub.Architecture.Tests/` — the same decisions as 234 executable rules. Often
    faster than reading prose: each rule names the record it defends and quotes it.
 5. The existing implementation.
 
@@ -242,6 +242,14 @@ The build enforces the style, so match what is there rather than normalizing it:
   rule that defends it. ADR 0013 makes that last part mandatory.
 - A merged record is never rewritten. A decision that changes gets a new record superseding it.
 - Update the README when a convention, a workflow or the project graph changes.
+- **A living document answers to three ledgers in `DocumentationRules`, and a sentence belongs to
+  exactly one.** A sentence that *counts* is a `CountedClaims` row (ADR 0038); one that
+  *enumerates* is a `NamedLists` row (ADR 0041); one that *denies* is a `ClaimsOfAbsence` row
+  (ADR 0092). The third exists because a denial ages worst: an assertion going stale reads as
+  incomplete, while *it does not serve a catalog* reads as a decision long after it stopped being
+  true — which is exactly how it survived eleven merges. Each row names the sentence it anchors on,
+  so **rewording a guarded sentence fails the build**: a guarantee quietly rephrased is a guarantee
+  quietly withdrawn, and no rule can tell those apart.
 
 ## Before calling it done
 

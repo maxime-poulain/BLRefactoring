@@ -238,10 +238,12 @@ verification, and erasure endpoints commit them directly (ADR 0084, ADR 0085, AD
 two go further than the contact fact went — their consumers, `SendPasswordResetLink` and
 `SendVerificationLink`, do not merely resolve a detail at
 delivery, they *mint the secret* at delivery, so neither token ever touches the outbox row at
-all. The verification fact carries the one thing its consumer could not resolve on its own — the
-culture the requester was being served in, so the email arrives in the requester's language — and
-deliberately not the address, which is read off the account at delivery like every notice's
-(ADR 0056). The other two are the owner's alarm bells, each committed in the same transaction as the
+all. The verification fact carries `UserId` and nothing else, and the *nothing else* is ADR 0091's
+correction: it carried the requester's culture until then, which let a message leave in the language
+of whoever pressed the button rather than in the language of the account it was addressed to. The
+address is read off the account at delivery like every notice's (ADR 0056), and the language is now
+read from the same place — one authority beats two that can disagree. The other two are the owner's
+alarm bells, each committed in the same transaction as the
 change it announces — and the erasure's carries the address and the username on the wire, because
 by delivery time the rows that held them are gone.
 
@@ -341,8 +343,10 @@ answer (ADR 0052).
 Reading the aggregates tells you what is allowed. Reading the boards tells you three things the code
 never states in one place:
 
-1. **Registration is the system's only cross-context write.** You would have to open five files to
-   notice.
+1. **The system's cross-context writes are two, and they are mirrors.** Registration creates an
+   Identity account and a `Trainer` in one ambient transaction; erasure removes both in another
+   (ADR 0085). You would have to open several files to notice either, and nothing but these boards
+   puts the two beside each other.
 2. **Every reaction is a side effect the domain must not know about.** Outbox rows, audit entries,
    the emails and index updates the worker delivers — none of them is a business rule, and none of
    them lives in an aggregate.
