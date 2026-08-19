@@ -12,19 +12,25 @@ is aspirational unless it says so.
 A **trainer** signs up, keeps a professional profile — a name, a contact address, a bio, a portrait
 — and publishes the **trainings** they teach. A training has a title, a description, what a
 participant needs beforehand, what they leave with, and one or more **topics** drawn from a closed
-set of six.
+set of sixteen.
 
 That is the whole business today. Two facts about it are worth stating immediately, because they
 explain most of the design:
 
 **A training is a catalog entry, not a scheduled event.** It has no date, no session, no capacity
-and no price. Nobody enrols in anything. The system describes what is on offer; it does not run it.
+and no price. Nobody enrolls in anything. The system describes what is on offer; it does not run it.
 
-**Everything is scoped to its owner.** A trainer reads and writes their own profile and their own
-trainings, and nothing else. There is no browsing, no directory, no search — those endpoints existed
-once and were removed rather than restricted, because a read scoped to one caller is not a catalog
-read. The public catalog is the announced next step, and parts of the model are already shaped for
-it.
+**Every write is scoped to its owner, and the reading is not.** A trainer edits their own profile
+and their own trainings, and nothing else. What a visitor may *read* is a different question, and
+it now has a different answer: the catalog is public, it is the front door — the root address
+serves it — and a visitor searches it, narrows it by subject, opens a training and the page of the
+person who offers it, without an account at all (ADR 0062, ADR 0069, ADR 0070, ADR 0074).
+
+The five endpoints that were removed are still removed, and the difference is what makes the shape
+legible: they handed one trainer another's name, contact address and bio to any signed-in caller,
+enumerable. What came back came back anonymous and read-only, over a search index that holds what
+a visitor may be shown rather than over the trainers' own rows — which is why a read scoped to one
+caller was never the same thing as a catalog read.
 
 ## The map, at a glance
 

@@ -21,6 +21,12 @@
   <data name="Trainer.BioExceeds500Characters" xml:space="preserve">
     <value>La biographie ne peut pas dépasser 500 caractères.</value>
   </data>
+  <data name="Trainer.InvalidFirstname" xml:space="preserve">
+    <value>Le prénom doit contenir entre 2 et 50 caractères.</value>
+  </data>
+  <data name="Trainer.InvalidLastname" xml:space="preserve">
+    <value>Le nom doit contenir entre 2 et 50 caractères.</value>
+  </data>
   <data name="Trainer.NotSuspended" xml:space="preserve">
     <value>Ce formateur n'est pas suspendu.</value>
   </data>

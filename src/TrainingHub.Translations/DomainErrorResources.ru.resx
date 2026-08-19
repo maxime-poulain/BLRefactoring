@@ -21,6 +21,12 @@
   <data name="Trainer.BioExceeds500Characters" xml:space="preserve">
     <value>Биография не может превышать 500 символов.</value>
   </data>
+  <data name="Trainer.InvalidFirstname" xml:space="preserve">
+    <value>Имя должно содержать от 2 до 50 символов.</value>
+  </data>
+  <data name="Trainer.InvalidLastname" xml:space="preserve">
+    <value>Фамилия должна содержать от 2 до 50 символов.</value>
+  </data>
   <data name="Trainer.NotSuspended" xml:space="preserve">
     <value>Этот тренер не приостановлен.</value>
   </data>

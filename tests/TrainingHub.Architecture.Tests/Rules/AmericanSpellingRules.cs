@@ -272,7 +272,11 @@ public sealed partial class AmericanSpellingRules
             ["SKILFUL"] = "skillful",
             ["COUNSELLOR"] = "counselor",
 
-            // …and one it does double.
+            // …and one it does double. The noun was known and the verb it is built on was not,
+            // which is how "nobody enrols in anything" sat in the strategic design under a rule
+            // that reads every word of it.
+            ["ENROL"] = "enroll",
+            ["ENROLS"] = "enrolls",
             ["ENROLMENT"] = "enrollment",
             ["ENROLMENTS"] = "enrollments",
             ["FULFIL"] = "fulfill",

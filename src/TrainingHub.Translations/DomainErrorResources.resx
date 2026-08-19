@@ -21,6 +21,12 @@
   <data name="Trainer.BioExceeds500Characters" xml:space="preserve">
     <value>Bio cannot exceed 500 characters.</value>
   </data>
+  <data name="Trainer.InvalidFirstname" xml:space="preserve">
+    <value>Firstname must be between 2 and 50 characters long.</value>
+  </data>
+  <data name="Trainer.InvalidLastname" xml:space="preserve">
+    <value>Lastname must be between 2 and 50 characters long.</value>
+  </data>
   <data name="Trainer.NotSuspended" xml:space="preserve">
     <value>This trainer is not suspended.</value>
   </data>
