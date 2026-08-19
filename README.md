@@ -878,6 +878,15 @@ answer. The reasoning, the alternatives — in-memory tokens, refresh tokens, Du
 this does *not* protect against are in
 [ADR 0009](docs/adr/0009-hold-the-access-token-in-the-bff-instead-of-the-browser.md).
 
+**A form with no multi-line field is submitted by the keyboard as well as by the button.**
+`MudForm` renders a real `form` element whose implicit submission it suppresses, and offers
+`OnEnterPressed` in its place — a form-level keydown that names no target. The five screens whose
+fields are all single lines wire it to the handler the button already clicks, so Enter does what
+clicking does and both gestures name one method; the four screens with a textarea deliberately do
+not, because a callback that cannot tell which field Enter was pressed in would turn a paragraph
+break into a save. Each dialog also states whether Escape closes it
+([ADR 0093](docs/adr/0093-let-the-keyboard-finish-what-the-form-starts.md)).
+
 **The catalog's routes are also the crawler's.** They prerender on the host, per request path
 ([ADR 0072](docs/adr/0072-prerender-the-catalogs-routes.md)), and they describe themselves to the
 machines that read them: each page writes its own head — a description, a canonical naming which

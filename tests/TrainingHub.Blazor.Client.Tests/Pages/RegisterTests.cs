@@ -3,6 +3,7 @@ using AwesomeAssertions;
 using Bunit;
 using Bunit.TestDoubles;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using TrainingHub.Blazor.Client.Infrastructure;
@@ -169,6 +170,55 @@ public sealed class RegisterTests : ComponentTest
         return problem;
     }
 
+    /// <summary>
+    /// Register, while the account is being created, says so and refuses a second submission.
+    /// </summary>
+    /// <remarks>
+    /// The one page where a second submission is not merely wasteful: two creations of the same
+    /// account race, and the loser is a refusal the visitor never asked for. Enter makes that
+    /// reachable by holding a key (ADR 0093), and the <c>disabled</c> the busy label announces is
+    /// the whole of what stops it.
+    /// </remarks>
+    [Fact]
+    public async Task Register_WhileTheAccountIsBeingCreated_SaysSoAndRefusesASecondSubmission()
+    {
+        // Arrange
+        var answering = new TaskCompletionSource<ProblemDetails?>();
+
+        _session
+            .Setup(client => client.RegisterAsync(It.IsAny<RegisterHttpRequest>(), It.IsAny<CancellationToken>()))
+            .Returns(answering.Task);
+
+        var page = Render<Register>();
+
+        var fields = page.FindAll("input");
+        fields[0].Input("John");
+        fields[1].Input("Doe");
+        fields[2].Input("john");
+        fields[3].Input("john@example.com");
+        fields[4].Input("Passw0rd!");
+        fields[5].Input("Passw0rd!");
+
+        // By either label, because the lookup must survive the flip to the busy one —
+        // which is the very state this fact is about.
+        var register = () => page.FindAll("button")
+            .Single(button => button.TextContent.Contains("Register", StringComparison.Ordinal)
+                || button.TextContent.Contains("Creating account", StringComparison.Ordinal));
+        page.WaitForState(() => !register().HasAttribute("disabled"));
+
+        // Act
+        var submitted = page.InvokeAsync(() =>
+            page.Find("form").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" }));
+
+        // Assert
+        page.WaitForState(() => register().TextContent.Contains("Creating account", StringComparison.Ordinal));
+        register().HasAttribute("disabled")
+            .Should().BeTrue("the second submission would race the first for the same username");
+
+        answering.SetResult(null);
+        await submitted;
+    }
+
     private async Task Register()
     {
         var page = Render<Register>();
@@ -190,6 +240,8 @@ public sealed class RegisterTests : ComponentTest
 
         page.WaitForState(() => !register().HasAttribute("disabled"));
 
-        await page.InvokeAsync(() => register().Click());
+        // The gesture is Enter, dispatched where MudForm listens for it — its own form element.
+        // The button's OnClick names the same handler, held by the architecture rule (ADR 0093).
+        await page.InvokeAsync(() => page.Find("form").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" }));
     }
 }

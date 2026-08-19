@@ -12,7 +12,7 @@
         @* The password is the proof of intent, not decoration: a session outlives an unlocked
            device by up to sixty minutes, and this is the one action nobody can undo afterwards.
            The API checks it (ADR 0085); this field is only how it gets there. *@
-        <MudForm @ref="_form" @bind-IsValid="_isValid" Class="mt-4">
+        <MudForm @ref="_form" @bind-IsValid="_isValid" OnEnterPressed="Confirm" Class="mt-4">
             <MudTextField @bind-Value="_password"
                           Label="@L["CurrentPassword"]"
                           Variant="Variant.Outlined"

@@ -33,6 +33,10 @@ public static class ContactTrainerDialogs
         var options = new DialogOptions
         {
             CloseButton = true,
+            // Stated rather than inherited: the provider's own is nullable and unset, so a
+            // dialog that says nothing answers Escape however the library decided this
+            // release. No test here can press that key (ADR 0093).
+            CloseOnEscapeKey = true,
             MaxWidth = MaxWidth.Small,
             FullWidth = true
         };

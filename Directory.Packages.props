@@ -21,12 +21,19 @@
     <PackageVersion Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
     <PackageVersion Include="AspNetCore.HealthChecks.UI.InMemory.Storage" Version="9.0.0" />
     <!--
-      Pinned, not referenced — the Microsoft.OpenApi mechanism below, for the same reason there:
-      AspNetCore.HealthChecks.UI 9.0.0 pulls KubernetesClient 15.0.1 for a discovery feature this
-      repository never turns on, and that version carries GHSA-w7r3-mgwf-4mqq (CVE-2025-9708,
-      CVSS 6.8) — the client accepts certificates without verifying the trust chain. First patched
-      version is 17.0.14; transitive pinning (enabled above) is what closes it. Remove this line
-      once the UI package references a patched version itself.
+      Pinned, not referenced: no project carries a PackageReference to this package. It arrives
+      transitively — AspNetCore.HealthChecks.UI 9.0.0 pulls KubernetesClient 15.0.1 for a discovery
+      feature this repository never turns on — and that version carries GHSA-w7r3-mgwf-4mqq
+      (CVE-2025-9708, CVSS 6.8): the client accepts certificates without verifying the trust chain.
+      First patched version is 17.0.14, and transitive pinning (enabled above) is what reaches it
+      without waiting for the UI package to move. Remove this line once that package references a
+      patched version itself.
+
+      This one line deliberately does not follow the latest release. What a pin of this kind owes is
+      the *lowest* version that closes the advisory: the UI package was compiled against the 15.0.1
+      API, so every major beyond the fix is a compatibility risk taken on somebody else's behalf,
+      and 19.0.2 would add Fractions and YamlDotNet to both API hosts' restore graph for an assembly
+      nothing here ever loads.
     -->
     <PackageVersion Include="KubernetesClient" Version="17.0.14" />
     <!--
@@ -40,7 +47,7 @@
       mirroring the API's, an address built to defeat a year-long cache, and a failure path that
       shows the server's own words.
     -->
-    <PackageVersion Include="bunit" Version="2.8.6" />
+    <PackageVersion Include="bunit" Version="2.9.0" />
     <!--
       The S3 client, under Apache 2.0. Named for Amazon, but nothing here talks to Amazon: the
       adapter points it at whatever endpoint the configuration names, which is a SeaweedFS
@@ -48,7 +55,7 @@
       choice of client is what makes the provider a configuration value rather than a rewrite —
       the server is the replaceable part. See ADR 0021.
     -->
-    <PackageVersion Include="AWSSDK.S3" Version="4.0.101.6" />
+    <PackageVersion Include="AWSSDK.S3" Version="4.0.102.2" />
     <!--
       Collects line coverage during `dotnet test`, in OpenCover format, for the analysis to read.
       Referenced by every project that runs tests and by no other — an architecture rule checks
@@ -56,7 +63,7 @@
       the quality gate would read the silence as uncovered code.
     -->
     <PackageVersion Include="coverlet.collector" Version="10.0.1" />
-    <PackageVersion Include="EmailValidation" Version="1.3.0" />
+    <PackageVersion Include="EmailValidation" Version="1.4.0" />
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <!--
@@ -70,35 +77,27 @@
     <PackageVersion Include="MailKit" Version="4.17.0" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.11" />
     <!--
       Writes the API's OpenAPI document to disk during the build, so the client generator reads a
       file instead of loading the host itself. Only the layered API references it, and only
       scripts/generate-clients.sh turns the emission on. See ADR 0008.
     -->
-    <PackageVersion Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.11" />
     <!--
       The framework's own OpenAPI document generator, used by both hosts. It replaced NSwag on one
       and Swashbuckle on the other: two libraries describing one API produced two documents that
       disagreed on nullability and enum representation. See ADR 0006.
     -->
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
     <!--
-      Pinned, not referenced: Microsoft.AspNetCore.OpenApi 10.0.10 pulls Microsoft.OpenApi 2.0.0,
-      which carries GHSA-v5pm-xwqc-g5wc (CVSS 7.5) — a circular schema reference makes the document
-      reader recurse until the process dies. First patched version is 2.7.5, and no 10.0.x of the
-      ASP.NET Core package ships it yet, so transitive pinning (enabled above) is what closes it.
-      Remove this line once the framework package references a patched version itself.
-    -->
-    <PackageVersion Include="Microsoft.OpenApi" Version="2.7.5" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
-    <!--
-      Pinned, not referenced — like Microsoft.OpenApi above, and for the same mechanism rather than
+      Pinned, not referenced — like KubernetesClient above, and for the same mechanism rather than
       the same reason. No project carries a PackageReference to either of these two; they arrive
       transitively, and transitive pinning (enabled above) is what keeps them on the version the
       rest of the EF and Extensions families are on. Said out loud because a version with no
@@ -107,9 +106,9 @@
       health dashboard arrived: its storage package asks for the EF 8 provider, which throws
       MissingMethodException against an EF 10 runtime — this line is what boots it on 10.
     -->
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Abstractions" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Abstractions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.11" />
     <!--
       A relational provider for one unit test, and it has to be relational: the schema probe asks
       GetPendingMigrationsAsync, which the in-memory provider above does not answer at all. SQLite
@@ -117,28 +116,28 @@
       without a container, which is what keeps that fact in the suite that runs without Docker
       (ADR 0045). It never touches src/ — the hosts speak SQL Server and nothing else.
     -->
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
     <!--
       The host builder itself, for DevelopmentSeedExtensionsTests. The seeder is an extension of
       IHost and reaches everything through the scopes it opens, so proving it takes a real host
       rather than a container of services — and src/ needs only the abstractions below, because a
       host is something the API projects are handed rather than something they build.
     -->
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.11" />
     <!--
       IStringLocalizer and AddLocalization for the WebAssembly client, which sits outside the
       shared framework that hands them to the three hosts for free. One package, browser side
       only. See ADR 0088.
     -->
-    <PackageVersion Include="Microsoft.Extensions.Localization" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+    <PackageVersion Include="Microsoft.Extensions.Localization" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
     <PackageVersion Include="Moq" Version="4.20.72" />
-    <PackageVersion Include="MudBlazor" Version="9.7.0" />
+    <PackageVersion Include="MudBlazor" Version="9.8.0" />
     <!--
       Reads compiled assemblies with Mono.Cecil and states an architectural rule as a fluent
       predicate, for TrainingHub.Architecture.Tests. The eNhanced fork rather than
@@ -150,7 +149,7 @@
     -->
     <PackageVersion Include="NetArchTest.eNhancedEdition" Version="1.4.5" />
     <PackageVersion Include="Respawn" Version="7.0.0" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.16.16" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.16.20" />
     <!--
       The logging pipeline of the two API hosts: console and rolling text files, from one typed
       options class. The framework's own logging has no file sink at all, and this meta-package is
@@ -175,15 +174,6 @@
     <PackageVersion Include="SkiaSharp" Version="4.151.1" />
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.151.1" />
     <!--
-      Pinned, not referenced — the same mechanism as Microsoft.OpenApi above, and the same reason.
-      The SQLite provider added for the schema probe's unit test drags the native library in at
-      2.1.11, which NuGet's audit reports as GHSA-2m69-gcr7-jv3q, high severity. 2.1.12 is the
-      first version the audit stops reporting, and transitive pinning is what reaches it without
-      waiting for the EF provider to move. Remove this line once
-      Microsoft.EntityFrameworkCore.Sqlite references a patched version itself.
-    -->
-    <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.12" />
-    <!--
       The reverse proxy the Blazor host uses as a BFF: the browser calls its own origin, and this
       forwards to the API with the access token attached server-side. See ADR 0009.
     -->
@@ -198,6 +188,6 @@
     <PackageVersion Include="Testcontainers" Version="4.14.0" />
     <PackageVersion Include="Testcontainers.MsSql" Version="4.14.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
   </ItemGroup>
 </Project>

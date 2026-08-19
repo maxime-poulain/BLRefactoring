@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 using Moq;
@@ -98,6 +99,47 @@ public sealed class CreateTrainingTests : ComponentTest
         // Assert
         page.WaitForAssertion(() => Shown().Should().ContainSingle()
             .Which.Message.Should().Be("Something went wrong saving the training."));
+    }
+
+    /// <summary>
+    /// Submitting, while the training is being saved, says so and refuses a second submission.
+    /// </summary>
+    /// <remarks>
+    /// An edit carries the version it replaces (ADR 0010), so a second submission of the same form
+    /// states a version the first one has already superseded and is answered with a conflict the
+    /// trainer did not cause. The <c>disabled</c> the busy label announces is what refuses it —
+    /// this screen has no Enter path of its own, its description being multi-line (ADR 0093).
+    /// </remarks>
+    [Fact]
+    public async Task Submitting_WhileTheTrainingIsBeingSaved_SaysSoAndRefusesASecondSubmission()
+    {
+        // Arrange
+        var answering = new TaskCompletionSource<TrainingHttpResponse>();
+
+        _trainingClient
+            .Setup(client => client.UpdateTrainingAsync(
+                It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<EditTrainingHttpRequest>()))
+            .Returns(answering.Task);
+
+        var page = RenderPrefilled();
+
+        // By either label, because the lookup must survive the flip to the busy one —
+        // which is the very state this fact is about.
+        var save = () => page.FindAll("button")
+            .Single(button => button.TextContent.Contains("Save Changes", StringComparison.Ordinal)
+                || button.TextContent.Contains("Saving", StringComparison.Ordinal));
+        page.WaitForState(() => !save().HasAttribute("disabled"));
+
+        // Act
+        var submitted = page.InvokeAsync(() => save().ClickAsync(new MouseEventArgs()));
+
+        // Assert
+        page.WaitForState(() => save().TextContent.Contains("Saving", StringComparison.Ordinal));
+        save().HasAttribute("disabled")
+            .Should().BeTrue("the version the second submission would state is the one already in flight");
+
+        answering.SetException(ApiExceptions.Unreachable());
+        await submitted;
     }
 
     /// <summary>
