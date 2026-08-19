@@ -120,3 +120,5 @@ simpler from the outside.
 | [0090](0090-prove-the-address-before-the-catalog-grows.md) | Prove the address before the catalog grows | Accepted — amended by [0091](0091-write-to-everyone-in-the-language-they-read.md): the deferral it recorded is lifted, `IVerificationEmailComposer` is folded into `INotificationComposer`, and the verification fact no longer carries a culture |
 | [0091](0091-write-to-everyone-in-the-language-they-read.md) | Write to everyone in the language they read | Accepted |
 | [0092](0092-hold-a-documents-claims-of-absence-to-the-code.md) | Hold a document's claims of absence to the code | Accepted |
+| [0093](0093-let-the-keyboard-finish-what-the-form-starts.md) | Let the keyboard finish what the form starts | Accepted |
+| [0094](0094-read-the-catalog-from-a-snapshot.md) | Read the catalog from a snapshot | Accepted |

@@ -46,6 +46,22 @@ public abstract class ApiFactory<TEntryPoint>
     private readonly MsSqlContainer _msSqlContainer = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest")
         .Build();
 
+    /// <summary>The suite's own database on that container, rather than the container's default.</summary>
+    /// <remarks>
+    /// The MsSql module's connection string names <c>master</c>, and the suites ran there for a
+    /// long time with nothing saying so. ADR 0094's migration is what finally objected:
+    /// <c>ALTER DATABASE CURRENT</c> refuses a system database — the right refusal, because an
+    /// application schema does not belong in <c>master</c> and <c>READ_COMMITTED_SNAPSHOT</c>
+    /// cannot even be turned on there. Only the consumed string changes: the container still
+    /// answers its readiness probe on <c>master</c>, and the hosts migrate this database into
+    /// existence on startup, exactly as they would a real one.
+    /// </remarks>
+    private string SuiteConnectionString =>
+        new SqlConnectionStringBuilder(_msSqlContainer.GetConnectionString())
+        {
+            InitialCatalog = "TrainingHub",
+        }.ConnectionString;
+
     /// <summary>
     /// The object store the suite runs against.
     /// </summary>
@@ -287,7 +303,7 @@ public abstract class ApiFactory<TEntryPoint>
         // registrations made by AddInfrastructure survive and stay resolvable.
         services.AddDbContext<TContext>((serviceProvider, options) =>
         {
-            options.UseSqlServer(_msSqlContainer.GetConnectionString());
+            options.UseSqlServer(SuiteConnectionString);
             configure?.Invoke(serviceProvider, options);
         });
     }
@@ -320,7 +336,7 @@ public abstract class ApiFactory<TEntryPoint>
             {
             }
 
-            _connection = new SqlConnection(_msSqlContainer.GetConnectionString());
+            _connection = new SqlConnection(SuiteConnectionString);
             await _connection.OpenAsync();
 
             _respawner = await Respawner.CreateAsync(

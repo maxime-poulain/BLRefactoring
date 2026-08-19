@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Bunit;
 using Bunit.TestDoubles;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using TrainingHub.Blazor.Client.Infrastructure;
@@ -120,6 +121,56 @@ public sealed class ResetPasswordTests : ComponentTest
             .Which.Message.Should().Be("Password recovery is unavailable right now. Try again in a moment.");
     }
 
+    /// <summary>
+    /// Submit, while the change is in flight, says so and refuses a second submission.
+    /// </summary>
+    /// <remarks>
+    /// A reset token is spent once. A second submission of the same form redeems a token the first
+    /// one has already consumed, and the answer is a refusal that reads as though the link were
+    /// dead. Enter makes that reachable by holding a key (ADR 0093).
+    /// </remarks>
+    [Fact]
+    public async Task Submit_WhileTheChangeIsInFlight_SaysSoAndRefusesASecondSubmission()
+    {
+        // Arrange
+        var answering = new TaskCompletionSource<ProblemDetails?>();
+
+        _session
+            .Setup(client => client.ResetPasswordAsync(
+                It.IsAny<ResetPasswordHttpRequest>(), It.IsAny<CancellationToken>()))
+            .Returns(answering.Task);
+
+        var navigation = (BunitNavigationManager)Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo("http://localhost/reset-password");
+        navigation.NavigateTo(navigation.GetUriWithQueryParameter("token", EmailedToken));
+
+        var page = Render<ResetPassword>();
+
+        var fields = page.FindAll("input");
+        fields[0].Input("grace.hopper@example.org");
+        fields[1].Input("a-new-password");
+        fields[2].Input("a-new-password");
+
+        // By either label, because the lookup must survive the flip to the busy one —
+        // which is the very state this fact is about.
+        var change = () => page.FindAll("button")
+            .Single(button => button.TextContent.Contains("Change the password", StringComparison.Ordinal)
+                || button.TextContent.Contains("Changing the password", StringComparison.Ordinal));
+        page.WaitForState(() => !change().HasAttribute("disabled"));
+
+        // Act
+        var submitted = page.InvokeAsync(() =>
+            page.Find("form").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" }));
+
+        // Assert
+        page.WaitForState(() => change().TextContent.Contains("Changing the password", StringComparison.Ordinal));
+        change().HasAttribute("disabled")
+            .Should().BeTrue("the token the second submission would spend is the one already in flight");
+
+        answering.SetResult(null);
+        await submitted;
+    }
+
     private async Task SubmitAsync()
     {
         // Through the address bar, not as a parameter: the token is bound with
@@ -141,6 +192,8 @@ public sealed class ResetPasswordTests : ComponentTest
 
         page.WaitForState(() => !change().HasAttribute("disabled"));
 
-        await page.InvokeAsync(() => change().Click());
+        // The gesture is Enter, dispatched where MudForm listens for it — its own form element.
+        // The button's OnClick names the same handler, held by the architecture rule (ADR 0093).
+        await page.InvokeAsync(() => page.Find("form").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" }));
     }
 }

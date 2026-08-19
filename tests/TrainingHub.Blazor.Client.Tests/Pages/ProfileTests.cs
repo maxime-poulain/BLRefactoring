@@ -9,6 +9,7 @@ using TrainingHub.GeneratedClients;
 using Bunit;
 using Bunit.TestDoubles;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -514,6 +515,73 @@ public sealed class ProfileTests : ComponentTest
             .Setup(service => service.ShowAsync<EraseAccountDialog>(
                 It.IsAny<string>(), It.IsAny<DialogOptions>()))
             .ReturnsAsync(reference.Object);
+    }
+
+    /// <summary>
+    /// Save, while the profile is being saved, says so and refuses a second submission.
+    /// </summary>
+    /// <remarks>
+    /// The edit carries the version it replaces (ADR 0010), so a second submission of the same form
+    /// states a version the first one has already superseded and comes back a conflict nobody
+    /// caused. The <c>disabled</c> the busy label announces is what stops it — this screen has no
+    /// Enter path of its own, its bio being multi-line (ADR 0093).
+    /// </remarks>
+    [Fact]
+    public async Task Save_WhileTheProfileIsBeingSaved_SaysSoAndRefusesASecondSubmission()
+    {
+        // Arrange
+        var answering = new TaskCompletionSource<TrainerHttpResponse>();
+
+        _trainerClient
+            .Setup(client => client.EditCurrentAsync(It.IsAny<string?>(), It.IsAny<EditTrainerHttpRequest>()))
+            .Returns(answering.Task);
+
+        var page = Render<Profile>();
+
+        // By either label, because the lookup must survive the flip to the busy one —
+        // which is the very state this fact is about.
+        var save = () => page.FindAll("button")
+            .Single(button => button.TextContent.Contains("Save Changes", StringComparison.Ordinal)
+                || button.TextContent.Contains("Saving", StringComparison.Ordinal));
+        page.WaitForState(() => !save().HasAttribute("disabled"));
+
+        // Act
+        var submitted = page.InvokeAsync(() => save().ClickAsync(new MouseEventArgs()));
+
+        // Assert
+        page.WaitForState(() => save().TextContent.Contains("Saving", StringComparison.Ordinal));
+        save().HasAttribute("disabled")
+            .Should().BeTrue("the version the second submission would state is the one already in flight");
+
+        answering.SetException(ApiExceptions.Unreachable());
+        await submitted;
+    }
+
+    /// <summary>
+    /// Cancel, leaves the profile for the trainings without asking anything of the API.
+    /// </summary>
+    /// <remarks>
+    /// It sits beside the save button on a screen whose form deliberately answers no Enter — the
+    /// bio is multi-line (ADR 0093). Worth a fact because a Cancel wired to the wrong handler
+    /// would save the page it was meant to abandon.
+    /// </remarks>
+    [Fact]
+    public void Cancel_LeavesTheProfileForTheTrainings()
+    {
+        // Arrange
+        var navigation = (BunitNavigationManager)Services.GetRequiredService<NavigationManager>();
+        var page = Render<Profile>();
+
+        // Act
+        page.FindAll("button")
+            .Single(button => button.TextContent.Contains("Cancel", StringComparison.Ordinal))
+            .Click();
+
+        // Assert
+        navigation.Uri.Should().Be("http://localhost/trainings");
+        _trainerClient.Verify(
+            client => client.EditCurrentAsync(It.IsAny<string?>(), It.IsAny<EditTrainerHttpRequest>()),
+            Times.Never);
     }
 
     private static AngleSharp.Dom.IElement EraseButton(IRenderedComponent<Profile> page) =>

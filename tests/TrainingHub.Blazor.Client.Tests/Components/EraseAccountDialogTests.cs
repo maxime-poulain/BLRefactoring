@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 using TrainingHub.Blazor.Client.Components;
@@ -78,6 +79,33 @@ public sealed class EraseAccountDialogTests : ComponentTest
         result.Canceled.Should().BeFalse();
         result.Data.Should().Be("Password1!",
             "the password travels as typed — the API is the judge of it, not this dialog");
+    }
+
+    /// <summary>
+    /// Pressing Enter in the password field, closes like the button does.
+    /// </summary>
+    /// <remarks>
+    /// The dialog's one field is a single line, so its MudForm declares <c>OnEnterPressed</c> and
+    /// the keyboard finishes what was typed (ADR 0093). Dispatched on the form element, because
+    /// that is where MudForm listens for the key.
+    /// </remarks>
+    [Fact]
+    public async Task PressingEnter_ClosesLikeTheButtonDoes()
+    {
+        // Arrange
+        var (dialog, reference) = await OpenAsync();
+        dialog.Find("input").Input("Password1!");
+        dialog.WaitForAssertion(() => Erasing(dialog).HasAttribute("disabled").Should().BeFalse());
+
+        // Act
+        await dialog.InvokeAsync(() =>
+            dialog.Find("form").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" }));
+
+        // Assert
+        var result = await ClosedAsync(dialog, reference);
+
+        result.Canceled.Should().BeFalse();
+        result.Data.Should().Be("Password1!");
     }
 
     /// <summary>

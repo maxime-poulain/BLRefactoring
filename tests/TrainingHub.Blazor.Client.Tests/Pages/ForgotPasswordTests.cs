@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using TrainingHub.Blazor.Client.Infrastructure;
@@ -96,6 +97,45 @@ public sealed class ForgotPasswordTests : ComponentTest
         page.Markup.Should().NotContain("on its way");
     }
 
+    /// <summary>
+    /// Submit, while the ask is in flight, says so and refuses a second submission.
+    /// </summary>
+    /// <remarks>
+    /// A recovery window counts requests (ADR 0084), so a form that could be submitted twice while
+    /// the first ask is unanswered would spend somebody's allowance on their own impatience. Enter
+    /// makes that reachable by holding a key (ADR 0093); the busy label and the <c>disabled</c> are
+    /// what answer it, and a test that asserted only the label would not notice the second one.
+    /// </remarks>
+    [Fact]
+    public async Task Submit_WhileTheAskIsInFlight_SaysSoAndRefusesASecondSubmission()
+    {
+        // Arrange
+        var answering = new TaskCompletionSource<bool>();
+
+        _session
+            .Setup(client => client.ForgotPasswordAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(answering.Task);
+
+        var page = Render<ForgotPassword>();
+        page.FindAll("input")[0].Input("grace.hopper@example.org");
+
+        var send = () => page.FindAll("button")
+            .Single(button => button.TextContent.Contains("Send", StringComparison.Ordinal));
+        page.WaitForState(() => !send().HasAttribute("disabled"));
+
+        // Act
+        var submitted = page.InvokeAsync(() =>
+            page.Find("form").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" }));
+
+        // Assert
+        page.WaitForState(() => send().TextContent.Contains("Sending", StringComparison.Ordinal));
+        send().HasAttribute("disabled")
+            .Should().BeTrue("an ask already on its way is the one the window is counting");
+
+        answering.SetResult(true);
+        await submitted;
+    }
+
     private async Task<IRenderedComponent<ForgotPassword>> SubmitAsync(string email)
     {
         var page = Render<ForgotPassword>();
@@ -109,7 +149,9 @@ public sealed class ForgotPasswordTests : ComponentTest
 
         page.WaitForState(() => !send().HasAttribute("disabled"));
 
-        await page.InvokeAsync(() => send().Click());
+        // The gesture is Enter, dispatched where MudForm listens for it — its own form element.
+        // The button's OnClick names the same handler, held by the architecture rule (ADR 0093).
+        await page.InvokeAsync(() => page.Find("form").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" }));
 
         return page;
     }

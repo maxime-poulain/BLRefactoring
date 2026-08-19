@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Bunit;
 using Bunit.TestDoubles;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using MudBlazor;
@@ -219,6 +220,51 @@ public sealed class LoginTests : ComponentTest
         _caller.SetClaims(new Claim(SessionClaims.TrainerId, Guid.NewGuid().ToString()));
     }
 
+    /// <summary>
+    /// Sign in, while the credentials are in flight, says so and refuses a second submission.
+    /// </summary>
+    /// <remarks>
+    /// This state stopped being cosmetic when Enter began submitting the form (ADR 0093). A button
+    /// is pressed once; a key held down repeats. What keeps the second submission from reaching the
+    /// session client is the same <c>disabled</c> the busy label announces, so the label and the
+    /// attribute are asserted together — a spinner over a live button would be a lie about both.
+    /// </remarks>
+    [Fact]
+    public async Task SignIn_WhileTheCredentialsAreInFlight_SaysSoAndRefusesASecondSubmission()
+    {
+        // Arrange
+        var answering = new TaskCompletionSource<bool>();
+
+        _session
+            .Setup(client => client.LoginAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(answering.Task);
+
+        var page = Render<Login>();
+
+        var fields = page.FindAll("input");
+        fields[0].Input("john");
+        fields[1].Input("secret");
+
+        // By either label, because the lookup must survive the flip to the busy one —
+        // which is the very state this fact is about.
+        var signIn = () => page.FindAll("button")
+            .Single(button => button.TextContent.Contains("Sign in", StringComparison.Ordinal)
+                || button.TextContent.Contains("Signing in", StringComparison.Ordinal));
+        page.WaitForState(() => !signIn().HasAttribute("disabled"));
+
+        // Act
+        var submitted = page.InvokeAsync(() =>
+            page.Find("form").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" }));
+
+        // Assert
+        page.WaitForState(() => signIn().TextContent.Contains("Signing in", StringComparison.Ordinal));
+        signIn().HasAttribute("disabled")
+            .Should().BeTrue("a submission already on its way is what the second one has to wait for");
+
+        answering.SetResult(true);
+        await submitted;
+    }
+
     private async Task<BunitNavigationManager> SignInWith(string? returnUrl)
     {
         // Through the address bar, not as a parameter: `returnUrl` is bound with
@@ -248,7 +294,10 @@ public sealed class LoginTests : ComponentTest
 
         page.WaitForState(() => !signIn().HasAttribute("disabled"));
 
-        await page.InvokeAsync(() => signIn().Click());
+        // The gesture is Enter, dispatched where MudForm listens for it — its own form element.
+        // The button's OnClick names the same handler, and the architecture rule holds that,
+        // so one gesture exercises the one path both share (ADR 0093).
+        await page.InvokeAsync(() => page.Find("form").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" }));
 
         return navigation;
     }

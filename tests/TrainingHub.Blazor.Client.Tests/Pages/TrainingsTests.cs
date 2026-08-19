@@ -500,6 +500,39 @@ public sealed class TrainingsTests : ComponentTest
         buttons[buttons.Count - 1].Click();
     }
 
+    /// <summary>
+    /// Withdrawing, asks first and takes nothing away until the dialog answers.
+    /// </summary>
+    /// <remarks>
+    /// The one lifecycle transition this page confirms, because withdrawing takes a training away
+    /// from the people it was on offer to. The fact worth holding is the order: the dialog is
+    /// raised, and the API hears nothing until it comes back — a button that unpublished first and
+    /// asked afterwards would pass every other test in this file. The options it is raised with say
+    /// Escape closes it (ADR 0093), which is the way out no test here can press.
+    /// </remarks>
+    [Fact]
+    public void Withdrawing_AsksFirst_AndTakesNothingAwayUntilTheDialogAnswers()
+    {
+        // Arrange
+        _trainings
+            .Setup(client => client.GetMineAsync(It.IsAny<int?>(), It.IsAny<int?>()))
+            .ReturnsAsync(Page(page: 1, totalPages: 1, totalCount: 1, Training("A published training")));
+
+        var page = Render<Trainings>();
+
+        // Act
+        // The withdraw button — the last on a published training's card, like the publish one on a
+        // withdrawn training's.
+        var buttons = page.FindAll("button");
+        buttons[buttons.Count - 1].Click();
+
+        // Assert
+        _trainings.Verify(
+            client => client.UnpublishTrainingAsync(It.IsAny<Guid>()),
+            Times.Never,
+            "the training stays on offer until somebody confirms in the dialog");
+    }
+
     private static PagedHttpResponseOfTrainingHttpResponse Page(
         int page,
         int totalPages,

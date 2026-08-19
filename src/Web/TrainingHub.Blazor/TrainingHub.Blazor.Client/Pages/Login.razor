@@ -18,7 +18,7 @@
         <MudStack Spacing="4">
             <MudText Typo="Typo.h4">@Common["SignIn"]</MudText>
 
-            <MudForm @ref="_form" @bind-IsValid="_isValid">
+            <MudForm @ref="_form" @bind-IsValid="_isValid" OnEnterPressed="HandleLogin">
                 <MudTextField @bind-Value="_username"
                               Label="@L["UsernameLabel"]"
                               Variant="Variant.Outlined"

@@ -18,7 +18,7 @@
         <MudStack Spacing="4">
             <MudText Typo="Typo.h4">@L["CreateAnAccount"]</MudText>
 
-            <MudForm @ref="_form" @bind-IsValid="_isValid">
+            <MudForm @ref="_form" @bind-IsValid="_isValid" OnEnterPressed="HandleRegister">
                 <MudGrid>
                     <MudItem xs="12" sm="6">
                         <MudTextField @bind-Value="_firstname"
